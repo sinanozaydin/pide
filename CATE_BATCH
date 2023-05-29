@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+
+import os
+
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'cate_src')
+
+import sys, csv, itertools, math, platform, random, warnings
+import numpy as np
+from scipy.interpolate import interp1d, griddata
+
+#Importing external functions
+
+sys.path.append(core_path_ext)
+
+from cond_models.melt_odd import * #Conductivity functions of melts
+from cond_models.fluids_odd import * #Conductivity functions of fluids
+
+warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
+
+
+class bcolors:
+	BLUE = '\033[94m'
+	GREEN = '\033[92m'
+	RED = '\033[91m'
+	B = '\033[0m'
+	NC ='\x1b[0m'
+
+#Version 2.0, July. 2022.
+#MATE - (M)antle (A)nalysis (T)ools for (E)lectromagnetics
+#Program written by Sinan Ozaydin (Macquarie University, School of Natural
+#sciences, Australia).
+
+#Indentation method: hard tabs ('\t')
+
+#Works with Python3
+#Required libraries: numpy,scipy,matplotlib,PyQt5
+#optional libraries: mtpy
+
+#Installation of libraries:
+#In Linux (mac included) distros through terminal:
+#pip install numpy,scipy,matplotlib,PyQt5
+#In Windows skip sudo.
+
+print(bcolors.GREEN + '#############################################')
+print(' ')
+print(' ')
+print(' ')
+print(bcolors.GREEN + '                CATE 0.1')
+print(' ')
+print(bcolors.BLUE + '            Crust Analysis Tools')
+print('                     for')
+print('               Electromagnetics')
+print(' ')
+print(' ')
+print(' ')
+print(bcolors.GREEN + '#############################################')
+print(bcolors.BLUE + 'developed by Sinan Ozaydin,' + bcolors.RED +  ' School of Geosciences, University of Sydney')
+print(' ')
+print(' ')
+print(bcolors.NC + 'for questions, email: sinan.ozaydin@protonmail.com or sinan.ozaydin@sydney.edu.au')
+print('Initializing the software...')
+
+
+class CATE_BATCH(object):
+	
+	def __init__(self, core_path = core_path_ext):
+
+		args_input = sys.argv
+		self.core_path = core_path
+
+		if len(args_input) == 1:
+
+			print('You have to run the program with options:')
+			print('Current Methods:')
+			print(' ')
+			print(bcolors.RED + '1. -forward')
+
+			print(' ')
+			print(' ')
+			print(bcolors.NC + 'To have more information for each method. Just run the program with the option only like CATE_BATCH -forward ')
+			sys.exit()
+
+		if args_input[1] == '-forward':
+
+			try:
+				self.calc_path = args_input[0]
+
+RUN_PROGRAM = CATE_BATCH()
