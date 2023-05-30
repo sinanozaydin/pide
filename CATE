@@ -1,0 +1,377 @@
+#!/usr/bin/env python3
+
+import os
+
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'cate_src')
+
+import sys, csv, itertools, math, platform, random, warnings, timeit
+import numpy as np
+from scipy.interpolate import interp1d
+from scipy import optimize
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.collections import PatchCollection
+import matplotlib.colors as colors
+from matplotlib.pyplot import Figure
+import matplotlib.patheffects as pe
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import *
+
+#Importing external functions
+
+sys.path.append(core_path_ext)
+
+from cond_models.melt_odd import * #Conductivity functions of melts
+from cond_models.fluids_odd import * #Conductivity functions of fluids
+
+warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are utterly useless
+
+#Color coding class for fancy-colored print-outs.
+class bcolors:
+	BLUE = '\033[94m'
+	GREEN = '\033[92m'
+	RED = '\033[91m'
+	B = '\033[0m'
+	NC ='\x1b[0m'
+	
+
+#Version 0.1, June. 2023.
+#CATE - (C)antle (A)nalysis (T)ools for (E)lectromagnetics
+#Program written by Sinan Ozaydin (Macquarie University, School of Natural Sciences
+#sciences, Australia).
+
+#Indentation method: hard tabs ('\t')
+
+#Works with Python3
+#Required libraries: numpy,scipy,matplotlib,PyQt5
+
+#Installation of libraries:
+#In Linux (mac included) distros through terminal:
+#pip install numpy,scipy,matplotlib,PyQt5
+#In Windows skip sudo.
+
+print(bcolors.GREEN + '#############################################')
+print(' ')
+print(' ')
+print(' ')
+print(bcolors.GREEN + '                  CATE 0.1')
+print(' ')
+print(bcolors.BLUE + '            Crust Analysis Tools')
+print('                     for')
+print('               Electromagnetics')
+print(' ')
+print(' ')
+print(' ')
+print(bcolors.GREEN + '#############################################')
+print(bcolors.BLUE + 'developed by Sinan Ozaydin,' + bcolors.RED +  ' School of Geosciences, University of Sydney')
+print(' ')
+print(' ')
+print(bcolors.NC + 'for questions, email: sinan.ozaydin@protonmail.com or sinan.ozaydin@sydney.edu.au')
+print('Initializing the software...')
+
+class CATE(QMainWindow):
+
+	def __init__(self, core_path = core_path_ext, parent = None):
+
+		super(CATE,self).__init__(parent)
+
+		self.core_path = core_path
+		self.working_path = os.getcwd()
+
+		if platform.system() == 'Windows':
+			self.commandmv = 'move'
+		else:
+			self.commandmv = 'mv'
+
+		args_input = sys.argv
+		if len(args_input) == 1:
+			CATE.arguments_load = False
+			CATE.composition_args_path = False
+		else:
+			CATE.arguments_load = True
+			try:
+				CATE.composition_args_path = args_input[1]
+			except IndexError:
+				pass
+
+		self.setMinimumSize(1800,1000)
+		self.setStyleSheet("QMainWindow{background-color: #ebfaeb;border: 1px solid black}")
+		self.setWindowTitle("CATE")
+		
+		#Defining Menubar items
+		mainMenu = self.menuBar()
+		mainMenu.setNativeMenuBar(False)
+		mainMenu.setStyleSheet("QMenuBar{background-color: #ccffcc;border: 1px solid black}")
+		fileMenu = mainMenu.addMenu('Main')
+		mainMenu.setStyleSheet("QMenuBar{background-color: #ccffcc;border: 1px solid black}")
+		
+		#ENV FILE BUTTON
+		infoMain = QAction("&Info", self)
+		infoMain.setShortcut("Ctrl+O")
+		infoMain.triggered.connect(self.info_main)
+		fileMenu.addAction(infoMain)
+
+		self.home()
+		
+	def home(self):
+		
+		#Setting up initial variables.
+
+		self.data_existence = False
+		self.composition_readfile = False
+		CATE.loaded_file = False
+
+		CATE.plot_style_list = ['ggplot', 'default', 'classic','bmh', 'fast', 'seaborn', 'seaborn-colorblind',
+		'seaborn-deep','seaborn-pastel', 'seaborn-dark','fivethirtyeight','grayscale']
+		CATE.plot_style_selection = 0
+
+		CATE.model_method_grt = 0
+
+		CATE.grt_cond_selection = 0
+		CATE.fluid_cond_selection = 0
+		CATE.melt_cond_selection = 0
+		CATE.sulfide_cond_selection = 0
+		CATE.graphite_cond_selection = 0
+
+		#Setting up the blank canvas on the main page.
+
+		self.canvas_widget = QFrame(self)
+		self.canvas_widget.setGeometry(500,50,1250,925)
+		self.canvas_widget.setStyleSheet("border:1.25px solid #768795")
+		self.canvaslayout = QVBoxLayout(self.canvas_widget)
+
+		#Using the internal matplotlib style ggplot
+		plt.style.use('ggplot')
+		self.fig = Figure()
+		self.fig.patch.set_facecolor('#EFF0F1')
+
+		self.canvas = FigureCanvas(self.fig)
+		self.toolbar = NavigationToolbar(self.canvas, self)
+		self.toolbar.setStyleSheet("QToolBar { border: 0px ; : #889DAE}")
+		self.canvaslayout.addWidget(self.toolbar)
+		self.canvaslayout.addWidget(self.canvas)
+
+		#Reading parameter files...
+
+		self.read_cond_models()
+
+		#Defining buttons on the MainWindow
+		properties_mark = QLabel(self)
+		properties_mark.setText('Setup')
+		properties_mark.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+		properties_mark.move(65,35)
+
+		cond_btn = QPushButton('Conducitivity Models', self)
+		cond_btn.move(10,65)
+		cond_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		cond_btn.clicked.connect(self.info_main)
+		self.cond_pop = None
+
+		mix_btn = QPushButton('Phase-Mixing', self)
+		mix_btn.move(10,100)
+		mix_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		mix_btn.clicked.connect(self.info_main)
+		self.phs_mix_popup = None
+
+		self.show()
+
+	def read_csv(self,filename,delim):
+
+		#Simple function for reading csv files and give out filtered output for given delimiter (delim)
+
+		file_obj = open(filename,'rt',encoding = "utf8") #Creating file object
+		file_csv = csv.reader(file_obj,delimiter = delim) #Reading the file object with csv module, delimiter assigned to ','
+		data = [] #Creating empty array to append data
+
+		#Appending data from csb object
+		for row in file_csv:
+			data.append(row)
+
+		#Filtering data for None elements read.
+		for j in range(0,len(data)):
+			data[j] = list(filter(None,data[j]))
+		data = list(filter(None,data))
+
+		return data
+
+	def read_cond_models(self):
+
+		#A function that reads conductivity model files and get the data.
+
+		self.fluid_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'fluids.csv'),delim = ',') 
+		self.melt_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'melt.csv'),delim = ',')
+
+		self.cond_data_array = [self.fluid_cond_data, self.melt_cond_data]
+
+		len_fluid = len(self.fluid_cond_data) - 1 
+		len_melt = len(self.melt_cond_data) - 1
+
+		#Creating empty arrays for appending new data.
+		CATE.name = [[None] * len_fluid, [None] * len_melt]
+		CATE.type = [[None] * len_fluid, [None] * len_melt]
+		CATE.t_min = [[None] * len_fluid, [None] * len_melt]
+		CATE.t_max = [[None] * len_fluid, [None] * len_melt]
+		self.p_min = [[None] * len_fluid, [None] * len_melt]
+		self.p_max = [[None] * len_fluid, [None] * len_melt]
+		self.w_calib = [[None] * len_fluid, [None] * len_melt]
+		self.mg_cond = [[None] * len_fluid, [None] * len_melt]
+		self.sigma_pol = [[None] * len_fluid, [None] * len_melt]
+		self.sigma_pol_err = [[None] * len_fluid, [None] * len_melt]
+		self.h_pol = [[None] * len_fluid, [None] * len_melt]
+		self.h_pol_err = [[None] * len_fluid, [None] * len_melt]
+		self.sigma_p = [[None] * len_fluid, [None] * len_melt]
+		self.sigma_p_err = [[None] * len_fluid, [None] * len_melt]
+		self.h_p = [[None] * len_fluid, [None] * len_melt]
+		self.h_p_err = [[None] * len_fluid, [None] * len_melt]
+		self.r = [[None] * len_fluid, [None] * len_melt]
+		self.r_err = [[None] * len_fluid, [None] * len_melt]
+		self.alpha_p = [[None] * len_fluid, [None] * len_melt]
+		self.alpha_p_err = [[None] * len_fluid, [None] * len_melt]
+		self.wtype = [[None] * len_fluid, [None] * len_melt]
+		self.dens_mat = [[None] * len_fluid, [None] * len_melt]
+
+		#Filling up the arrays.
+		for i in range(0,len(CATE.type)):
+			count = 1
+			for j in range(0,len(CATE.type[i])):
+				CATE.name[i][count-1] = self.cond_data_array[i][count][0]
+				CATE.type[i][count-1] = self.cond_data_array[i][count][1]
+				CATE.t_min[i][count-1] = float(self.cond_data_array[i][count][2])
+				CATE.t_max[i][count-1] = float(self.cond_data_array[i][count][3])
+				self.p_min[i][count-1] = float(self.cond_data_array[i][count][4])
+				self.p_max[i][count-1] = float(self.cond_data_array[i][count][5])
+				self.w_calib[i][count-1] = int(self.cond_data_array[i][count][6])
+				self.mg_cond[i][count-1] = float(self.cond_data_array[i][count][7])
+				self.sigma_pol[i][count-1] = float(self.cond_data_array[i][count][8])
+				self.sigma_pol_err[i][count-1] = float(self.cond_data_array[i][count][9])
+				self.h_pol[i][count-1] = float(self.cond_data_array[i][count][10])
+				self.h_pol_err[i][count-1] = float(self.cond_data_array[i][count][11])
+				self.sigma_p[i][count-1] = float(self.cond_data_array[i][count][12])
+				self.sigma_p_err[i][count-1] = float(self.cond_data_array[i][count][13])
+				self.h_p[i][count-1] = float(self.cond_data_array[i][count][14])
+				self.h_p_err[i][count-1] = float(self.cond_data_array[i][count][15])
+				self.r[i][count-1] = float(self.cond_data_array[i][count][16])
+				self.r_err[i][count-1] = float(self.cond_data_array[i][count][17])
+				self.alpha_p[i][count-1] = float(self.cond_data_array[i][count][18])
+				self.alpha_p_err[i][count-1] = float(self.cond_data_array[i][count][19])
+				self.wtype[i][count-1] = int(self.cond_data_array[i][count][20])
+				self.dens_mat[i][count-1] = float(self.cond_data_array[i][count][21])
+
+				count += 1
+
+	def calculate_arrhenian_single(self, T, sigma, E):
+
+		cond = sigma * np.exp((-E) / (self.R * T))
+
+		return cond
+	
+	def calculate_fluids_conductivity(self, method, sol_idx = None):
+
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+
+		if CATE.type[0][CATE.fluid_cond_selection] == '0':
+
+			self.fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node], P = self.p[idx_node],
+								   sigma = self.sigma_pol[0][CATE.fluid_cond_selection],
+								   E = self.h_pol[0][CATE.fluid_cond_selection])
+			
+		elif CATE.type[0][CATE.fluid_cond_selection] == '1':
+
+			self.fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_pol[0][CATE.fluid_cond_selection],
+								   E = self.h_pol[0][CATE.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_p[0][CATE.fluid_cond_selection],
+								   E = self.h_p[0][CATE.fluid_cond_selection])
+			
+		elif CATE.type[0][CATE.fluid_cond_selection] == '3':
+
+			if ('*' in CATE.name[0][CATE.fluid_cond_selection]) == True:
+
+				fluids_odd_function = CATE.name[0][CATE.fluid_cond_selection].replace('*','')
+
+			else:
+
+				fluids_odd_function = CATE.name[0][CATE.fluid_cond_selection]
+
+			cond_fluids_max, cond_fluids_min, cond_fluids = eval(fluids_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], NaCL = self.nacl[idx_node], method = method)')
+
+		self.fluids_cond[idx_node] = cond_fluids
+		if method == 'array':
+			self.fluids_cond_max[idx_node] = cond_fluids_max
+			self.fluids_cond_min[idx_node] = cond_fluids_min
+		else:
+			self.fluids_cond_max[idx_node] = self.fluids_cond[idx_node]
+			self.fluids_cond_min[idx_node] = self.fluids_cond[idx_node]
+
+	def calculate_melt_conductivity(self, method, sol_idx = None):
+
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+
+		if CATE.type[1][CATE.melt_cond_selection] == '0':
+
+			self.melt_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node], P = self.p[idx_node],
+								   sigma = self.sigma_pol[1][CATE.melt_cond_selection],
+								   E = self.h_pol[1][CATE.melt_cond_selection])
+			
+		elif CATE.type[1][CATE.melt_cond_selection] == '1':
+
+			self.melt_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_pol[1][CATE.melt_cond_selection],
+								   E = self.h_pol[1][CATE.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_p[1][CATE.melt_cond_selection],
+								   E = self.h_p[1][CATE.melt_cond_selection])
+			
+		elif CATE.type[1][CATE.melt_cond_selection] == '3':
+
+			if ('*' in CATE.name[1][CATE.melt_cond_selection]) == True:
+
+				melt_odd_function = CATE.name[1][CATE.melt_cond_selection].replace('*','')
+
+			else:
+
+				melt_odd_function = CATE.name[1][CATE.melt_cond_selection]
+
+			cond_melt_max, cond_melt_min, cond_melt = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], NaCL = self.nacl[idx_node], method = method)')
+
+		self.melt_cond[idx_node] = cond_melt
+		if method == 'array':
+			self.melt_cond_max[idx_node] = cond_melt_max
+			self.melt_cond_min[idx_node] = cond_melt_min
+		else:
+			self.melt_cond_max[idx_node] = self.melt_cond[idx_node]
+			self.melt_cond_min[idx_node] = self.melt_cond[idx_node]
+
+	def info_main(self):
+
+		QMessageBox.about(self, "INFO GENERAL", "TBW.")
+
+	def conductivity_popup(self):
+
+		if self.cond_pop is None:
+			self.cond_pop = COND_POP()
+			self.cond_pop.setGeometry(QtCore.QRect(1000, 700, 100, 100))
+		self.cond_pop.show()
+
+	def phase_mixing_popup(self):
+
+		if self.phs_mix_popup is None:
+			self.phs_mix_popup = PHS_POP()
+			self.phs_mix_popup.setGeometry(QtCore.QRect(600, 700, 100, 100))
+		self.phs_mix_popup.show()
+ 
+def main():
+
+	app = QApplication(sys.argv)
+	GUI = CATE()
+	sys.exit(app.exec_())
+
+if __name__ == '__main__':
+	main()
