@@ -175,7 +175,51 @@ class CATE(QMainWindow):
 		mix_btn.clicked.connect(self.info_main)
 		self.phs_mix_popup = None
 
+		fluid_phases_mark = QLabel(self)
+		fluid_phases_mark.setText('Fluid Phases')
+		fluid_phases_mark.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+		fluid_phases_mark.move(290,35)
+
+		btn_melt_content= QPushButton("Melt Content(%)", self)
+		btn_melt_content.clicked.connect(self.get_melt_content)
+		btn_melt_content.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.melt_content_textbox = QLineEdit(str(0.0), self)
+		self.melt_content_textbox.setEnabled(False)
+		btn_melt_content.move(200,65)
+		self.melt_content_textbox.move(325,65)
+
+		btn_fluid_content = QPushButton("Fluid Content(%)", self)
+		btn_fluid_content.clicked.connect(self.get_fluid_content)
+		btn_fluid_content.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.fluid_content_textbox = QLineEdit(str(0.0), self)
+		self.fluid_content_textbox.setEnabled(False)
+		btn_fluid_content.move(200,100)
+		self.fluid_content_textbox.move(325,100)
+
 		self.show()
+
+	def get_melt_content(self):
+
+		text, ok = QInputDialog.getText(self, 'Melt Content Dialogue', 'Enter the value in (%):')
+		if ok:
+			try:
+				float(text)
+				self.melt_content_textbox.setText(str(text))
+				self.melt_frac = np.array([float(text) * 1e-2])
+			except ValueError:
+				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+
+	def get_fluid_content(self):
+
+		text, ok = QInputDialog.getText(self, 'Fluid Content Dialogue', 'Enter the value in (%):')
+		if ok:
+			try:
+				float(text)
+				self.fluid_content_textbox.setText(str(text))
+				self.fluid_frac = np.array([float(text) * 1e-2])
+			except ValueError:
+				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+
 
 	def read_csv(self,filename,delim):
 
