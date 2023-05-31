@@ -135,6 +135,8 @@ class CATE(QMainWindow):
 		CATE.sulfide_cond_selection = 0
 		CATE.graphite_cond_selection = 0
 
+		CATE.fluid_or_melt_method = 0
+
 		#Setting up the blank canvas on the main page.
 
 		self.canvas_widget = QFrame(self)
@@ -163,6 +165,8 @@ class CATE(QMainWindow):
 		properties_mark.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
 		properties_mark.move(65,35)
 
+		#conductivity button
+
 		cond_btn = QPushButton('Conducitivity Models', self)
 		cond_btn.move(10,65)
 		cond_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
@@ -175,51 +179,162 @@ class CATE(QMainWindow):
 		mix_btn.clicked.connect(self.info_main)
 		self.phs_mix_popup = None
 
+		#radiobutton melt or fluid
+
 		fluid_phases_mark = QLabel(self)
 		fluid_phases_mark.setText('Fluid Phases')
 		fluid_phases_mark.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
 		fluid_phases_mark.move(290,35)
 
-		btn_melt_content= QPushButton("Melt Content(%)", self)
-		btn_melt_content.clicked.connect(self.get_melt_content)
-		btn_melt_content.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		btn_fluid_phase_setup = QPushButton("Fluid Phase Setup", self)
+		btn_fluid_phase_setup.clicked.connect(self.fluid_phase_popup)
+		btn_fluid_phase_setup.setStyleSheet("QPushButton {min-width: 18em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		btn_fluid_phase_setup.move(200,65)
+		self.fluid_melt_pop = None
+
+		btn_melt_content= QPushButton("Fluid-Melt Content (%)", self)
+		btn_melt_content.clicked.connect(self.get_fluid_melt_content)
+		btn_melt_content.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		self.melt_content_textbox = QLineEdit(str(0.0), self)
 		self.melt_content_textbox.setEnabled(False)
-		btn_melt_content.move(200,65)
-		self.melt_content_textbox.move(325,65)
+		self.melt_content_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		btn_melt_content.move(200,100)
+		self.melt_content_textbox.move(370,100)
 
-		btn_fluid_content = QPushButton("Fluid Content(%)", self)
-		btn_fluid_content.clicked.connect(self.get_fluid_content)
-		btn_fluid_content.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
-		self.fluid_content_textbox = QLineEdit(str(0.0), self)
-		self.fluid_content_textbox.setEnabled(False)
-		btn_fluid_content.move(200,100)
-		self.fluid_content_textbox.move(325,100)
+		btn_salinity_fluid= QPushButton("Fluid Salinity (%wt)", self)
+		btn_salinity_fluid.clicked.connect(self.get_salinity)
+		btn_salinity_fluid.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.salinity_textbox = QLineEdit(str(0.0), self)
+		self.salinity_textbox.setEnabled(False)
+		self.salinity_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		btn_salinity_fluid.move(200,135)
+		self.salinity_textbox.move(370,135)
+
+		btn_co2_melt = QPushButton("Melt CO2 (ppm)", self)
+		btn_co2_melt.clicked.connect(self.get_co2_melt)
+		btn_co2_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.co2_melt_textbox = QLineEdit(str(0.0), self)
+		self.co2_melt_textbox.setEnabled(False)
+		self.co2_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		btn_co2_melt.move(200,170)
+		self.co2_melt_textbox.move(370,170)
+
+		btn_h2o_melt = QPushButton("Melt H2O (ppm)", self)
+		btn_h2o_melt.clicked.connect(self.get_h2o_melt)
+		btn_h2o_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.h2o_melt_textbox = QLineEdit(str(0.0), self)
+		self.h2o_melt_textbox.setEnabled(False)
+		self.h2o_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		btn_h2o_melt.move(200,205)
+		self.h2o_melt_textbox.move(370,205)
+		
+		btn_nao_melt = QPushButton("Melt NaO (ppm)", self)
+		btn_nao_melt.clicked.connect(self.get_nao_melt)
+		btn_nao_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.nao_melt_textbox = QLineEdit(str(0.0), self)
+		self.nao_melt_textbox.setEnabled(False)
+		self.nao_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		btn_nao_melt.move(200,235)
+		self.nao_melt_textbox.move(370,235)
+
+		btn_k2o_melt = QPushButton("Melt K2O (ppm)", self)
+		btn_k2o_melt.clicked.connect(self.get_k2o_melt)
+		btn_k2o_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.k2o_melt_textbox = QLineEdit(str(0.0), self)
+		self.k2o_melt_textbox.setEnabled(False)
+		self.k2o_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		btn_k2o_melt.move(200,270)
+		self.k2o_melt_textbox.move(370,270)
 
 		self.show()
 
-	def get_melt_content(self):
+	def get_fluid_melt_content(self):
 
 		text, ok = QInputDialog.getText(self, 'Melt Content Dialogue', 'Enter the value in (%):')
 		if ok:
 			try:
 				float(text)
 				self.melt_content_textbox.setText(str(text))
-				self.melt_frac = np.array([float(text) * 1e-2])
+				self.melt_fluid_frac = np.array([float(text) * 1e-2])
 			except ValueError:
 				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		
+	def get_salinity(self):
 
-	def get_fluid_content(self):
+		if CATE.fluid_or_melt_method == 0:
+			text, ok = QInputDialog.getText(self, 'Salinity Content Dialogue', 'Enter the value in (%):')
+			if ok:
+				try:
+					float(text)
+					self.salinity_textbox.setText(str(text))
+					self.salinity_fluid = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","Only fluids can have salinity. Now, the fluid phase is selected to be melt.")
+		
+	def get_co2_melt(self):
 
-		text, ok = QInputDialog.getText(self, 'Fluid Content Dialogue', 'Enter the value in (%):')
-		if ok:
-			try:
-				float(text)
-				self.fluid_content_textbox.setText(str(text))
-				self.fluid_frac = np.array([float(text) * 1e-2])
-			except ValueError:
-				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		if CATE.fluid_or_melt_method == 1:
+			text, ok = QInputDialog.getText(self, 'CO2 Melt Dialogue', 'Enter the value in (ppm):')
+			if ok:
+				try:
+					float(text)
+					self.co2_melt_textbox.setText(str(text))
+					self.co2_melt = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","Only melts can have co2. Now, the phase is selected to be fluid.")
+		
+	def get_h2o_melt(self):
 
+		if CATE.fluid_or_melt_method == 1:
+			text, ok = QInputDialog.getText(self, 'H2O Melt Dialogue', 'Enter the value in (ppm):')
+			if ok:
+				try:
+					float(text)
+					self.h2o_melt_textbox.setText(str(text))
+					self.h2o_melt = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","Only melts can have strcutrally bounded h2o. Now, the phase is selected to be fluid.")
+		
+	def get_nao_melt(self):
+
+		if CATE.fluid_or_melt_method == 1:
+			text, ok = QInputDialog.getText(self, 'NaO Melt Dialogue', 'Enter the value in (%wt):')
+			if ok:
+				try:
+					float(text)
+					self.nao_melt_textbox.setText(str(text))
+					self.nao_melt = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","Only melts can have NaO in this software. Now, the phase is selected to be fluid.")
+
+	def get_k2o_melt(self):
+
+		if CATE.fluid_or_melt_method == 1:
+			text, ok = QInputDialog.getText(self, 'K2O Melt Dialogue', 'Enter the value in (wt%):')
+			if ok:
+				try:
+					float(text)
+					self.nao_melt_textbox.setText(str(text))
+					self.nao_melt = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","Only melts can have K2O in this software. Now, the phase is selected to be fluid.")
+		
+	def fluid_phase_popup(self):
+
+		if self.fluid_melt_pop is None:
+			self.fluid_melt_pop = FLUID_MELT_POP()
+			self.fluid_melt_pop.setGeometry(QtCore.QRect(100, 500, 100, 100))
+		self.fluid_melt_pop.show()
 
 	def read_csv(self,filename,delim):
 
@@ -392,7 +507,7 @@ class CATE(QMainWindow):
 		else:
 			self.melt_cond_max[idx_node] = self.melt_cond[idx_node]
 			self.melt_cond_min[idx_node] = self.melt_cond[idx_node]
-
+			
 	def info_main(self):
 
 		QMessageBox.about(self, "INFO GENERAL", "TBW.")
@@ -410,7 +525,49 @@ class CATE(QMainWindow):
 			self.phs_mix_popup = PHS_POP()
 			self.phs_mix_popup.setGeometry(QtCore.QRect(600, 700, 100, 100))
 		self.phs_mix_popup.show()
- 
+
+class FLUID_MELT_POP(QWidget):
+
+	def __init__(self):
+
+		QWidget.__init__(self)
+
+		fluid_melt_layout = QVBoxLayout(self)
+
+		fluid_melt_label = QLabel(self)
+		fluid_melt_label.setText('Select the fluid phase')
+		fluid_melt_label.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+
+
+		fluid_melt_btg = QButtonGroup(self)
+
+		self.btn_fom_1 = QRadioButton("Fluid")
+		self.btn_fom_1.toggled.connect(lambda:self.btnstate_fluidormelt(self.btn_fom_1))
+		self.btn_fom_2 = QRadioButton("Melt")
+		self.btn_fom_2.toggled.connect(lambda:self.btnstate_fluidormelt(self.btn_fom_2))
+
+		if CATE.fluid_or_melt_method == 0:
+			self.btn_fom_1.setChecked(True)
+		elif CATE.fluid_or_melt_method == 1:
+			self.btn_fom_2.setChecked(True)
+
+		fluid_melt_btg.addButton(self.btn_fom_1)
+		fluid_melt_btg.addButton(self.btn_fom_2)
+
+		fluid_melt_layout.addWidget(fluid_melt_label)
+		fluid_melt_layout.addWidget(self.btn_fom_1)
+		fluid_melt_layout.addWidget(self.btn_fom_2)
+
+	def btnstate_fluidormelt(self,b):
+
+		if b.text() == "Fluid":
+			if b.isChecked() == True:
+				CATE.fluid_or_melt_method = 0
+		if b.text() == "Melt":
+			if b.isChecked() == True:
+				CATE.fluid_or_melt_method = 1
+
+
 def main():
 
 	app = QApplication(sys.argv)
