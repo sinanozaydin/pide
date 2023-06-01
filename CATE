@@ -136,6 +136,7 @@ class CATE(QMainWindow):
 		CATE.graphite_cond_selection = 0
 
 		CATE.fluid_or_melt_method = 0
+		CATE.solid_phase_method = 0
 
 		#Setting up the blank canvas on the main page.
 
@@ -228,7 +229,7 @@ class CATE(QMainWindow):
 		btn_h2o_melt.move(200,205)
 		self.h2o_melt_textbox.move(370,205)
 		
-		btn_nao_melt = QPushButton("Melt NaO (ppm)", self)
+		btn_nao_melt = QPushButton("Melt NaO (%wt)", self)
 		btn_nao_melt.clicked.connect(self.get_nao_melt)
 		btn_nao_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		self.nao_melt_textbox = QLineEdit(str(0.0), self)
@@ -237,7 +238,7 @@ class CATE(QMainWindow):
 		btn_nao_melt.move(200,235)
 		self.nao_melt_textbox.move(370,235)
 
-		btn_k2o_melt = QPushButton("Melt K2O (ppm)", self)
+		btn_k2o_melt = QPushButton("Melt K2O (%wt)", self)
 		btn_k2o_melt.clicked.connect(self.get_k2o_melt)
 		btn_k2o_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		self.k2o_melt_textbox = QLineEdit(str(0.0), self)
@@ -245,6 +246,40 @@ class CATE(QMainWindow):
 		self.k2o_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
 		btn_k2o_melt.move(200,270)
 		self.k2o_melt_textbox.move(370,270)
+		
+		solid_phases_mark = QLabel(self)
+		solid_phases_mark.setText('Solid Phases')
+		solid_phases_mark.setStyleSheet("QLabel {font:bold}; min-width: 12em ; fontsize: 10pt;color: red")
+		solid_phases_mark.move(200,400)
+
+		btn_solid_phase_setup = QPushButton("Solid Phase Setup", self)
+		btn_solid_phase_setup.clicked.connect(self.solid_phase_popup)
+		btn_solid_phase_setup.setStyleSheet("QPushButton {min-width: 18em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		btn_solid_phase_setup.move(110,435)
+		self.solid_phase_pop = None
+
+		btn_bckgr_res = QPushButton("Backgr. Resistivity", self)
+		btn_bckgr_res.clicked.connect(self.get_bckgr_res)
+		btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.bckgr_res_textbox = QLineEdit(str(0.0), self)
+		self.bckgr_res_textbox.setEnabled(False)
+		self.bckgr_res_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		btn_bckgr_res.move(10,470)
+		self.bckgr_res_textbox.move(140,470)
+
+		line_mark = QLabel(self)
+		line_mark.setText('------------------------------------------')
+		line_mark.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
+		line_mark.move(20,505)
+
+		btn_granite_res = QPushButton("Granite", self)
+		btn_granite_res.clicked.connect(self.get_granite)
+		btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.granite_res_textbox = QLineEdit(str(0.0), self)
+		self.granite_res_textbox.setEnabled(False)
+		self.granite_res_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		btn_granite_res.move(10,470)
+		self.bckgr_res_textbox.move(140,470)
 
 		self.show()
 
@@ -322,12 +357,26 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.nao_melt_textbox.setText(str(text))
-					self.nao_melt = np.array([float(text)])
+					self.k2o_melt_textbox.setText(str(text))
+					self.k2o_melt = np.array([float(text)])
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
 			QMessageBox.about(self,"Warning!","Only melts can have K2O in this software. Now, the phase is selected to be fluid.")
+
+	def get_bckgr_res(self):
+
+		if CATE.solid_phase_method == 0:
+			text, ok = QInputDialog.getText(self, 'Background Resistivity Dialogue', 'Enter the value in (ohm m):')
+			if ok:
+				try:
+					float(text)
+					self.bckgr_res_textbox.setText(str(text))
+					self.bckgr_res = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","You selected to use experimental conductivity measurements to build the solid phases. Choose the other option ot use this method.")
 		
 	def fluid_phase_popup(self):
 
@@ -335,6 +384,14 @@ class CATE(QMainWindow):
 			self.fluid_melt_pop = FLUID_MELT_POP()
 			self.fluid_melt_pop.setGeometry(QtCore.QRect(100, 500, 100, 100))
 		self.fluid_melt_pop.show()
+
+	def solid_phase_popup(self):
+
+		if self.solid_phase_pop is None:
+			self.solid_phase_pop = SOLID_PHASE_POP()
+			self.solid_phase_pop.setGeometry(QtCore.QRect(100, 500, 400, 100))
+		self.solid_phase_pop.show()
+
 
 	def read_csv(self,filename,delim):
 
@@ -566,6 +623,48 @@ class FLUID_MELT_POP(QWidget):
 		if b.text() == "Melt":
 			if b.isChecked() == True:
 				CATE.fluid_or_melt_method = 1
+
+class SOLID_PHASE_POP(QWidget):
+
+	def __init__(self):
+
+		QWidget.__init__(self)
+
+		layout = QVBoxLayout(self)
+
+		main_label = QLabel(self)
+		main_label.setText('Select the solid phase option.')
+		main_label.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+
+		solid_phase_btg = QButtonGroup(self)
+
+		self.btn_sphase_1 = QRadioButton("Background Resistivity Entry")
+		self.btn_sphase_1.toggled.connect(lambda:self.btnstate_solid_phase_setup(self.btn_sphase_1))
+		self.btn_sphase_2 = QRadioButton("Experimental Conductivity Measurements")
+		self.btn_sphase_2.toggled.connect(lambda:self.btnstate_solid_phase_setup(self.btn_sphase_2))
+
+		if CATE.solid_phase_method == 0:
+			self.btn_sphase_1.setChecked(True)
+		elif CATE.solid_phase_method == 1:
+			self.btn_sphase_2.setChecked(True)
+
+		solid_phase_btg.addButton(self.btn_sphase_1)
+		solid_phase_btg.addButton(self.btn_sphase_2)
+
+		layout.addWidget(main_label)
+		layout.addWidget(self.btn_sphase_1)
+		layout.addWidget(self.btn_sphase_2)
+
+	def btnstate_solid_phase_setup(self,b):
+
+		if b.text() == "Background Resistivity Entry":
+			if b.isChecked() == True:
+				CATE.solid_phase_method = 0
+		if b.text() == "Experimental Conductivity Measurements":
+			if b.isChecked() == True:
+				CATE.solid_phase_method = 1
+
+
 
 
 def main():
