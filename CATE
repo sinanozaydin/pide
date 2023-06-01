@@ -202,49 +202,65 @@ class CATE(QMainWindow):
 		btn_melt_content.move(200,100)
 		self.melt_content_textbox.move(370,100)
 
-		btn_salinity_fluid= QPushButton("Fluid Salinity (%wt)", self)
-		btn_salinity_fluid.clicked.connect(self.get_salinity)
-		btn_salinity_fluid.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		CATE.btn_salinity_fluid= QPushButton("Fluid Salinity (%wt)", self)
+		CATE.btn_salinity_fluid.clicked.connect(self.get_salinity)
+		if CATE.fluid_or_melt_method == 0:
+			CATE.btn_salinity_fluid.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.fluid_or_melt_method == 1:
+			CATE.btn_salinity_fluid.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		CATE.btn_salinity_fluid.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		self.salinity_textbox = QLineEdit(str(0.0), self)
 		self.salinity_textbox.setEnabled(False)
 		self.salinity_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		btn_salinity_fluid.move(200,135)
+		CATE.btn_salinity_fluid.move(200,135)
 		self.salinity_textbox.move(370,135)
 
-		btn_co2_melt = QPushButton("Melt CO2 (ppm)", self)
-		btn_co2_melt.clicked.connect(self.get_co2_melt)
-		btn_co2_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		CATE.btn_co2_melt = QPushButton("Melt CO2 (ppm)", self)
+		CATE.btn_co2_melt.clicked.connect(self.get_co2_melt)
+		if CATE.fluid_or_melt_method == 1:
+			CATE.btn_co2_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.fluid_or_melt_method == 0:
+			CATE.btn_co2_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.co2_melt_textbox = QLineEdit(str(0.0), self)
 		self.co2_melt_textbox.setEnabled(False)
 		self.co2_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		btn_co2_melt.move(200,170)
+		CATE.btn_co2_melt.move(200,170)
 		self.co2_melt_textbox.move(370,170)
 
-		btn_h2o_melt = QPushButton("Melt H2O (ppm)", self)
-		btn_h2o_melt.clicked.connect(self.get_h2o_melt)
-		btn_h2o_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		CATE.btn_h2o_melt = QPushButton("Melt H2O (ppm)", self)
+		CATE.btn_h2o_melt.clicked.connect(self.get_h2o_melt)
+		if CATE.fluid_or_melt_method == 1:
+			CATE.btn_h2o_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.fluid_or_melt_method == 0:
+			CATE.btn_h2o_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.h2o_melt_textbox = QLineEdit(str(0.0), self)
 		self.h2o_melt_textbox.setEnabled(False)
 		self.h2o_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		btn_h2o_melt.move(200,205)
+		CATE.btn_h2o_melt.move(200,205)
 		self.h2o_melt_textbox.move(370,205)
 		
-		btn_nao_melt = QPushButton("Melt NaO (%wt)", self)
-		btn_nao_melt.clicked.connect(self.get_nao_melt)
-		btn_nao_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		CATE.btn_nao_melt = QPushButton("Melt NaO (%wt)", self)
+		CATE.btn_nao_melt.clicked.connect(self.get_nao_melt)
+		if CATE.fluid_or_melt_method == 1:
+			CATE.btn_nao_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.fluid_or_melt_method == 0:
+			CATE.btn_nao_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.nao_melt_textbox = QLineEdit(str(0.0), self)
 		self.nao_melt_textbox.setEnabled(False)
 		self.nao_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		btn_nao_melt.move(200,235)
+		CATE.btn_nao_melt.move(200,235)
 		self.nao_melt_textbox.move(370,235)
 
-		btn_k2o_melt = QPushButton("Melt K2O (%wt)", self)
-		btn_k2o_melt.clicked.connect(self.get_k2o_melt)
-		btn_k2o_melt.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		CATE.btn_k2o_melt = QPushButton("Melt K2O (%wt)", self)
+		CATE.btn_k2o_melt.clicked.connect(self.get_k2o_melt)
+		if CATE.fluid_or_melt_method == 1:
+			CATE.btn_k2o_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.fluid_or_melt_method == 0:
+			CATE.btn_k2o_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.k2o_melt_textbox = QLineEdit(str(0.0), self)
 		self.k2o_melt_textbox.setEnabled(False)
 		self.k2o_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		btn_k2o_melt.move(200,270)
+		CATE.btn_k2o_melt.move(200,270)
 		self.k2o_melt_textbox.move(370,270)
 		
 		solid_phases_mark = QLabel(self)
@@ -258,13 +274,16 @@ class CATE(QMainWindow):
 		btn_solid_phase_setup.move(110,435)
 		self.solid_phase_pop = None
 
-		btn_bckgr_res = QPushButton("Backgr. Resistivity", self)
-		btn_bckgr_res.clicked.connect(self.get_bckgr_res)
-		btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		CATE.btn_bckgr_res = QPushButton("Backgr. Resistivity", self)
+		CATE.btn_bckgr_res.clicked.connect(self.get_bckgr_res)
+		if CATE.solid_phase_method == 0:
+			CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.solid_phase_method == 1:
+			CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.bckgr_res_textbox = QLineEdit(str(0.0), self)
 		self.bckgr_res_textbox.setEnabled(False)
 		self.bckgr_res_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		btn_bckgr_res.move(10,470)
+		CATE.btn_bckgr_res.move(10,470)
 		self.bckgr_res_textbox.move(140,470)
 
 		line_mark = QLabel(self)
@@ -272,14 +291,65 @@ class CATE(QMainWindow):
 		line_mark.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
 		line_mark.move(20,505)
 
-		btn_granite_res = QPushButton("Granite", self)
-		btn_granite_res.clicked.connect(self.get_granite)
-		btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
-		self.granite_res_textbox = QLineEdit(str(0.0), self)
-		self.granite_res_textbox.setEnabled(False)
-		self.granite_res_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		btn_granite_res.move(10,470)
-		self.bckgr_res_textbox.move(140,470)
+		CATE.btn_granite_res = QPushButton("Granite", self)
+		CATE.btn_granite_res.clicked.connect(self.get_granite)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		self.granite_frac_textbox = QLineEdit(str(0.0), self)
+		self.granite_frac_textbox.setEnabled(False)
+		self.granite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_granite_res.move(10,540)
+		self.granite_frac_textbox.move(140,540)
+
+		CATE.btn_granulite_res = QPushButton("Granulite", self)
+		CATE.btn_granulite_res.clicked.connect(self.get_granulite)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		self.granulite_frac_textbox = QLineEdit(str(0.0), self)
+		self.granulite_frac_textbox.setEnabled(False)
+		self.granulite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_granulite_res.move(10,575)
+		self.granulite_frac_textbox.move(140,575)
+
+		CATE.btn_sandstone_res = QPushButton("Sandstone", self)
+		CATE.btn_sandstone_res.clicked.connect(self.get_sandstone)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		self.sandstone_frac_textbox = QLineEdit(str(0.0), self)
+		self.sandstone_frac_textbox.setEnabled(False)
+		self.sandstone_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_sandstone_res.move(10,610)
+		self.sandstone_frac_textbox.move(140,610)
+
+		CATE.btn_gneiss_res = QPushButton("Gneiss", self)
+		CATE.btn_gneiss_res.clicked.connect(self.get_gneiss)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		self.gneiss_frac_textbox = QLineEdit(str(0.0), self)
+		self.gneiss_frac_textbox.setEnabled(False)
+		self.gneiss_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_gneiss_res.move(250,540)
+		self.gneiss_frac_textbox.move(380,540)
+
+		CATE.btn_amphibolite_res = QPushButton("Amphibolite", self)
+		CATE.btn_amphibolite_res.clicked.connect(self.get_amphibolite)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		self.amphibolite_frac_textbox = QLineEdit(str(0.0), self)
+		self.amphibolite_frac_textbox.setEnabled(False)
+		self.amphibolite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_amphibolite_res.move(250,575)
+		self.amphibolite_frac_textbox.move(380,575)
 
 		self.show()
 
@@ -378,6 +448,79 @@ class CATE(QMainWindow):
 		else:
 			QMessageBox.about(self,"Warning!","You selected to use experimental conductivity measurements to build the solid phases. Choose the other option ot use this method.")
 		
+
+	def get_granite(self):
+
+		if CATE.solid_phase_method == 1:
+			text, ok = QInputDialog.getText(self, 'Granite volume dialogue', 'Enter the value in (%)')
+			if ok:
+				try:
+					float(text)
+					self.granite_frac_textbox.setText(str(text))
+					self.granite_frac = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","You selected to use the background resistivity mode. Choose the other option ot use experimental conductivity measurements to build a mixing model..")
+
+	def get_granulite(self):
+
+		if CATE.solid_phase_method == 1:
+			text, ok = QInputDialog.getText(self, 'Granulite volume dialogue', 'Enter the value in (%)')
+			if ok:
+				try:
+					float(text)
+					self.granulite_frac_textbox.setText(str(text))
+					self.granulite_frac = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","You selected to use the background resistivity mode. Choose the other option ot use experimental conductivity measurements to build a mixing model..")
+
+	def get_sandstone(self):
+
+		if CATE.solid_phase_method == 1:
+			text, ok = QInputDialog.getText(self, 'Sandstone volume dialogue', 'Enter the value in (%)')
+			if ok:
+				try:
+					float(text)
+					self.sandstone_frac_textbox.setText(str(text))
+					self.sandstone_frac = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","You selected to use the background resistivity mode. Choose the other option ot use experimental conductivity measurements to build a mixing model..")
+
+	def get_gneiss(self):
+
+		if CATE.solid_phase_method == 1:
+			text, ok = QInputDialog.getText(self, 'Gneiss volume dialogue', 'Enter the value in (%)')
+			if ok:
+				try:
+					float(text)
+					self.gneiss_frac_textbox.setText(str(text))
+					self.gneiss_frac = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","You selected to use the background resistivity mode. Choose the other option ot use experimental conductivity measurements to build a mixing model..")
+
+	def get_amphibolite(self):
+
+		if CATE.solid_phase_method == 1:
+			text, ok = QInputDialog.getText(self, 'Amphibolite volume dialogue', 'Enter the value in (%)')
+			if ok:
+				try:
+					float(text)
+					self.amphibolite_frac_textbox.setText(str(text))
+					self.amphibolite_frac = np.array([float(text)])
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","You selected to use the background resistivity mode. Choose the other option ot use experimental conductivity measurements to build a mixing model..")
+
+
+
 	def fluid_phase_popup(self):
 
 		if self.fluid_melt_pop is None:
@@ -566,7 +709,6 @@ class CATE(QMainWindow):
 			self.melt_cond_min[idx_node] = self.melt_cond[idx_node]
 			
 	def info_main(self):
-
 		QMessageBox.about(self, "INFO GENERAL", "TBW.")
 
 	def conductivity_popup(self):
@@ -620,9 +762,20 @@ class FLUID_MELT_POP(QWidget):
 		if b.text() == "Fluid":
 			if b.isChecked() == True:
 				CATE.fluid_or_melt_method = 0
+				CATE.btn_salinity_fluid.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_co2_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_h2o_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_nao_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_k2o_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		if b.text() == "Melt":
 			if b.isChecked() == True:
 				CATE.fluid_or_melt_method = 1
+				CATE.btn_salinity_fluid.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_co2_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_h2o_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_nao_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_k2o_melt.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+
 
 class SOLID_PHASE_POP(QWidget):
 
@@ -660,11 +813,21 @@ class SOLID_PHASE_POP(QWidget):
 		if b.text() == "Background Resistivity Entry":
 			if b.isChecked() == True:
 				CATE.solid_phase_method = 0
+				CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		if b.text() == "Experimental Conductivity Measurements":
 			if b.isChecked() == True:
 				CATE.solid_phase_method = 1
-
-
+				CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 
 
 def main():
