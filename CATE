@@ -280,6 +280,8 @@ class CATE(QMainWindow):
 			CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		elif CATE.solid_phase_method == 1:
 			CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.bckgr_res_textbox = QLineEdit(str(0.0), self)
 		self.bckgr_res_textbox.setEnabled(False)
 		self.bckgr_res_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
@@ -297,6 +299,8 @@ class CATE(QMainWindow):
 			CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		elif CATE.solid_phase_method == 0:
 			CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.granite_frac_textbox = QLineEdit(str(0.0), self)
 		self.granite_frac_textbox.setEnabled(False)
 		self.granite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
@@ -308,6 +312,8 @@ class CATE(QMainWindow):
 		if CATE.solid_phase_method == 1:
 			CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		elif CATE.solid_phase_method == 0:
+			CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
 			CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.granulite_frac_textbox = QLineEdit(str(0.0), self)
 		self.granulite_frac_textbox.setEnabled(False)
@@ -321,6 +327,8 @@ class CATE(QMainWindow):
 			CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		elif CATE.solid_phase_method == 0:
 			CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.sandstone_frac_textbox = QLineEdit(str(0.0), self)
 		self.sandstone_frac_textbox.setEnabled(False)
 		self.sandstone_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
@@ -332,6 +340,8 @@ class CATE(QMainWindow):
 		if CATE.solid_phase_method == 1:
 			CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		elif CATE.solid_phase_method == 0:
+			CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
 			CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.gneiss_frac_textbox = QLineEdit(str(0.0), self)
 		self.gneiss_frac_textbox.setEnabled(False)
@@ -345,11 +355,75 @@ class CATE(QMainWindow):
 			CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		elif CATE.solid_phase_method == 0:
 			CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		self.amphibolite_frac_textbox = QLineEdit(str(0.0), self)
 		self.amphibolite_frac_textbox.setEnabled(False)
 		self.amphibolite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
 		CATE.btn_amphibolite_res.move(250,575)
 		self.amphibolite_frac_textbox.move(380,575)
+
+		line_mark_2 = QLabel(self)
+		line_mark_2.setText('------------------------------------------')
+		line_mark_2.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
+		line_mark_2.move(20,645)
+
+		CATE.btn_quartz_res = QPushButton("Quartz", self)
+		CATE.btn_quartz_res.clicked.connect(self.get_amphibolite)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_quartz_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_quartz_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_quartz_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.quartz_frac_textbox = QLineEdit(str(0.0), self)
+		self.quartz_frac_textbox.setEnabled(False)
+		self.quartz_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_quartz_res.move(10,680)
+		self.quartz_frac_textbox.move(140,680)
+
+		CATE.btn_plag_res = QPushButton("Plagioclase", self)
+		CATE.btn_plag_res.clicked.connect(self.get_amphibolite)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.plag_frac_textbox = QLineEdit(str(0.0), self)
+		self.plag_frac_textbox.setEnabled(False)
+		self.plag_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_plag_res.move(10,715)
+		self.plag_frac_textbox.move(140,715)
+
+		CATE.btn_plag_res = QPushButton("K-Feldspar", self)
+		CATE.btn_plag_res.clicked.connect(self.get_amphibolite)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.plag_frac_textbox = QLineEdit(str(0.0), self)
+		self.plag_frac_textbox.setEnabled(False)
+		self.plag_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_plag_res.move(10,750)
+		self.plag_frac_textbox.move(140,750)
+
+		CATE.btn_plag_res = QPushButton("Amphibole", self)
+		CATE.btn_plag_res.clicked.connect(self.get_amphibolite)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.plag_frac_textbox = QLineEdit(str(0.0), self)
+		self.plag_frac_textbox.setEnabled(False)
+		self.plag_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_plag_res.move(10,750)
+		self.plag_frac_textbox.move(140,750)
+
 
 		self.show()
 
@@ -793,20 +867,26 @@ class SOLID_PHASE_POP(QWidget):
 
 		self.btn_sphase_1 = QRadioButton("Background Resistivity Entry")
 		self.btn_sphase_1.toggled.connect(lambda:self.btnstate_solid_phase_setup(self.btn_sphase_1))
-		self.btn_sphase_2 = QRadioButton("Experimental Conductivity Measurements")
+		self.btn_sphase_2 = QRadioButton("Experimental Conductivity Measurements of Rocks")
 		self.btn_sphase_2.toggled.connect(lambda:self.btnstate_solid_phase_setup(self.btn_sphase_2))
+		self.btn_sphase_3 = QRadioButton("Experimental Conductivity Measurements of Minerals")
+		self.btn_sphase_3.toggled.connect(lambda:self.btnstate_solid_phase_setup(self.btn_sphase_3))
 
 		if CATE.solid_phase_method == 0:
 			self.btn_sphase_1.setChecked(True)
 		elif CATE.solid_phase_method == 1:
 			self.btn_sphase_2.setChecked(True)
+		elif CATE.solid_phase_method == 2:
+			self.btn_sphase_3.setChecked(True)
 
 		solid_phase_btg.addButton(self.btn_sphase_1)
 		solid_phase_btg.addButton(self.btn_sphase_2)
+		solid_phase_btg.addButton(self.btn_sphase_3)
 
 		layout.addWidget(main_label)
 		layout.addWidget(self.btn_sphase_1)
 		layout.addWidget(self.btn_sphase_2)
+		layout.addWidget(self.btn_sphase_3)
 
 	def btnstate_solid_phase_setup(self,b):
 
@@ -819,7 +899,7 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
-		if b.text() == "Experimental Conductivity Measurements":
+		if b.text() == "Experimental Conductivity Measurements of Rocks":
 			if b.isChecked() == True:
 				CATE.solid_phase_method = 1
 				CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
@@ -828,6 +908,15 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		if b.text() == "Experimental Conductivity Measurements of Minerals":
+			if b.isChecked() == True:
+				CATE.solid_phase_method = 1
+				CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_sandstone_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_gneiss_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_amphibolite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 
 
 def main():
