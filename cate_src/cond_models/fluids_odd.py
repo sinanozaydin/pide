@@ -38,7 +38,7 @@ def Sinmyo2016(T, P, NaCL, method):
 	else:
 		cond = 10**(A + (B/T) + (D * (np.log10(rho_water))) + np.log10(lambda_0))
 
-	return cond, cond, cond
+	return cond
 
 def Guo2019(T, P, NaCL, method):
 
@@ -73,7 +73,7 @@ def Guo2019(T, P, NaCL, method):
 	else:
 		cond = 10**(A + (B/T) + (D * (np.log10(rho_water))) + np.log10(lambda_0))
 
-	return cond, cond, cond
+	return cond
 
 def Manthilake2021_Aqueous(T, P, NaCL, method):
 
@@ -83,7 +83,7 @@ def Manthilake2021_Aqueous(T, P, NaCL, method):
 		else:
 			cond = (10.0**-2.3) * np.exp((-80000.0) / R_const * T[i])
 
-	return cond, cond, cond
+	return cond
 		
 
 
