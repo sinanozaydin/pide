@@ -142,11 +142,12 @@ class CATE(QMainWindow):
 		CATE.amphibolite_cond_selection = 0
 
 		self.rock_cond_selections = [CATE.granite_cond_selection, CATE.granulite_cond_selection, CATE.sandstone_cond_selection, CATE.gneiss_cond_selection,
-			       CATE.amphibolite_cond_selection]
+				   CATE.amphibolite_cond_selection]
 		
 		CATE.quartz_cond_selection = 0
 		CATE.plag_cond_selection = 0
 		CATE.amp_cond_selection = 0
+		CATE.kfelds_cond_selection = 0
 		CATE.pyx_cond_selection = 0
 		CATE.mica_cond_selection = 0
 		CATE.clay_cond_selection = 0
@@ -156,6 +157,22 @@ class CATE(QMainWindow):
 
 		CATE.fluid_or_melt_method = 0
 		CATE.solid_phase_method = 0
+		
+		self.granite_frac = np.zeros(1)
+		self.granulite_frac = np.zeros(1)
+		self.sandstone_frac = np.zeros(1)
+		self.gneiss_frac = np.zeros(1)
+		self.amphibolite_frac = np.zeros(1)
+		
+		self.quartz_frac = np.zeros(1)
+		self.plag_frac = np.zeros(1)
+		self.amp_frac = np.zeros(1)
+		self.kfelds_frac = np.zeros(1)
+		self.pyx_frac = np.zeros(1)
+		self.mica_frac = np.zeros(1)
+		self.clay_frac = np.zeros(1)
+		
+		self.melt_fluid_frac = np.zeros(1)
 
 		#Setting up the blank canvas on the main page.
 
@@ -196,7 +213,7 @@ class CATE(QMainWindow):
 		mix_btn = QPushButton('Phase-Mixing', self)
 		mix_btn.move(10,100)
 		mix_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
-		mix_btn.clicked.connect(self.info_main)
+		mix_btn.clicked.connect(self.phase_mixing_popup)
 		self.phs_mix_popup = None
 
 		#radiobutton melt or fluid
@@ -381,6 +398,17 @@ class CATE(QMainWindow):
 		self.amphibolite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
 		CATE.btn_amphibolite_res.move(250,575)
 		self.amphibolite_frac_textbox.move(380,575)
+		
+		total_label_1 = QLabel(self)
+		total_label_1.setText('Total:')
+		total_label_1.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
+		total_label_1.move(250,610)
+		
+		self.total_rock_textbox = QLineEdit(str(0.0), self)
+		self.total_rock_textbox.setEnabled(False)
+		self.total_rock_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		self.total_rock_textbox.move(380,610)
+
 
 		line_mark_2 = QLabel(self)
 		line_mark_2.setText('------------------------------------------')
@@ -388,7 +416,7 @@ class CATE(QMainWindow):
 		line_mark_2.move(20,645)
 
 		CATE.btn_quartz_res = QPushButton("Quartz", self)
-		CATE.btn_quartz_res.clicked.connect(self.get_amphibolite)
+		CATE.btn_quartz_res.clicked.connect(self.get_quartz)
 		if CATE.solid_phase_method == 1:
 			CATE.btn_quartz_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		elif CATE.solid_phase_method == 0:
@@ -402,7 +430,7 @@ class CATE(QMainWindow):
 		self.quartz_frac_textbox.move(140,680)
 
 		CATE.btn_plag_res = QPushButton("Plagioclase", self)
-		CATE.btn_plag_res.clicked.connect(self.get_amphibolite)
+		CATE.btn_plag_res.clicked.connect(self.get_plag)
 		if CATE.solid_phase_method == 1:
 			CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		elif CATE.solid_phase_method == 0:
@@ -415,22 +443,8 @@ class CATE(QMainWindow):
 		CATE.btn_plag_res.move(10,715)
 		self.plag_frac_textbox.move(140,715)
 
-		CATE.btn_kfelds_res = QPushButton("K-Feldspar", self)
-		CATE.btn_kfelds_res.clicked.connect(self.get_amphibolite)
-		if CATE.solid_phase_method == 1:
-			CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
-		elif CATE.solid_phase_method == 0:
-			CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
-		elif CATE.solid_phase_method == 2:
-			CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
-		self.kfelds_frac_textbox = QLineEdit(str(0.0), self)
-		self.kfelds_frac_textbox.setEnabled(False)
-		self.kfelds_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_kfelds_res.move(10,750)
-		self.kfelds_frac_textbox.move(140,750)
-
 		CATE.btn_amp_res = QPushButton("Amphibole", self)
-		CATE.btn_amp_res.clicked.connect(self.get_amphibolite)
+		CATE.btn_amp_res.clicked.connect(self.get_amp)
 		if CATE.solid_phase_method == 1:
 			CATE.btn_amp_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		elif CATE.solid_phase_method == 0:
@@ -443,8 +457,22 @@ class CATE(QMainWindow):
 		CATE.btn_amp_res.move(10,750)
 		self.amp_frac_textbox.move(140,750)
 		
+		CATE.btn_kfelds_res = QPushButton("K-Feldspar", self)
+		CATE.btn_kfelds_res.clicked.connect(self.get_kfeldspar)
+		if CATE.solid_phase_method == 1:
+			CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 0:
+			CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+		elif CATE.solid_phase_method == 2:
+			CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.kfelds_frac_textbox = QLineEdit(str(0.0), self)
+		self.kfelds_frac_textbox.setEnabled(False)
+		self.kfelds_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_kfelds_res.move(10,785)
+		self.kfelds_frac_textbox.move(140,785)
+		
 		CATE.btn_pyx_res = QPushButton("Pyroxenes", self)
-		CATE.btn_pyx_res.clicked.connect(self.get_amphibolite)
+		CATE.btn_pyx_res.clicked.connect(self.get_pyx)
 		if CATE.solid_phase_method == 1:
 			CATE.btn_pyx_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		elif CATE.solid_phase_method == 0:
@@ -458,7 +486,7 @@ class CATE(QMainWindow):
 		self.pyx_frac_textbox.move(380,680)
 
 		CATE.btn_mica_res = QPushButton("Mica", self)
-		CATE.btn_mica_res.clicked.connect(self.get_amphibolite)
+		CATE.btn_mica_res.clicked.connect(self.get_mica)
 		if CATE.solid_phase_method == 1:
 			CATE.btn_mica_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		elif CATE.solid_phase_method == 0:
@@ -472,7 +500,7 @@ class CATE(QMainWindow):
 		self.mica_frac_textbox.move(380,715)
 
 		CATE.btn_clay_res = QPushButton("Clay", self)
-		CATE.btn_clay_res.clicked.connect(self.get_amphibolite)
+		CATE.btn_clay_res.clicked.connect(self.get_clay)
 		if CATE.solid_phase_method == 1:
 			CATE.btn_clay_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		elif CATE.solid_phase_method == 0:
@@ -484,6 +512,16 @@ class CATE(QMainWindow):
 		self.clay_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
 		CATE.btn_clay_res.move(250,750)
 		self.clay_frac_textbox.move(380,750)
+		
+		total_label_2 = QLabel(self)
+		total_label_2.setText('Total:')
+		total_label_2.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
+		total_label_2.move(250,785)
+		
+		self.total_min_textbox = QLineEdit(str(0.0), self)
+		self.total_min_textbox.setEnabled(False)
+		self.total_min_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		self.total_min_textbox.move(380,785)
 
 		self.act_comp_btn = QPushButton('Plot Composition',self)
 		self.act_comp_btn.move(10,820)
@@ -498,8 +536,11 @@ class CATE(QMainWindow):
 		if ok:
 			try:
 				float(text)
-				self.melt_content_textbox.setText(str(text))
-				self.melt_fluid_frac = np.array([float(text) / 1e2])
+				if (float(text) <= 100.0) and (float(text) > 0.0):
+					self.melt_content_textbox.setText(str(text))
+					self.melt_fluid_frac = np.array([float(text) / 1e2])
+				else:
+					QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 			except ValueError:
 				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		
@@ -595,8 +636,14 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.granite_frac_textbox.setText(str(text))
-					self.granite_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+
+						self.granite_frac_textbox.setText(str(text))
+						self.granite_frac = np.array([float(text) / 1e2])
+						self.total_rock_textbox.setText(str(self.granite_frac[0]*1e2 + self.granulite_frac[0]*1e2 +\
+						self.sandstone_frac[0]*1e2 + self.gneiss_frac[0]*1e2 + self.amphibolite_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -609,8 +656,13 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.granulite_frac_textbox.setText(str(text))
-					self.granulite_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.granulite_frac_textbox.setText(str(text))
+						self.granulite_frac = np.array([float(text) / 1e2])
+						self.total_rock_textbox.setText(str(self.granite_frac[0]*1e2 + self.granulite_frac[0]*1e2 +\
+						self.sandstone_frac[0]*1e2 + self.gneiss_frac[0]*1e2 + self.amphibolite_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -623,8 +675,13 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.sandstone_frac_textbox.setText(str(text))
-					self.sandstone_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.sandstone_frac_textbox.setText(str(text))
+						self.sandstone_frac = np.array([float(text) / 1e2])
+						self.total_rock_textbox.setText(str(self.granite_frac[0]*1e2 + self.granulite_frac[0]*1e2 +\
+						self.sandstone_frac[0]*1e2 + self.gneiss_frac[0]*1e2 + self.amphibolite_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -637,8 +694,13 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.gneiss_frac_textbox.setText(str(text))
-					self.gneiss_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.gneiss_frac_textbox.setText(str(text))
+						self.gneiss_frac = np.array([float(text) / 1e2])
+						self.total_rock_textbox.setText(str(self.granite_frac[0]*1e2 + self.granulite_frac[0]*1e2 +\
+						self.sandstone_frac[0]*1e2 + self.gneiss_frac[0]*1e2 + self.amphibolite_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -651,8 +713,13 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.amphibolite_frac_textbox.setText(str(text))
-					self.amphibolite_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.amphibolite_frac_textbox.setText(str(text))
+						self.amphibolite_frac = np.array([float(text) / 1e2])
+						self.total_rock_textbox.setText(str(self.granite_frac[0]*1e2 + self.granulite_frac[0]*1e2 +\
+						self.sandstone_frac[0]*1e2 + self.gneiss_frac[0]*1e2 + self.amphibolite_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -665,8 +732,13 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.quartz_frac_textbox.setText(str(text))
-					self.quartz_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.quartz_frac_textbox.setText(str(text))
+						self.quartz_frac = np.array([float(text) / 1e2])
+						self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
+						self.amp_frac[0]*1e2 + self.pyx_frac[0]*1e2 + self.mica_frac[0]*1e2 + self.clay_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -680,12 +752,37 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.plag_frac_textbox.setText(str(text))
-					self.plag_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.plag_frac_textbox.setText(str(text))
+						self.plag_frac = np.array([float(text) / 1e2])
+						self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
+						self.amp_frac[0]*1e2 + self.pyx_frac[0]*1e2 + self.mica_frac[0]*1e2 + self.clay_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
 			QMessageBox.about(self,"Warning!","You selected to use the background resistivity or rock conductivity mode. Choose the other option ot use experimental conductivity measurements to build a mixing model..")
+
+	def get_kfeldspar(self):
+
+		if CATE.solid_phase_method == 2:
+			text, ok = QInputDialog.getText(self, 'K-Feldspar volume dialogue', 'Enter the value in (%)')
+			if ok:
+				try:
+					float(text)
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.kfelds_frac_textbox.setText(str(text))
+						self.kfelds_frac = np.array([float(text) / 1e2])
+						self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
+						self.amp_frac[0]*1e2 + self.pyx_frac[0]*1e2 + self.mica_frac[0]*1e2 + self.clay_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
+				except ValueError:
+					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		else:
+			QMessageBox.about(self,"Warning!","You selected to use the background resistivity or rock conductivity mode. Choose the other option ot use experimental conductivity measurements to build a mixing model..")
+
 
 	def get_amp(self):
 
@@ -694,8 +791,13 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.amp_frac_textbox.setText(str(text))
-					self.amp_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.amp_frac_textbox.setText(str(text))
+						self.amp_frac = np.array([float(text) / 1e2])
+						self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
+						self.amp_frac[0]*1e2 + self.pyx_frac[0]*1e2 + self.mica_frac[0]*1e2 + self.clay_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -708,8 +810,13 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.pyx_frac_textbox.setText(str(text))
-					self.pyx_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.pyx_frac_textbox.setText(str(text))
+						self.pyx_frac = np.array([float(text) / 1e2])
+						self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
+						self.amp_frac[0]*1e2 + self.pyx_frac[0]*1e2 + self.mica_frac[0]*1e2 + self.clay_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -722,8 +829,13 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.mica_frac_textbox.setText(str(text))
-					self.mica_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.mica_frac_textbox.setText(str(text))
+						self.mica_frac = np.array([float(text) / 1e2])
+						self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
+						self.amp_frac[0]*1e2 + self.pyx_frac[0]*1e2 + self.mica_frac[0]*1e2 + self.clay_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
@@ -736,13 +848,17 @@ class CATE(QMainWindow):
 			if ok:
 				try:
 					float(text)
-					self.clay_frac_textbox.setText(str(text))
-					self.clay_frac = np.array([float(text) / 1e2])
+					if (float(text) <= 100.0) and (float(text) > 0.0):
+						self.clay_frac_textbox.setText(str(text))
+						self.clay_frac = np.array([float(text) / 1e2])
+						self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
+						self.amp_frac[0]*1e2 + self.pyx_frac[0]*1e2 + self.mica_frac[0]*1e2 + self.clay_frac[0]*1e2))
+					else:
+						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
 				except ValueError:
 					QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		else:
 			QMessageBox.about(self,"Warning!","You selected to use the background resistivity or rock conductivity mode. Choose the other option ot use experimental conductivity measurements to build a mixing model..")
-
 
 	def fluid_phase_popup(self):
 
@@ -829,49 +945,49 @@ class CATE(QMainWindow):
 
 		#Creating empty arrays for appending new data.
 		CATE.name = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		CATE.type = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		CATE.t_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		CATE.t_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.p_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.p_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.w_calib = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.mg_cond = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.sigma_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.sigma_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.h_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.h_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.sigma_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.sigma_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.h_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.h_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.r = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.r_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.alpha_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.alpha_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.wtype = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.dens_mat = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-	       [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 
 		#Filling up the arrays.
 		for i in range(0,len(CATE.type)):
@@ -921,7 +1037,7 @@ class CATE(QMainWindow):
 				continue_adjusting = False
 		elif CATE.solid_phase_method == 2:
 
-			tot = self.quartz_frac + self.plag_frac + self.amp_frac +\
+			tot = self.quartz_frac + self.plag_frac + self.amp_frac + self.kfelds_frac +\
 			self.pyx_frac + self.mica_frac + self.clay_frac
 
 			if tot != 1.0:
@@ -1082,20 +1198,102 @@ class CATE(QMainWindow):
 
 		return cond
 	
-	def plot_composition(self):
+	def plot_composition(self, method = None):
 
-		
-
+		if method == 'draw':
 			
+			self.ax0 = plt.subplot2grid((16,16),(0,0), rowspan = 4,colspan = 3, fig = self.fig)
+			self.ax1 = plt.subplot2grid((16,16),(0,6), rowspan = 4,colspan = 3, fig = self.fig)
+			
+		elif method == 'save':
+		
+			self.figure_comp_save = plt.figure(figsize = (2,7))
+			fontsize_labels = 10
+			self.ax0 = plt.subplot(111)
+			
+		self.label_general_rocks = ['Granite', 'Granulite', 'Sandstone', 'Gneiss', 'Amphibolite']
+		self.color_general_rocks = ['#e016c2',"#52081b","#f0cf6e","#cbe0c3","#41453f"]
+		labels = []
+		label_colors = []
+		
+		self.label_general_mins = ['Quartz', 'Plagioclase', 'Amphibole', 'K-Feldspar', 'Pyroxenes', 'Mica', 'Clay']
+		self.color_general_mins = ["#f7f7d7","#fad9a0", "#bfbab2", "#fa5f93", "#3747b0", "#36cf45", "#574018"]
+				
+		if CATE.solid_phase_method == 0:
+			self.solid_phase_array = np.array([100])
+			labels = ['Rock\n Assemblage']
+			label_colors = ['#70653f']
+		elif CATE.solid_phase_method == 1:
+			
+			self.solid_phase_array = []
+			solid_phase_array = [self.granite_frac, self.granulite_frac,self.sandstone_frac,
+			self.gneiss_frac,self.amphibolite_frac]
+			
+			for i in range(0,len(solid_phase_array)):
+				if solid_phase_array[i][0] != 0.0:
+					self.solid_phase_array.append(solid_phase_array[i][0]*1e2)
+					labels.append(self.label_general_rocks[i])
+					label_colors.append(self.color_general_rocks[i])
+					
+		elif CATE.solid_phase_method == 2:
+		
+			self.solid_phase_array = []
+			solid_phase_array = [self.quartz_frac, self.plag_frac, self.kfelds_frac, self.amp_frac, self.pyx_frac,
+			self.mica_frac,self.clay_frac]
+			
+			for i in range(0,len(solid_phase_array)):
+				if solid_phase_array[i][0] != 0.0:
+					
+					self.solid_phase_array.append(solid_phase_array[i][0]*1e2)
+					labels.append(self.label_general_mins[i])
+					label_colors.append(self.color_general_mins[i])
+					
+					
+		solid = (1 - self.melt_fluid_frac[0]) * 1e2
+		liquid = self.melt_fluid_frac[0] * 1e2
+		
+		sol_liq_array = []
+		labels_fs = []
+		color_fs = []
+		
+		if solid != 0:
+			sol_liq_array.append(solid)
+			labels_fs.append('Solid')
+			color_fs.append('#70653f')
+		
+		if liquid != 0:
+		
+			sol_liq_array.append(liquid)
+			
+			if CATE.fluid_or_melt_method == 1:
+				label_f = 'Melt'
+				color_f = '#912c10'
+			else:
+				label_f = 'Fluid'
+				color_f = '#24abad'
+		
+			labels_fs.append(label_f)
+			color_fs.append(color_f)
+		
+		self.ax0.pie(self.solid_phase_array, labels = labels, colors = label_colors,radius = 2,autopct='%1.1f%%')
+		self.ax1.pie(sol_liq_array, labels = labels_fs, colors = color_fs,radius = 2, autopct='%1.1f%%')
+		
+		if method == 'draw':
+		
+			self.canvas.draw()
+
+
 	def info_main(self):
 		QMessageBox.about(self, "INFO GENERAL", "TBW.")
 
 	def plot_composition_button(self):
+	
+		bool_comp = self.check_composition()
 
-		bool_comp = self.check_composition
 		if bool_comp == True:
 
-			self.plot_composition()
+			self.plot_composition(method = 'draw')
+			self.act_comp_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #679c5f}")
 
 	def conductivity_popup(self):
 
@@ -1107,8 +1305,8 @@ class CATE(QMainWindow):
 	def phase_mixing_popup(self):
 
 		if self.phs_mix_popup is None:
-			self.phs_mix_popup = PHS_POP()
-			self.phs_mix_popup.setGeometry(QtCore.QRect(600, 700, 100, 100))
+			self.phs_mix_popup = PHS_MIX_POP()
+			self.phs_mix_popup.setGeometry(QtCore.QRect(100, 100, 1350, 650))
 		self.phs_mix_popup.show()
 
 class FLUID_MELT_POP(QWidget):
@@ -1214,6 +1412,7 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_quartz_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_amp_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_pyx_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_mica_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_clay_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
@@ -1229,12 +1428,13 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_quartz_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_amp_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_pyx_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_mica_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_clay_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		if b.text() == "Experimental Conductivity Measurements of Minerals":
 			if b.isChecked() == True:
-				CATE.solid_phase_method = 1
+				CATE.solid_phase_method = 2
 				CATE.btn_bckgr_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_granite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_granulite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
@@ -1244,9 +1444,22 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_quartz_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_plag_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_amp_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_kfelds_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_pyx_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_mica_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_clay_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+
+class PHS_MIX_POP(QWidget):
+
+	def __init__(self):
+
+		QWidget.__init__(self)
+
+		layout = QVBoxLayout(self)
+
+		main_label = QLabel(self)
+		main_label.setText('Choose Phase Mixing Options')
+		main_label.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
 
 
 def main():
