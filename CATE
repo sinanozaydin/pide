@@ -152,7 +152,7 @@ class CATE(QMainWindow):
 		CATE.mica_cond_selection = 0
 		CATE.clay_cond_selection = 0
 
-		self.minerals_cond_selections = [CATE.quartz_cond_selection, CATE.plag_cond_selection, CATE.amp_cond_selection, CATE.pyx_cond_selection,
+		self.minerals_cond_selections = [CATE.quartz_cond_selection, CATE.plag_cond_selection, CATE.amp_cond_selection, CATE.kfelds_cond_selection, CATE.pyx_cond_selection,
 				   CATE.mica_cond_selection, CATE.clay_cond_selection]
 
 		CATE.fluid_or_melt_method = 0
@@ -173,6 +173,25 @@ class CATE(QMainWindow):
 		self.clay_frac = np.zeros(1)
 		
 		self.melt_fluid_frac = np.zeros(1)
+		
+		CATE.phs_mix_method = 0
+		CATE.phs_melt_mix_method = 0
+		
+		CATE.melt_fluid_m = 5
+		
+		CATE.granite_m = 4
+		CATE.granulite_m = 4
+		CATE.sandstone_m = 4
+		CATE.gneiss_m = 4
+		CATE.amphibolite_m = 4
+		
+		CATE.quartz_m = 1
+		CATE.plag_m = 2.5
+		CATE.amp_m = 4
+		CATE.kfelds_m = 2.5
+		CATE.pyx_m = 4
+		CATE.mica_m = 4
+		CATE.clay_m = 4
 
 		#Setting up the blank canvas on the main page.
 
@@ -210,11 +229,17 @@ class CATE(QMainWindow):
 		cond_btn.clicked.connect(self.info_main)
 		self.cond_pop = None
 
-		mix_btn = QPushButton('Phase-Mixing', self)
+		mix_btn = QPushButton('Phase Mixing', self)
 		mix_btn.move(10,100)
 		mix_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		mix_btn.clicked.connect(self.phase_mixing_popup)
 		self.phs_mix_popup = None
+		
+		int_btn = QPushButton('Phase Interconnectivity', self)
+		int_btn.move(10,135)
+		int_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		int_btn.clicked.connect(self.phase_intercon_popup)
+		self.phs_intercon_popup = None
 
 		#radiobutton melt or fluid
 
@@ -912,6 +937,7 @@ class CATE(QMainWindow):
 		self.quartz_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'quartz.csv'),delim = ',')
 		self.plag_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'plag.csv'),delim = ',')
 		self.amp_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'amp.csv'),delim = ',')
+		self.kfelds_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'kfelds.csv'),delim = ',')
 		self.pyx_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'pyx.csv'),delim = ',')
 		self.mica_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'mica.csv'),delim = ',')
 		self.clay_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'clay.csv'),delim = ',')
@@ -919,7 +945,7 @@ class CATE(QMainWindow):
 
 		self.cond_data_array = [self.fluid_cond_data, self.melt_cond_data, self.granite_cond_data, self.granulite_cond_data,
 			  self.sandstone_cond_data, self.gneiss_cond_data, self.amphibolite_cond_data, self.quartz_cond_data, self.plag_cond_data,
-			  self.amp_cond_data, self.pyx_cond_data, self.mica_cond_data, self.clay_cond_data]
+			  self.amp_cond_data, self.kfelds_cond_data, self.pyx_cond_data, self.mica_cond_data, self.clay_cond_data]
 
 		len_fluid = len(self.fluid_cond_data) - 1 
 		len_melt = len(self.melt_cond_data) - 1
@@ -937,57 +963,58 @@ class CATE(QMainWindow):
 		len_quartz = len(self.quartz_cond_data) - 1
 		len_plag = len(self.plag_cond_data) - 1
 		len_amp = len(self.amp_cond_data) - 1
+		len_kfelds = len(self.kfelds_cond_data) - 1
 		len_pyx = len(self.pyx_cond_data) - 1
 		len_mica = len(self.mica_cond_data) - 1
 		len_clay = len(self.clay_cond_data) - 1
 
-		self.mineral_num = 6
+		self.mineral_num = 7
 
 		#Creating empty arrays for appending new data.
 		CATE.name = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		CATE.type = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		CATE.t_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		CATE.t_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.p_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.p_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.w_calib = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.mg_cond = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.sigma_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.sigma_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.h_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.h_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.sigma_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.sigma_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.h_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.h_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.r = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.r_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.alpha_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.alpha_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.wtype = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 		self.dens_mat = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
+		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay]
 
 		#Filling up the arrays.
 		for i in range(0,len(CATE.type)):
@@ -1306,8 +1333,15 @@ class CATE(QMainWindow):
 
 		if self.phs_mix_popup is None:
 			self.phs_mix_popup = PHS_MIX_POP()
-			self.phs_mix_popup.setGeometry(QtCore.QRect(100, 100, 1350, 650))
+			self.phs_mix_popup.setGeometry(QtCore.QRect(100, 100, 1000, 200))
 		self.phs_mix_popup.show()
+		
+	def phase_intercon_popup(self):
+	
+		if self.phs_intercon_popup is None:
+			self.phs_intercon_popup = PHS_INTER_POP()
+			self.phs_intercon_popup.setGeometry(QtCore.QRect(100, 100, 1350, 650))
+		self.phs_intercon_popup.show()
 
 class FLUID_MELT_POP(QWidget):
 
@@ -1455,13 +1489,191 @@ class PHS_MIX_POP(QWidget):
 
 		QWidget.__init__(self)
 
-		layout = QVBoxLayout(self)
+		layout = QGridLayout(self)
 
-		main_label = QLabel(self)
-		main_label.setText('Choose Phase Mixing Options')
-		main_label.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+		bg1 = QButtonGroup(self)
+		
+		label_solid_mix = QLabel(self)
+		label_solid_mix.setText('--------Solid-State Mixing--------')
+		label_solid_mix.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+		layout.addWidget(label_solid_mix,0,0)
+		
+		self.btn_mix_1 = QRadioButton("Generalized Archie's Law (Glover, 2010)")
+		self.btn_mix_1.toggled.connect(lambda:self.btnstate_phsmix(self.btn_mix_1))
+		self.btn_mix_2 = QRadioButton("Hashin-Shtrikman Lower Bound (Berryman, 1995)")
+		self.btn_mix_2.toggled.connect(lambda:self.btnstate_phsmix(self.btn_mix_2))
+		self.btn_mix_3 = QRadioButton("Hashin-Shtrikman Upper Bound (Berryman, 1995)")
+		self.btn_mix_3.toggled.connect(lambda:self.btnstate_phsmix(self.btn_mix_3))
+		self.btn_mix_4 = QRadioButton("Parallel Model (Guegen and Palciauskas, 1994)")
+		self.btn_mix_4.toggled.connect(lambda:self.btnstate_phsmix(self.btn_mix_4))
+		self.btn_mix_5 = QRadioButton("Perpendicular Model (Guegen and Palciauskas, 1994)")
+		self.btn_mix_5.toggled.connect(lambda:self.btnstate_phsmix(self.btn_mix_5))
+		self.btn_mix_6 = QRadioButton("Random Model (Guegen and Palciauskas, 1994)")
+		self.btn_mix_6.toggled.connect(lambda:self.btnstate_phsmix(self.btn_mix_6))
+		
+		if CATE.phs_mix_method == 0:
+			self.btn_mix_1.setChecked(True)
+		elif CATE.phs_mix_method == 1:
+			self.btn_mix_2.setChecked(True)
+		elif CATE.phs_mix_method == 2:
+			self.btn_mix_3.setChecked(True)
+		elif CATE.phs_mix_method == 3:
+			self.btn_mix_4.setChecked(True)
+		elif CATE.phs_mix_method == 4:
+			self.btn_mix_5.setChecked(True)
+		elif CATE.phs_mix_method == 5:
+			self.btn_mix_6.setChecked(True)
+			
+		bg1.addButton(self.btn_mix_1)
+		bg1.addButton(self.btn_mix_2)
+		bg1.addButton(self.btn_mix_3)
+		bg1.addButton(self.btn_mix_4)
+		bg1.addButton(self.btn_mix_5)
+		bg1.addButton(self.btn_mix_6)
+		
+		layout.addWidget(self.btn_mix_1,1,0)
+		layout.addWidget(self.btn_mix_2,2,0)
+		layout.addWidget(self.btn_mix_3,3,0)
+		layout.addWidget(self.btn_mix_4,4,0)
+		layout.addWidget(self.btn_mix_5,5,0)
+		layout.addWidget(self.btn_mix_6,6,0)
+		
+		label_melt_mix = QLabel(self)
+		label_melt_mix.setText('--------Melt/Fluid-Solid Mixing--------')
+		label_melt_mix.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+		layout.addWidget(label_melt_mix,0,1)
+
+		self.btn_mix_melt_1 = QRadioButton("Modified Archie's Law (Glover et al., 2000)")
+		self.btn_mix_melt_1.toggled.connect(lambda:self.btnstate_phsmix_melt(self.btn_mix_melt_1))
+		self.btn_mix_melt_2 = QRadioButton("Tubes Model (ten Grotenhuis et al., 2005)")
+		self.btn_mix_melt_2.toggled.connect(lambda:self.btnstate_phsmix_melt(self.btn_mix_melt_2))
+		self.btn_mix_melt_3 = QRadioButton("Spheres Model (ten Grotenhuis et al., 2005)")
+		self.btn_mix_melt_3.toggled.connect(lambda:self.btnstate_phsmix_melt(self.btn_mix_melt_3))
+		self.btn_mix_melt_4 = QRadioButton("Modified Brick-layer Model (Schilling et al., 1997)")
+		self.btn_mix_melt_4.toggled.connect(lambda:self.btnstate_phsmix_melt(self.btn_mix_melt_4))
+		self.btn_mix_melt_5 = QRadioButton("Hashin-Shtrikman Upper-Bound (Glover et al., 2000)")
+		self.btn_mix_melt_5.toggled.connect(lambda:self.btnstate_phsmix_melt(self.btn_mix_melt_5))
+		self.btn_mix_melt_6 = QRadioButton("Hashin-Shtrikman Lower-Bound (Glover et al., 2000)")
+		self.btn_mix_melt_6.toggled.connect(lambda:self.btnstate_phsmix_melt(self.btn_mix_melt_6))
+
+		bg2 = QButtonGroup(self)
+
+		bg2.addButton(self.btn_mix_melt_1)
+		bg2.addButton(self.btn_mix_melt_2)
+		bg2.addButton(self.btn_mix_melt_3)
+		bg2.addButton(self.btn_mix_melt_4)
+		bg2.addButton(self.btn_mix_melt_5)
+		bg2.addButton(self.btn_mix_melt_6)
+
+		layout.addWidget(self.btn_mix_melt_1,1,1)
+		layout.addWidget(self.btn_mix_melt_2,2,1)
+		layout.addWidget(self.btn_mix_melt_3,3,1)
+		layout.addWidget(self.btn_mix_melt_4,4,1)
+		layout.addWidget(self.btn_mix_melt_5,5,1)
+		layout.addWidget(self.btn_mix_melt_6,6,1)
+
+		if CATE.phs_melt_mix_method == 0:
+			self.btn_mix_melt_1.setChecked(True)
+		elif CATE.phs_melt_mix_method == 1:
+			self.btn_mix_melt_2.setChecked(True)
+		elif CATE.phs_melt_mix_method == 2:
+			self.btn_mix_melt_3.setChecked(True)
+		elif CATE.phs_melt_mix_method == 3:
+			self.btn_mix_melt_4.setChecked(True)
+		elif CATE.phs_melt_mix_method == 4:
+			self.btn_mix_melt_5.setChecked(True)
+		elif CATE.phs_melt_mix_method == 5:
+			self.btn_mix_melt_6.setChecked(True)
 
 
+	def btnstate_phsmix(self,b):
+
+		if b.text() == "Generalized Archie's Law (Glover, 2010)":
+			if b.isChecked() == True:
+				CATE.phs_mix_method = 0
+		if b.text() == "Hashin-Shtrikman Lower Bound (Berryman, 1995)":
+			if b.isChecked() == True:
+				CATE.phs_mix_method = 1
+		if b.text() == "Hashin-Shtrikman Upper Bound (Berryman, 1995)":
+			if b.isChecked() == True:
+				CATE.phs_mix_method = 2
+		if b.text() == "Parallel Model (Guegen and Palciauskas, 1994)":
+			if b.isChecked() == True:
+				CATE.phs_mix_method = 3
+		if b.text() == "Perpendicular Model (Guegen and Palciauskas, 1994)":
+			if b.isChecked() == True:
+				CATE.phs_mix_method = 4
+		if b.text() == "Random Model (Guegen and Palciauskas, 1994)":
+			if b.isChecked() == True:
+				CATE.phs_mix_method = 5
+				
+				
+	def btnstate_phsmix_melt(self, b2):
+
+		if b2.text() == "Modified Archie's Law (Glover et al., 2000)":
+			if b2.isChecked() == True:
+				CATE.phs_melt_mix_method = 0
+				CATE.phs_melt_mix_type = 0
+		elif b2.text() == "Tubes Model (ten Grotenhuis et al., 2005)":
+			if b2.isChecked() == True:
+				CATE.phs_melt_mix_method = 1
+				CATE.phs_melt_mix_type = 1
+		elif b2.text() == "Spheres Model (ten Grotenhuis et al., 2005)":
+			if b2.isChecked() == True:
+				CATE.phs_melt_mix_method = 2
+				CATE.phs_melt_mix_type = 1
+		elif b2.text() == "Modified Brick-layer Model (Glover et al., 2000)":
+			if b2.isChecked() == True:
+				CATE.phs_melt_mix_method = 3
+				CATE.phs_melt_mix_type = 1
+		elif b2.text() == "Hashin-Shtrikman Upper-Bound (Glover et al., 2000)":
+			if b2.isChecked() == True:
+				CATE.phs_melt_mix_method = 4
+				CATE.phs_melt_mix_type = 1
+		elif b2.text() == "Hashin-Shtrikman Lower-Bound (Glover et al., 2000)":
+			if b2.isChecked() == True:
+				CATE.phs_melt_mix_method = 5
+				CATE.phs_melt_mix_type = 1
+				
+class PHS_INTER_POP(QWidget):
+
+	def __init__(self):
+	
+		QWidget.__init__(self)
+
+		layout = QFormLayout(self)
+		
+		self.melt_fluid_m_btn = QPushButton('Melt/Fluid m')
+		self.melt_fluid_m_textbox = QLineEdit(str(CATE.melt_fluid_m))
+		self.melt_fluid_m_textbox.setEnabled(False)
+		self.melt_fluid_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.melt_fluid_m_textbox, param = CATE.melt_fluid_m))
+		
+		self.check_m = QPushButton('check m')
+		self.check_m.clicked.connect(self.check_em)
+		
+		layout.addRow(self.melt_fluid_m_btn, self.melt_fluid_m_textbox)
+		layout.addRow(self.check_m)
+
+	def get_interconnectivity(self,textbox_obj,param):
+
+		text, ok = QInputDialog.getText(self, 'Interconnectivity dialogue', 'Enter the value (bigger than 1)')
+		if ok:
+			try:
+				float(text)
+				if (float(text) >= 1):
+
+					textbox_obj.setText(str(text))
+					param = np.array([float(text)])
+
+				else:
+					QMessageBox.about(self,"Warning!","Enter a value above 1")
+			except ValueError:
+				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+				
+	def check_em(self):
+	
+		QMessageBox.about(self,"Warning!",str(CATE.melt_fluid_m))
+		
 def main():
 
 	app = QApplication(sys.argv)
