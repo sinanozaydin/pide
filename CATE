@@ -1340,7 +1340,7 @@ class CATE(QMainWindow):
 	
 		if self.phs_intercon_popup is None:
 			self.phs_intercon_popup = PHS_INTER_POP()
-			self.phs_intercon_popup.setGeometry(QtCore.QRect(100, 100, 1350, 650))
+			self.phs_intercon_popup.setGeometry(QtCore.QRect(100, 100, 300, 200))
 		self.phs_intercon_popup.show()
 
 class FLUID_MELT_POP(QWidget):
@@ -1642,17 +1642,111 @@ class PHS_INTER_POP(QWidget):
 		QWidget.__init__(self)
 
 		layout = QFormLayout(self)
+
+		desc_label = QLabel(self)
+		desc_label.setText('---Enter Interconnectivity (Cementation exponent) values---')
+		desc_label.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
 		
 		self.melt_fluid_m_btn = QPushButton('Melt/Fluid m')
 		self.melt_fluid_m_textbox = QLineEdit(str(CATE.melt_fluid_m))
 		self.melt_fluid_m_textbox.setEnabled(False)
-		self.melt_fluid_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.melt_fluid_m_textbox, param = CATE.melt_fluid_m))
+		self.melt_fluid_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.melt_fluid_m_textbox, param = "melt_fluid_m"))
+
+
+		#rocks
+		rocks_label = QLabel(self)
+		rocks_label.setText('---Rocks---')
+		rocks_label.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+
+		self.granite_m_btn = QPushButton('Granite m')
+		self.granite_m_textbox = QLineEdit(str(CATE.granite_m))
+		self.granite_m_textbox.setEnabled(False)
+		self.granite_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.granite_m_textbox, param = "granite_m"))
+
+		self.granulite_m_btn = QPushButton('Granulite m')
+		self.granulite_m_textbox = QLineEdit(str(CATE.granulite_m))
+		self.granulite_m_textbox.setEnabled(False)
+		self.granulite_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.granulite_m_textbox, param = "granulite_m"))
+
+		self.sandstone_m_btn = QPushButton('Sandstone m')
+		self.sandstone_m_textbox = QLineEdit(str(CATE.sandstone_m))
+		self.sandstone_m_textbox.setEnabled(False)
+		self.sandstone_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.sandstone_m_textbox, param = "sandstone_m"))
+
+		self.gneiss_m_btn = QPushButton('Gneiss m')
+		self.gneiss_m_textbox = QLineEdit(str(CATE.gneiss_m))
+		self.gneiss_m_textbox.setEnabled(False)
+		self.gneiss_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.gneiss_m_textbox, param = "gneiss_m"))
+
+		self.amphibolite_m_btn = QPushButton('Amphibolite m')
+		self.amphibolite_m_textbox = QLineEdit(str(CATE.amphibolite_m))
+		self.amphibolite_m_textbox.setEnabled(False)
+		self.amphibolite_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.amphibolite_m_textbox, param = "amphibolite_m"))
 		
-		self.check_m = QPushButton('check m')
-		self.check_m.clicked.connect(self.check_em)
-		
+		#minerals
+		minerals_label = QLabel(self)
+		minerals_label.setText('---Mineral---')
+		minerals_label.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+
+		self.quartz_m_btn = QPushButton('Quartz m')
+		self.quartz_m_textbox = QLineEdit(str(CATE.quartz_m))
+		self.quartz_m_textbox.setEnabled(False)
+		self.quartz_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.quartz_m_textbox, param = "quartz_m"))
+
+		self.plag_m_btn = QPushButton('Plagioclase m')
+		self.plag_m_textbox = QLineEdit(str(CATE.plag_m))
+		self.plag_m_textbox.setEnabled(False)
+		self.plag_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.plag_m_textbox, param = "plag_m"))
+
+		self.amp_m_btn = QPushButton('Amphibole m')
+		self.amp_m_textbox = QLineEdit(str(CATE.amp_m))
+		self.amp_m_textbox.setEnabled(False)
+		self.amp_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.amp_m_textbox, param = "amp_m"))
+
+		self.kfelds_m_btn = QPushButton('K-Feldspar m')
+		self.kfelds_m_textbox = QLineEdit(str(CATE.kfelds_m))
+		self.kfelds_m_textbox.setEnabled(False)
+		self.kfelds_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.kfelds_m_textbox, param = "kfelds_m"))
+
+		self.pyx_m_btn = QPushButton('Pyroxene m')
+		self.pyx_m_textbox = QLineEdit(str(CATE.pyx_m))
+		self.pyx_m_textbox.setEnabled(False)
+		self.pyx_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.pyx_m_textbox, param = "pyx_m"))
+
+		self.mica_m_btn = QPushButton('Mica m')
+		self.mica_m_textbox = QLineEdit(str(CATE.mica_m))
+		self.mica_m_textbox.setEnabled(False)
+		self.mica_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.mica_m_textbox, param = "mica_m"))
+
+		self.clay_m_btn = QPushButton('Clay m')
+		self.clay_m_textbox = QLineEdit(str(CATE.clay_m))
+		self.clay_m_textbox.setEnabled(False)
+		self.clay_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.clay_m_textbox, param = "clay_m"))
+
+
+		layout.addRow(desc_label)
 		layout.addRow(self.melt_fluid_m_btn, self.melt_fluid_m_textbox)
-		layout.addRow(self.check_m)
+
+		layout.addRow(rocks_label)
+
+		layout.addRow(self.granite_m_btn, self.granite_m_textbox)
+		layout.addRow(self.granulite_m_btn, self.granulite_m_textbox)
+		layout.addRow(self.sandstone_m_btn, self.sandstone_m_textbox)
+		layout.addRow(self.gneiss_m_btn, self.gneiss_m_textbox)
+		layout.addRow(self.amphibolite_m_btn, self.amphibolite_m_textbox)
+
+		layout.addRow(minerals_label)
+
+		layout.addRow(self.quartz_m_btn, self.quartz_m_textbox)
+		layout.addRow(self.plag_m_btn, self.plag_m_textbox)
+		layout.addRow(self.amp_m_btn, self.amp_m_textbox)
+		layout.addRow(self.kfelds_m_btn, self.kfelds_m_textbox)
+		layout.addRow(self.pyx_m_btn, self.pyx_m_textbox)
+		layout.addRow(self.mica_m_btn, self.mica_m_textbox)
+		layout.addRow(self.clay_m_btn, self.clay_m_textbox)
+
+
+
 
 	def get_interconnectivity(self,textbox_obj,param):
 
@@ -1663,16 +1757,13 @@ class PHS_INTER_POP(QWidget):
 				if (float(text) >= 1):
 
 					textbox_obj.setText(str(text))
-					param = np.array([float(text)])
+					setattr(CATE, param, float(text))
 
 				else:
 					QMessageBox.about(self,"Warning!","Enter a value above 1")
 			except ValueError:
 				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 				
-	def check_em(self):
-	
-		QMessageBox.about(self,"Warning!",str(CATE.melt_fluid_m))
 		
 def main():
 
