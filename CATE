@@ -1035,6 +1035,15 @@ class CATE(QMainWindow):
 
 		return cond
 	
+	def phase_mixing_function(self, method = None, melt_method = None, indexing_method = None, sol_idx = None):
+
+		if indexing_method == 'array':
+			idx_node = None
+		elif indexing_method == 'index':
+			idx_node = sol_idx
+
+		
+	
 	def plot_composition(self, method = None):
 
 		if method == 'draw':
