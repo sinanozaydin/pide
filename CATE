@@ -192,6 +192,9 @@ class CATE(QMainWindow):
 		CATE.pyx_m = 4
 		CATE.mica_m = 4
 		CATE.clay_m = 4
+		
+		self.p = np.array([0.5])
+		self.T = np.array([500.0])
 
 		#Setting up the blank canvas on the main page.
 
@@ -240,6 +243,38 @@ class CATE(QMainWindow):
 		int_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		int_btn.clicked.connect(self.phase_intercon_popup)
 		self.phs_intercon_popup = None
+		
+		pt_mark = QLabel(self)
+		pt_mark.setText('P-T')
+		pt_mark.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+		pt_mark.move(225,310)
+		
+		CATE.btn_pressure = QPushButton("Pressure (GPa)", self)
+		CATE.btn_pressure.clicked.connect(self.get_pressure)
+		CATE.btn_pressure.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.pressure_textbox = QLineEdit(str(self.p[0]), self)
+		self.pressure_textbox.setEnabled(False)
+		self.pressure_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_pressure.move(100,345)
+		self.pressure_textbox.move(280,345)
+		
+		CATE.btn_depth = QPushButton("Depth (Km)", self)
+		CATE.btn_depth.clicked.connect(self.get_depth)
+		CATE.btn_depth.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.depth_textbox = QLineEdit(str(self.p[0] * 26), self)
+		self.depth_textbox.setEnabled(False)
+		self.depth_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_depth.move(100,380)
+		self.depth_textbox.move(280,380)		
+		
+		CATE.btn_temp = QPushButton("Temperature (C)", self)
+		CATE.btn_temp.clicked.connect(self.get_temp)
+		CATE.btn_temp.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		self.temp_textbox = QLineEdit(str(self.T[0]), self)
+		self.temp_textbox.setEnabled(False)
+		self.temp_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
+		CATE.btn_temp.move(100,415)
+		self.temp_textbox.move(280,415)
 
 		#radiobutton melt or fluid
 
@@ -309,8 +344,8 @@ class CATE(QMainWindow):
 		self.nao_melt_textbox = QLineEdit(str(0.0), self)
 		self.nao_melt_textbox.setEnabled(False)
 		self.nao_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_nao_melt.move(200,235)
-		self.nao_melt_textbox.move(370,235)
+		CATE.btn_nao_melt.move(200,240)
+		self.nao_melt_textbox.move(370,240)
 
 		CATE.btn_k2o_melt = QPushButton("Melt K2O (%wt)", self)
 		CATE.btn_k2o_melt.clicked.connect(self.get_k2o_melt)
@@ -321,18 +356,18 @@ class CATE(QMainWindow):
 		self.k2o_melt_textbox = QLineEdit(str(0.0), self)
 		self.k2o_melt_textbox.setEnabled(False)
 		self.k2o_melt_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_k2o_melt.move(200,270)
-		self.k2o_melt_textbox.move(370,270)
+		CATE.btn_k2o_melt.move(200,275)
+		self.k2o_melt_textbox.move(370,275)
 		
 		solid_phases_mark = QLabel(self)
 		solid_phases_mark.setText('Solid Phases')
 		solid_phases_mark.setStyleSheet("QLabel {font:bold}; min-width: 12em ; fontsize: 10pt;color: red")
-		solid_phases_mark.move(200,400)
+		solid_phases_mark.move(200,440)
 
 		btn_solid_phase_setup = QPushButton("Solid Phase Setup", self)
 		btn_solid_phase_setup.clicked.connect(self.solid_phase_popup)
 		btn_solid_phase_setup.setStyleSheet("QPushButton {min-width: 18em; font: bold; font-size: 9pt;background-color: #c8cccc}")
-		btn_solid_phase_setup.move(110,435)
+		btn_solid_phase_setup.move(110,475)
 		self.solid_phase_pop = None
 
 		CATE.btn_bckgr_res = QPushButton("Backgr. Resistivity", self)
@@ -346,13 +381,13 @@ class CATE(QMainWindow):
 		self.bckgr_res_textbox = QLineEdit(str(0.0), self)
 		self.bckgr_res_textbox.setEnabled(False)
 		self.bckgr_res_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_bckgr_res.move(10,470)
-		self.bckgr_res_textbox.move(140,470)
+		CATE.btn_bckgr_res.move(10,510)
+		self.bckgr_res_textbox.move(140,510)
 
 		line_mark = QLabel(self)
 		line_mark.setText('------------------------------------------')
 		line_mark.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
-		line_mark.move(20,505)
+		line_mark.move(20,545)
 
 		CATE.btn_granite_res = QPushButton("Granite", self)
 		CATE.btn_granite_res.clicked.connect(lambda: self.get_rock_value(textbox_obj=self.granite_frac_textbox, param = "granite_frac", rock = "Granite"))
@@ -365,8 +400,8 @@ class CATE(QMainWindow):
 		self.granite_frac_textbox = QLineEdit(str(0.0), self)
 		self.granite_frac_textbox.setEnabled(False)
 		self.granite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_granite_res.move(10,540)
-		self.granite_frac_textbox.move(140,540)
+		CATE.btn_granite_res.move(10,580)
+		self.granite_frac_textbox.move(140,580)
 
 		CATE.btn_granulite_res = QPushButton("Granulite", self)
 		CATE.btn_granulite_res.clicked.connect(lambda: self.get_rock_value(textbox_obj=self.granulite_frac_textbox, param = "granulite_frac", rock = "Granulite"))
@@ -379,8 +414,8 @@ class CATE(QMainWindow):
 		self.granulite_frac_textbox = QLineEdit(str(0.0), self)
 		self.granulite_frac_textbox.setEnabled(False)
 		self.granulite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_granulite_res.move(10,575)
-		self.granulite_frac_textbox.move(140,575)
+		CATE.btn_granulite_res.move(10,615)
+		self.granulite_frac_textbox.move(140,615)
 
 		CATE.btn_sandstone_res = QPushButton("Sandstone", self)
 		CATE.btn_sandstone_res.clicked.connect(lambda: self.get_rock_value(textbox_obj=self.sandstone_frac_textbox, param = "sandstone_frac", rock = "Sandstone"))
@@ -393,8 +428,8 @@ class CATE(QMainWindow):
 		self.sandstone_frac_textbox = QLineEdit(str(0.0), self)
 		self.sandstone_frac_textbox.setEnabled(False)
 		self.sandstone_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_sandstone_res.move(10,610)
-		self.sandstone_frac_textbox.move(140,610)
+		CATE.btn_sandstone_res.move(10,650)
+		self.sandstone_frac_textbox.move(140,650)
 
 		CATE.btn_gneiss_res = QPushButton("Gneiss", self)
 		CATE.btn_gneiss_res.clicked.connect(lambda: self.get_rock_value(textbox_obj=self.gneiss_frac_textbox, param = "gneiss_frac", rock = "Gneiss"))
@@ -407,8 +442,8 @@ class CATE(QMainWindow):
 		self.gneiss_frac_textbox = QLineEdit(str(0.0), self)
 		self.gneiss_frac_textbox.setEnabled(False)
 		self.gneiss_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_gneiss_res.move(250,540)
-		self.gneiss_frac_textbox.move(380,540)
+		CATE.btn_gneiss_res.move(250,580)
+		self.gneiss_frac_textbox.move(380,580)
 
 		CATE.btn_amphibolite_res = QPushButton("Amphibolite", self)
 		CATE.btn_amphibolite_res.clicked.connect(lambda: self.get_rock_value(textbox_obj=self.amphibolite_frac_textbox, param = "amphibolite_frac", rock = "Amphibolite"))
@@ -421,24 +456,24 @@ class CATE(QMainWindow):
 		self.amphibolite_frac_textbox = QLineEdit(str(0.0), self)
 		self.amphibolite_frac_textbox.setEnabled(False)
 		self.amphibolite_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_amphibolite_res.move(250,575)
-		self.amphibolite_frac_textbox.move(380,575)
+		CATE.btn_amphibolite_res.move(250,615)
+		self.amphibolite_frac_textbox.move(380,615)
 		
 		total_label_1 = QLabel(self)
 		total_label_1.setText('Total:')
 		total_label_1.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
-		total_label_1.move(250,610)
+		total_label_1.move(250,650)
 		
 		self.total_rock_textbox = QLineEdit(str(0.0), self)
 		self.total_rock_textbox.setEnabled(False)
 		self.total_rock_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		self.total_rock_textbox.move(380,610)
+		self.total_rock_textbox.move(380,650)
 
 
 		line_mark_2 = QLabel(self)
 		line_mark_2.setText('------------------------------------------')
 		line_mark_2.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
-		line_mark_2.move(20,645)
+		line_mark_2.move(20,685)
 
 		CATE.btn_quartz_res = QPushButton("Quartz", self)
 		CATE.btn_quartz_res.clicked.connect(lambda: self.get_mineral_value(textbox_obj=self.quartz_frac_textbox, param = "quartz_frac", mineral = "Quartz"))
@@ -451,8 +486,8 @@ class CATE(QMainWindow):
 		self.quartz_frac_textbox = QLineEdit(str(0.0), self)
 		self.quartz_frac_textbox.setEnabled(False)
 		self.quartz_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_quartz_res.move(10,680)
-		self.quartz_frac_textbox.move(140,680)
+		CATE.btn_quartz_res.move(10,720)
+		self.quartz_frac_textbox.move(140,720)
 
 		CATE.btn_plag_res = QPushButton("Plagioclase", self)
 		CATE.btn_plag_res.clicked.connect(lambda: self.get_mineral_value(textbox_obj=self.plag_frac_textbox, param = "plag_frac", mineral = "Plagioclase"))
@@ -465,8 +500,8 @@ class CATE(QMainWindow):
 		self.plag_frac_textbox = QLineEdit(str(0.0), self)
 		self.plag_frac_textbox.setEnabled(False)
 		self.plag_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_plag_res.move(10,715)
-		self.plag_frac_textbox.move(140,715)
+		CATE.btn_plag_res.move(10,755)
+		self.plag_frac_textbox.move(140,755)
 
 		CATE.btn_amp_res = QPushButton("Amphibole", self)
 		CATE.btn_amp_res.clicked.connect(lambda: self.get_mineral_value(textbox_obj=self.amp_frac_textbox, param = "amp_frac", mineral = "Amphibole"))
@@ -479,8 +514,8 @@ class CATE(QMainWindow):
 		self.amp_frac_textbox = QLineEdit(str(0.0), self)
 		self.amp_frac_textbox.setEnabled(False)
 		self.amp_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_amp_res.move(10,750)
-		self.amp_frac_textbox.move(140,750)
+		CATE.btn_amp_res.move(10,790)
+		self.amp_frac_textbox.move(140,790)
 		
 		CATE.btn_kfelds_res = QPushButton("K-Feldspar", self)
 		CATE.btn_kfelds_res.clicked.connect(lambda: self.get_mineral_value(textbox_obj=self.kfelds_frac_textbox, param = "kfelds_frac", mineral = "K-Feldspar"))
@@ -493,8 +528,8 @@ class CATE(QMainWindow):
 		self.kfelds_frac_textbox = QLineEdit(str(0.0), self)
 		self.kfelds_frac_textbox.setEnabled(False)
 		self.kfelds_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_kfelds_res.move(10,785)
-		self.kfelds_frac_textbox.move(140,785)
+		CATE.btn_kfelds_res.move(10,825)
+		self.kfelds_frac_textbox.move(140,825)
 		
 		CATE.btn_pyx_res = QPushButton("Pyroxenes", self)
 		CATE.btn_pyx_res.clicked.connect(lambda: self.get_mineral_value(textbox_obj=self.pyx_frac_textbox, param = "pyx_frac", mineral = "Pyroxene"))
@@ -507,8 +542,8 @@ class CATE(QMainWindow):
 		self.pyx_frac_textbox = QLineEdit(str(0.0), self)
 		self.pyx_frac_textbox.setEnabled(False)
 		self.pyx_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_pyx_res.move(250,680)
-		self.pyx_frac_textbox.move(380,680)
+		CATE.btn_pyx_res.move(250,720)
+		self.pyx_frac_textbox.move(380,720)
 
 		CATE.btn_mica_res = QPushButton("Mica", self)
 		CATE.btn_mica_res.clicked.connect(lambda: self.get_mineral_value(textbox_obj=self.mica_frac_textbox, param = "mica_frac", mineral = "Mica"))
@@ -521,8 +556,8 @@ class CATE(QMainWindow):
 		self.mica_frac_textbox = QLineEdit(str(0.0), self)
 		self.mica_frac_textbox.setEnabled(False)
 		self.mica_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_mica_res.move(250,715)
-		self.mica_frac_textbox.move(380,715)
+		CATE.btn_mica_res.move(250,755)
+		self.mica_frac_textbox.move(380,755)
 
 		CATE.btn_clay_res = QPushButton("Clay", self)
 		CATE.btn_clay_res.clicked.connect(lambda: self.get_mineral_value(textbox_obj=self.clay_frac_textbox, param = "clay_frac", mineral = "Clay"))
@@ -535,25 +570,71 @@ class CATE(QMainWindow):
 		self.clay_frac_textbox = QLineEdit(str(0.0), self)
 		self.clay_frac_textbox.setEnabled(False)
 		self.clay_frac_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		CATE.btn_clay_res.move(250,750)
-		self.clay_frac_textbox.move(380,750)
+		CATE.btn_clay_res.move(250,790)
+		self.clay_frac_textbox.move(380,790)
 		
 		total_label_2 = QLabel(self)
 		total_label_2.setText('Total:')
 		total_label_2.setStyleSheet("QLabel {font:bold}; min-width: 100em ; fontsize: 10pt;color: red")
-		total_label_2.move(250,785)
+		total_label_2.move(250,825)
 		
 		self.total_min_textbox = QLineEdit(str(0.0), self)
 		self.total_min_textbox.setEnabled(False)
 		self.total_min_textbox.setStyleSheet("QlineEdit {min-width: 4em}")
-		self.total_min_textbox.move(380,785)
+		self.total_min_textbox.move(380,825)
 
 		self.act_comp_btn = QPushButton('Plot Composition',self)
-		self.act_comp_btn.move(10,820)
+		self.act_comp_btn.move(10,860)
 		self.act_comp_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #93db88}")
 		self.act_comp_btn.clicked.connect(self.plot_composition_button)
 
 		self.show()
+		
+	def get_pressure(self):
+		
+		text, ok = QInputDialog.getText(self, 'Pressure Dialogue', 'Enter the value in (GPa):')
+		if ok:
+			try:
+				float(text)
+				if (float(text) > 0.0):
+					self.pressure_textbox.setText(str(text))
+					self.p = np.array([float(text)])
+					self.depth = np.array([float(text) * 26.0]) #assuming a density of crust of 2.6 g/cm^3
+					self.depth_textbox.setText(str(float(text) * 26.0))
+				else:
+					QMessageBox.about(self,"Warning!","Enter a value larger than 0")
+			except ValueError:
+				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+				
+	def get_depth(self):
+		
+		text, ok = QInputDialog.getText(self, 'Depth Dialogue', 'Enter the value in (km):')
+		if ok:
+			try:
+				float(text)
+				if (float(text) > 0.0):
+					self.depth_textbox.setText(str(text))
+					self.depth = np.array([float(text)])
+					self.p = np.array([float(text) / 26.0]) #assuming a density of crust of 2.6 g/cm^3
+					self.pressure_textbox.setText(str(float(text) / 26.0))
+				else:
+					QMessageBox.about(self,"Warning!","Enter a value larger than 0")
+			except ValueError:
+				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+		
+	def get_temp(self):
+	
+		text, ok = QInputDialog.getText(self, 'Temperature Dialogue', 'Enter the value in (C):')
+		if ok:
+			try:
+				float(text)
+				if (float(text) > 0.0):
+					self.temp_textbox.setText(str(text))
+					self.T = np.array([float(text) + 273.15]) #converting it to Kelvin
+				else:
+					QMessageBox.about(self,"Warning!","Enter a value larger than 0")
+			except ValueError:
+				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 
 	def get_fluid_melt_content(self):
 
@@ -1348,7 +1429,7 @@ class CATE(QMainWindow):
 
 			for i in range(start_idx,end_idx):
 				if self.melt_mass_frac[i] != 0.0:
-					self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_mantle[i] / 1e3))))
+					self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i] / 1e3))))
 	
 	
 			if melt_method == 0:
@@ -1414,7 +1495,7 @@ class CATE(QMainWindow):
 			float(self.dens_mat[5][CATE.gneiss_cond_selection])/1e3,
 			float(self.dens_mat[6][CATE.amphibolite_cond_selection])/1e3]
 			
-			self.density_mantle = np.zeros(len(self.T))
+			self.density_solids = np.zeros(len(self.T))
 			
 			for i in range(0,len(self.T)):
 			
@@ -1426,7 +1507,7 @@ class CATE(QMainWindow):
 				for j in range(0,len(phase_list)):
 					density_indv = density_indv + (phase_list[j] * dens_list[j])
 					
-				self.density_mantle[i] = density_indv
+				self.density_solids[i] = density_indv
 			
 		elif CATE.solid_phase_method == 2:
 		
@@ -1438,7 +1519,7 @@ class CATE(QMainWindow):
 			float(self.dens_mat[12][CATE.mica_cond_selection])/1e3,
 			float(self.dens_mat[13][CATE.clay_cond_selection])/1e3]
 			
-			self.density_mantle = np.zeros(len(self.T))
+			self.density_solids = np.zeros(len(self.T))
 			
 			for i in range(0,len(self.T)):
 			
@@ -1450,7 +1531,7 @@ class CATE(QMainWindow):
 				for j in range(0,len(phase_list)):
 					density_indv = density_indv + (phase_list[j] * dens_list[j])
 					
-				self.density_mantle[i] = density_indv
+				self.density_solids[i] = density_indv
 	
 	def plot_composition(self, method = None):
 
