@@ -1041,7 +1041,291 @@ class CATE(QMainWindow):
 			idx_node = None
 		elif indexing_method == 'index':
 			idx_node = sol_idx
+			
+		if method == 0:
 
+			#Calculating phase exponent of the abundant mineral to make connectedness equal to unity.
+			#From Glover (2010, Geophysics), analytic solution.
+
+			#creating search limits for different indexing methods.
+			if indexing_method == 'array':
+				start_idx = 0
+				end_idx = len(self.T)
+			elif indexing_method == 'index':
+				start_idx = sol_idx
+				end_idx = sol_idx + 1
+				
+			for i in range(start_idx,end_idx):
+			
+				if CATE.solid_phase_method == 1:
+					phase_list = [self.granite_frac[i],self.granulite_frac[i],self.sandstone_frac[i],
+					self.gneiss_frac[i], self.amphibolite_frac[i]]
+					m_list = [self.granite_m[i],self.granulite_m[i],self.sandstone_m[i],
+					self.gneiss_m[i], self.amphibolite_m[i]]
+				elif CATE.solid_phase_method == 2:
+					phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
+					self.pyx_frac[i], self.mica_frac[i], self.clay_frac[i]]
+					m_list = [self.quartz_m[i], self.plag_m[i], self.amp_m[i], self.kfelds_m[i],
+					self.pyx_m[i], self.mica_m[i], self.clay_m[i]]
+					
+				frac_abundant = max(phase_list) #fraction of abundant mineral
+				idx_max_ph = phase_list.index(frac_abundant) #index of the abundant mineral
+				del phase_list[idx_max_ph] #deleting the abundant mineral form local list
+				del m_list[idx_max_ph] #deleting the exponent of the abundant mineral from local list
+				connectedness = np.asarray(phase_list)**np.asarray(m_list) #calculating the connectedness of the rest
+				m_abundant = np.log(1.0 - np.sum(connectedness)) / np.log(frac_abundant) #analytic solution to the problem
+				
+				if CATE.solid_phase_method == 1:
+					
+					if idx_max_ph == 0:
+						self.granite_m = m_abundant
+					elif idx_max_ph == 1:
+						self.granulite_m = m_abundant
+					elif idx_max_ph == 2:
+						self.sandstone_m = m_abundant
+					elif idx_max_ph == 3:
+						self.gneiss_m = m_abundant
+					elif idx_max_ph == 4:
+						self.amphibolite_m = m_abundant
+						
+					self.bulk_cond[idx_node] = (self.granite_cond[idx_node]*(self.granite_frac[idx_node]**self.granite_m[idx_node])) +\
+					(self.granulite_cond[idx_node]*(self.granulite_frac[idx_node]**self.granulite_m[idx_node])) +\
+					(self.sandstone_cond[idx_node]*(self.sandstone_frac[idx_node]**self.sandstone_m[idx_node])) +\
+					(self.gneiss_cond[idx_node]*(self.gneiss_frac[idx_node]**self.gneiss_m[idx_node])) +\
+					(self.amphibolite_cond[idx_node]*(self.amphibolite_frac[idx_node]**self.amphibolite_m[idx_node])) 
+				
+				elif CATE.solid_phase_method == 2:
+					if idx_max_ph == 0:
+						self.quartz_m = m_abundant
+					elif idx_max_ph == 1:
+						self.plag_m = m_abundant
+					elif idx_max_ph == 2:
+						self.amp_m = m_abundant
+					elif idx_max_ph == 3:
+						self.kfelds_m = m_abundant
+					elif idx_max_ph == 4:
+						self.pyx_m = m_abundant
+					elif idx_max_ph == 5:
+						self.mica_m = m_abundant
+					elif idx_max_ph == 6:
+						self.clay_m = m_abundant
+						
+					self.bulk_cond[idx_node] = (self.quartz_cond[idx_node]*(self.quartz_frac[idx_node]**self.quartz_m[idx_node])) +\
+					(self.plag_cond[idx_node]*(self.plag_frac[idx_node]**self.plag_m[idx_node])) +\
+					(self.amp_cond[idx_node]*(self.amp_frac[idx_node]**self.amp_m[idx_node])) +\
+					(self.kfelds_cond[idx_node]*(self.kfelds_frac[idx_node]**self.kfelds_m[idx_node])) +\
+					(self.pyx_cond[idx_node]*(self.pyx_frac[idx_node]**self.pyx_m[idx_node])) +\
+					(self.mica_cond[idx_node]*(self.mica_frac[idx_node]**self.mica_m[idx_node])) +\
+					(self.clay_cond[idx_node]*(self.clay_frac[idx_node]**self.clay_m[idx_node]))
+					
+		elif method == 1:
+			
+			if indexing_method == 'array':
+				
+				self.bulk_cond = np.zeros(len(self.ol_cond))
+				start_idx = 0
+				end_idx = len(self.T)
+			elif indexing_method == 'index':
+				start_idx = sol_idx
+				end_idx = sol_idx + 1
+				
+			for i in range(start_idx,end_idx):
+				
+				if CATE.solid_phase_method == 1:
+					list_i = [self.granite_cond[i], self.granulite_cond[i], self.sandstone_cond[i],
+					self.gneiss_cond[i],self.amphibolite_cond[i]]
+				elif CATE.solid_phase_method == 2:
+					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
+					self.kfelds_cond[i],self.pyx_cond[i],self.mica_cond[i],self.clay_cond[i]]				
+					
+				while True:
+				
+					#while loop for deleting the zero arrays that could be encountered due to non-existence of the mineral.
+					
+					min_local = np.amin(np.asarray(list_i))
+				
+					if (min_local != 0.0):
+						
+						break
+					
+					else:
+					
+						list_i = np.delete(list_i, np.argwhere(list_i == 0))
+						
+				if CATE.solid_phase_method == 1:
+				
+					self.bulk_cond[i] = (((self.granite_frac[i] / (self.granite_cond[i] + (2*min_local))) +\
+					(self.granulite_frac[i] / (self.granulite_cond[i] + (2*min_local))) +\
+					(self.sandstone_frac[i] / (self.sandstone_cond[i] + (2*min_local))) +\
+					(self.gneiss_frac[i] / (self.gneiss_cond[i] + (2*min_local))) +\
+					(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*min_local))))**(-1.0)) -\
+					2.0*min_local
+						
+				elif CATE.solid_phase_method == 2:
+				
+					self.bulk_cond[i] = (((self.quartz_frac[i] / (self.quartz_cond[i] + (2*min_local))) +\
+					(self.plag_frac[i] / (self.plag_cond[i] + (2*min_local))) +\
+					(self.amp_frac[i] / (self.amp_cond[i] + (2*min_local))) +\
+					(self.kfelds_frac[i] / (self.kfelds_cond[i] + (2*min_local))) +\
+					(self.pyx_frac[i] / (self.pyx_cond[i] + (2*min_local))) +\
+					(self.mica_frac[i] / (self.mica_cond[i] + (2*min_local))) +\
+					(self.clay_frac[i] / (self.clay_cond[i] + (2*min_local))))**(-1.0)) -\
+					2.0*min_local
+					
+		elif method == 2:
+		
+			if indexing_method == 'array':
+				
+				self.bulk_cond = np.zeros(len(self.ol_cond))
+				start_idx = 0
+				end_idx = len(self.T)
+			elif indexing_method == 'index':
+				start_idx = sol_idx
+				end_idx = sol_idx + 1
+				
+			for i in range(start_idx,end_idx):
+				
+				if CATE.solid_phase_method == 1:
+					list_i = [self.granite_cond[i], self.granulite_cond[i], self.sandstone_cond[i],
+					self.gneiss_cond[i],self.amphibolite_cond[i]]
+				elif CATE.solid_phase_method == 2:
+					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
+					self.kfelds_cond[i],self.pyx_cond[i],self.mica_cond[i],self.clay_cond[i]]				
+					
+				while True:
+				
+					#while loop for deleting the zero arrays that could be encountered due to non-existence of the mineral.
+					
+					max_local = np.amax(np.asarray(list_i))
+				
+					if (max_local != 0.0):
+						
+						break
+					
+					else:
+					
+						list_i = np.delete(list_i, np.argwhere(list_i == 0))
+						
+				if CATE.solid_phase_method == 1:
+				
+					self.bulk_cond[i] = (((self.granite_frac[i] / (self.granite_cond[i] + (2*max_local))) +\
+					(self.granulite_frac[i] / (self.granulite_cond[i] + (2*max_local))) +\
+					(self.sandstone_frac[i] / (self.sandstone_cond[i] + (2*max_local))) +\
+					(self.gneiss_frac[i] / (self.gneiss_cond[i] + (2*max_local))) +\
+					(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*max_local))))**(-1.0)) -\
+					2.0*max_local
+						
+				elif CATE.solid_phase_method == 2:
+				
+					self.bulk_cond[i] = (((self.quartz_frac[i] / (self.quartz_cond[i] + (2*max_local))) +\
+					(self.plag_frac[i] / (self.plag_cond[i] + (2*max_local))) +\
+					(self.amp_frac[i] / (self.amp_cond[i] + (2*max_local))) +\
+					(self.kfelds_frac[i] / (self.kfelds_cond[i] + (2*max_local))) +\
+					(self.pyx_frac[i] / (self.pyx_cond[i] + (2*max_local))) +\
+					(self.mica_frac[i] / (self.mica_cond[i] + (2*max_local))) +\
+					(self.clay_frac[i] / (self.clay_cond[i] + (2*max_local))))**(-1.0)) -\
+					2.0*max_local
+					
+		elif method == 3:
+		
+			#Parallel model for maximum, minimum bounds and neutral w/o errors
+			
+			if CATE.solid_phase_method == 1:
+				self.bulk_cond[idx_node] = (self.granite_frac[idx_node]*self.granite_cond[idx_node]) +\
+				(self.granulite_frac[idx_node]*self.granulite_cond[idx_node]) +\
+				(self.sandstone_frac[idx_node]*self.sandstone_cond[idx_node]) +\
+				(self.gneiss_frac[idx_node]*self.gneiss_cond[idx_node]) +\
+				(self.amphibolite_frac[idx_node]*self.amphibolite_cond[idx_node])
+				
+			elif CATE.solid_phase_method == 2:
+			
+				self.bulk_cond[idx_node] = (self.quartz_frac[idx_node]*self.quartz_cond[idx_node]) +\
+				(self.plag_frac[idx_node]*self.plag_cond[idx_node]) +\
+				(self.amp_frac[idx_node]*self.amp_cond[idx_node]) +\
+				(self.kfelds_frac[idx_node]*self.kfelds_cond[idx_node]) +\
+				(self.pyx_frac[idx_node]*self.pyx_cond[idx_node]) +\
+				(self.mica_frac[idx_node]*self.mica_cond[idx_node]) +\
+				(self.clay_frac[idx_node]*self.clay_cond[idx_node])
+				
+				
+		elif method == 4:
+		
+			if indexing_method == 'array':
+				self.bulk_cond = np.zeros(len(self.ol_cond))
+				start_idx = 0
+				end_idx = len(self.T)
+			elif indexing_method == 'index':
+				start_idx = sol_idx
+				end_idx = sol_idx + 1
+
+			#Perpendicular model for maximum, minimum bounds and neutral w/o errors				
+			if CATE.solid_phase_method == 1:
+				for i in range(start_idx,end_idx):
+					if self.granite_frac[i] == 0.0:
+						self.granite_cond[i] = -999
+					if self.granulite_frac[i] == 0.0:
+						self.granulite_cond[i] = -999
+					if self.sandstone_frac[i] == 0.0:
+						self.sandstone_cond[i] = -999
+					if self.gneiss_frac[i] == 0.0:
+						self.gneiss_cond[i] = -999
+					if self.amphibolite_frac[i] == 0.0:
+						self.amphibolite_cond[i] = -999
+	
+				self.bulk_cond[idx_node] = 1.0 / ((self.granite_frac[idx_node] / self.granite_cond[idx_node]) +\
+				(self.granulite_frac[idx_node] / self.granulite_cond[idx_node]) +\
+				(self.sandstone_frac[idx_node] / self.sandstone_cond[idx_node]) +\
+				(self.gneiss_frac[idx_node] / self.gneiss_cond[idx_node]) +\
+				(self.amphibolite_frac[idx_node] / self.amphibolite_cond[idx_node]))
+				
+			elif CATE.solid_phase_method == 2:
+			
+				for i in range(start_idx,end_idx):
+					if self.quartz_frac[i] == 0.0:
+						self.quartz_cond[i] = -999
+					if self.plag_frac[i] == 0.0:
+						self.plag_cond[i] = -999
+					if self.amp_frac[i] == 0.0:
+						self.amp_cond[i] = -999
+					if self.kfelds_frac[i] == 0.0:
+						self.kfelds_cond[i] = -999
+					if self.pyx_frac[i] == 0.0:
+						self.pyx_cond[i] = -999
+					if self.mica_frac[i] == 0.0:
+						self.mica_cond[i] = -999
+					if self.clay_frac[i] == 0.0:
+						self.clay_cond[i] = -999
+	
+				self.bulk_cond[idx_node] = 1.0 / ((self.quartz_frac[idx_node] / self.quartz_cond[idx_node]) +\
+				(self.plag_frac[idx_node] / self.plag_cond[idx_node]) +\
+				(self.amp_frac[idx_node] / self.amp_cond[idx_node]) +\
+				(self.kfelds_frac[idx_node] / self.kfelds_cond[idx_node]) +\
+				(self.pyx_frac[idx_node] / self.pyx_cond[idx_node]) +\
+				(self.mica_frac[idx_node] / self.mica_cond[idx_node]) +\
+				(self.clay_frac[idx_node] / self.clay_cond[idx_node]))
+				
+		elif method == 5:
+		
+			#Random model for maximum, minimum bounds and neutral w/o errors
+			
+			if CATE.solid_phase_method == 1:
+				
+				self.bulk_cond[idx_node] = (self.granite_cond[idx_node]**self.granite_frac[idx_node]) *\
+				(self.granulite_cond[idx_node]**self.granulite_frac[idx_node]) *\
+				(self.sandstone_cond[idx_node]**self.sandstone_frac[idx_node]) *\
+				(self.gneiss_cond[idx_node]**self.gneiss_frac[idx_node]) *\
+				(self.amphibolite_cond[idx_node]**self.amphibolite_frac[idx_node])
+				
+			elif CATE.solid_phase_method == 2:
+			
+				self.bulk_cond[idx_node] = (self.quartz_cond[idx_node]**self.quartz_frac[idx_node]) *\
+				(self.plag_cond[idx_node]**self.plag_frac[idx_node]) *\
+				(self.amp_cond[idx_node]**self.amp_frac[idx_node]) *\
+				(self.kfelds_cond[idx_node]**self.kfelds_frac[idx_node]) *\
+				(self.pyx_cond[idx_node]**self.pyx_frac[idx_node]) *\
+				(self.mica_cond[idx_node]**self.mica_frac[idx_node]) *\
+				(self.clay_cond[idx_node]**self.clay_frac[idx_node])
+				
 		
 	
 	def plot_composition(self, method = None):
@@ -1563,9 +1847,6 @@ class PHS_INTER_POP(QWidget):
 		layout.addRow(self.pyx_m_btn, self.pyx_m_textbox)
 		layout.addRow(self.mica_m_btn, self.mica_m_textbox)
 		layout.addRow(self.clay_m_btn, self.clay_m_textbox)
-
-
-
 
 	def get_interconnectivity(self,textbox_obj,param):
 
