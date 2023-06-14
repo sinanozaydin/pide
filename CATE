@@ -156,7 +156,13 @@ class CATE(QMainWindow):
 				   CATE.mica_cond_selection, CATE.clay_cond_selection]
 
 		CATE.fluid_or_melt_method = 0
-		CATE.solid_phase_method = 0
+		CATE.solid_phase_method = 1
+		
+		self.salinity_fluid = np.zeros(1)
+		self.k2o_melt = np.zeros(1)
+		self.co2_melt = np.zeros(1)
+		self.h2o_melt = np.zeros(1)
+		self.nao_melt = np.zeros(1)
 		
 		self.granite_frac = np.zeros(1)
 		self.granulite_frac = np.zeros(1)
@@ -195,6 +201,8 @@ class CATE(QMainWindow):
 		
 		self.p = np.array([0.5])
 		self.T = np.array([500.0])
+		
+		self.composition_set = False
 
 		#Setting up the blank canvas on the main page.
 
@@ -587,6 +595,11 @@ class CATE(QMainWindow):
 		self.act_comp_btn.move(10,860)
 		self.act_comp_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #93db88}")
 		self.act_comp_btn.clicked.connect(self.plot_composition_button)
+		
+		self.calc_cond_btn = QPushButton('Calculate Conductivity',self)
+		self.calc_cond_btn.move(10,895)
+		self.calc_cond_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #93db88}")
+		self.calc_cond_btn.clicked.connect(self.calculate_conductivity_button)
 
 		self.show()
 		
@@ -947,18 +960,18 @@ class CATE(QMainWindow):
 
 		elif CATE.solid_phase_method == 1:
 
-			tot = self.granite_frac + self.granulite_frac + self.sandstone_frac +\
-			self.gneiss_frac + self.amphibolite_frac
+			tot = self.granite_frac[0] + self.granulite_frac[0] + self.sandstone_frac[0] +\
+			self.gneiss_frac[0] + self.amphibolite_frac[0]
 
-			if tot != 1.0:
+			if (tot <= 0.99) and (tot >= 1.01):
 				QMessageBox.about(self, "Warning!", "The total number of does not add up to 100%. Currently it is:  " + str(tot*1e2))
 				continue_adjusting = False
 		elif CATE.solid_phase_method == 2:
 
-			tot = self.quartz_frac + self.plag_frac + self.amp_frac + self.kfelds_frac +\
-			self.pyx_frac + self.mica_frac + self.clay_frac
+			tot = self.quartz_frac[0] + self.plag_frac[0] + self.amp_frac[0] + self.kfelds_frac[0] +\
+			self.pyx_frac[0] + self.mica_frac[0] + self.clay_frac[0]
 
-			if tot != 1.0:
+			if (tot <= 0.99) and (tot > 1.01):
 				QMessageBox.about(self, "Warning!", "The total number of does not add up to 100%. Currently it is:  " + str(tot*1e2))
 				continue_adjusting = False
 
@@ -1001,9 +1014,9 @@ class CATE(QMainWindow):
 
 				fluids_odd_function = CATE.name[0][CATE.fluid_cond_selection]
 
-			cond_fluids = eval(fluids_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], NaCL = self.nacl[idx_node], method = method)')
-
-		self.melt_fluid_cond[idx_node] = cond_fluids
+			cond_fluids = eval(fluids_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], salinity = self.salinity_fluid[idx_node], method = method)')
+	
+		return cond_fluids
 
 	def calculate_melt_conductivity(self, method, sol_idx = None):
 
@@ -1037,8 +1050,8 @@ class CATE(QMainWindow):
 				melt_odd_function = CATE.name[1][CATE.melt_cond_selection]
 
 			cond_melt = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], NaCL = self.nacl[idx_node], method = method)')
-
-		self.melt_fluid_cond[idx_node] = cond_melt
+		
+		return cond_melt
 
 	def calculate_rock_conductivity(self, method, rock_idx = None, sol_idx = None):
 
@@ -1400,6 +1413,12 @@ class CATE(QMainWindow):
 				(self.pyx_cond[idx_node]**self.pyx_frac[idx_node]) *\
 				(self.mica_cond[idx_node]**self.mica_frac[idx_node]) *\
 				(self.clay_cond[idx_node]**self.clay_frac[idx_node])
+				
+		elif method == -1:
+			
+			#In case the bulk conductivity is determined by a solid phase conductivity entry...
+			
+			self.bulk_cond = self.bckgr_res
 			
 		#Calculations regarding solid phases and fluid phases mixing take place after this.
 		#checking if there's any melt/fluid on the list at all.
@@ -1508,6 +1527,7 @@ class CATE(QMainWindow):
 					density_indv = density_indv + (phase_list[j] * dens_list[j])
 					
 				self.density_solids[i] = density_indv
+				
 			
 		elif CATE.solid_phase_method == 2:
 		
@@ -1532,6 +1552,88 @@ class CATE(QMainWindow):
 					density_indv = density_indv + (phase_list[j] * dens_list[j])
 					
 				self.density_solids[i] = density_indv
+				
+		print(self.density_solids)
+				
+	def calculate_conductivity_single(self, method = None):
+	
+		if CATE.fluid_or_melt_method == 0:
+			self.melt_fluid_cond = self.calculate_fluids_conductivity(method= method, sol_idx = 0)
+		elif CATE.fluid_or_melt_method == 1:
+			self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = 0)
+	
+		if CATE.solid_phase_method == 0:
+
+			self.phase_mixing_function(method == -1, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
+			
+		elif CATE.solid_phase_method == 1:
+		
+			if self.granite_frac[0] != 0:
+				self.granite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 0, sol_idx = 0)
+			else:
+				self.granite_cond = np.array([0])
+				
+			if self.granulite_frac[0] != 0:
+				self.granulite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 1, sol_idx = 0)
+			else:
+				self.granulite_cond = np.array([0])
+				
+			if self.sandstone_frac[0] != 0:
+				self.sandstone_cond = self.calculate_rock_conductivity(method = method, rock_idx= 2, sol_idx = 0)
+			else:
+				self.sandstone_cond = np.array([0])
+				
+			if self.gneiss_frac[0] != 0:
+				self.gneiss_cond = self.calculate_rock_conductivity(method = method, rock_idx= 3, sol_idx = 0)
+			else:
+				self.gneiss_cond = np.array([0])
+				
+			if self.amphibolite_frac[0] != 0:
+				self.amphibolite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 4, sol_idx = 0)
+			else:
+				self.amphibolite_cond = np.array([0])
+				
+		
+			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
+			
+		elif CATE.solid_phase_method == 2:
+		
+			if self.quartz_frac[0] != 0:
+				self.quartz_cond = self.calculate_mineral_conductivity(method = method, min_idx= 0, sol_idx = 0)
+			else:
+				self.quartz_cond = np.array([0])
+				
+			if self.plag_frac[0] != 0:
+				self.plag_cond = self.calculate_mineral_conductivity(method = method, min_idx= 1, sol_idx = 0)
+			else:
+				self.plag_cond = np.array([0])
+				
+			if self.amp_frac[0] != 0:
+				self.amp_cond = self.calculate_mineral_conductivity(method = method, min_idx= 2, sol_idx = 0)
+			else:
+				self.amp_cond = np.array([0])
+				
+			if self.kfelds_frac[0] != 0:
+				self.kfelds_cond = self.calculate_mineral_conductivity(method = method, min_idx= 3, sol_idx = 0)
+			else:
+				self.kfelds_cond = np.array([0])
+				
+			if self.pyx_frac[0] != 0:
+				self.pyx_cond = self.calculate_mineral_conductivity(method = method, min_idx= 4, sol_idx = 0)
+			else:
+				self.pyx_cond = np.array([0])
+				
+			if self.mica_frac[0] != 0:
+				self.mica_cond = self.calculate_mineral_conductivity(method = method, min_idx= 5, sol_idx = 0)
+			else:
+				self.mica_cond = np.array([0])
+				
+			if self.clay_frac[0] != 0:
+				self.clay_cond = self.calculate_mineral_conductivity(method = method, min_idx= 6, sol_idx = 0)
+			else:
+				self.clay_cond = np.array([0])
+				
+			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
 	
 	def plot_composition(self, method = None):
 
@@ -1629,7 +1731,16 @@ class CATE(QMainWindow):
 
 			self.plot_composition(method = 'draw')
 			self.act_comp_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #679c5f}")
-
+			self.composition_set = True
+			
+	def calculate_conductivity_button(self):
+	
+		if self.composition_set == True:
+			
+			self.calculate_density_solid()
+			self.calculate_conductivity_single(method = 'index')
+			# self.plot_conductivity(method = 'draw')
+			
 	def conductivity_popup(self):
 
 		if self.cond_pop is None:
