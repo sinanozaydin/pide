@@ -32,6 +32,7 @@ from cond_models.rocks.granite_odd import *
 # from cond_models.rocks.sandstone_odd import *
 # from cond_models.rocks.gneiss_odd import *
 # from cond_models.rocks.amphibolite_odd import *
+# from cond_models.rocks.other_odd import *
 #importing odd mineral functions
 # from cond_models.minerals.quartz_odd import *
 # from cond_models.minerals.plag_odd import *
@@ -40,6 +41,11 @@ from cond_models.rocks.granite_odd import *
 # from cond_models.minerals.pyx_odd import *
 # from cond_models.minerals.mica_odd import *
 # from cond_models.minerals.clay_odd import *
+# from cond_models.minerals.carbonates_odd import *
+# from cond_models.minerals.garnet_odd import *
+# from cond_models.minerals.sulphides_odd import *
+# from cond_models.minerals.graphite_odd import *
+# from cond_models.minerals.other_odd import *
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are utterly useless
 
@@ -881,7 +887,7 @@ class CATE(QMainWindow):
 						setattr(self, param, np.array([float(text) /1e2]))
 						self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
 						self.amp_frac[0]*1e2 + self.pyx_frac[0]*1e2 + self.mica_frac[0]*1e2 + self.clay_frac[0]*1e2 + self.carbonate_frac[0]*1e2 +\
-						self.garnet_frac[0]*1e2 + self.sulphide_frac[0]*1e2 + self.graphite_frac[0]*1e2 + self.other_frac[0]*1e2]))
+						self.garnet_frac[0]*1e2 + self.sulphide_frac[0]*1e2 + self.graphite_frac[0]*1e2 + self.other_frac[0]*1e2))
 
 					else:
 						QMessageBox.about(self,"Warning!","Enter a value between 0 and 100")
@@ -967,6 +973,7 @@ class CATE(QMainWindow):
 		len_sandstone = len(self.sandstone_cond_data) - 1
 		len_gneiss = len(self.gneiss_cond_data) - 1
 		len_amphibolite = len(self.amphibolite_cond_data) - 1
+		len_other_rock = len(self.other_rock_cond_data) - 1
 		
 		self.rock_num = 5
 
@@ -987,70 +994,70 @@ class CATE(QMainWindow):
 
 		#Creating empty arrays for appending new data.
 		CATE.name = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		CATE.type = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		CATE.t_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		CATE.t_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.p_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.p_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.w_calib = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.mg_cond = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.sigma_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.sigma_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.h_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.h_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.sigma_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.sigma_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.h_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.h_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.r = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.r_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.alpha_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.alpha_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.wtype = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.dens_mat = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 
 		#Filling up the arrays.
@@ -1634,7 +1641,7 @@ class CATE(QMainWindow):
 				(self.garnet_cond[idx_node]**self.garnet_frac[idx_node]) *\
 				(self.sulphide_cond[idx_node]**self.sulphide_frac[idx_node]) *\
 				(self.graphite_cond[idx_node]**self.graphite_frac[idx_node]) *\
-				(self.other_cond[idx_node]**self.other_frac[idx_node]) *\
+				(self.other_cond[idx_node]**self.other_frac[idx_node])
 				
 		elif method == -1:
 			
@@ -1906,8 +1913,9 @@ class CATE(QMainWindow):
 		labels = []
 		label_colors = []
 		
-		self.label_general_mins = ['Quartz', 'Plagioclase', 'Amphibole', 'K-Feldspar', 'Pyroxenes', 'Mica', 'Clay']
-		self.color_general_mins = ["#f7f7d7","#fad9a0", "#bfbab2", "#fa5f93", "#3747b0", "#36cf45", "#574018"]
+		self.label_general_mins = ['Quartz', 'Plagioclase', 'Amphibole', 'K-Feldspar', 'Pyroxenes', 'Mica', 'Clay', 'Carbonate',
+			     'Garnet', 'Sulphide', 'Graphite', 'Other']
+		self.color_general_mins = ["#f7f7d7","#fad9a0", "#bfbab2", "#fa5f93", "#3747b0", "#36cf45", "#574018"] #cansu
 				
 		if CATE.solid_phase_method == 0:
 			self.solid_phase_array = np.array([100])
@@ -1929,7 +1937,7 @@ class CATE(QMainWindow):
 		
 			self.solid_phase_array = []
 			solid_phase_array = [self.quartz_frac, self.plag_frac, self.kfelds_frac, self.amp_frac, self.pyx_frac,
-			self.mica_frac,self.clay_frac,self.carbonate_frac,self.]
+			self.mica_frac,self.clay_frac,self.carbonate_frac,self.garnet_frac,self.sulphide_frac,self.graphite_frac,self.other_frac]
 			
 			for i in range(0,len(solid_phase_array)):
 				if solid_phase_array[i][0] != 0.0:
@@ -2122,6 +2130,11 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_pyx_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_mica_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_clay_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_carbonates_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_garnet_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_sulphides_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_graphite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_other_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		if b.text() == "Experimental Conductivity Measurements of Rocks":
 			if b.isChecked() == True:
 				CATE.solid_phase_method = 1
@@ -2138,6 +2151,11 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_pyx_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_mica_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 				CATE.btn_clay_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_carbonates_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_garnet_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_sulphides_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_graphite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
+				CATE.btn_other_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #6b786e}")
 		if b.text() == "Experimental Conductivity Measurements of Minerals":
 			if b.isChecked() == True:
 				CATE.solid_phase_method = 2
@@ -2154,6 +2172,11 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_pyx_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_mica_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_clay_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_carbonates_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_garnet_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_sulphides_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_graphite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+				CATE.btn_other_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 
 class PHS_MIX_POP(QWidget):
 
@@ -2395,7 +2418,32 @@ class PHS_INTER_POP(QWidget):
 		self.clay_m_textbox.setEnabled(False)
 		self.clay_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.clay_m_textbox, param = "clay_m"))
 
+		self.carbonates_m_btn = QPushButton('Carbonates m')
+		self.carbonates_m_textbox = QLineEdit(str(CATE.carbonate_m))
+		self.carbonates_m_textbox.setEnabled(False)
+		self.carbonates_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.carbonates_m_textbox, param = "carbonate_m"))
 
+		self.garnet_m_btn = QPushButton('Garnet m')
+		self.garnet_m_textbox = QLineEdit(str(CATE.garnet_m))
+		self.garnet_m_textbox.setEnabled(False)
+		self.garnet_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.garnet_m_textbox, param = "garnet_m"))
+
+		self.sulphides_m_btn = QPushButton('Sulphides m')
+		self.sulphides_m_textbox = QLineEdit(str(CATE.sulphide_m))
+		self.sulphides_m_textbox.setEnabled(False)
+		self.sulphides_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.sulphides_m_textbox, param = "sulphide_m"))
+
+		self.graphite_m_btn = QPushButton('Graphite m')
+		self.graphite_m_textbox = QLineEdit(str(CATE.graphite_m))
+		self.graphite_m_textbox.setEnabled(False)
+		self.graphite_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.graphite_m_textbox, param = "graphite_m"))
+
+		self.other_m_btn = QPushButton('Other m')
+		self.other_m_textbox = QLineEdit(str(CATE.other_m))
+		self.other_m_textbox.setEnabled(False)
+		self.other_m_btn.clicked.connect(lambda: self.get_interconnectivity(textbox_obj=self.other_m_textbox, param = "other_m"))
+
+	
 		layout.addRow(desc_label)
 		layout.addRow(self.melt_fluid_m_btn, self.melt_fluid_m_textbox)
 
@@ -2416,6 +2464,11 @@ class PHS_INTER_POP(QWidget):
 		layout.addRow(self.pyx_m_btn, self.pyx_m_textbox)
 		layout.addRow(self.mica_m_btn, self.mica_m_textbox)
 		layout.addRow(self.clay_m_btn, self.clay_m_textbox)
+		layout.addRow(self.carbonates_m_btn, self.carbonates_m_textbox)
+		layout.addRow(self.garnet_m_btn, self.garnet_m_textbox)
+		layout.addRow(self.sulphides_m_btn, self.sulphides_m_textbox)
+		layout.addRow(self.graphite_m_btn, self.graphite_m_textbox)
+		layout.addRow(self.other_m_btn, self.other_m_textbox)
 
 	def get_interconnectivity(self,textbox_obj,param):
 
