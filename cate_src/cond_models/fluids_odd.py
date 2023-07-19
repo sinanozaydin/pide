@@ -9,13 +9,17 @@ def Sinmyo2016(T, P, salinity, method):
 
 	#first calculating pure water density at T and P using iapws08
 
-	P = P * 1e3 #converting GPa to MPa
+	P = P * 1e3 #converting GPa to MPa	
 
 	if method == 'index':
 		d = iapws.iapws08.SeaWater(T = T, P = P, S = 0)
 		rho = d.rho / 1e3 #in g/cm3
 		rho_water = rho
 	else:
+		
+		P = P[0]
+		T = T[0]
+		salinity = salinity[0]
 		rho_water = np.zeros(len(P))
 
 		for i in range(0,len(P)):
@@ -60,6 +64,12 @@ def Guo2019(T, P, salinity, method):
 
 	P = P * 1e3 #converting GPa to MPa
 
+	if method == 'array':
+
+		P = P[0]
+		T = T[0]
+		salinity = salinity[0]
+
 	rho_water = np.zeros(len(P))
 
 	for i in range(0,len(P)):
@@ -82,14 +92,18 @@ def Guo2019(T, P, salinity, method):
 	C = 0.852
 	D = 7.61
 
-	if S > 0:
-		cond = 10**(A + (B/T) + (C * np.log10(salinity)) + (D * (np.log10(rho_water))) + np.log10(lambda_0))
-	else:
-		cond = 10**(A + (B/T) + (D * (np.log10(rho_water))) + np.log10(lambda_0))
+	for i in range(0,len(T)):
+		if salinity[i] > 0:
+			cond = 10**(A + (B/T[i]) + (C * np.log10(salinity[i])) + (D * (np.log10(rho_water[i]))) + np.log10(lambda_0[i]))
+		else:
+			cond = 10**(A + (B/T[i]) + (D * (np.log10(rho_water[i]))) + np.log10(lambda_0[i]))
 
 	return cond
 
 def Manthilake2021_Aqueous(T, P, salinity, method):
+
+	if method == 'array':
+		T = T[0]
 
 	for i in range(0,len(T)):
 		if T[i] > 673.0:

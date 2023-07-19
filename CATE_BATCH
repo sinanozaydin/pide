@@ -106,7 +106,7 @@ class CATE(object):
 				CATE.composition_args_path = args_input[2]
 				self.write_file_save_name = args_input[3]
 			except IndexError:
-				print('You need to put two main inputs for -forward selection')
+				print('You need to put in these for -forward selection:')
 				print('CATE_BATCH -forward input_file.csv output_file.csv')
 				sys.exit()
 				
@@ -116,8 +116,32 @@ class CATE(object):
 			self.check_composition()
 
 			self.calculate_density_solid()
-			self.calculate_conductivity_single(method = 'index')
+			self.calculate_conductivity(method = 'index')
 
+			self.write_results()
+
+		elif args_input[1] == '-forward_multiple':
+
+			try:
+				CATE.composition_args_path = args_input[2]
+				self.pt_file = args_input[3]
+				self.write_file_save_name = args_input[4]
+			except IndexError:
+				print('You need to put in these for -forward_multiple selection:')
+				print('CATE_BATCH -forward_multiple input_file.csv pt_file.csv output_file.csv')
+				sys.exit()
+
+			self.home()
+			self.read_cond_models()
+			self.read_params()
+			self.check_composition()
+
+			self.read_pt_file()
+			self.duplicate_composition_for_pt_file()
+
+			self.calculate_density_solid()
+
+			self.calculate_conductivity(method = 'array')
 			self.write_results()
 
 
@@ -929,8 +953,14 @@ class CATE(object):
 			
 			if CATE.fluid_or_melt_method == 0:
 				
-				dens = iapws.iapws08.SeaWater(T = self.T[idx_node], P = self.p[idx_node], S = 0)
-				self.dens_melt_fluid[idx_node] = dens.rho / 1e3
+				if indexing_method == 'index':
+					dens = iapws.iapws08.SeaWater(T = self.T[idx_node], P = self.p[idx_node], S = 0)
+					self.dens_melt_fluid[idx_node] = dens.rho / 1e3
+				elif indexing_method == 'array':
+					self.dens_melt_fluid = np.zeros(len(self.T))
+					for i in range(0,len(self.T)):
+						dens = iapws.iapws08.SeaWater(T = self.T[i], P = self.p[i], S = 0)
+						self.dens_melt_fluid[i] = dens.rho / 1e3
 				
 			elif CATE.fluid_or_melt_method == 1:
 				
@@ -1065,117 +1095,125 @@ class CATE(object):
 					
 				self.density_solids[i] = density_indv
 								
-	def calculate_conductivity_single(self, method = None):
-	
+	def calculate_conductivity(self, method = None):
+
+		if method == 'index':
+
+			index = 0
+
+		elif method == 'array':
+
+			index = None
+
 		if CATE.fluid_or_melt_method == 0:
-			self.melt_fluid_cond = self.calculate_fluids_conductivity(method= method, sol_idx = 0)
+			self.melt_fluid_cond = self.calculate_fluids_conductivity(method= method, sol_idx = index)
 		elif CATE.fluid_or_melt_method == 1:
-			self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = 0)
-	
+			self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
+
+
 		if CATE.solid_phase_method == 0:
 
-			self.phase_mixing_function(method == -1, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
+			self.phase_mixing_function(method == -1, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 			
 		elif CATE.solid_phase_method == 1:
 		
 			if self.granite_frac[0] != 0:
-				self.granite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 2, sol_idx = 0)
+				self.granite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 2, sol_idx = index)
 			else:
-				self.granite_cond = np.array([0])
+				self.granite_cond = np.zeros(len(self.T))
 				
 			if self.granulite_frac[0] != 0:
-				self.granulite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 3, sol_idx = 0)
+				self.granulite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 3, sol_idx = index)
 			else:
-				self.granulite_cond = np.array([0])
+				self.granulite_cond = np.zeros(len(self.T))
 				
 			if self.sandstone_frac[0] != 0:
-				self.sandstone_cond = self.calculate_rock_conductivity(method = method, rock_idx= 4, sol_idx = 0)
+				self.sandstone_cond = self.calculate_rock_conductivity(method = method, rock_idx= 4, sol_idx = index)
 			else:
-				self.sandstone_cond = np.array([0])
+				self.sandstone_cond = np.zeros(len(self.T))
 				
 			if self.gneiss_frac[0] != 0:
-				self.gneiss_cond = self.calculate_rock_conductivity(method = method, rock_idx= 5, sol_idx = 0)
+				self.gneiss_cond = self.calculate_rock_conductivity(method = method, rock_idx= 5, sol_idx = index)
 			else:
-				self.gneiss_cond = np.array([0])
+				self.gneiss_cond = np.zeros(len(self.T))
 				
 			if self.amphibolite_frac[0] != 0:
-				self.amphibolite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 6, sol_idx = 0)
+				self.amphibolite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 6, sol_idx = index)
 			else:
-				self.amphibolite_cond = np.array([0])
+				self.amphibolite_cond = np.zeros(len(self.T))
 
 			if self.other_rock_frac[0] != 0:
-				self.other_rock_cond = self.calculate_rock_conductivity(method = method, rock_idx= 7, sol_idx = 0)
+				self.other_rock_cond = self.calculate_rock_conductivity(method = method, rock_idx= 7, sol_idx = index)
 			else:
-				self.other_rock_cond = np.array([0])
+				self.other_rock_cond = np.zeros(len(self.T))
 				
 		
-			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
+			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 			
 		elif CATE.solid_phase_method == 2:
 		
 			if self.quartz_frac[0] != 0:
-				self.quartz_cond = self.calculate_mineral_conductivity(method = method, min_idx= 8, sol_idx = 0)
+				self.quartz_cond = self.calculate_mineral_conductivity(method = method, min_idx= 8, sol_idx = index)
 			else:
-				self.quartz_cond = np.array([0])
+				self.quartz_cond = np.zeros(len(self.T))
 				
 			if self.plag_frac[0] != 0:
-				self.plag_cond = self.calculate_mineral_conductivity(method = method, min_idx= 9, sol_idx = 0)
+				self.plag_cond = self.calculate_mineral_conductivity(method = method, min_idx= 9, sol_idx = index)
 			else:
-				self.plag_cond = np.array([0])
+				self.plag_cond = np.zeros(len(self.T))
 				
 			if self.amp_frac[0] != 0:
-				self.amp_cond = self.calculate_mineral_conductivity(method = method, min_idx= 10, sol_idx = 0)
+				self.amp_cond = self.calculate_mineral_conductivity(method = method, min_idx= 10, sol_idx = index)
 			else:
-				self.amp_cond = np.array([0])
+				self.amp_cond = np.zeros(len(self.T))
 				
 			if self.kfelds_frac[0] != 0:
-				self.kfelds_cond = self.calculate_mineral_conductivity(method = method, min_idx= 11, sol_idx = 0)
+				self.kfelds_cond = self.calculate_mineral_conductivity(method = method, min_idx= 11, sol_idx = index)
 			else:
-				self.kfelds_cond = np.array([0])
+				self.kfelds_cond = np.zeros(len(self.T))
 				
 			if self.pyx_frac[0] != 0:
-				self.pyx_cond = self.calculate_mineral_conductivity(method = method, min_idx= 12, sol_idx = 0)
+				self.pyx_cond = self.calculate_mineral_conductivity(method = method, min_idx= 12, sol_idx = index)
 			else:
-				self.pyx_cond = np.array([0])
+				self.pyx_cond = np.zeros(len(self.T))
 				
 			if self.mica_frac[0] != 0:
-				self.mica_cond = self.calculate_mineral_conductivity(method = method, min_idx= 13, sol_idx = 0)
+				self.mica_cond = self.calculate_mineral_conductivity(method = method, min_idx= 13, sol_idx = index)
 			else:
-				self.mica_cond = np.array([0])
+				self.mica_cond = np.zeros(len(self.T))
 				
 			if self.clay_frac[0] != 0:
-				self.clay_cond = self.calculate_mineral_conductivity(method = method, min_idx= 14, sol_idx = 0)
+				self.clay_cond = self.calculate_mineral_conductivity(method = method, min_idx= 14, sol_idx = index)
 			else:
-				self.clay_cond = np.array([0])
+				self.clay_cond = np.zeros(len(self.T))
 
 			if self.carbonate_frac[0] != 0:
-				self.carbonate_cond = self.calculate_mineral_conductivity(method = method, min_idx= 15, sol_idx = 0)
+				self.carbonate_cond = self.calculate_mineral_conductivity(method = method, min_idx= 15, sol_idx = index)
 			else:
-				self.carbonate_cond = np.array([0])
+				self.carbonate_cond = np.zeros(len(self.T))
 
 			if self.garnet_frac[0] != 0:
-				self.garnet_cond = self.calculate_mineral_conductivity(method = method, min_idx= 16, sol_idx = 0)
+				self.garnet_cond = self.calculate_mineral_conductivity(method = method, min_idx= 16, sol_idx = index)
 			else:
-				self.garnet_cond = np.array([0])
+				self.garnet_cond = np.zeros(len(self.T))
 
 			if self.sulphide_frac[0] != 0:
-				self.sulphide_cond = self.calculate_mineral_conductivity(method = method, min_idx= 17, sol_idx = 0)
+				self.sulphide_cond = self.calculate_mineral_conductivity(method = method, min_idx= 17, sol_idx = index)
 			else:
-				self.sulphide_cond = np.array([0])
+				self.sulphide_cond = np.zeros(len(self.T))
 
 			if self.graphite_frac[0] != 0:
-				self.graphite_cond = self.calculate_mineral_conductivity(method = method, min_idx= 18, sol_idx = 0)
+				self.graphite_cond = self.calculate_mineral_conductivity(method = method, min_idx= 18, sol_idx = index)
 			else:
-				self.graphite_cond = np.array([0])
+				self.graphite_cond = np.zeros(len(self.T))
 
 			if self.other_frac[0] != 0:
-				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 19, sol_idx = 0)
+				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 19, sol_idx = index)
 			else:
-				self.other_cond = np.array([0])
+				self.other_cond = np.zeros(len(self.T))
 
-			
-				
-			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
+			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = index)
+		
 		self.cond_calculated = True
 
 	def savetextfile(self):
@@ -1204,11 +1242,83 @@ class CATE(object):
 
 			print("Files are saved at the chosen location ")
 
+	def read_pt_file(self):
+
+		data_pt = self.read_csv(filename = self.pt_file, delim = ',')
+
+		self.p = np.zeros(len(data_pt) - 1)
+		self.T = np.zeros(len(data_pt) - 1)
+		self.depth = np.zeros(len(data_pt) - 1)
+
+		for i in range(1,len(data_pt)):
+
+			self.p[i-1] = data_pt[i][0]
+			self.depth[i-1] = data_pt[i][1]
+			self.T[i-1] = data_pt[i][2]
+
+	def duplicate_composition_for_pt_file(self):
+
+		for i in range(0,len(self.T)):
+
+			if CATE.solid_phase_method == 1:
+
+				self.granite_frac = np.ones(len(self.T)) * self.granite_frac[0]
+				self.granulite_frac = np.ones(len(self.T)) * self.granulite_frac[0]
+				self.sandstone_frac = np.ones(len(self.T)) * self.sandstone_frac[0]
+				self.gneiss_frac = np.ones(len(self.T)) * self.gneiss_frac[0]
+				self.amphibolite_frac = np.ones(len(self.T)) * self.amphibolite_frac[0]
+				self.other_rock_frac = np.ones(len(self.T)) * self.other_rock_frac[0]
+
+				CATE.granite_m = np.ones(len(self.T)) * CATE.granite_m[0]
+				CATE.granulite_m = np.ones(len(self.T)) * CATE.granulite_m[0]
+				CATE.sandstone_m = np.ones(len(self.T)) * CATE.sandstone_m[0]
+				CATE.gneiss_m = np.ones(len(self.T)) * CATE.gneiss_m[0]
+				CATE.amphibolite_m = np.ones(len(self.T)) * CATE.amphibolite_m[0]
+				CATE.other_rock_m = np.ones(len(self.T)) * CATE.other_rock_m[0]
+
+			elif CATE.solid_phase_method == 2:
+
+				self.quartz_frac = np.ones(len(self.T)) * self.quartz_frac[0]
+				self.plag_frac = np.ones(len(self.T)) * self.plag_frac[0]
+				self.amp_frac = np.ones(len(self.T)) * self.amp_frac[0]
+				self.kfelds_frac = np.ones(len(self.T)) * self.kfelds_frac[0]
+				self.garnet_frac = np.ones(len(self.T)) * self.garnet_frac[0]
+				self.pyx_frac = np.ones(len(self.T)) * self.pyx_frac[0]
+				self.mica_frac = np.ones(len(self.T)) * self.mica_frac[0]
+				self.clay_frac = np.ones(len(self.T)) * self.clay_frac[0]
+				self.carbonate_frac = np.ones(len(self.T)) * self.carbonate_frac[0]
+				self.graphite_frac = np.ones(len(self.T)) * self.graphite_frac[0]
+				self.sulphide_frac = np.ones(len(self.T)) * self.sulphide_frac[0]
+				self.other_frac = np.ones(len(self.T)) * self.other_frac[0]
+
+				CATE.quartz_m = np.ones(len(self.T)) * CATE.quartz_m[0]
+				CATE.plag_m = np.ones(len(self.T)) * CATE.plag_m[0]
+				CATE.amp_m = np.ones(len(self.T)) * CATE.amp_m[0]
+				CATE.kfelds_m = np.ones(len(self.T)) * CATE.kfelds_m[0]
+				CATE.garnet_m = np.ones(len(self.T)) * CATE.garnet_m[0]
+				CATE.pyx_m = np.ones(len(self.T)) * CATE.pyx_m[0]
+				CATE.mica_m = np.ones(len(self.T)) * CATE.mica_m[0]
+				CATE.clay_m = np.ones(len(self.T)) * CATE.clay_m[0]
+				CATE.carbonate_m = np.ones(len(self.T)) * CATE.carbonate_m[0]
+				CATE.graphite_m = np.ones(len(self.T)) * CATE.graphite_m[0]
+				CATE.sulphide_m = np.ones(len(self.T)) * CATE.sulphide_m[0]
+				CATE.other_m = np.ones(len(self.T)) * CATE.other_m[0]
+
+			CATE.melt_fluid_m = np.ones(len(self.T)) * CATE.melt_fluid_m[0]
+			self.melt_fluid_mass_frac = np.ones(len(self.T)) * self.melt_fluid_mass_frac[0]
+			self.salinity_fluid = np.ones(len(self.T)) * self.salinity_fluid[0]
+			self.co2_melt = np.ones(len(self.T)) * self.co2_melt[0]
+			self.h2o_melt = np.ones(len(self.T)) * self.h2o_melt[0]
+			self.na2o_melt = np.ones(len(self.T)) * self.na2o_melt[0]
+			self.k2o_melt = np.ones(len(self.T)) * self.k2o_melt[0]
+
+		
 	def write_results(self):
 
-		lines = ['Bulk_Cond,Melt_Fluid_Cond,Solid_Cond,T,Depth,P\n']
+		lines = ['Bulk_Cond[S/m],Melt_Fluid_Cond[S/m],Solid_Cond[S/m],T[K],Depth[km],P[GPa]\n']
 
-		lines.append(','.join((str(self.bulk_cond[0]),str(self.melt_fluid_cond[0]),str(self.solid_phase_cond[0]), self.T[0], self.depth[0], self.p[0], + '\n')))
+		for i in range(0,len(self.T)):
+			lines.append(','.join((str(self.bulk_cond[i]),str(self.melt_fluid_cond[i]),str(self.solid_phase_cond[i]), str(self.T[i]), str(self.depth[i]), str(self.p[i]) + '\n')))
 		filesave_results = open(self.write_file_save_name ,'w')
 		filesave_results.writelines(lines)
 		filesave_results.close()
