@@ -19,48 +19,75 @@ melt_fluid_m,6,CATE,float,Melt/fluid cementation exponent,Unitless
 granite_cond_selection,0,CATE,int,Choice of granite model,Unitless Choice
 granite_frac,80,self,float,Granite volumetric percentage,Percentage (%)
 granite_m,1,CATE,float,Granite cementation exponent,Unitless
+granite_water,0,CATE,float,Granite water content,ppm
 granulite_cond_selection,0,CATE,int,Choice of granulite model,Unitless Choice
 granulite_frac,20,self,float,Granulite volumetric percentage,Percentage (%)
 granulite_m,3,CATE,float,Granulite cementation exponent,Unitless
+granulite_water,0,CATE,Granulite water content,ppm
 sandstone_cond_selection,0,CATE,int,Choice of sandstone model,Unitless Choice
 sandstone_frac,0,self,float,Sandstone volumetric percentage,Percentage (%)
 sandstone_m,4,CATE,float,Sandstone cementation exponent,Unitless
+sandstone_water,0,CATE,Sandstone water content,ppm
 gneiss_cond_selection,0,CATE,int,Choice of gneiss model,Unitless Choice
 gneiss_frac,0,self,float,Gneiss volumetric percentage,Percentage (%)
 gneiss_m,4,CATE,float,Gneiss cementation exponent,Unitless
+gneiss_water,0,CATE,Gneiss water content,ppm
 amphibolite_cond_selection,0,CATE,int,Choice of amphibolite model,Unitless Choice
 amphibolite_frac,0,self,float,Amphibolite volumetric percentage,Percentage (%)
 amphibolite_m,4,CATE,float,Amphibolite cementation exponent,Unitless
+amphibolite_water,0,CATE,Amphibolite water content,ppm
+basalt_cond_selection,0,CATE,int,Choice of basalt model,Unitless Choice
+basalt_frac,0,self,float,Basalt volumetric percentage,Percentage (%)
+basalt_m,4,CATE,float,Basalt cementation exponent,Unitless
+basalt_water,0,CATE,Basalt water content,ppm
+mud_cond_selection,0,CATE,int,Choice of Mudstone/Shale model,Unitless Choice
+mud_frac,0,self,float,Mudstone/Shale volumetric percentage,Percentage (%)
+mud_m,4,CATE,float,Mudstone/Shale cementation exponent,Unitless
+mud_water,0,CATE,Mudstone/Shale water content,ppm
+gabbro_cond_selection,0,CATE,int,Choice of gabbro model,Unitless Choice
+gabbro_frac,0,self,float,Gabbro volumetric percentage,Percentage (%)
+gabbro_m,4,CATE,float,Gabbro cementation exponent,Unitless
+gabbro_water,0,CATE,Gabbro water content,ppm
 other_rock_cond_selection,0,CATE,int,Choice of other rock model,Unitless Choice
 other_rock_frac,0,self,float,Other rock volumetric percentage,Percentage (%)
 other_rock_m,4,CATE,float,Other rock cementation exponent,Unitless
+other_rock_water,0,CATE,Other rock water content,ppm
 quartz_cond_selection,0,CATE,int,Choice of quartz model,Unitless Choice
 quartz_frac,0,self,float,Quartz volumetric percentage,Percentage (%)
 quartz_m,4,CATE,float,Quartz cementation exponent,Unitless
+quartz_water,0,CATE,Quartz water content,ppm
 plag_cond_selection,0,CATE,int,Choice of plagioclase model,Unitless Choice
 plag_frac,0,self,float,Plagioclase volumetric percentage,Percentage (%)
 plag_m,4,CATE,float,Plagioclase cementation exponent,Unitless
+plag_water,0,CATE,Plagioclase water content,ppm
 amp_cond_selection,0,CATE,int,Choice of amphibole model,Unitless Choice
 amp_frac,0,self,float,Amphibole volumetric percentage,Percentage (%)
 amp_m,4,CATE,float,Amphibole cementation exponent,Unitless
+amp_water,0,CATE,Amphibole water content,ppm
 kfelds_cond_selection,0,CATE,int,Choice of K-feldspar model,Unitless Choice
 kfelds_frac,0,self,float,K-feldspar volumetric percentage,Percentage (%)
 kfelds_m,4,CATE,float,K-feldspar cementation exponent,Unitless
+kfelds_water,0,CATE,K-Feldspar water content,ppm
 pyx_cond_selection,0,CATE,int,Choice of pyroxene model,Unitless Choice
 pyx_frac,0,self,float,Pyroxene volumetric percentage,Percentage (%)
 pyx_m,4,CATE,float,Pyroxene cementation exponent,Unitless
+pyx_water,0,CATE,Pyroxene water content,ppm
 mica_cond_selection,0,CATE,int,Choice of mica model,Unitless Choice
 mica_frac,0,self,float,Mica volumetric percentage,Percentage (%)
 mica_m,4,CATE,float,Mica cementation exponent,Unitless
+mica_water,0,CATE,Mica water content,ppm
 clay_cond_selection,0,CATE,int,Choice of clay model,Unitless Choice
 clay_frac,0,self,float,Clay volumetric percentage,Percentage (%)
 clay_m,4,CATE,float,Clay cementation exponent,Unitless
+clay_water,0,CATE,Clay water content,ppm
 carbonate_cond_selection,0,CATE,int,Choice of carbonate model,Unitless Choice
 carbonate_frac,0,self,float,Carbonate volumetric percentage,Percentage (%)
 carbonate_m,4,CATE,float,Carbonate cementation exponent,Unitless
+carbonate_water,0,CATE,Carbonate water content,ppm
 garnet_cond_selection,0,CATE,int,Choice of garnet model,Unitless Choice
 garnet_frac,0,self,float,Garnet volumetric percentage,Percentage (%)
 garnet_m,4,CATE,float,Garnet cementation exponent,Unitless
+garnet_water,0,CATE,Garnet water content,ppm
 sulphide_cond_selection,0,CATE,int,Choice of Sulphide model,Unitless Choice
 sulphide_frac,0,self,float,Sulphide volumetric percentage,Percentage (%)
 sulphide_m,4,CATE,float,Sulphide cementation exponent,Unitless
@@ -70,3 +97,4 @@ graphite_m,4,CATE,float,Graphite cementation exponent,Unitless
 other_cond_selection,0,CATE,int,Choice of other mineral model,Unitless Choice
 other_frac,0,self,float,Other mineral volumetric percentage,Percentage (%)
 other_m,4,CATE,float,Other mineral cementation exponent,Unitless
+

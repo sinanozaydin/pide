@@ -21,6 +21,9 @@ from cond_models.rocks.granite_odd import *
 # from cond_models.rocks.sandstone_odd import *
 # from cond_models.rocks.gneiss_odd import *
 # from cond_models.rocks.amphibolite_odd import *
+# from cond_models.rocks.basalt_odd import *
+# from cond_models.rocks.mud_odd import *
+# from cond_models.rocks.gabbro_odd import *
 # from cond_models.rocks.other_odd import *
 #importing odd mineral functions
 # from cond_models.minerals.quartz_odd import *
@@ -185,7 +188,7 @@ class CATE(object):
 
 
 		self.rock_cond_selections = [CATE.granite_cond_selection, CATE.granulite_cond_selection, CATE.sandstone_cond_selection, CATE.gneiss_cond_selection,
-				   CATE.amphibolite_cond_selection, CATE.other_rock_cond_selection]
+				   CATE.amphibolite_cond_selection, CATE.basalt_cond_selection, CATE.mud_cond_selection, CATE.gabbro_cond_selection, CATE.other_rock_cond_selection]
 
 		self.minerals_cond_selections = [CATE.quartz_cond_selection, CATE.plag_cond_selection, CATE.amp_cond_selection, CATE.kfelds_cond_selection, CATE.pyx_cond_selection,
 				   CATE.mica_cond_selection, CATE.clay_cond_selection, CATE.carbonate_cond_selection, CATE.garnet_cond_selection, CATE.sulphide_cond_selection,
@@ -223,6 +226,9 @@ class CATE(object):
 		self.sandstone_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'rocks', 'sandstone.csv'),delim = ',')
 		self.gneiss_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'rocks', 'gneiss.csv'),delim = ',')
 		self.amphibolite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'rocks', 'amphibolite.csv'),delim = ',')
+		self.basalt_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'rocks', 'basalt.csv'),delim = ',')
+		self.mud_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'rocks', 'mud.csv'),delim = ',')
+		self.gabbro_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'rocks', 'gabbro.csv'),delim = ',')
 		self.other_rock_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'rocks', 'other_rock.csv'),delim = ',')
 
 		#reading minerals
@@ -241,7 +247,8 @@ class CATE(object):
 		
 
 		self.cond_data_array = [self.fluid_cond_data, self.melt_cond_data, self.granite_cond_data, self.granulite_cond_data,
-			  self.sandstone_cond_data, self.gneiss_cond_data, self.amphibolite_cond_data, self.other_rock_cond_data, self.quartz_cond_data, self.plag_cond_data,
+			  self.sandstone_cond_data, self.gneiss_cond_data, self.amphibolite_cond_data, self.basalt_cond_data, self.mud_cond_data,
+			   self.gabbro_cond_data, self.other_rock_cond_data, self.quartz_cond_data, self.plag_cond_data,
 			  self.amp_cond_data, self.kfelds_cond_data, self.pyx_cond_data, self.mica_cond_data, self.clay_cond_data,
 			  self.carbonate_cond_data, self.garnet_cond_data, self.sulphides_cond_data, self.graphite_cond_data, self.other_cond_data]
 
@@ -255,9 +262,12 @@ class CATE(object):
 		len_sandstone = len(self.sandstone_cond_data) - 1
 		len_gneiss = len(self.gneiss_cond_data) - 1
 		len_amphibolite = len(self.amphibolite_cond_data) - 1
+		len_basalt = len(self.basalt_cond_data) - 1
+		len_mud = len(self.mud_cond_data) - 1
+		len_gabbro = len(self.gabbro_cond_data) - 1
 		len_other_rock = len(self.other_rock_cond_data) - 1
 		
-		self.rock_num = 6
+		self.rock_num = 9
 
 		len_quartz = len(self.quartz_cond_data) - 1
 		len_plag = len(self.plag_cond_data) - 1
@@ -276,70 +286,92 @@ class CATE(object):
 
 		#Creating empty arrays for appending new data.
 		CATE.name = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		CATE.type = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		CATE.t_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		CATE.t_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.p_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.p_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.w_calib = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.mg_cond = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.sigma_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.sigma_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.h_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.h_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.sigma_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.sigma_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.h_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.h_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.r = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.r_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.alpha_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.alpha_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.wtype = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 		self.dens_mat = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
-		   [None] * len_amphibolite, [None] * len_other_rock, [None] * len_quartz, [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
+		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
+		    [None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_pyx, [None] * len_mica, [None] * len_clay,
 		   [None] * len_carbonate, [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_other]
 
 		#Filling up the arrays.
@@ -397,7 +429,8 @@ class CATE(object):
 		elif CATE.solid_phase_method == 1:
 
 			tot = self.granite_frac[0] + self.granulite_frac[0] + self.sandstone_frac[0] +\
-			self.gneiss_frac[0] + self.amphibolite_frac[0] + self.other_rock_frac[0]
+			self.gneiss_frac[0] + self.amphibolite_frac[0] + self.basalt_frac[0] + self.mud_frac[0] +\
+				 self.gabbro_frac[0] + self.other_rock_frac[0]
 
 			if (tot <= 0.99) and (tot >= 1.01):
 				print("The total number of rock fractions do not add up to 100%. Currently it is:  " + str(tot*1e2))
@@ -600,9 +633,11 @@ class CATE(object):
 			
 				if CATE.solid_phase_method == 1:
 					phase_list = [self.granite_frac[i],self.granulite_frac[i],self.sandstone_frac[i],
-					self.gneiss_frac[i], self.amphibolite_frac[i], self.other_rock_frac[i]]
+					self.gneiss_frac[i], self.amphibolite_frac[i], self.basalt_frac[i], self.mud_frac[i],
+					 self.gabbro_frac[i], self.other_rock_frac[i]]
 					m_list = [CATE.granite_m[i],CATE.granulite_m[i],CATE.sandstone_m[i],
-					CATE.gneiss_m[i], CATE.amphibolite_m[i], CATE.other_rock_m[i]]
+					CATE.gneiss_m[i], CATE.amphibolite_m[i], CATE.basalt_m[i], self.mud_m[i],
+					 self.gabbro_m[i], CATE.other_rock_m[i]]
 				elif CATE.solid_phase_method == 2:
 					phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
 					self.pyx_frac[i], self.mica_frac[i], self.clay_frac[i], self.carbonate_frac[i], self.garnet_frac[i],
@@ -636,6 +671,12 @@ class CATE(object):
 					elif idx_max_ph == 4:
 						CATE.amphibolite_m[idx_node] = m_abundant
 					elif idx_max_ph == 5:
+						CATE.basalt_m[idx_node] = m_abundant
+					elif idx_max_ph == 6:
+						CATE.mud_m[idx_node] = m_abundant
+					elif idx_max_ph == 7:
+						CATE.gabbro_m[idx_node] = m_abundant
+					elif idx_max_ph == 8:
 						CATE.other_rock_m[idx_node] = m_abundant
 					
 					self.bulk_cond[idx_node] = (self.granite_cond[idx_node]*(self.granite_frac[idx_node]**CATE.granite_m[idx_node])) +\
@@ -643,6 +684,9 @@ class CATE(object):
 					(self.sandstone_cond[idx_node]*(self.sandstone_frac[idx_node]**CATE.sandstone_m[idx_node])) +\
 					(self.gneiss_cond[idx_node]*(self.gneiss_frac[idx_node]**CATE.gneiss_m[idx_node])) +\
 					(self.amphibolite_cond[idx_node]*(self.amphibolite_frac[idx_node]**CATE.amphibolite_m[idx_node])) +\
+					(self.basalt_cond[idx_node]*(self.basalt_frac[idx_node]**CATE.basalt_m[idx_node])) +\
+					(self.mud_cond[idx_node]*(self.mud_frac[idx_node]**CATE.mud_m[idx_node])) +\
+					(self.gabbro_cond[idx_node]*(self.gabbro_frac[idx_node]**CATE.gabbro_m[idx_node])) +\
 					(self.other_rock_cond[idx_node]*(self.other_rock_frac[idx_node]**CATE.other_rock_m[idx_node]))
 				
 				elif CATE.solid_phase_method == 2:
@@ -699,7 +743,8 @@ class CATE(object):
 				
 				if CATE.solid_phase_method == 1:
 					list_i = [self.granite_cond[i], self.granulite_cond[i], self.sandstone_cond[i],
-					self.gneiss_cond[i],self.amphibolite_cond[i], self.other_rock_cond[i]]
+					self.gneiss_cond[i],self.amphibolite_cond[i], self.basalt_cond[i], self.mud_cond[i],
+					  self.gabbro_cond, self.other_rock_cond[i]]
 				elif CATE.solid_phase_method == 2:
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.pyx_cond[i],self.mica_cond[i],self.clay_cond[i],self.carbonate_cond[i],
@@ -726,6 +771,9 @@ class CATE(object):
 					(self.sandstone_frac[i] / (self.sandstone_cond[i] + (2*min_local))) +\
 					(self.gneiss_frac[i] / (self.gneiss_cond[i] + (2*min_local))) +\
 					(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*min_local))) +\
+					(self.basalt_frac[i] / (self.basalt_cond[i] + (2*min_local))) +\
+					(self.mud_frac[i] / (self.mud_cond[i] + (2*min_local))) +\
+					(self.gabbro_frac[i] / (self.gabbro_cond[i] + (2*min_local))) +\
 					(self.other_rock_frac[i] / (self.other_rock_cond[i] + (2*min_local))))**(-1.0)) -\
 					2.0*min_local
 						
@@ -761,7 +809,8 @@ class CATE(object):
 				
 				if CATE.solid_phase_method == 1:
 					list_i = [self.granite_cond[i], self.granulite_cond[i], self.sandstone_cond[i],
-					self.gneiss_cond[i],self.amphibolite_cond[i], self.other_rock_cond[i]]
+					self.gneiss_cond[i],self.amphibolite_cond[i], self.basalt_cond[i], self.mud_cond[i],
+					  self.gabbro_cond, self.other_rock_cond[i]]
 				elif CATE.solid_phase_method == 2:
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.pyx_cond[i],self.mica_cond[i],self.clay_cond[i],
@@ -788,7 +837,10 @@ class CATE(object):
 					(self.granulite_frac[i] / (self.granulite_cond[i] + (2*max_local))) +\
 					(self.sandstone_frac[i] / (self.sandstone_cond[i] + (2*max_local))) +\
 					(self.gneiss_frac[i] / (self.gneiss_cond[i] + (2*max_local))) +\
-					(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*max_local)))
+					(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*max_local))) +\
+					(self.basalt_frac[i] / (self.basalt_cond[i] + (2*max_local))) +\
+					(self.mud_frac[i] / (self.mud_cond[i] + (2*max_local))) +\
+					(self.gabbro_frac[i] / (self.gabbro_cond[i] + (2*max_local))) +\
 					(self.other_rock_frac[i] / (self.other_rock_cond[i] + (2*max_local))))**(-1.0)) -\
 					2.0*max_local
 						
@@ -819,6 +871,9 @@ class CATE(object):
 				(self.sandstone_frac[idx_node]*self.sandstone_cond[idx_node]) +\
 				(self.gneiss_frac[idx_node]*self.gneiss_cond[idx_node]) +\
 				(self.amphibolite_frac[idx_node]*self.amphibolite_cond[idx_node]) +\
+				(self.basalt_frac[idx_node]*self.basalt_cond[idx_node]) +\
+				(self.mud_frac[idx_node]*self.mud_cond[idx_node]) +\
+				(self.gabbro_frac[idx_node]*self.gabbro_cond[idx_node]) +\
 				(self.other_rock_frac[idx_node]*self.other_rock_cond[idx_node])
 				
 			elif CATE.solid_phase_method == 2:
@@ -860,6 +915,12 @@ class CATE(object):
 						self.gneiss_cond[i] = -999
 					if self.amphibolite_frac[i] == 0.0:
 						self.amphibolite_cond[i] = -999
+					if self.basalt_frac[i] == 0.0:
+						self.basalt_cond[i] = -999
+					if self.mud_frac[i] == 0.0:
+						self.mud_cond[i] = -999
+					if self.gabbro_frac[i] == 0.0:
+						self.gabbro_cond[i] = -999
 					if self.other_rock_frac[i] == 0.0:
 						self.other_rock_cond[i] = -999
 	
@@ -868,6 +929,9 @@ class CATE(object):
 				(self.sandstone_frac[idx_node] / self.sandstone_cond[idx_node]) +\
 				(self.gneiss_frac[idx_node] / self.gneiss_cond[idx_node]) +\
 				(self.amphibolite_frac[idx_node] / self.amphibolite_cond[idx_node]) +\
+				(self.basalt_frac[idx_node] / self.basalt_cond[idx_node]) +\
+				(self.mud_frac[idx_node] / self.mud_cond[idx_node]) +\
+				(self.gabbro_frac[idx_node] / self.gabbro_cond[idx_node]) +\
 				(self.other_rock_frac[idx_node] / self.other_rock_cond[idx_node]))
 				
 			elif CATE.solid_phase_method == 2:
@@ -922,6 +986,9 @@ class CATE(object):
 				(self.sandstone_cond[idx_node]**self.sandstone_frac[idx_node]) *\
 				(self.gneiss_cond[idx_node]**self.gneiss_frac[idx_node]) *\
 				(self.amphibolite_cond[idx_node]**self.amphibolite_frac[idx_node]) *\
+				(self.basalt_cond[idx_node]**self.basalt_frac[idx_node]) *\
+				(self.mud_cond[idx_node]**self.mud_frac[idx_node]) *\
+				(self.gabbro_cond[idx_node]**self.gabbro_frac[idx_node]) *\
 				(self.other_rock_cond[idx_node]**self.other_rock_frac[idx_node]) 
 				
 			elif CATE.solid_phase_method == 2:
@@ -1048,7 +1115,10 @@ class CATE(object):
 			float(self.dens_mat[4][CATE.sandstone_cond_selection])/1e3,
 			float(self.dens_mat[5][CATE.gneiss_cond_selection])/1e3,
 			float(self.dens_mat[6][CATE.amphibolite_cond_selection])/1e3,
-			float(self.dens_mat[7][CATE.other_rock_cond_selection])/1e3]
+			float(self.dens_mat[7][CATE.basalt_cond_selection])/1e3,
+			float(self.dens_mat[8][CATE.mud_cond_selection])/1e3,
+			float(self.dens_mat[9][CATE.gabbro_cond_selection])/1e3,
+			float(self.dens_mat[10][CATE.other_rock_cond_selection])/1e3]
 			
 			self.density_solids = np.zeros(len(self.T))
 			
@@ -1057,7 +1127,8 @@ class CATE(object):
 				density_indv = 0.0
 				
 				phase_list = [self.granite_frac[i],self.granulite_frac[i],self.sandstone_frac[i],
-						self.gneiss_frac[i], self.amphibolite_frac[i], self.other_rock_frac[i]]
+						self.gneiss_frac[i], self.amphibolite_frac[i], self.basalt_frac[i], self.mud_frac[i],
+						 self.gabbro_frac[i], self.other_rock_frac[i]]
 				
 				for j in range(0,len(phase_list)):
 					density_indv = density_indv + (phase_list[j] * dens_list[j])
@@ -1142,10 +1213,25 @@ class CATE(object):
 			else:
 				self.amphibolite_cond = np.zeros(len(self.T))
 
-			if self.other_rock_frac[0] != 0:
-				self.other_rock_cond = self.calculate_rock_conductivity(method = method, rock_idx= 7, sol_idx = index)
+			if self.basalt_frac[0] != 0:
+				self.basalt_cond = self.calculate_rock_conductivity(method = method, rock_idx= 7, sol_idx = 0)
 			else:
-				self.other_rock_cond = np.zeros(len(self.T))
+				self.basalt_cond = np.array([0])
+
+			if self.mud_frac[0] != 0:
+				self.mud_cond = self.calculate_rock_conductivity(method = method, rock_idx= 8, sol_idx = 0)
+			else:
+				self.mud_cond = np.array([0])
+
+			if self.gabbro_frac[0] != 0:
+				self.gabbro_cond = self.calculate_rock_conductivity(method = method, rock_idx= 9, sol_idx = 0)
+			else:
+				self.gabbro_cond = np.array([0])
+
+			if self.other_rock_frac[0] != 0:
+				self.other_rock_cond = self.calculate_rock_conductivity(method = method, rock_idx= 10, sol_idx = 0)
+			else:
+				self.other_rock_cond = np.array([0])
 				
 		
 			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = index)
@@ -1153,62 +1239,62 @@ class CATE(object):
 		elif CATE.solid_phase_method == 2:
 		
 			if self.quartz_frac[0] != 0:
-				self.quartz_cond = self.calculate_mineral_conductivity(method = method, min_idx= 8, sol_idx = index)
+				self.quartz_cond = self.calculate_mineral_conductivity(method = method, min_idx= 11, sol_idx = index)
 			else:
 				self.quartz_cond = np.zeros(len(self.T))
 				
 			if self.plag_frac[0] != 0:
-				self.plag_cond = self.calculate_mineral_conductivity(method = method, min_idx= 9, sol_idx = index)
+				self.plag_cond = self.calculate_mineral_conductivity(method = method, min_idx= 12, sol_idx = index)
 			else:
 				self.plag_cond = np.zeros(len(self.T))
 				
 			if self.amp_frac[0] != 0:
-				self.amp_cond = self.calculate_mineral_conductivity(method = method, min_idx= 10, sol_idx = index)
+				self.amp_cond = self.calculate_mineral_conductivity(method = method, min_idx= 13, sol_idx = index)
 			else:
 				self.amp_cond = np.zeros(len(self.T))
 				
 			if self.kfelds_frac[0] != 0:
-				self.kfelds_cond = self.calculate_mineral_conductivity(method = method, min_idx= 11, sol_idx = index)
+				self.kfelds_cond = self.calculate_mineral_conductivity(method = method, min_idx= 14, sol_idx = index)
 			else:
 				self.kfelds_cond = np.zeros(len(self.T))
 				
 			if self.pyx_frac[0] != 0:
-				self.pyx_cond = self.calculate_mineral_conductivity(method = method, min_idx= 12, sol_idx = index)
+				self.pyx_cond = self.calculate_mineral_conductivity(method = method, min_idx= 15, sol_idx = index)
 			else:
 				self.pyx_cond = np.zeros(len(self.T))
 				
 			if self.mica_frac[0] != 0:
-				self.mica_cond = self.calculate_mineral_conductivity(method = method, min_idx= 13, sol_idx = index)
+				self.mica_cond = self.calculate_mineral_conductivity(method = method, min_idx= 16, sol_idx = index)
 			else:
 				self.mica_cond = np.zeros(len(self.T))
 				
 			if self.clay_frac[0] != 0:
-				self.clay_cond = self.calculate_mineral_conductivity(method = method, min_idx= 14, sol_idx = index)
+				self.clay_cond = self.calculate_mineral_conductivity(method = method, min_idx= 17, sol_idx = index)
 			else:
 				self.clay_cond = np.zeros(len(self.T))
 
 			if self.carbonate_frac[0] != 0:
-				self.carbonate_cond = self.calculate_mineral_conductivity(method = method, min_idx= 15, sol_idx = index)
+				self.carbonate_cond = self.calculate_mineral_conductivity(method = method, min_idx= 18, sol_idx = index)
 			else:
 				self.carbonate_cond = np.zeros(len(self.T))
 
 			if self.garnet_frac[0] != 0:
-				self.garnet_cond = self.calculate_mineral_conductivity(method = method, min_idx= 16, sol_idx = index)
+				self.garnet_cond = self.calculate_mineral_conductivity(method = method, min_idx= 19, sol_idx = index)
 			else:
 				self.garnet_cond = np.zeros(len(self.T))
 
 			if self.sulphide_frac[0] != 0:
-				self.sulphide_cond = self.calculate_mineral_conductivity(method = method, min_idx= 17, sol_idx = index)
+				self.sulphide_cond = self.calculate_mineral_conductivity(method = method, min_idx= 20, sol_idx = index)
 			else:
 				self.sulphide_cond = np.zeros(len(self.T))
 
 			if self.graphite_frac[0] != 0:
-				self.graphite_cond = self.calculate_mineral_conductivity(method = method, min_idx= 18, sol_idx = index)
+				self.graphite_cond = self.calculate_mineral_conductivity(method = method, min_idx= 21, sol_idx = index)
 			else:
 				self.graphite_cond = np.zeros(len(self.T))
 
 			if self.other_frac[0] != 0:
-				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 19, sol_idx = index)
+				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 22, sol_idx = index)
 			else:
 				self.other_cond = np.zeros(len(self.T))
 
@@ -1267,6 +1353,9 @@ class CATE(object):
 				self.sandstone_frac = np.ones(len(self.T)) * self.sandstone_frac[0]
 				self.gneiss_frac = np.ones(len(self.T)) * self.gneiss_frac[0]
 				self.amphibolite_frac = np.ones(len(self.T)) * self.amphibolite_frac[0]
+				self.basalt_frac = np.ones(len(self.T)) * self.basalt_frac[0]
+				self.mud_frac = np.ones(len(self.T)) * self.mud_frac[0]
+				self.gabbro_frac = np.ones(len(self.T)) * self.gabbro_frac[0]
 				self.other_rock_frac = np.ones(len(self.T)) * self.other_rock_frac[0]
 
 				CATE.granite_m = np.ones(len(self.T)) * CATE.granite_m[0]
@@ -1274,6 +1363,9 @@ class CATE(object):
 				CATE.sandstone_m = np.ones(len(self.T)) * CATE.sandstone_m[0]
 				CATE.gneiss_m = np.ones(len(self.T)) * CATE.gneiss_m[0]
 				CATE.amphibolite_m = np.ones(len(self.T)) * CATE.amphibolite_m[0]
+				CATE.basalt_m = np.ones(len(self.T)) * CATE.basalt_m[0]
+				CATE.mud_m = np.ones(len(self.T)) * CATE.mud_m[0]
+				CATE.gabbro_m = np.ones(len(self.T)) * CATE.gabbro_m[0]
 				CATE.other_rock_m = np.ones(len(self.T)) * CATE.other_rock_m[0]
 
 			elif CATE.solid_phase_method == 2:
