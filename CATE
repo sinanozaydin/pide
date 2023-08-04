@@ -333,10 +333,10 @@ class CATE(QMainWindow):
 
 		#conductivity button
 
-		cond_btn = QPushButton('Conducitivity Models', self)
+		cond_btn = QPushButton('Conductivity Models', self)
 		cond_btn.move(10,65)
 		cond_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
-		cond_btn.clicked.connect(self.info_main)
+		cond_btn.clicked.connect(self.conductivity_popup)
 		self.cond_pop = None
 
 		mix_btn = QPushButton('Phase Mixing', self)
@@ -2548,6 +2548,178 @@ class SOLID_PHASE_POP(QWidget):
 				CATE.btn_graphite_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 				CATE.btn_other_res.setStyleSheet("QPushButton {min-width: 8em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 
+class COND_POP(QWidget):
+	
+	def __init__(self):
+
+		QWidget.__init__(self)
+
+		conduc_layout = QFormLayout(self)
+
+		self.melt_cond_btn = QPushButton('Melt Model')
+		self.melt_cond_text_box = QLineEdit(CATE.name[0][CATE.melt_cond_selection])
+		self.melt_cond_text_box.setEnabled(False)
+		self.melt_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.melt_cond_text_box, param = "melt_cond_selection", name_index = 0))
+
+		self.fluid_cond_btn = QPushButton('Fluid Model')
+		self.fluid_cond_text_box = QLineEdit(CATE.name[1][CATE.fluid_cond_selection])
+		self.fluid_cond_text_box.setEnabled(False)
+		self.fluid_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.melt_cond_text_box, param = "fluid_cond_selection", name_index = 1))
+
+		self.granite_cond_btn = QPushButton('Granite Model')
+		self.granite_cond_text_box = QLineEdit(CATE.name[2][CATE.granite_cond_selection])
+		self.granite_cond_text_box.setEnabled(False)
+		self.granite_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.granite_cond_text_box, param = "granite_cond_selection", name_index = 2))
+
+		self.granulite_cond_btn = QPushButton('Granulite Model')
+		self.granulite_cond_text_box = QLineEdit(CATE.name[3][CATE.granulite_cond_selection])
+		self.granulite_cond_text_box.setEnabled(False)
+		self.granulite_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.granulite_cond_text_box, param = "granulite_cond_selection", name_index = 3))
+
+		self.sandstone_cond_btn = QPushButton('Sandstone Model')
+		self.sandstone_cond_text_box = QLineEdit(CATE.name[4][CATE.sandstone_cond_selection])
+		self.sandstone_cond_text_box.setEnabled(False)
+		self.sandstone_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.sandstone_cond_text_box, param = "sandstone_cond_selection", name_index = 4))
+
+		self.gneiss_cond_btn = QPushButton('Gneiss Model')
+		self.gneiss_cond_text_box = QLineEdit(CATE.name[5][CATE.gneiss_cond_selection])
+		self.gneiss_cond_text_box.setEnabled(False)
+		self.gneiss_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.gneiss_cond_text_box, param = "gneiss_cond_selection", name_index =5))
+
+		self.amphibolite_cond_btn = QPushButton('Amphibolite Model')
+		self.amphibolite_cond_text_box = QLineEdit(CATE.name[6][CATE.amphibolite_cond_selection])
+		self.amphibolite_cond_text_box.setEnabled(False)
+		self.amphibolite_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.amphibolite_cond_text_box, param = "amphibolite_cond_selection", name_index = 6))
+
+		self.basalt_cond_btn = QPushButton('Basalt Model')
+		self.basalt_cond_text_box = QLineEdit(CATE.name[7][CATE.basalt_cond_selection])
+		self.basalt_cond_text_box.setEnabled(False)
+		self.basalt_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.basalt_cond_text_box, param = "basalt_cond_selection", name_index = 7))
+
+		self.mud_cond_btn = QPushButton('Mudstone/Shale Model')
+		self.mud_cond_text_box = QLineEdit(CATE.name[8][CATE.mud_cond_selection])
+		self.mud_cond_text_box.setEnabled(False)
+		self.mud_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.mud_cond_text_box, param = "mud_cond_selection", name_index = 8))
+
+		self.gabbro_cond_btn = QPushButton('Gabbro Model')
+		self.gabbro_cond_text_box = QLineEdit(CATE.name[9][CATE.gabbro_cond_selection])
+		self.gabbro_cond_text_box.setEnabled(False)
+		self.gabbro_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.gabbro_cond_text_box, param = "gabbro_cond_selection", name_index = 9))
+
+		self.other_rock_cond_btn = QPushButton('Other Rock Model')
+		self.other_rock_cond_text_box = QLineEdit(CATE.name[10][CATE.other_rock_cond_selection])
+		self.other_rock_cond_text_box.setEnabled(False)
+		self.other_rock_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.other_rock_cond_text_box, param = "other_rock_cond_selection", name_index = 10))
+
+		self.quartz_cond_btn = QPushButton('Quartz Model')
+		self.quartz_cond_text_box = QLineEdit(CATE.name[11][CATE.quartz_cond_selection])
+		self.quartz_cond_text_box.setEnabled(False)
+		self.quartz_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.quartz_cond_text_box, param = "quartz_cond_selection", name_index = 11))
+		
+		self.plag_cond_btn = QPushButton('Plagioclase Model')
+		self.plag_cond_text_box = QLineEdit(CATE.name[12][CATE.plag_cond_selection])
+		self.plag_cond_text_box.setEnabled(False)
+		self.plag_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.plag_cond_text_box, param = "plag_cond_selection", name_index = 12))
+
+		self.amp_cond_btn = QPushButton('Amphibole Model')
+		self.amp_cond_text_box = QLineEdit(CATE.name[13][CATE.amp_cond_selection])
+		self.amp_cond_text_box.setEnabled(False)
+		self.amp_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.amp_cond_text_box, param = "amp_cond_selection", name_index = 13))
+
+		self.kfelds_cond_btn = QPushButton('K-Feldspar Model')
+		self.kfelds_cond_text_box = QLineEdit(CATE.name[14][CATE.kfelds_cond_selection])
+		self.kfelds_cond_text_box.setEnabled(False)
+		self.kfelds_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.kfelds_cond_text_box, param = "kfelds_cond_selection", name_index = 14))
+
+		self.pyx_cond_btn = QPushButton('Pyroxene Model')
+		self.pyx_cond_text_box = QLineEdit(CATE.name[15][CATE.pyx_cond_selection])
+		self.pyx_cond_text_box.setEnabled(False)
+		self.pyx_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.pyx_cond_text_box, param = "pyx_cond_selection", name_index = 15))
+
+		self.mica_cond_btn = QPushButton('Mica Model')
+		self.mica_cond_text_box = QLineEdit(CATE.name[16][CATE.mica_cond_selection])
+		self.mica_cond_text_box.setEnabled(False)
+		self.mica_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.mica_cond_text_box, param = "mica_cond_selection", name_index = 16))
+
+		self.clay_cond_btn = QPushButton('Clay Model')
+		self.clay_cond_text_box = QLineEdit(CATE.name[17][CATE.clay_cond_selection])
+		self.clay_cond_text_box.setEnabled(False)
+		self.clay_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.clay_cond_text_box, param = "clay_cond_selection", name_index = 17))
+
+		self.carbonate_cond_btn = QPushButton('Carbonate Model')
+		self.carbonate_cond_text_box = QLineEdit(CATE.name[18][CATE.carbonate_cond_selection])
+		self.carbonate_cond_text_box.setEnabled(False)
+		self.carbonate_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.carbonate_cond_text_box, param = "carbonate_cond_selection", name_index = 18))
+
+		self.garnet_cond_btn = QPushButton('Garnet Model')
+		self.garnet_cond_text_box = QLineEdit(CATE.name[19][CATE.garnet_cond_selection])
+		self.garnet_cond_text_box.setEnabled(False)
+		self.garnet_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.garnet_cond_text_box, param = "garnet_cond_selection", name_index = 19))
+
+		self.sulphides_cond_btn = QPushButton('Sulphide Model')
+		self.sulphides_cond_text_box = QLineEdit(CATE.name[20][CATE.sulphide_cond_selection])
+		self.sulphides_cond_text_box.setEnabled(False)
+		self.sulphides_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.sulphides_cond_text_box, param = "sulphide_cond_selection", name_index = 20))
+
+		self.graphite_cond_btn = QPushButton('Graphite Model')
+		self.graphite_cond_text_box = QLineEdit(CATE.name[21][CATE.graphite_cond_selection])
+		self.graphite_cond_text_box.setEnabled(False)
+		self.graphite_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.graphite_cond_text_box, param = "graphite_cond_selection", name_index = 21))
+
+		self.other_cond_btn = QPushButton('Other Model')
+		self.other_cond_text_box = QLineEdit(CATE.name[22][CATE.other_cond_selection])
+		self.other_cond_text_box.setEnabled(False)
+		self.other_cond_btn.clicked.connect(lambda: self.cond_get(textbox_obj=self.other_cond_text_box, param = "other_cond_selection", name_index = 22))
+
+		label_meltfluid = QLabel(self)
+		label_meltfluid.setText('--------Melt/Fluid--------')
+		label_meltfluid.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+
+		label_rocks = QLabel(self)
+		label_rocks.setText('--------Rocks--------')
+		label_rocks.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+
+		label_minerals = QLabel(self)
+		label_minerals.setText('--------Minerals--------')
+		label_minerals.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+
+		conduc_layout.addRow(label_meltfluid)
+		conduc_layout.addRow(self.melt_cond_btn,self.melt_cond_text_box)
+		conduc_layout.addRow(self.fluid_cond_btn,self.fluid_cond_text_box)
+		conduc_layout.addRow(label_rocks)
+		conduc_layout.addRow(self.granite_cond_btn,self.granite_cond_text_box)
+		conduc_layout.addRow(self.granulite_cond_btn,self.granulite_cond_text_box)
+		conduc_layout.addRow(self.sandstone_cond_btn,self.sandstone_cond_text_box)
+		conduc_layout.addRow(self.gneiss_cond_btn,self.gneiss_cond_text_box)
+		conduc_layout.addRow(self.amphibolite_cond_btn,self.amphibolite_cond_text_box)
+		conduc_layout.addRow(self.basalt_cond_btn,self.basalt_cond_text_box)
+		conduc_layout.addRow(self.mud_cond_btn,self.mud_cond_text_box)
+		conduc_layout.addRow(self.gabbro_cond_btn,self.gabbro_cond_text_box)
+		conduc_layout.addRow(self.other_rock_cond_btn,self.other_rock_cond_text_box)
+		conduc_layout.addRow(label_minerals)
+		conduc_layout.addRow(self.quartz_cond_btn,self.quartz_cond_text_box)
+		conduc_layout.addRow(self.plag_cond_btn,self.plag_cond_text_box)
+		conduc_layout.addRow(self.amp_cond_btn,self.amp_cond_text_box)
+		conduc_layout.addRow(self.kfelds_cond_btn,self.kfelds_cond_text_box)
+		conduc_layout.addRow(self.pyx_cond_btn,self.pyx_cond_text_box)
+		conduc_layout.addRow(self.mica_cond_btn,self.mica_cond_text_box)
+		conduc_layout.addRow(self.clay_cond_btn,self.clay_cond_text_box)
+		conduc_layout.addRow(self.carbonate_cond_btn,self.carbonate_cond_text_box)
+		conduc_layout.addRow(self.garnet_cond_btn,self.garnet_cond_text_box)
+		conduc_layout.addRow(self.sulphides_cond_btn,self.sulphides_cond_text_box)
+		conduc_layout.addRow(self.graphite_cond_btn,self.graphite_cond_text_box)
+		conduc_layout.addRow(self.other_cond_btn,self.other_cond_text_box)
+
+	def cond_get(self, textbox_obj, param, name_index):
+
+		item, ok = QInputDialog.getItem(self, "select input dialog",
+			"Conductivity model", CATE.name[name_index], 0, False)
+
+		if ok and item:
+			textbox_obj.setText(item)
+		
+		setattr(CATE, param, CATE.name[name_index].index(item))
+		
 class PHS_MIX_POP(QWidget):
 
 	def __init__(self):
