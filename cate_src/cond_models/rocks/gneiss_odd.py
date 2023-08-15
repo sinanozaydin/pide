@@ -8,8 +8,8 @@ def Dai2018_DS12(T, P, water,method):
 
 	E1 = 63e3
 	E2 = 78e3
-	dv1 = -7.1
-	dv2 = -2.69
+	dv1 = -7.1e3
+	dv2 = -2.69e3
 	sigma1 = 10.0**-0.2
 	sigma2 = 10.0**1.11
 

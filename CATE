@@ -210,6 +210,10 @@ class CATE(QMainWindow):
 			CATE.gabbro_water = np.zeros(1)
 			CATE.other_rock_water = np.zeros(1)
 			
+			CATE.rock_water_list = [CATE.granite_water, CATE.granulite_water,
+			CATE.sandstone_water, CATE.gneiss_water, CATE.amphibolite_water, CATE.basalt_water,
+			CATE.mud_water, CATE.gabbro_water, CATE.other_rock_water]
+			
 			self.quartz_frac = np.zeros(1)
 			self.plag_frac = np.zeros(1)
 			self.amp_frac = np.zeros(1)
@@ -233,8 +237,14 @@ class CATE(QMainWindow):
 			CATE.pyx_water = np.zeros(1)
 			CATE.mica_water = np.zeros(1)
 			CATE.clay_water = np.zeros(1)
+			CATE.sulphide_water = np.zeros(1)
+			CATE.graphite_water = np.zeros(1)
 			CATE.ol_water = np.zeros(1)
 			CATE.other_water = np.zeros(1)
+			
+			CATE.mineral_water_list = [CATE.quartz_water, CATE.plag_water, CATE.amp_water, CATE.kfelds_water,
+			CATE.garnet_water, CATE.carbonate_water, CATE.pyx_water, CATE.clay_water, CATE.sulphide_water,
+				   CATE.graphite_water, CATE.ol_water, CATE.other_water]
 			
 			self.melt_fluid_mass_frac = np.zeros(1)
 
@@ -1381,16 +1391,20 @@ class CATE(QMainWindow):
 		if CATE.type[0][CATE.fluid_cond_selection] == '0':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_i[0][CATE.fluid_cond_selection],
+								   E = self.h_i[0][CATE.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[0][CATE.fluid_cond_selection],
 								   E = self.h_pol[0][CATE.fluid_cond_selection])
 			
 		elif CATE.type[0][CATE.fluid_cond_selection] == '1':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_i[0][CATE.fluid_cond_selection],
+								   E = self.h_i[0][CATE.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[0][CATE.fluid_cond_selection],
 								   E = self.h_pol[0][CATE.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[0][CATE.fluid_cond_selection],
-								   E = self.h_p[0][CATE.fluid_cond_selection])
+								   E = self.h_p[0][CATE.fluid_cond_selection], r = self.r[0][CATE.fluid_cond_selection], water = self.h2o_melt[idx_node])
 			
 		elif CATE.type[0][CATE.fluid_cond_selection] == '3':
 
@@ -1418,17 +1432,21 @@ class CATE(QMainWindow):
 		if CATE.type[1][CATE.melt_cond_selection] == '0':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_i[1][CATE.melt_cond_selection],
+								   E = self.h_i[1][CATE.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][CATE.melt_cond_selection],
 								   E = self.h_pol[1][CATE.melt_cond_selection])
 			
 		elif CATE.type[1][CATE.melt_cond_selection] == '1':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_i[1][CATE.melt_cond_selection],
+								   E = self.h_i[1][CATE.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][CATE.melt_cond_selection],
 								   E = self.h_pol[1][CATE.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[1][CATE.melt_cond_selection],
-								   E = self.h_p[1][CATE.melt_cond_selection])
-			
+								   E = self.h_p[1][CATE.melt_cond_selection],r = self.r[1][CATE.melt_cond_selection], wate = self.h2o_melt)
+								   			
 		elif CATE.type[1][CATE.melt_cond_selection] == '3':
 
 			if ('*' in CATE.name[1][CATE.melt_cond_selection]) == True:
@@ -1458,16 +1476,21 @@ class CATE(QMainWindow):
 		if CATE.type[rock_idx][CATE.rock_cond_selections[rock_sub_idx]] == '0':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_i[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
+								   E = self.h_i[rock_idx][CATE.rock_cond_selections[rock_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
 								   E = self.h_pol[rock_idx][CATE.rock_cond_selections[rock_sub_idx]])
 			
 		elif CATE.type[rock_idx][CATE.rock_cond_selections[rock_sub_idx]] == '1':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_i[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
+								   E = self.h_i[rock_idx][CATE.rock_cond_selections[rock_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
 								   E = self.h_pol[rock_idx][CATE.rock_cond_selections[rock_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
-								   E = self.h_p[rock_idx][CATE.rock_cond_selections[rock_sub_idx]])
+								   E = self.h_p[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],r = self.r[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
+								   water = CATE.rock_water_list[rock_sub_idx])
 			
 		elif CATE.type[rock_idx][CATE.rock_cond_selections[rock_sub_idx]] == '3':
 
@@ -1479,7 +1502,7 @@ class CATE(QMainWindow):
 
 				odd_function = CATE.name[rock_idx][CATE.rock_cond_selections[rock_sub_idx]]
 
-			cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = water_rock, method = method)')
+			cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = water_rock,method = method)')
 
 		return cond
 	
@@ -1497,16 +1520,21 @@ class CATE(QMainWindow):
 		if CATE.type[min_idx][CATE.minerals_cond_selections[min_sub_idx]] == '0':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_i[min_idx][CATE.minerals_cond_selections[min_sub_idx]],
+								   E = self.h_i[min_idx][CATE.minerals_cond_selections[min_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[min_idx][CATE.minerals_cond_selections[min_sub_idx]],
 								   E = self.h_pol[min_idx][CATE.minerals_cond_selections[min_sub_idx]])
 			
 		elif CATE.type[min_idx][CATE.minerals_cond_selections[min_sub_idx]] == '1':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_i[min_idx][CATE.minerals_cond_selections[min_sub_idx]],
+								   E = self.h_i[min_idx][CATE.minerals_cond_selections[min_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[min_idx][CATE.minerals_cond_selections[min_sub_idx]],
 								   E = self.h_pol[min_idx][CATE.minerals_cond_selections[min_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[min_idx][CATE.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_p[min_idx][CATE.minerals_cond_selections[min_sub_idx]])
+								   E = self.h_p[min_idx][CATE.minerals_cond_selections[min_sub_idx]], r = self.r[min_idx][CATE.minerals_cond_selections[min_sub_idx]],
+								   water = CATE.mineral_water_list[min_sub_idx])
 			
 		elif CATE.type[min_idx][CATE.minerals_cond_selections[min_sub_idx]] == '3':
 
@@ -1518,7 +1546,7 @@ class CATE(QMainWindow):
 
 				odd_function = CATE.name[min_idx][CATE.minerals_cond_selections[min_sub_idx]]
 
-			cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = water_mineral, method = method)')
+			cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = water_mineral, param1 = CATE.param1_list[CATE.minerals_cond_selections[min_sub_idx]], param2 = CATE.param2_list[CATE.minerals_cond_selections[min_sub_idx]], method = method)')
 
 		return cond
 	
@@ -3234,6 +3262,11 @@ class WATER_PHS_POP(QWidget):
 		self.pyx_water_textbox = QLineEdit(str(CATE.pyx_water[0]))
 		self.pyx_water_textbox.setEnabled(False)
 		self.pyx_water_btn.clicked.connect(lambda: self.get_water(textbox_obj=self.pyx_water_textbox, param = "pyx_water"))
+		
+		self.ol_water_btn = QPushButton('Olivine water')
+		self.ol_water_textbox = QLineEdit(str(CATE.ol_water[0]))
+		self.ol_water_textbox.setEnabled(False)
+		self.ol_water_btn.clicked.connect(lambda: self.get_water(textbox_obj=self.ol_water_textbox, param = "ol_water"))
 
 		self.mica_water_btn = QPushButton('Mica water')
 		self.mica_water_textbox = QLineEdit(str(CATE.mica_water[0]))
@@ -3244,7 +3277,7 @@ class WATER_PHS_POP(QWidget):
 		self.clay_water_textbox = QLineEdit(str(CATE.clay_water[0]))
 		self.clay_water_textbox.setEnabled(False)
 		self.clay_water_btn.clicked.connect(lambda: self.get_water(textbox_obj=self.clay_water_textbox, param = "clay_water"))
-
+		
 		self.other_water_btn = QPushButton('Other water')
 		self.other_water_textbox = QLineEdit(str(CATE.other_water[0]))
 		self.other_water_textbox.setEnabled(False)
@@ -3272,6 +3305,7 @@ class WATER_PHS_POP(QWidget):
 		layout.addRow(self.garnet_water_btn, self.garnet_water_textbox)
 		layout.addRow(self.carbonate_water_btn, self.carbonate_water_textbox)
 		layout.addRow(self.pyx_water_btn, self.pyx_water_textbox)
+		layout.addRow(self.ol_water_btn, self.ol_water_textbox)
 		layout.addRow(self.mica_water_btn, self.mica_water_textbox)
 		layout.addRow(self.clay_water_btn, self.clay_water_textbox)
 		layout.addRow(self.other_water_btn, self.other_water_textbox)
@@ -3291,6 +3325,14 @@ class WATER_PHS_POP(QWidget):
 					QMessageBox.about(self,"Warning!","Enter a value above 0")
 			except ValueError:
 				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+				
+		CATE.rock_water_list = [CATE.granite_water, CATE.granulite_water,
+			CATE.sandstone_water, CATE.gneiss_water, CATE.amphibolite_water, CATE.basalt_water,
+			CATE.mud_water, CATE.gabbro_water, CATE.other_rock_water]
+			
+		CATE.mineral_water_list = [CATE.quartz_water, CATE.plag_water, CATE.amp_water, CATE.kfelds_water,
+			CATE.garnet_water, CATE.carbonate_water, CATE.pyx_water, CATE.clay_water, CATE.sulphide_water,
+				   CATE.graphite_water, CATE.ol_water, CATE.other_water]
 
 		
 def main():

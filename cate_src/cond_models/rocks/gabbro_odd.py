@@ -14,7 +14,7 @@ def Dai2015(T, P, water,method):
 
 	sigma = 10.0**sigma_interp
 	E = 72e3
-	dv = -6.8
+	dv = -6.8e3
 
 	cond = sigma * np.exp(-(E + (P * dv)) / (R_const * T))
 
@@ -24,7 +24,7 @@ def Wang2022(T,P,water,method):
 
 	sigma = 92.40 * (1 - (0.23 * P))
 	E = 102e3
-	dv = 6.0
+	dv = 6.0e3
 
 	cond = sigma * np.exp(-(E + (P * dv)) / (R_const * T))
 

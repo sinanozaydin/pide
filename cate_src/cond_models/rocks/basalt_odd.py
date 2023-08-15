@@ -23,7 +23,7 @@ def Hui2015_AndesiteGrainBoundary(T,P,water,method):
 
 	sigma = 10.0**2.36
 	E = 90e3
-	dv = 0.56
+	dv = 0.56e3
 
 	cond = sigma * np.exp(-(E + (P * dv)) / (R_const * T))
 
@@ -34,7 +34,7 @@ def Hui2015_AndesiteGrainInterior(T,P,water,method):
 
 	sigma = 10.0**1.63
 	E = 76e3
-	dv = 4.96
+	dv = 4.96e3
 
 	cond = sigma * np.exp(-(E + (P * dv)) / (R_const * T))
 
@@ -44,7 +44,7 @@ def Hui2017_PyroxeneAndesite(T,P,water,method):
 
 	sigma = 10.0
 	E = 48000.0
-	dv = -6.75
+	dv = -6.75e3
 
 	cond = sigma * np.exp(-(E + (P * dv)) / (R_const * T))
 
