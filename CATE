@@ -245,6 +245,52 @@ class CATE(QMainWindow):
 			CATE.mineral_water_list = [CATE.quartz_water, CATE.plag_water, CATE.amp_water, CATE.kfelds_water,
 			CATE.garnet_water, CATE.carbonate_water, CATE.pyx_water, CATE.clay_water, CATE.sulphide_water,
 				   CATE.graphite_water, CATE.ol_water, CATE.other_water]
+				   
+			CATE.granite_param1 = np.zeros(1)
+			CATE.granulite_param1 = np.zeros(1)
+			CATE.sandstone_param1 = np.zeros(1)
+			CATE.gneiss_param1 = np.zeros(1)
+			CATE.amphibolite_param1 = np.zeros(1)
+			CATE.basalt_param1 = np.zeros(1)
+			CATE.mud_param1 = np.zeros(1)
+			CATE.gabbro_param1 = np.zeros(1)
+			CATE.other_rock_param1 = np.zeros(1)
+			CATE.quartz_param1 = np.zeros(1)
+			CATE.plag_param1 = np.zeros(1)
+			CATE.amp_param1 = np.zeros(1)
+			CATE.kfelds_param1 = np.zeros(1)
+			CATE.garnet_param1 = np.zeros(1)
+			CATE.carbonate_param1 = np.zeros(1)
+			CATE.pyx_param1 = np.zeros(1)
+			CATE.mica_param1 = np.zeros(1)
+			CATE.clay_param1 = np.zeros(1)
+			CATE.sulphide_param1 = np.zeros(1)
+			CATE.graphite_param1 = np.zeros(1)
+			CATE.ol_param1 = np.zeros(1)
+			CATE.other_param1 = np.zeros(1)
+			
+			CATE.granite_param2 = np.zeros(1)
+			CATE.granulite_param2 = np.zeros(1)
+			CATE.sandstone_param2 = np.zeros(1)
+			CATE.gneiss_param2 = np.zeros(1)
+			CATE.amphibolite_param2 = np.zeros(1)
+			CATE.basalt_param2 = np.zeros(1)
+			CATE.mud_param2 = np.zeros(1)
+			CATE.gabbro_param2 = np.zeros(1)
+			CATE.other_rock_param2 = np.zeros(1)
+			CATE.quartz_param2 = np.zeros(1)
+			CATE.plag_param2 = np.zeros(1)
+			CATE.amp_param2 = np.zeros(1)
+			CATE.kfelds_param2 = np.zeros(1)
+			CATE.garnet_param2 = np.zeros(1)
+			CATE.carbonate_param2 = np.zeros(1)
+			CATE.pyx_param2 = np.zeros(1)
+			CATE.mica_param2 = np.zeros(1)
+			CATE.clay_param2 = np.zeros(1)
+			CATE.sulphide_param2 = np.zeros(1)
+			CATE.graphite_param2 = np.zeros(1)
+			CATE.ol_param2 = np.zeros(1)
+			CATE.other_param2 = np.zeros(1)
 			
 			self.melt_fluid_mass_frac = np.zeros(1)
 
@@ -371,6 +417,12 @@ class CATE(QMainWindow):
 		water_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
 		water_btn.clicked.connect(self.water_content_popup)
 		self.water_phase_popup = None
+		
+		param_btn = QPushButton('Optional Parameters', self)
+		param_btn.move(10,205)
+		param_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #c8cccc}")
+		param_btn.clicked.connect(self.optional_param_popup)
+		self.param_phase_popup = None
 		
 		pt_mark = QLabel(self)
 		pt_mark.setText('P-T')
@@ -1373,9 +1425,9 @@ class CATE(QMainWindow):
 
 		return continue_adjusting
 	
-	def calculate_arrhenian_single(self, T, sigma, E, r=0, water=1):
+	def calculate_arrhenian_single(self, T, sigma, E, r=0, alpha= 0, water=1):
 
-		cond = (10.0**sigma) * (water**r) * np.exp((-E) / (self.R * T))
+		cond = (10.0**sigma) * (water**r) * np.exp((-E - (alpha * water)) / (self.R * T))
 
 		return cond
 	
@@ -1489,8 +1541,8 @@ class CATE(QMainWindow):
 								   sigma = self.sigma_pol[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
 								   E = self.h_pol[rock_idx][CATE.rock_cond_selections[rock_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
-								   E = self.h_p[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],r = self.r[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],
-								   water = CATE.rock_water_list[rock_sub_idx])
+								   E = self.h_p[rock_idx][CATE.rock_cond_selections[rock_sub_idx]],r = self.r[rock_idx][CATE.rock_cond_selections[rock_sub_idx]], 
+								   alpha = self.alpha_p[rock_idx][CATE.rock_cond_selections[rock_sub_idx]], water = CATE.rock_water_list[rock_sub_idx])
 			
 		elif CATE.type[rock_idx][CATE.rock_cond_selections[rock_sub_idx]] == '3':
 
@@ -1534,7 +1586,7 @@ class CATE(QMainWindow):
 								   E = self.h_pol[min_idx][CATE.minerals_cond_selections[min_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[min_idx][CATE.minerals_cond_selections[min_sub_idx]],
 								   E = self.h_p[min_idx][CATE.minerals_cond_selections[min_sub_idx]], r = self.r[min_idx][CATE.minerals_cond_selections[min_sub_idx]],
-								   water = CATE.mineral_water_list[min_sub_idx])
+								   alpha = self.alpha_p[min_idx][CATE.minerals_cond_selections[min_sub_idx]], water = CATE.mineral_water_list[min_sub_idx])
 			
 		elif CATE.type[min_idx][CATE.minerals_cond_selections[min_sub_idx]] == '3':
 
@@ -2420,6 +2472,13 @@ class CATE(QMainWindow):
 			self.water_phase_popup = WATER_PHS_POP()
 			self.water_phase_popup.setGeometry(QtCore.QRect(100, 100, 300, 200))
 		self.water_phase_popup.show()
+		
+	def optional_param_popup(self):
+	
+		if self.param_phase_popup is None:
+			self.param_phase_popup = OPTIONAL_PARAM_POP()
+			self.param_phase_popup.setGeometry(QtCore.QRect(100, 100, 300, 200))
+		self.param_phase_popup.show()
 
 	def savetextfile(self):
 
@@ -3333,7 +3392,355 @@ class WATER_PHS_POP(QWidget):
 		CATE.mineral_water_list = [CATE.quartz_water, CATE.plag_water, CATE.amp_water, CATE.kfelds_water,
 			CATE.garnet_water, CATE.carbonate_water, CATE.pyx_water, CATE.clay_water, CATE.sulphide_water,
 				   CATE.graphite_water, CATE.ol_water, CATE.other_water]
+				   
+class OPTIONAL_PARAM_POP(QWidget):
 
+	def __init__(self):
+	
+		QWidget.__init__(self)
+
+		layout = QGridLayout(self)
+
+		desc_label = QLabel(self)
+		desc_label.setText('---Enter optional parameters required for some models---')
+		desc_label.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+		
+		rocks_label = QLabel(self)
+		rocks_label.setText('---Rocks---')
+		rocks_label.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+		
+		minerals_label = QLabel(self)
+		minerals_label.setText('---Minerals---')
+		minerals_label.setStyleSheet("QLabel {font:bold};fontsize: 10pt;color: red")
+		
+		self.granite_param1_btn = QPushButton('Granite param1')
+		self.granite_param1_textbox = QLineEdit(str(CATE.granite_param1[0]))
+		self.granite_param1_textbox.setEnabled(False)
+		self.granite_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.granite_param1_textbox, param = "granite_param1"))
+		
+		self.granite_param2_btn = QPushButton('Granite param2')
+		self.granite_param2_textbox = QLineEdit(str(CATE.granite_param2[0]))
+		self.granite_param2_textbox.setEnabled(False)
+		self.granite_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.granite_param2_textbox, param = "granite_param2"))
+		
+		self.granulite_param1_btn = QPushButton('Granulite param1')
+		self.granulite_param1_textbox = QLineEdit(str(CATE.granulite_param1[0]))
+		self.granulite_param1_textbox.setEnabled(False)
+		self.granulite_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.granulite_param1_textbox, param = "granulite_param1"))
+		
+		self.granulite_param2_btn = QPushButton('Granulite param2')
+		self.granulite_param2_textbox = QLineEdit(str(CATE.granulite_param2[0]))
+		self.granulite_param2_textbox.setEnabled(False)
+		self.granulite_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.granulite_param2_textbox, param = "granulite_param2"))
+		
+		self.sandstone_param1_btn = QPushButton('Sandstone param1')
+		self.sandstone_param1_textbox = QLineEdit(str(CATE.sandstone_param1[0]))
+		self.sandstone_param1_textbox.setEnabled(False)
+		self.sandstone_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.sandstone_param1_textbox, param = "sandstone_param1"))
+		
+		self.sandstone_param2_btn = QPushButton('Sandstone param2')
+		self.sandstone_param2_textbox = QLineEdit(str(CATE.sandstone_param2[0]))
+		self.sandstone_param2_textbox.setEnabled(False)
+		self.sandstone_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.sandstone_param2_textbox, param = "sandstone_param2"))
+		
+		self.gneiss_param1_btn = QPushButton('Gneiss param1')
+		self.gneiss_param1_textbox = QLineEdit(str(CATE.gneiss_param1[0]))
+		self.gneiss_param1_textbox.setEnabled(False)
+		self.gneiss_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.gneiss_param1_textbox, param = "gneiss_param1"))
+		
+		self.gneiss_param2_btn = QPushButton('Gneiss param2')
+		self.gneiss_param2_textbox = QLineEdit(str(CATE.gneiss_param2[0]))
+		self.gneiss_param2_textbox.setEnabled(False)
+		self.gneiss_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.gneiss_param2_textbox, param = "gneiss_param2"))
+		
+		self.amphibolite_param1_btn = QPushButton('Amphibolite param1')
+		self.amphibolite_param1_textbox = QLineEdit(str(CATE.amphibolite_param1[0]))
+		self.amphibolite_param1_textbox.setEnabled(False)
+		self.amphibolite_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.amphibolite_param1_textbox, param = "amphibolite_param1"))
+		
+		self.amphibolite_param2_btn = QPushButton('Amphibolite param2')
+		self.amphibolite_param2_textbox = QLineEdit(str(CATE.amphibolite_param2[0]))
+		self.amphibolite_param2_textbox.setEnabled(False)
+		self.amphibolite_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.amphibolite_param2_textbox, param = "amphibolite_param2"))
+		
+		self.basalt_param1_btn = QPushButton('Basalt param1')
+		self.basalt_param1_textbox = QLineEdit(str(CATE.basalt_param1[0]))
+		self.basalt_param1_textbox.setEnabled(False)
+		self.basalt_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.basalt_param1_textbox, param = "basalt_param1"))
+		
+		self.basalt_param2_btn = QPushButton('Basalt param2')
+		self.basalt_param2_textbox = QLineEdit(str(CATE.basalt_param2[0]))
+		self.basalt_param2_textbox.setEnabled(False)
+		self.basalt_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.basalt_param2_textbox, param = "basalt_param2"))
+		
+		self.mud_param1_btn = QPushButton('Mudstone/Shale param1')
+		self.mud_param1_textbox = QLineEdit(str(CATE.mud_param1[0]))
+		self.mud_param1_textbox.setEnabled(False)
+		self.mud_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.mud_param1_textbox, param = "mud_param1"))
+		
+		self.mud_param2_btn = QPushButton('Mudstone/Shale param2')
+		self.mud_param2_textbox = QLineEdit(str(CATE.mud_param2[0]))
+		self.mud_param2_textbox.setEnabled(False)
+		self.mud_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.mud_param2_textbox, param = "mud_param2"))
+		
+		self.gabbro_param1_btn = QPushButton('Gabbro param1')
+		self.gabbro_param1_textbox = QLineEdit(str(CATE.gabbro_param1[0]))
+		self.gabbro_param1_textbox.setEnabled(False)
+		self.gabbro_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.gabbro_param1_textbox, param = "gabbro_param1"))
+		
+		self.gabbro_param2_btn = QPushButton('Gabbro param2')
+		self.gabbro_param2_textbox = QLineEdit(str(CATE.gabbro_param2[0]))
+		self.gabbro_param2_textbox.setEnabled(False)
+		self.gabbro_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.gabbro_param2_textbox, param = "gabbro_param2"))
+		
+		self.other_rock_param1_btn = QPushButton('Other_rock param1')
+		self.other_rock_param1_textbox = QLineEdit(str(CATE.other_rock_param1[0]))
+		self.other_rock_param1_textbox.setEnabled(False)
+		self.other_rock_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.other_rock_param1_textbox, param = "other_rock_param1"))
+		
+		self.other_rock_param2_btn = QPushButton('Other_rock param2')
+		self.other_rock_param2_textbox = QLineEdit(str(CATE.other_rock_param2[0]))
+		self.other_rock_param2_textbox.setEnabled(False)
+		self.other_rock_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.other_rock_param2_textbox, param = "other_rock_param2"))
+		
+		self.quartz_param1_btn = QPushButton('Quartz param1')
+		self.quartz_param1_textbox = QLineEdit(str(CATE.quartz_param1[0]))
+		self.quartz_param1_textbox.setEnabled(False)
+		self.quartz_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.quartz_param1_textbox, param = "quartz_param1"))
+		
+		self.quartz_param2_btn = QPushButton('Quartz param2')
+		self.quartz_param2_textbox = QLineEdit(str(CATE.quartz_param2[0]))
+		self.quartz_param2_textbox.setEnabled(False)
+		self.quartz_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.quartz_param2_textbox, param = "quartz_param2"))
+		
+		self.plag_param1_btn = QPushButton('Plagioclase param1')
+		self.plag_param1_textbox = QLineEdit(str(CATE.plag_param1[0]))
+		self.plag_param1_textbox.setEnabled(False)
+		self.plag_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.plag_param1_textbox, param = "plag_param1"))
+		
+		self.plag_param2_btn = QPushButton('Plagioclase param2')
+		self.plag_param2_textbox = QLineEdit(str(CATE.plag_param2[0]))
+		self.plag_param2_textbox.setEnabled(False)
+		self.plag_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.plag_param2_textbox, param = "plag_param2"))
+		
+		self.amp_param1_btn = QPushButton('Amphibole param1')
+		self.amp_param1_textbox = QLineEdit(str(CATE.amp_param1[0]))
+		self.amp_param1_textbox.setEnabled(False)
+		self.amp_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.amp_param1_textbox, param = "amp_param1"))
+		
+		self.amp_param2_btn = QPushButton('Amphibole param2')
+		self.amp_param2_textbox = QLineEdit(str(CATE.amp_param2[0]))
+		self.amp_param2_textbox.setEnabled(False)
+		self.amp_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.amp_param2_textbox, param = "amp_param2"))
+		
+		self.kfelds_param1_btn = QPushButton('K-Feldspar param1')
+		self.kfelds_param1_textbox = QLineEdit(str(CATE.kfelds_param1[0]))
+		self.kfelds_param1_textbox.setEnabled(False)
+		self.kfelds_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.kfelds_param1_textbox, param = "kfelds_param1"))
+		
+		self.kfelds_param2_btn = QPushButton('K-Feldspar param2')
+		self.kfelds_param2_textbox = QLineEdit(str(CATE.kfelds_param2[0]))
+		self.kfelds_param2_textbox.setEnabled(False)
+		self.kfelds_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.kfelds_param2_textbox, param = "kfelds_param2"))
+		
+		self.garnet_param1_btn = QPushButton('Garnet param1')
+		self.garnet_param1_textbox = QLineEdit(str(CATE.garnet_param1[0]))
+		self.garnet_param1_textbox.setEnabled(False)
+		self.garnet_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.garnet_param1_textbox, param = "garnet_param1"))
+		
+		self.garnet_param2_btn = QPushButton('Garnet param2')
+		self.garnet_param2_textbox = QLineEdit(str(CATE.garnet_param2[0]))
+		self.garnet_param2_textbox.setEnabled(False)
+		self.garnet_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.garnet_param2_textbox, param = "garnet_param2"))
+		
+		self.carbonate_param1_btn = QPushButton('Carbonate param1')
+		self.carbonate_param1_textbox = QLineEdit(str(CATE.carbonate_param1[0]))
+		self.carbonate_param1_textbox.setEnabled(False)
+		self.carbonate_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.carbonate_param1_textbox, param = "carbonate_param1"))
+		
+		self.carbonate_param2_btn = QPushButton('Carbonate param2')
+		self.carbonate_param2_textbox = QLineEdit(str(CATE.carbonate_param2[0]))
+		self.carbonate_param2_textbox.setEnabled(False)
+		self.carbonate_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.carbonate_param2_textbox, param = "carbonate_param2"))
+		
+		self.pyx_param1_btn = QPushButton('Pyroxene param1')
+		self.pyx_param1_textbox = QLineEdit(str(CATE.pyx_param1[0]))
+		self.pyx_param1_textbox.setEnabled(False)
+		self.pyx_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.pyx_param1_textbox, param = "pyx_param1"))
+		
+		self.pyx_param2_btn = QPushButton('Pyroxene param2')
+		self.pyx_param2_textbox = QLineEdit(str(CATE.pyx_param2[0]))
+		self.pyx_param2_textbox.setEnabled(False)
+		self.pyx_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.pyx_param2_textbox, param = "pyx_param2"))
+		
+		self.ol_param1_btn = QPushButton('Olivine param1')
+		self.ol_param1_textbox = QLineEdit(str(CATE.ol_param1[0]))
+		self.ol_param1_textbox.setEnabled(False)
+		self.ol_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.ol_param1_textbox, param = "ol_param1"))
+		
+		self.ol_param2_btn = QPushButton('Olivine param2')
+		self.ol_param2_textbox = QLineEdit(str(CATE.ol_param2[0]))
+		self.ol_param2_textbox.setEnabled(False)
+		self.ol_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.ol_param2_textbox, param = "ol_param2"))
+		
+		self.mica_param1_btn = QPushButton('Mica param1')
+		self.mica_param1_textbox = QLineEdit(str(CATE.mica_param1[0]))
+		self.mica_param1_textbox.setEnabled(False)
+		self.mica_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.mica_param1_textbox, param = "mica_param1"))
+		
+		self.mica_param2_btn = QPushButton('Mica param2')
+		self.mica_param2_textbox = QLineEdit(str(CATE.mica_param2[0]))
+		self.mica_param2_textbox.setEnabled(False)
+		self.mica_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.mica_param2_textbox, param = "mica_param2"))
+		
+		self.clay_param1_btn = QPushButton('Clay param1')
+		self.clay_param1_textbox = QLineEdit(str(CATE.clay_param1[0]))
+		self.clay_param1_textbox.setEnabled(False)
+		self.clay_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.clay_param1_textbox, param = "clay_param1"))
+		
+		self.clay_param2_btn = QPushButton('Clay param2')
+		self.clay_param2_textbox = QLineEdit(str(CATE.clay_param2[0]))
+		self.clay_param2_textbox.setEnabled(False)
+		self.clay_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.clay_param2_textbox, param = "clay_param2"))
+		
+		self.graphite_param1_btn = QPushButton('Graphite param1')
+		self.graphite_param1_textbox = QLineEdit(str(CATE.graphite_param1[0]))
+		self.graphite_param1_textbox.setEnabled(False)
+		self.graphite_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.graphite_param1_textbox, param = "graphite_param1"))
+		
+		self.graphite_param2_btn = QPushButton('Graphite param2')
+		self.graphite_param2_textbox = QLineEdit(str(CATE.graphite_param2[0]))
+		self.graphite_param2_textbox.setEnabled(False)
+		self.graphite_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.graphite_param2_textbox, param = "graphite_param2"))
+		
+		self.sulphide_param1_btn = QPushButton('Sulphide param1')
+		self.sulphide_param1_textbox = QLineEdit(str(CATE.sulphide_param1[0]))
+		self.sulphide_param1_textbox.setEnabled(False)
+		self.sulphide_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.sulphide_param1_textbox, param = "sulphide_param1"))
+		
+		self.sulphide_param2_btn = QPushButton('Sulphide param2')
+		self.sulphide_param2_textbox = QLineEdit(str(CATE.sulphide_param2[0]))
+		self.sulphide_param2_textbox.setEnabled(False)
+		self.sulphide_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.sulphide_param2_textbox, param = "sulphide_param2"))
+		
+		self.other_param1_btn = QPushButton('Other param1')
+		self.other_param1_textbox = QLineEdit(str(CATE.other_param1[0]))
+		self.other_param1_textbox.setEnabled(False)
+		self.other_param1_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.other_param1_textbox, param = "other_param1"))
+		
+		self.other_param2_btn = QPushButton('Other param2')
+		self.other_param2_textbox = QLineEdit(str(CATE.other_param2[0]))
+		self.other_param2_textbox.setEnabled(False)
+		self.other_param2_btn.clicked.connect(lambda: self.get_param(textbox_obj=self.other_param2_textbox, param = "other_param2"))
+		
+		layout.addWidget(desc_label,0,2)
+		layout.addWidget(rocks_label,1,0)
+		layout.addWidget(self.granite_param1_btn,2,0)
+		layout.addWidget(self.granite_param1_textbox,2,1)
+		layout.addWidget(self.granite_param2_btn,2,2)
+		layout.addWidget(self.granite_param2_textbox,2,3)
+		layout.addWidget(self.granulite_param1_btn,3,0)
+		layout.addWidget(self.granulite_param1_textbox,3,1)
+		layout.addWidget(self.granulite_param2_btn,3,2)
+		layout.addWidget(self.granulite_param2_textbox,3,3)
+		layout.addWidget(self.sandstone_param1_btn,4,0)
+		layout.addWidget(self.sandstone_param1_textbox,4,1)
+		layout.addWidget(self.sandstone_param2_btn,4,2)
+		layout.addWidget(self.sandstone_param2_textbox,4,3)
+		layout.addWidget(self.gneiss_param1_btn,5,0)
+		layout.addWidget(self.gneiss_param1_textbox,5,1)
+		layout.addWidget(self.gneiss_param2_btn,5,2)
+		layout.addWidget(self.gneiss_param2_textbox,5,3)
+		layout.addWidget(self.amphibolite_param1_btn,6,0)
+		layout.addWidget(self.amphibolite_param1_textbox,6,1)
+		layout.addWidget(self.amphibolite_param2_btn,6,2)
+		layout.addWidget(self.amphibolite_param2_textbox,6,3)
+		layout.addWidget(self.basalt_param1_btn,7,0)
+		layout.addWidget(self.basalt_param1_textbox,7,1)
+		layout.addWidget(self.basalt_param2_btn,7,2)
+		layout.addWidget(self.basalt_param2_textbox,7,3)
+		layout.addWidget(self.mud_param1_btn,8,0)
+		layout.addWidget(self.mud_param1_textbox,8,1)
+		layout.addWidget(self.mud_param2_btn,8,2)
+		layout.addWidget(self.mud_param2_textbox,8,3)
+		layout.addWidget(self.gabbro_param1_btn,9,0)
+		layout.addWidget(self.gabbro_param1_textbox,9,1)
+		layout.addWidget(self.gabbro_param2_btn,9,2)
+		layout.addWidget(self.gabbro_param2_textbox,9,3)
+		layout.addWidget(self.other_rock_param1_btn,10,0)
+		layout.addWidget(self.other_rock_param1_textbox,10,1)
+		layout.addWidget(self.other_rock_param2_btn,10,2)
+		layout.addWidget(self.other_rock_param2_textbox,10,3)
+		layout.addWidget(minerals_label,11,0)
+		layout.addWidget(self.quartz_param1_btn,12,0)
+		layout.addWidget(self.quartz_param1_textbox,12,1)
+		layout.addWidget(self.quartz_param2_btn,12,2)
+		layout.addWidget(self.quartz_param2_textbox,12,3)
+		layout.addWidget(self.plag_param1_btn,13,0)
+		layout.addWidget(self.plag_param1_textbox,13,1)
+		layout.addWidget(self.plag_param2_btn,13,2)
+		layout.addWidget(self.plag_param2_textbox,13,3)
+		layout.addWidget(self.amp_param1_btn,14,0)
+		layout.addWidget(self.amp_param1_textbox,14,1)
+		layout.addWidget(self.amp_param2_btn,14,2)
+		layout.addWidget(self.amp_param2_textbox,14,3)
+		layout.addWidget(self.kfelds_param1_btn,15,0)
+		layout.addWidget(self.kfelds_param1_textbox,15,1)
+		layout.addWidget(self.kfelds_param2_btn,15,2)
+		layout.addWidget(self.kfelds_param2_textbox,15,3)
+		layout.addWidget(self.garnet_param1_btn,16,0)
+		layout.addWidget(self.garnet_param1_textbox,16,1)
+		layout.addWidget(self.garnet_param2_btn,16,2)
+		layout.addWidget(self.garnet_param2_textbox,16,3)
+		layout.addWidget(self.carbonate_param1_btn,17,0)
+		layout.addWidget(self.carbonate_param1_textbox,17,1)
+		layout.addWidget(self.carbonate_param2_btn,17,2)
+		layout.addWidget(self.carbonate_param2_textbox,17,3)
+		layout.addWidget(self.pyx_param1_btn,18,0)
+		layout.addWidget(self.pyx_param1_textbox,18,1)
+		layout.addWidget(self.pyx_param2_btn,18,2)
+		layout.addWidget(self.pyx_param2_textbox,18,3)
+		layout.addWidget(self.ol_param1_btn,19,0)
+		layout.addWidget(self.ol_param1_textbox,19,1)
+		layout.addWidget(self.ol_param2_btn,19,2)
+		layout.addWidget(self.ol_param2_textbox,19,3)
+		layout.addWidget(self.mica_param1_btn,20,0)
+		layout.addWidget(self.mica_param1_textbox,20,1)
+		layout.addWidget(self.mica_param2_btn,20,2)
+		layout.addWidget(self.mica_param2_textbox,20,3)
+		layout.addWidget(self.clay_param1_btn,21,0)
+		layout.addWidget(self.clay_param1_textbox,21,1)
+		layout.addWidget(self.clay_param2_btn,21,2)
+		layout.addWidget(self.clay_param2_textbox,21,3)
+		layout.addWidget(self.graphite_param1_btn,22,0)
+		layout.addWidget(self.graphite_param1_textbox,22,1)
+		layout.addWidget(self.graphite_param2_btn,22,2)
+		layout.addWidget(self.graphite_param2_textbox,22,3)
+		layout.addWidget(self.sulphide_param1_btn,23,0)
+		layout.addWidget(self.sulphide_param1_textbox,23,1)
+		layout.addWidget(self.sulphide_param2_btn,23,2)
+		layout.addWidget(self.sulphide_param2_textbox,23,3)
+		layout.addWidget(self.other_param1_btn,24,0)
+		layout.addWidget(self.other_param1_textbox,24,1)
+		layout.addWidget(self.other_param2_btn,24,2)
+		layout.addWidget(self.other_param2_textbox,24,3)
+		
+		
+	def get_param(self,textbox_obj,param):
+
+		text, ok = QInputDialog.getText(self, 'Parameter dialogue', 'Enter the value (bigger than 0)')
+		if ok:
+			try:
+				float(text)
+				if (float(text) >= 0):
+
+					textbox_obj.setText(str(text))
+					setattr(CATE, param, np.array([float(text)]))
+
+				else:
+					QMessageBox.about(self,"Warning!","Enter a value above 0")
+			except ValueError:
+				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
 		
 def main():
 
