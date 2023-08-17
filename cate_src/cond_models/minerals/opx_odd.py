@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Dai2005_DryOpx(T,P, water, param1, param2, method):
+def Dai2005_DryEnstatite(T,P, water, param1, param2, method):
 
 	sigma1 = 10**3.78
 	E = 171500.0
