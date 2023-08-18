@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Dai2014_WetOlivine_param1_fo2_param2_fo2ref(T, P, water, param1, param2, fo2, fo2ref, method):
+def Dai2014_DryandWetOlivine_param1_fo2_param2_fo2ref(T, P, water, param1, param2, fo2, fo2ref, method):
 
 	dv_dai2014 = -0.86 * 1e3 # cm^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
 	p_ref = 4.0
@@ -51,7 +51,7 @@ def Dai2020_WetOlivine_200ppmTi(T,P, water, param1, param2, fo2, fo2ref, method)
 
 	return cond
 	
-def Poe2010_WetOlivine(T, P, water, param1, param2, fo2, fo2ref, method):
+def Poe2010_DryandWetOlivine(T, P, water, param1, param2, fo2, fo2ref, method):
 
 	E1 = [146e3,126e3]
 	E2 = [112e3,150e3]
@@ -142,3 +142,21 @@ def Yoshino2012_DryOlivine_param1_xfe(T, P, water, param1, param2, fo2, fo2ref, 
 	cond = (A0_yosh) * param1 * np.exp(- ((H_yosh) - ((alpha_yosh) * param1**(0.33))) / (R_const * T))
 
 	return cond
+	
+def Fei2020_WetOlivineIonic_Isotropic(T, P, water, param1, param2, fo2, fo2ref, method):
+
+	sigma1 = 10**11.1
+	E1 = 372e3
+	dv1 = 3.8e3
+	sigma2 = 10**2.3
+	E2 = 139e3
+	dv2 = 0.3e3
+	r = 1.3
+	
+	water = water / 1e4 #converting to wt%
+	
+	cond = ((sigma1 / T) * (water ** r) * np.exp(-(E1 + (P*dv1)) / (R_const*T))) +\
+		((sigma2) * np.exp(-(E2 + (P*dv2)) / (R_const*T)))
+		
+	return cond
+		
