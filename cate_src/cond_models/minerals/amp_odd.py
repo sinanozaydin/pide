@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Shen2021(T, P, water, param1, param2, method):
+def Shen2021(T, P, water, param1, param2, fo2, fo2_ref, method):
 
 	E = 52210.0
 	dv = 0.33e3
@@ -14,7 +14,7 @@ def Shen2021(T, P, water, param1, param2, method):
 
 	return cond
 	
-def Shen2020_TremoliteDehydrogenated(T, P, water, param1, param2, method):
+def Shen2020_TremoliteDehydrogenated(T, P, water, param1, param2, fo2, fo2_ref, method):
 
 	E = 39210.0
 	dv = 0.41e3

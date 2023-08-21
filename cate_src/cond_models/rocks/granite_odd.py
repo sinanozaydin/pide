@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Guo2017_MuscoviteGranite(T, P, water,method):
+def Guo2017_MuscoviteGranite(T,P,water, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 92000.0
 	E2 = 216000.0
@@ -35,7 +35,7 @@ def Guo2017_MuscoviteGranite(T, P, water,method):
 	
 	return cond
 
-def Guo2017_BiotiteGranite(T, P, water,method):
+def Guo2017_BiotiteGranite(T,P,water, param1, param2, fo2, fo2_ref, method):
 
 	E1 = 48000.0
 	E2 = 206000.0

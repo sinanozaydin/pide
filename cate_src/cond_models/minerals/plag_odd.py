@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Hu2022_Wet_Na_param1(T, P, water, param1, param2, method):
+def Hu2022_Wet_Na_param1(T, P, water, param1, param2, fo2, fo2_ref, method):
 
 	r = 1.47
 	sigma_wet = 9139.0
@@ -45,7 +45,7 @@ def Hu2022_Wet_Na_param1(T, P, water, param1, param2, method):
 	
 	return cond
 	
-def Hu2015_DryAnorthite(T, P, water, param1, param2, method):
+def Hu2015_DryAnorthite(T, P, water, param1, param2, fo2, fo2_ref, method):
 
 	sigma_list = np.array([4.62,4.43,4.36])
 	P_list = np.array([1,2,3])
@@ -75,7 +75,7 @@ def Hu2015_DryAnorthite(T, P, water, param1, param2, method):
 		
 	return cond
 	
-def Hu2011_DryAlbite(T, P, water, param1, param2, method):
+def Hu2011_DryAlbite(T, P, water, param1, param2, fo2, fo2_ref, method):
 
 	sigma_list = np.array([4,3.92,3.89])
 	P_list = np.array([1,2,3])

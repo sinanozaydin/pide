@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Shen2021(T, P, water, method):
+def Shen2021(T,P,water, param1, param2, fo2, fo2_ref, method):
 
 	E = 52210.0
 	dv = 0.33e3
@@ -14,7 +14,7 @@ def Shen2021(T, P, water, method):
 
 	return cond
 
-def Wang2012_PH_Perpendicular(T,P,water,method):
+def Wang2012_PH_Perpendicular(T,P,water, param1, param2, fo2, fo2_ref, method):
 
 	E1 = 66e3
 	E2 = 333e3
@@ -44,7 +44,7 @@ def Wang2012_PH_Perpendicular(T,P,water,method):
 
 	return cond
 
-def Wang2012_PH_Parallel(T,P,water,method):
+def Wang2012_PH_Parallel(T,P,water, param1, param2, fo2, fo2_ref, method):
 
 	E1 = 64e3
 	E2 = 319e3
@@ -74,7 +74,7 @@ def Wang2012_PH_Parallel(T,P,water,method):
 
 	return cond
 
-def Wang2012_HA(T,P,water,method):
+def Wang2012_HA(T,P,water, param1, param2, fo2, fo2_ref, method):
 
 	E1 = 67e3
 	E2 = 378e3

@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Zhao2016_WetDiopside(T,P, water, param1, param2, fo2, fo2_ref, method):
+def Zhao2016_WetDiopside(T, P, water, param1, param2, fo2, fo2_ref, method):
 
 	h2o = water / (1e4) #converting ppm to wt
 
