@@ -137,10 +137,15 @@ class CATE(QMainWindow):
 		infoMain.triggered.connect(self.info_main)
 		fileMenu.addAction(infoMain)
 		
-		infoMain = QAction("&Write Parameter File", self)
-		infoMain.setShortcut("Ctrl+S")
-		infoMain.triggered.connect(self.write_parameter_file)
-		fileMenu.addAction(infoMain)
+		paramreadMain = QAction("&Read Parameter File", self)
+		paramreadMain.setShortcut("Ctrl+O")
+		paramreadMain.triggered.connect(self.read_parameter_file_batch)
+		fileMenu.addAction(paramreadMain)
+		
+		paramwriteMain = QAction("&Write Parameter File", self)
+		paramwriteMain.setShortcut("Ctrl+S")
+		paramwriteMain.triggered.connect(self.write_parameter_file_batch)
+		fileMenu.addAction(paramwriteMain)
 		
 		openFugButton = QAction("&Oxygen Fugacity Selection", self)
 		openFugButton.triggered.connect(self.fo2_properties_popup)
@@ -161,7 +166,7 @@ class CATE(QMainWindow):
 		CATE.plot_style_selection = 0
 
 		self.init_params = self.read_csv(filename = os.path.join(self.core_path,'init_param.csv'),delim = ',') #loading the blueprint parameter file.
-
+		
 		if CATE.arguments_load == False:
 
 			CATE.fluid_cond_selection = 0
@@ -200,8 +205,8 @@ class CATE(QMainWindow):
 			self.h2o_melt = np.zeros(1)
 			self.na2o_melt = np.zeros(1)
 			
-			self.granite_frac = np.zeros(1) * 0.8
-			self.granulite_frac = np.zeros(1) * 0.2
+			self.granite_frac = np.ones(1) * 0.8
+			self.granulite_frac = np.ones(1) * 0.2
 			self.sandstone_frac = np.zeros(1)
 			self.gneiss_frac = np.zeros(1)
 			self.amphibolite_frac = np.zeros(1)
@@ -962,8 +967,54 @@ class CATE(QMainWindow):
 		self.cp_bulk_val_btn.move(550,240)
 		self.cp_bulk_val_btn.setStyleSheet("QPushButton {min-width: 10em; font: bold; font-size: 9pt;background-color: #3248a8}")
 		self.cp_bulk_val_btn.clicked.connect(lambda: self.cp_val_to_clipboard(param = 'bulk'))
-
+		
 		self.show()
+		
+	def fill_lineEdit_values(self):
+	
+		self.depth_textbox.setText(str(self.depth[0]))
+		self.temp_textbox.setText(str(self.T[0]))
+		self.melt_content_textbox.setText(str(self.melt_fluid_mass_frac[0] * 1e2)) 
+		self.salinity_textbox.setText(str(self.salinity_fluid[0]))
+		self.co2_melt_textbox.setText(str(self.co2_melt[0]))
+		self.h2o_melt_textbox.setText(str(self.h2o_melt[0]))
+		self.na2o_melt_textbox.setText(str(self.na2o_melt[0]))
+		self.k2o_melt_textbox.setText(str(self.k2o_melt[0]))
+		self.bckgr_res_textbox.setText(str(self.bckgr_res[0]))
+		
+		self.granite_frac_textbox.setText(str(self.granite_frac[0])*1e2)
+		self.granulite_frac_textbox.setText(str(self.granulite_frac[0]*1e2))
+		self.sandstone_frac_textbox.setText(str(self.sandstone_frac[0]*1e2))
+		self.gneiss_frac_textbox.setText(str(self.gneiss_frac[0]*1e2))
+		self.amphibolite_frac_textbox.setText(str(self.amphibolite_frac[0]*1e2))
+		self.basalt_frac_textbox.setText(str(self.basalt_frac[0]*1e2))
+		self.mud_frac_textbox.setText(str(self.mud_frac[0]*1e2))
+		self.gabbro_frac_textbox.setText(str(self.gabbro_frac[0]*1e2))
+		self.other_rock_frac_textbox.setText(str(self.other_rock_frac[0]*1e2))
+		
+		self.total_rock_textbox.setText(str(self.granite_frac[0]*1e2 + self.granulite_frac[0]*1e2 +\
+							self.sandstone_frac[0]*1e2 + self.gneiss_frac[0]*1e2 + self.amphibolite_frac[0]*1e2 +\
+							self.basalt_frac[0]*1e2 + self.mud_frac[0]*1e2 + self.gabbro_frac[0]*1e2 +\
+								self.other_rock_frac[0]*1e2))
+		
+		self.quartz_frac_textbox.setText(str(self.quartz_frac[0]*1e2))
+		self.plag_frac_textbox.setText(str(self.plag_frac[0]*1e2))
+		self.amp_frac_textbox.setText(str(self.amp_frac[0]*1e2))
+		self.kfelds_frac_textbox.setText(str(self.kfelds_frac[0]*1e2))
+		self.garnet_frac_textbox.setText(str(self.garnet_frac[0]*1e2))
+		self.ol_frac_textbox.setText(str(self.ol_frac[0]*1e2))
+		self.opx_frac_textbox.setText(str(self.opx_frac[0]*1e2))
+		self.cpx_frac_textbox.setText(str(self.cpx_frac[0]*1e2))
+		self.mica_frac_textbox.setText(str(self.mica_frac[0]*1e2))
+		self.graphite_frac_textbox.setText(str(self.graphite_frac[0]*1e2))
+		self.sulphides_frac_textbox.setText(str(self.sulphide_frac[0]*1e2))
+		self.mixture_frac_textbox.setText(str(self.mixture_frac[0]*1e2))
+		self.other_frac_textbox.setText(str(self.other_frac[0]*1e2))
+		
+		self.total_min_textbox.setText(str(self.quartz_frac[0]*1e2 + self.plag_frac[0]*1e2 + self.kfelds_frac[0]*1e2 +\
+						self.amp_frac[0]*1e2 + self.opx_frac[0]*1e2 + self.cpx_frac[0]*1e2 + self.mica_frac[0]*1e2 +\
+						self.garnet_frac[0]*1e2 + self.sulphide_frac[0]*1e2 + self.graphite_frac[0]*1e2 + self.ol_frac[0]*1e2 + self.mixture_frac[0]*1e2 + self.other_frac[0]*1e2))
+		
 		
 	def get_pressure(self):
 		
@@ -2627,7 +2678,65 @@ class CATE(QMainWindow):
 			filesave_composition.close()
 
 			QMessageBox.about(self, 'Hey sup!', "Files are saved at the chosen location ")
+			
+	def read_parameter_file_batch(self):
+		
+		self.param_input_file = QFileDialog.getOpenFileName(self, 'Open File')
+		
+		self.param_data = self.read_csv(self.param_input_file, delim = ',')
+		
+		for i in range(0,len(self.param_data[0])):
+			
+			if ('selection' in self.param_data[0][i] is True) or ('method' in self.param_data[0][i] is True):
+				try:
+					setattr(CATE, self.param_data[0][i], int(self.param_data[1][i]))
+				except AttributeError:
+					setattr(self, self.param_data[0][i], int(self.param_data[1][i]))
+			else:
+				try:
+					setattr(self, self.param_data[0][i], float(self.param_data[1][i]) * np.ones(1))
+					
+				except AttributeError:
+					setattr(CATE, self.param_data[0][i], float(self.param_data[1][i]) * np.ones(1))
+					
+		self.fill_lineEdit_values()
+			
+	def write_parameter_file_batch(self):
+	
+		self.write_file_save_name = QFileDialog.getSaveFileName(self, 'Save File')
+		init_params_numpy = []
+		
+		
+		if self.write_file_save_name[0] != '':
+			vals = []
+			header_vals = []
+			
+			for i in range(1,len(self.init_params)):
+				header_vals.append(self.init_params[i][0])
+				if self.init_params[i][2] == 'CATE':
+					val = getattr(CATE,self.init_params[i][0])
+				elif self.init_params[i][2] == 'self':
+					val = getattr(self,self.init_params[i][0])
+					
+				try:
+					if ('frac' in self.init_params[i][0]) == True:
+						vals.append(str(val[0])*1e2)
+					else:
+						vals.append(str(val[0]))
+				except TypeError:
+					vals.append(str(int(val)))
+			
+			header = ','.join(header_vals) + '\n'
+			lines = [header]
+			lines.append(','.join(vals) + '\n')
+					
+			
+			filesave_composition = open(self.write_file_save_name[0] ,'w')
+			filesave_composition.writelines(lines)
+			filesave_composition.close()
 
+			QMessageBox.about(self, 'Hey sup!', "Files are saved at the chosen location ")
+			
 	def cp_val_to_clipboard(self,param):
 		
 		if self.cond_calculated == True:

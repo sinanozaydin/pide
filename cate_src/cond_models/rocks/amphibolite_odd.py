@@ -74,7 +74,7 @@ def Wang2012_PH_Parallel(T,P,water, param1, param2, fo2, fo2_ref, method):
 
 	return cond
 
-def Wang2012_HA(T,P,water, param1, param2, fo2, fo2_ref, method):
+def Wang2012_HA(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 67e3
 	E2 = 378e3

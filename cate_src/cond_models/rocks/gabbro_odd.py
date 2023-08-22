@@ -20,7 +20,7 @@ def Dai2015_DryGabbro(T,P,water, param1, param2, fo2 = None, fo2_ref = None, met
 
 	return cond
 
-def Wang2022(T,P,water, param1, param2, fo2, fo2_ref, method):
+def Wang2022(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	sigma = 92.40 * (1 - (0.23 * P))
 	E = 102e3

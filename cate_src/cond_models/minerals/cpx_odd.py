@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Zhao2016_WetDiopside(T, P, water, param1, param2, fo2, fo2_ref, method):
+def Zhao2016_WetDiopside(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	h2o = water / (1e4) #converting ppm to wt
 
@@ -18,7 +18,7 @@ def Zhao2016_WetDiopside(T, P, water, param1, param2, fo2, fo2_ref, method):
 
 	return cond
 	
-def Liu2021_WetOmphacite_param1_Fe(T, P, water, param1, param2, fo2, fo2_ref, method):
+def Liu2021_WetOmphacite_param1_Fe(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	#param1 is xFE = feo / (feo+mgo)
 	#water has to be converted to wt%
@@ -35,7 +35,7 @@ def Liu2021_WetOmphacite_param1_Fe(T, P, water, param1, param2, fo2, fo2_ref, me
 	
 	return cond
 	
-def Fullea2011_DryCpx_param1_Fe(T, P, water, param1, param2, fo2, fo2_ref, method):
+def Fullea2011_DryCpx_param1_Fe(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	sigma_pol_fullea = 10**3.25
 

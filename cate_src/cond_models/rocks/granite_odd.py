@@ -35,7 +35,7 @@ def Guo2017_MuscoviteGranite(T,P,water, param1, param2, fo2 = None, fo2_ref = No
 	
 	return cond
 
-def Guo2017_BiotiteGranite(T,P,water, param1, param2, fo2, fo2_ref, method):
+def Guo2017_BiotiteGranite(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 48000.0
 	E2 = 206000.0
