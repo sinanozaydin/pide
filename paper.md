@@ -1,5 +1,5 @@
 ---
-title: 'CATE'
+title: 'SEEL: Synthetic Electrical Earth Library'
 tags:
   - Python
   - magnetotellurics
@@ -14,10 +14,11 @@ authors:
     corresponding: true 
     affiliation: 1 
   - name: Maria Constanza Manassero
-    equal-contrib: true
     affiliation: 2
   - name: Kate Selway
     affiliation: "2,3"
+  - name: Patrice F. Rey
+    affiliation: 1
 affiliations:
  - name: School of Geosciences, University of Sydney, Sydney, Australia.
    index: 1
