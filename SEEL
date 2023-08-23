@@ -51,7 +51,7 @@ from cond_models.minerals.ol_odd import *
 from cond_models.minerals.mixtures_odd import *
 from cond_models.minerals.other_odd import *
 
-warnings.filterwarnings("ignore", SEELgory=RuntimeWarning) #ignoring many RuntimeWarning printouts that are utterly useless
+warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are utterly useless
 
 #Color coding class for fancy-colored print-outs.
 class bcolors:
@@ -118,7 +118,7 @@ class SEEL(QMainWindow):
 		
 		self.setMinimumSize(1800,1000)
 		self.setStyleSheet("QMainWindow{background-color: #ebfaeb;border: 1px solid black}")
-		self.setWindowTitle("SEEL")
+		self.setWindowTitle("SEEL - Synthetic Electrical Earth Library")
 		
 		#Defining Menubar items
 		mainMenu = self.menuBar()
