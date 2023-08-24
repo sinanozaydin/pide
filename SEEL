@@ -128,6 +128,8 @@ class SEEL(QMainWindow):
 		mainMenu.setStyleSheet("QMenuBar{background-color: #ccffcc;border: 1px solid black}")
 		fugMenu = mainMenu.addMenu('Oxygen Fugacity')
 		fugMenu.setStyleSheet("QMenu{background-color: #ccffcc;border: 1px solid black}")
+		watercalibMenu = mainMenu.addMenu('Water Calibration Correction')
+		watercalibMenu.setStyleSheet("QMenu{background-color: #9098a3;border: 1px solid black}")
 		
 		#ENV FILE BUTTON
 		infoMain = QAction("&Info", self)
@@ -149,6 +151,17 @@ class SEEL(QMainWindow):
 		openFugButton.triggered.connect(self.fo2_properties_popup)
 		fugMenu.addAction(openFugButton)
 		self.fo2_pop = None
+		
+		#WATER CALIBRATIONS MENU
+
+		watercalibButton = QAction("&Water/Hydroxyl Calibration Setup",self)
+		watercalibButton.triggered.connect(self.water_calib_popup)
+		self.water_calib_pop = None
+
+		watercalibMenu.addAction(watercalibButton)
+
+		
+		
 
 		self.home()
 		
@@ -171,7 +184,7 @@ class SEEL(QMainWindow):
 			SEEL.melt_cond_selection = 0
 
 			SEEL.fluid_or_melt_method = 0
-			SEEL.solid_phase_method = 1
+			SEEL.solid_phase_method = 2
 
 			SEEL.granite_cond_selection = 0
 			SEEL.granulite_cond_selection = 0
@@ -196,6 +209,10 @@ class SEEL(QMainWindow):
 			SEEL.ol_cond_selection = 0
 			SEEL.mixture_cond_selection = 0
 			SEEL.other_cond_selection = 0
+			
+			SEEL.ol_calib = 3
+			SEEL.px_gt_calib = 2
+			SEEL.feldspar_calib = 2
 
 			self.salinity_fluid = np.zeros(1)
 			self.k2o_melt = np.zeros(1)
@@ -256,7 +273,7 @@ class SEEL(QMainWindow):
 			SEEL.other_water = np.zeros(1)
 			
 			SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
-			SEEL.garnet_water,  SEEL.opx_water, SEEL.cpx_water, SEEL.sulphide_water,
+			SEEL.garnet_water,  SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.sulphide_water,
 				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water]
 				   
 			SEEL.granite_param1 = np.zeros(1)
@@ -1227,6 +1244,13 @@ class SEEL(QMainWindow):
 			self.fo2_pop = FUG_POP()
 			self.fo2_pop.setGeometry(QtCore.QRect(100, 100, 100, 100))
 		self.fo2_pop.show()
+		
+	def water_calib_popup(self):
+
+		if self.water_calib_pop is None:
+			self.water_calib_pop = WATER_CALIB_POP()
+			self.water_calib_pop.setGeometry(QtCore.QRect(100, 100, 100, 100))
+		self.water_calib_pop.show()
 
 
 	def read_csv(self,filename,delim):
@@ -1475,6 +1499,24 @@ class SEEL(QMainWindow):
 		self.el_q = float(params_dat[4][1])
 		SEEL.spreadsheet = str(params_dat[5][1])
 		self.mu = 4.0 * np.pi * 10**(-7)
+		
+		correction_factor_dat = self.read_csv(os.path.join(self.core_path, 'water_calib.csv'), delim = ',')
+
+		#olivines
+		self.pat2with = float(correction_factor_dat[0][1])
+		self.bell2with = float(correction_factor_dat[1][1])
+		self.pat2bell = float(correction_factor_dat[2][1])
+		self.with2bell = 1.0/self.bell2with
+		self.bell2path = 1.0/self.pat2bell
+		self.with2pat = 1.0/self.pat2with
+		
+		#pyroxene and gt
+		self.pat2bell95 = float(correction_factor_dat[3][1])
+		self.bell952pat = 1.0/self.pat2bell95
+		
+		#feldspars
+		self.john2mosen = float(correction_factor_dat[4][1])
+		self.mosen2john = 1.0 / self.john2mosen
 
 	def check_composition(self):
 
@@ -1506,12 +1548,12 @@ class SEEL(QMainWindow):
 
 		return continue_adjusting
 	
-	def calculate_arrhenian_single(self, T, sigma, E, r=0, alpha= 1, water=0):
+	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
 
 		if (sigma == 0.0) and (E == 0.0):
 			cond = 0.0
 		else:
-			cond = (10.0**sigma) * (water**r) * np.exp(-(E + (alpha * water)) / (self.R * T))
+			cond = (10.0**sigma) * (water**r) * np.exp(-(E + (alpha * water)**(1.0/3.0)) / (self.R * T))
 
 		return cond
 	
@@ -1528,19 +1570,19 @@ class SEEL(QMainWindow):
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[0][SEEL.fluid_cond_selection],
-								   E = self.h_i[0][SEEL.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_i[0][SEEL.fluid_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[0][SEEL.fluid_cond_selection],
-								   E = self.h_pol[0][SEEL.fluid_cond_selection])
+								   E = self.h_pol[0][SEEL.fluid_cond_selection],r = 0, alpha = 0, water = 0)
 			
 		elif SEEL.type[0][SEEL.fluid_cond_selection] == '1':
 
 			self.melt_fluid_cond[idx_node] =  self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[0][SEEL.fluid_cond_selection],
-								   E = self.h_i[0][SEEL.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_i[0][SEEL.fluid_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[0][SEEL.fluid_cond_selection],
-								   E = self.h_pol[0][SEEL.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_pol[0][SEEL.fluid_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[0][SEEL.fluid_cond_selection],
-								   E = self.h_p[0][SEEL.fluid_cond_selection])
+								   E = self.h_p[0][SEEL.fluid_cond_selection],r = 0, alpha = 0, water = 0)
 			
 		elif SEEL.type[0][SEEL.fluid_cond_selection] == '3':
 
@@ -1569,17 +1611,17 @@ class SEEL(QMainWindow):
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[1][SEEL.melt_cond_selection],
-								   E = self.h_i[1][SEEL.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_i[1][SEEL.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][SEEL.melt_cond_selection],
-								   E = self.h_pol[1][SEEL.melt_cond_selection])
+								   E = self.h_pol[1][SEEL.melt_cond_selection],r = 0, alpha = 0, water = 0)
 			
 		elif SEEL.type[1][SEEL.melt_cond_selection] == '1':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[1][SEEL.melt_cond_selection],
-								   E = self.h_i[1][SEEL.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_i[1][SEEL.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][SEEL.melt_cond_selection],
-								   E = self.h_pol[1][SEEL.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_pol[1][SEEL.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[1][SEEL.melt_cond_selection],
 								   E = self.h_p[1][SEEL.melt_cond_selection], r = self.r[1][SEEL.melt_cond_selection], alpha = self.alpha_p[1][SEEL.melt_cond_selection],
 								   water = self.h2o_melt)
@@ -1609,25 +1651,36 @@ class SEEL(QMainWindow):
 		cond = np.zeros(len(self.T))
 
 		rock_sub_idx = rock_idx - self.fluid_num
+		
+		if ("Wet" in self.name[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]]) == True:
+					
+			if self.wtype[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]] == "0":
+				water_corr_factor = water_corr_factor * 1e4 #converting to wt % if the model requires
+			else:
+				water_corr_factor = 1.0
+			
+		else:
+			
+			water_corr_factor = 1.0
 
 		if SEEL.type[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]] == '0':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],
-								   E = self.h_i[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_i[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],
-								   E = self.h_pol[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]])
+								   E = self.h_pol[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],r = 0, alpha = 0, water = 0)
 			
 		elif SEEL.type[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]] == '1':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],
-								   E = self.h_i[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_i[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],
-								   E = self.h_pol[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_pol[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],
 								   E = self.h_p[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]], r = self.r[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]],
-								   alpha = self.alpha_p[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]], water = SEEL.rock_water_list[rock_sub_idx][idx_node])
+								   alpha = self.alpha_p[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]], water = SEEL.rock_water_list[rock_sub_idx][idx_node] / water_corr_factor)
 			
 		elif SEEL.type[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]] == '3':
 
@@ -1640,14 +1693,14 @@ class SEEL(QMainWindow):
 				odd_function = SEEL.name[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]]
 
 			if ('fo2' in odd_function) == True:
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.rock_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param1 = SEEL.param1_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param2 = SEEL.param2_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.rock_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node] / water_corr_factor, param1 = SEEL.param1_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param2 = SEEL.param2_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
 			else:
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.rock_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param1 = SEEL.param1_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param2 = SEEL.param2_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.rock_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node] / water_corr_factor, param1 = SEEL.param1_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param2 = SEEL.param2_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], method = method)')
 		
 		return cond
 	
 	def calculate_mineral_conductivity(self, method, min_idx = None, sol_idx = None):
-
+	
 		if method == 'array':
 			idx_node = None
 		elif method == 'index':
@@ -1656,25 +1709,40 @@ class SEEL(QMainWindow):
 		cond = np.zeros(len(self.T))
 
 		min_sub_idx = min_idx - self.fluid_num - self.rock_num
+		
+		if ("Wet" in self.name[min_idx][SEEL.minerals_cond_selections[min_sub_idx]]) == True:
+		
+			water_corr_factor = self.Water_correction(min_idx = min_idx)
+			
+			if self.wtype[min_idx][SEEL.minerals_cond_selections[min_sub_idx]] == "0":
+				water_corr_factor = water_corr_factor * 1e4 #converting to wt % if the model requires
+			else:
+				pass
+			
+		else:
+			
+			water_corr_factor = 1.0
+
 
 		if SEEL.type[min_idx][SEEL.minerals_cond_selections[min_sub_idx]] == '0':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_i[min_idx][SEEL.minerals_cond_selections[min_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_i[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_pol[min_idx][SEEL.minerals_cond_selections[min_sub_idx]])
+								   E = self.h_pol[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0)
 			
 		elif SEEL.type[min_idx][SEEL.minerals_cond_selections[min_sub_idx]] == '1':
+		
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_i[min_idx][SEEL.minerals_cond_selections[min_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_i[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_pol[min_idx][SEEL.minerals_cond_selections[min_sub_idx]]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   E = self.h_pol[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_p[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],
 								   E = self.h_p[min_idx][SEEL.minerals_cond_selections[min_sub_idx]], r = self.r[min_idx][SEEL.minerals_cond_selections[min_sub_idx]],
-								   alpha = self.alpha_p[min_idx][SEEL.minerals_cond_selections[min_sub_idx]], water = SEEL.mineral_water_list[min_sub_idx][idx_node])
+								   alpha = self.alpha_p[min_idx][SEEL.minerals_cond_selections[min_sub_idx]], water = SEEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor)
 			
 		elif SEEL.type[min_idx][SEEL.minerals_cond_selections[min_sub_idx]] == '3':
 
@@ -1688,14 +1756,138 @@ class SEEL(QMainWindow):
 
 			if ('fo2' in odd_function) == True:
 
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], SEEL.mineral_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param1 = SEEL.param1_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], param2 = SEEL.param2_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], SEEL.mineral_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node] / water_corr_factor, param1 = SEEL.param1_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], param2 = SEEL.param2_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
 
 			else:
 
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], SEEL.mineral_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param1 = SEEL.param1_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], param2 = SEEL.param2_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], SEEL.mineral_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node] / water_corr_factor, param1 = SEEL.param1_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], param2 = SEEL.param2_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], method = method)')
 
 		return cond
-	
+		
+	def Water_correction(self, min_idx = None):
+
+		#A function that corrects the water content to desired calibration. Numbers are taken from Demouchy and Bolfan-Casanova (2016, Lithos) for olivine, pyroxene and garnet.
+		#For feldspars, the correction number is taken from Mosenfelder et al. (2015, Am. Min.)
+
+		if min_idx == 21:
+		#olivine
+
+			calib_object = self.w_calib[min_idx][SEEL.ol_cond_selection]
+			calib_object_2 = SEEL.ol_calib
+
+			if calib_object_2 == 0:
+
+				if calib_object == 0:
+					
+					CORR_Factor = self.pat2with #Paterson to Withers
+
+				elif calib_object == 1:
+
+					CORR_Factor = self.bell2with #Bell to Withers from Demouchy and Bolfan Casanova
+
+				else:
+
+					CORR_Factor= 1.0 #Withers to Withers
+
+			elif calib_object_2 == 1:
+
+				if calib_object == 0:
+
+					CORR_Factor = self.pat2bell #Paterson to Bell
+
+				elif calib_object == 1:
+
+					CORR_Factor = 1.0 #Bell to Bell
+
+				else:
+
+					CORR_Factor = self.with2bell #Withers to Bell
+
+
+			elif calib_object_2 == 2:
+
+				if calib_object == 0:
+
+
+					CORR_Factor = 1.0 #Paterson to paterson
+
+				elif calib_object == 1:
+
+					CORR_Factor = self.bell2path #Bell to Paterson
+
+				else:
+
+					CORR_Factor = self.with2pat #Withers to Paterson
+					
+			else:
+			
+				CORR_Factor = 1.0
+
+		elif (min_idx == 15) or (min_idx == 16) or (min_idx == 18): #opx, cpx and garnet
+
+			calib_object = self.w_calib[min_idx][SEEL.minerals_cond_selections[min_idx - self.rock_num - self.fluid_num]]
+			calib_object_2 = SEEL.px_gt_calib
+
+			if calib_object_2 == 0:
+
+				if calib_object == 0:
+
+					CORR_Factor = self.pat2bell95
+
+				else:
+
+					CORR_Factor = 1.0
+
+			elif calib_object_2 == 1:
+
+				if calib_object == 1:
+
+					CORR_Factor = self.bell952pat
+
+				else:
+
+					CORR_Factor = 1.0
+			
+			else:
+			
+				CORR_Factor = 1.0
+
+		elif (min_idx == 12) or (min_idx == 14): #Plagioclase and k-feldspar
+			
+			calib_object = self.w_calib[min_idx][SEEL.minerals_cond_selections[min_idx - self.rock_num - self.fluid_num]]
+			calib_object_2 = SEEL.feldspar_calib
+				
+			if calib_object_2 == 0:
+
+				if calib_object == 0:
+
+					CORR_Factor = self.john2mosen
+
+				else:
+
+					CORR_Factor = 1.0
+
+			elif calib_object_2 == 1:
+
+				if calib_object_2 == 1:
+
+					CORR_Factor = self.mosen2john
+
+				else:
+
+					CORR_Factor = 1.0
+					
+			else:
+			
+				CORR_Factor == 1.0
+					
+		else:
+		
+			CORR_Factor = 1.0
+		
+		return CORR_Factor
+		
+		
 	def phase_mixing_function(self, method = None, melt_method = None, indexing_method = None, sol_idx = None):
 
 		self.bulk_cond = np.zeros(len(self.T)) #setting up an empty bulk conductivity array for all methods
@@ -2593,7 +2785,6 @@ class SEEL(QMainWindow):
 	def plot_composition_button(self):
 	
 		bool_comp = self.check_composition()
-		print(bool_comp)
 
 		if bool_comp == True:
 
@@ -3105,7 +3296,7 @@ class COND_POP(QWidget):
 				   SEEL.amphibolite_cond_selection, SEEL.basalt_cond_selection, SEEL.mud_cond_selection, SEEL.gabbro_cond_selection, SEEL.other_rock_cond_selection]
 		
 		SEEL.minerals_cond_selections = [SEEL.quartz_cond_selection, SEEL.plag_cond_selection, SEEL.amp_cond_selection, SEEL.kfelds_cond_selection, SEEL.opx_cond_selection,
-				   SEEL.mica_cond_selection, SEEL.garnet_cond_selection, SEEL.sulphide_cond_selection,
+				   SEEL.cpx_cond_selection, SEEL.mica_cond_selection, SEEL.garnet_cond_selection, SEEL.sulphide_cond_selection,
 				   SEEL.graphite_cond_selection, SEEL.ol_cond_selection, SEEL.mixture_cond_selection, SEEL.other_cond_selection]
 		
 				
@@ -3617,7 +3808,7 @@ class WATER_PHS_POP(QWidget):
 			SEEL.mud_water, SEEL.gabbro_water, SEEL.other_rock_water]
 			
 		SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
-			SEEL.garnet_water, SEEL.opx_water, SEEL.cpx_water, SEEL.sulphide_water,
+			SEEL.garnet_water, SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.sulphide_water,
 				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water] #cansu
 				   
 class OPTIONAL_PARAM_POP(QWidget):
@@ -4022,6 +4213,161 @@ class FUG_POP(QWidget):
 		elif b.text() == "MMO":
 			if b.isChecked() == True:
 				SEEL.o2_buffer = 4
+				
+class WATER_CALIB_POP(QWidget):
+
+	def __init__(self):
+		
+		QWidget.__init__(self)
+		
+
+		calib_layout = QGridLayout(self)
+		
+		bg_ol = QButtonGroup(self)
+		
+		label_ol_calib = QLabel(self)
+		label_ol_calib.setText('--------Olivine Calibration--------')
+		label_ol_calib.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+		calib_layout.addWidget(label_ol_calib,1,0)
+
+		self.calib_radio_ol_0 = QRadioButton("Default")
+		self.calib_radio_ol_1 = QRadioButton("Withers2012")
+		self.calib_radio_ol_2 = QRadioButton("Bell2003")
+		self.calib_radio_ol_3 = QRadioButton("Paterson1980")
+
+		self.calib_radio_ol_0.toggled.connect(lambda:self.btnstate_ol_calib(self.calib_radio_ol_0))
+		self.calib_radio_ol_1.toggled.connect(lambda:self.btnstate_ol_calib(self.calib_radio_ol_1))
+		self.calib_radio_ol_2.toggled.connect(lambda:self.btnstate_ol_calib(self.calib_radio_ol_2))
+		self.calib_radio_ol_3.toggled.connect(lambda:self.btnstate_ol_calib(self.calib_radio_ol_3))
+
+		if SEEL.ol_calib == 0:
+			self.calib_radio_ol_1.setChecked(True)
+		elif SEEL.ol_calib == 1:
+			self.calib_radio_ol_2.setChecked(True)
+		elif SEEL.ol_calib == 2:
+			self.calib_radio_ol_3.setChecked(True)
+		elif SEEL.ol_calib == 3:
+			self.calib_radio_ol_0.setChecked(True)
+
+		bg_ol.addButton(self.calib_radio_ol_0)
+		bg_ol.addButton(self.calib_radio_ol_1)
+		bg_ol.addButton(self.calib_radio_ol_2)
+		bg_ol.addButton(self.calib_radio_ol_3)
+		
+		calib_layout.addWidget(self.calib_radio_ol_0,2,0)
+		calib_layout.addWidget(self.calib_radio_ol_1,2,1)
+		calib_layout.addWidget(self.calib_radio_ol_2,2,2)
+		calib_layout.addWidget(self.calib_radio_ol_3,2,3)
+		################################3
+		
+		bg_px_gt = QButtonGroup(self)
+		label_px_gt_calib = QLabel(self)
+		label_px_gt_calib.setText('--------Pyroxenes/Garnet Calibration--------')
+		label_px_gt_calib.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+		calib_layout.addWidget(label_px_gt_calib,4,0)
+
+		self.calib_radio_px_gt_0 = QRadioButton("Default")
+		self.calib_radio_px_gt_1 = QRadioButton("Bell1995")
+		self.calib_radio_px_gt_2 = QRadioButton("Paterson1980")
+
+		self.calib_radio_px_gt_0.toggled.connect(lambda:self.btnstate_px_gt_calib(self.calib_radio_px_gt_0))
+		self.calib_radio_px_gt_1.toggled.connect(lambda:self.btnstate_px_gt_calib(self.calib_radio_px_gt_1))
+		self.calib_radio_px_gt_2.toggled.connect(lambda:self.btnstate_px_gt_calib(self.calib_radio_px_gt_2))
+
+		if SEEL.px_gt_calib == 0:
+			self.calib_radio_px_gt_1.setChecked(True)
+		elif SEEL.px_gt_calib == 1:
+			self.calib_radio_px_gt_2.setChecked(True)
+		elif SEEL.px_gt_calib == 2:
+			self.calib_radio_px_gt_0.setChecked(True)
+
+		bg_px_gt.addButton(self.calib_radio_px_gt_0)
+		bg_px_gt.addButton(self.calib_radio_px_gt_1)
+		bg_px_gt.addButton(self.calib_radio_px_gt_2)
+
+		calib_layout.addWidget(self.calib_radio_px_gt_0,5,0)
+		calib_layout.addWidget(self.calib_radio_px_gt_1,5,1)
+		calib_layout.addWidget(self.calib_radio_px_gt_2,5,2)
+		
+		################################3
+		
+		bg_feldspar = QButtonGroup(self)
+		label_feldspar_calib = QLabel(self)
+		label_feldspar_calib.setText('--------Feldspar Calibration--------')
+		label_feldspar_calib.setStyleSheet("QLabel {font:bold};min-width: 10em; fontsize: 10pt;color: red")
+		calib_layout.addWidget(label_feldspar_calib,6,0)
+
+		self.calib_radio_feldspar_0 = QRadioButton("Default")
+		self.calib_radio_feldspar_1 = QRadioButton("Johnson2003")
+		self.calib_radio_feldspar_2 = QRadioButton("Mosenfelder2015")
+
+		self.calib_radio_feldspar_0.toggled.connect(lambda:self.btnstate_feldspar_calib(self.calib_radio_feldspar_0))
+		self.calib_radio_feldspar_1.toggled.connect(lambda:self.btnstate_feldspar_calib(self.calib_radio_feldspar_1))
+		self.calib_radio_feldspar_2.toggled.connect(lambda:self.btnstate_feldspar_calib(self.calib_radio_feldspar_2))
+
+		if SEEL.feldspar_calib == 0:
+			self.calib_radio_feldspar_1.setChecked(True)
+		elif SEEL.feldspar_calib == 1:
+			self.calib_radio_feldspar_2.setChecked(True)
+		elif SEEL.feldspar_calib == 2:
+			self.calib_radio_feldspar_0.setChecked(True)
+
+		bg_feldspar.addButton(self.calib_radio_feldspar_0)
+		bg_feldspar.addButton(self.calib_radio_feldspar_1)
+		bg_feldspar.addButton(self.calib_radio_feldspar_2)
+
+		calib_layout.addWidget(self.calib_radio_feldspar_0,7,0)
+		calib_layout.addWidget(self.calib_radio_feldspar_1,7,1)
+		calib_layout.addWidget(self.calib_radio_feldspar_2,7,2)
+
+		self.calib_info_btn = QPushButton('Info')
+		self.calib_info_btn.clicked.connect(self.calib_info_box)
+
+		calib_layout.addWidget(self.calib_info_btn,8,0)
+		
+	def btnstate_ol_calib(self,b):
+
+		if b.text() == "Withers2012":
+			if b.isChecked() == True:
+				SEEL.ol_calib = 0
+		elif b.text() == "Bell2003":
+			if b.isChecked() == True:
+				SEEL.ol_calib = 1
+		elif b.text() == "Paterson1980":
+			if b.isChecked() == True:
+				SEEL.ol_calib = 2
+		elif b.text() == "Default":
+			if b.isChecked() == True:
+				SEEL.ol_calib = 3
+				
+	def btnstate_px_gt_calib(self,b):
+
+		if b.text() == "Bell1995":
+			if b.isChecked() == True:
+				SEEL.px_gt_calib = 0
+		elif b.text() == "Paterson1980":
+			if b.isChecked() == True:
+				SEEL.px_gt_calib = 1
+		elif b.text() == "Default":
+			if b.isChecked() == True:
+				SEEL.px_gt_calib = 2
+				
+	def btnstate_feldspar_calib(self,b):
+
+		if b.text() == "Johnson2003":
+			if b.isChecked() == True:
+				SEEL.feldspar_calib = 0
+		elif b.text() == "Mosenfelder2015":
+			if b.isChecked() == True:
+				SEEL.feldspar_calib = 1
+		elif b.text() == "Default":
+			if b.isChecked() == True:
+				SEEL.feldspar_calib = 2
+				
+	def calib_info_box(self):
+
+		QMessageBox.about(self, "Info on this", "This preferential settings relates to the selection of fixes related to water-calibrations."+
+		" Calibration method selected here affects the water-uptake of conductivity models solubility models.")
 		
 def main():
 
