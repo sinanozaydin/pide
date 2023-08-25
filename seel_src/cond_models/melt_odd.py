@@ -4,9 +4,8 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Sifre2014_H2O_CO2(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Sifre2014_Wet_Carbonated(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	Melt_H2O = Melt_H2O * 1e-4 #converting ppm to wt percent
 	Melt_CO2 = Melt_CO2 * 1e-4 #converting ppm to wt percent
 
 	E_CO2 = 789166.0 * np.exp(-0.1808 * Melt_CO2) + 32820.0
@@ -20,9 +19,8 @@ def Sifre2014_H2O_CO2(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
 	return cond
 
-def Pommier2008(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Pommier2008_WetBasalt_Na(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	Melt_H2O = Melt_H2O * 1e-4 #convering ppm to wt
 	P = P * 1e3 #converting GPa to MPa
 
 	phi = (2.439e-11 * Melt_Na2O) + 1.72e-10
@@ -37,26 +35,15 @@ def Pommier2008(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
 	cond = sigma_0 * np.exp((-Ea - (P * 20)) / (R_const*T))
 
-
 	return cond
 
 
-def Ni2011(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
-
-	Melt_H2O = 0.3 #convering ppm to wt
+def Ni2011_WetBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
 	cond = 10**(2.172 - ((860.82 - (204.46*np.sqrt(Melt_H2O))) / (T - 1146.8)))
 
 	return cond
 
-def Scarlato2004_DryBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
-
-	sigma_0 = 309.0
-	E = 82000
-
-	cond = sigma_0 * np.exp(-E / (R_const * T))
-
-	return cond
 
 def TyburczyWaff1983_DryTholeiite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
@@ -98,7 +85,7 @@ def TyburczyWaff1983_DryAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,m
 
 	return cond
 
-def Gaillard2005_K2O_Dependent(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Gaillard2005_DrySilicateMelt_K2O(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
 	a = 0.172 - (0.105 * Melt_K2O)
 	b = 4.742 - (0.6 * Melt_K2O)
@@ -109,15 +96,12 @@ def Gaillard2005_K2O_Dependent(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,met
 
 def Guo2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	Melt_H2O = Melt_H2O * 1e-4 #converting to wt percent
-
 	cond = 10**(5.23 - (0.56 * (Melt_H2O**0.6)) - ((8130.4 - (1462.7*(Melt_H2O**0.6)) + ((581.3 - (12.7*Melt_H2O**2)) * P)) / T))
 
 	return cond
 
 def Laumonier2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	Melt_H2O = Melt_H2O * 1e-4 #converting to wt percent
 	P = P * 1e5 #converting gpa to bars
 
 	a = -0.34
@@ -139,15 +123,14 @@ def Laumonier2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,meth
 
 def Laumonier2015_WetDacite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	Melt_H2O = Melt_H2O * 1e-4 #converting to wt percent
 	P = P * 1e5 #converting gpa to bars
 
 	a = -0.064
 	b = 5.96
 	c = 1.06e-5
 	d = 2.49e-5
-	e = -6146
-	f = 88440
+	e = -6146.0
+	f = 88440.0
 	g = 0.176
 	h = 0.388
 
@@ -161,9 +144,7 @@ def Laumonier2015_WetDacite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method
 
 def Gaillard2004_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	Melt_H2O = Melt_H2O * 1e-4 #converting to wt percent
 	P = P * 1e3
-
 
 	Ea = (-2925 * np.log(Melt_H2O)) + 64132.0
 	sigma_0 = (-78.9 * np.log(Melt_H2O)) + 754.0
@@ -174,16 +155,12 @@ def Gaillard2004_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,metho
 
 def Guo2016_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	Melt_H2O = Melt_H2O * 1e-4 #converting to wt percent
-
 	cond = 10**(2.983 - (0.0732*Melt_H2O) -\
 		((3528 - (233.8*Melt_H2O) + ((763 - 7.5*Melt_H2O**2)*P)) / T))
 
 	return cond
 
 def Chen2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
-
-	Melt_H2O = Melt_H2O * 1e-4 #converting to wt percent
 
 	sigma_0 = 6.673 - (0.491*P)
 	Ea = 58987.0 - (2200 * np.log(Melt_H2O + 0.046))
@@ -195,7 +172,6 @@ def Chen2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
 def Guo2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	Melt_H2O = Melt_H2O * 1e-4 #converting to wt percent
 
 	cond = 10.0**(3.205 - (0.102 * Melt_H2O) -\
 		(-(4228.5 - (354.7 * Melt_H2O) + (693.6 * P)) / T))
