@@ -4,7 +4,7 @@ import os
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'cate_src')
 
-import sys, csv, platform,warnings
+import sys, csv, platform, warnings
 import numpy as np
 import iapws
 
@@ -17,179 +17,292 @@ from cond_models.melt_odd import *
 from cond_models.fluids_odd import * 
 #importing odd rock functions
 from cond_models.rocks.granite_odd import * 
-# from cond_models.rocks.granulite_odd import *
-# from cond_models.rocks.sandstone_odd import *
-# from cond_models.rocks.gneiss_odd import *
-# from cond_models.rocks.amphibolite_odd import *
-# from cond_models.rocks.basalt_odd import *
-# from cond_models.rocks.mud_odd import *
-# from cond_models.rocks.gabbro_odd import *
-# from cond_models.rocks.other_odd import *
+from cond_models.rocks.granulite_odd import *
+from cond_models.rocks.sandstone_odd import *
+from cond_models.rocks.gneiss_odd import *
+from cond_models.rocks.amphibolite_odd import *
+from cond_models.rocks.basalt_odd import *
+from cond_models.rocks.mud_odd import *
+from cond_models.rocks.gabbro_odd import *
+from cond_models.rocks.other_rocks_odd import *
 #importing odd mineral functions
-# from cond_models.minerals.quartz_odd import *
-# from cond_models.minerals.plag_odd import *
-# from cond_models.minerals.amp_odd import *
-# from cond_models.minerals.kfelds_odd import *
-# from cond_models.minerals.pyx_odd import *
-# from cond_models.minerals.mica_odd import *
-# from cond_models.minerals.clay_odd import *
-# from cond_models.minerals.carbonates_odd import *
-# from cond_models.minerals.garnet_odd import *
-# from cond_models.minerals.sulphides_odd import *
-# from cond_models.minerals.graphite_odd import *
-# from cond_models.minerals.other_odd import *
+from cond_models.minerals.quartz_odd import *
+from cond_models.minerals.plag_odd import *
+from cond_models.minerals.amp_odd import *
+from cond_models.minerals.kfelds_odd import *
+from cond_models.minerals.opx_odd import *
+from cond_models.minerals.cpx_odd import *
+from cond_models.minerals.mica_odd import *
+from cond_models.minerals.garnet_odd import *
+from cond_models.minerals.ol_odd import *
+from cond_models.minerals.mixtures_odd import *
+from cond_models.minerals.other_odd import *
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
 
-
-class bcolors:
-	BLUE = '\033[94m'
-	GREEN = '\033[92m'
-	RED = '\033[91m'
-	B = '\033[0m'
-	NC ='\x1b[0m'
-
-#Version 2.0, July. 2022.
-#MATE - (M)antle (A)nalysis (T)ools for (E)lectromagnetics
-#Program written by Sinan Ozaydin (Macquarie University, School of Natural
+#Version 0.1, June. 2023.
+#SEEL - (S)ynthetic (E)lectrical (E)arth (L)ibrary
+#Program written by Sinan Ozaydin (Macquarie University, School of Natural Sciences
 #sciences, Australia).
 
 #Indentation method: hard tabs ('\t')
 
 #Works with Python3
-#Required libraries: numpy,matplotlib,PyQt5,iapws
+#Required libraries: numpy,matplotlib,PyQt5
+#optional libraries: pyperclip
 
-#Installation of libraries:
-#In Linux (mac included) distros through terminal:
-#pip install numpy,scipy,matplotlib,PyQt5
-#In Windows skip sudo.
-
-print(bcolors.GREEN + '#############################################')
-print(' ')
-print(' ')
-print(' ')
-print(bcolors.GREEN + '                CATE_BATCH 0.1')
-print(' ')
-print(bcolors.BLUE + '            Crust Analysis Tools')
-print('                     for')
-print('               Electromagnetics')
-print(' ')
-print(' ')
-print(' ')
-print(bcolors.GREEN + '#############################################')
-print(bcolors.BLUE + 'developed by Sinan Ozaydin,' + bcolors.RED +  ' School of Geosciences, University of Sydney')
-print(' ')
-print(' ')
-print(bcolors.NC + 'for questions, email: sinan.ozaydin@protonmail.com or sinan.ozaydin@sydney.edu.au')
-print('Initializing the software...')
-
-
-class CATE(object):
+class SEEL(object):
 	
 	def __init__(self, core_path = core_path_ext):
 
 		args_input = sys.argv
 		self.core_path = core_path
 
-		if len(args_input) == 1:
-
-			print('You have to run the program with options:')
-			print('Current Methods:')
-			print(' ')
-			print(bcolors.RED + '1. -forward')
-
-			print(' ')
-			print(' ')
-			print(bcolors.NC + 'To have more information for each method. Just run the program with the option only like CATE_BATCH -forward ')
-			sys.exit()
-
-		if args_input[1] == '-forward':
-
-			try:
-				CATE.composition_args_path = args_input[2]
-				self.write_file_save_name = args_input[3]
-			except IndexError:
-				print('You need to put in these for -forward selection:')
-				print('CATE_BATCH -forward input_file.csv output_file.csv')
-				sys.exit()
-				
-			self.home()
-			self.read_cond_models()
-			self.read_params()
-			self.check_composition()
-
-			self.calculate_density_solid()
-			self.calculate_conductivity(method = 'index')
-
-			self.write_results()
-
-		elif args_input[1] == '-forward_multiple':
-
-			try:
-				CATE.composition_args_path = args_input[2]
-				self.pt_file = args_input[3]
-				self.write_file_save_name = args_input[4]
-			except IndexError:
-				print('You need to put in these for -forward_multiple selection:')
-				print('CATE_BATCH -forward_multiple input_file.csv pt_file.csv output_file.csv')
-				sys.exit()
-
-			self.home()
-			self.read_cond_models()
-			self.read_params()
-			self.check_composition()
-
-			self.read_pt_file()
-			self.duplicate_composition_for_pt_file()
-
-			self.calculate_density_solid()
-
-			self.calculate_conductivity(method = 'array')
-			self.write_results()
-
-
+		
 	def home(self):
-
+		
 		#Setting up initial variables.
 
-		self.data_existence = False
-		self.composition_readfile = False
-		CATE.loaded_file = False
-
-		CATE.plot_style_list = ['ggplot', 'default', 'classic','bmh', 'fast', 'seaborn', 'seaborn-colorblind',
-		'seaborn-deep','seaborn-pastel', 'seaborn-dark','fivethirtyeight','grayscale']
-		CATE.plot_style_selection = 0
-
-		self.init_params = self.read_csv(filename = os.path.join(self.core_path,'init_param.csv'),delim = ',') #loading the blueprint parameter file.
-
+		SEEL.loaded_file = False
 		self.cond_calculated = False
 
-		data_comp_file = self.read_csv(filename = self.composition_args_path, delim = ',')
+		self.init_params = self.read_csv(filename = os.path.join(self.core_path,'init_param.csv'),delim = ',') #loading the blueprint parameter file.
+		
+		if SEEL.arguments_load == False:
 
-		for i in range(1,len(data_comp_file)):
+			SEEL.fluid_cond_selection = 0
+			SEEL.melt_cond_selection = 0
 
-			if data_comp_file[i][2] == 'CATE':
-				if data_comp_file[i][3] == 'float':
-					setattr(CATE, data_comp_file[i][0], np.array([float(data_comp_file[i][1])]))
-				elif data_comp_file[i][3] == 'int':
-					setattr(CATE, data_comp_file[i][0], int(data_comp_file[i][1]))
+			SEEL.fluid_or_melt_method = 0
+			SEEL.solid_phase_method = 2
 
-			elif data_comp_file[i][2] == 'self':
-				if data_comp_file[i][3] == 'float':
-					if ('frac' in data_comp_file[i][0]) == True:
-						setattr(self, data_comp_file[i][0], np.array([float(data_comp_file[i][1])/1e2]))
-					else:
-						setattr(self, data_comp_file[i][0], np.array([float(data_comp_file[i][1])]))
-				elif data_comp_file[i][3] == 'int':
-					setattr(self, data_comp_file[i][0], int(data_comp_file[i][1]))
+			SEEL.granite_cond_selection = 0
+			SEEL.granulite_cond_selection = 0
+			SEEL.sandstone_cond_selection = 0
+			SEEL.gneiss_cond_selection = 0
+			SEEL.amphibolite_cond_selection = 0
+			SEEL.basalt_cond_selection = 0
+			SEEL.mud_cond_selection = 0
+			SEEL.gabbro_cond_selection = 0
+			SEEL.other_rock_cond_selection = 0
+
+			SEEL.quartz_cond_selection = 0
+			SEEL.plag_cond_selection = 0
+			SEEL.amp_cond_selection = 0
+			SEEL.kfelds_cond_selection = 0
+			SEEL.opx_cond_selection = 0
+			SEEL.cpx_cond_selection = 0
+			SEEL.mica_cond_selection = 0
+			SEEL.garnet_cond_selection = 0
+			SEEL.sulphide_cond_selection = 0
+			SEEL.graphite_cond_selection = 0
+			SEEL.ol_cond_selection = 0
+			SEEL.mixture_cond_selection = 0
+			SEEL.other_cond_selection = 0
+			
+			SEEL.ol_calib = 3
+			SEEL.px_gt_calib = 2
+			SEEL.feldspar_calib = 2
+
+			self.salinity_fluid = np.zeros(1)
+			self.k2o_melt = np.zeros(1)
+			self.co2_melt = np.zeros(1)
+			self.h2o_melt = np.zeros(1)
+			self.na2o_melt = np.zeros(1)
+			
+			self.granite_frac = np.ones(1) * 0.8
+			self.granulite_frac = np.ones(1) * 0.2
+			self.sandstone_frac = np.zeros(1)
+			self.gneiss_frac = np.zeros(1)
+			self.amphibolite_frac = np.zeros(1)
+			self.basalt_frac = np.zeros(1)
+			self.mud_frac = np.zeros(1)
+			self.gabbro_frac = np.zeros(1)
+			self.other_rock_frac = np.zeros(1)
+
+			SEEL.granite_water = np.zeros(1)
+			SEEL.granulite_water = np.zeros(1)
+			SEEL.sandstone_water = np.zeros(1)
+			SEEL.gneiss_water = np.zeros(1)
+			SEEL.amphibolite_water = np.zeros(1)
+			SEEL.basalt_water = np.zeros(1)
+			SEEL.mud_water = np.zeros(1)
+			SEEL.gabbro_water = np.zeros(1)
+			SEEL.other_rock_water = np.zeros(1)
+			
+			SEEL.rock_water_list = [SEEL.granite_water, SEEL.granulite_water,
+			SEEL.sandstone_water, SEEL.gneiss_water, SEEL.amphibolite_water, SEEL.basalt_water,
+			SEEL.mud_water, SEEL.gabbro_water, SEEL.other_rock_water]
+			
+			self.quartz_frac = np.zeros(1)
+			self.plag_frac = np.zeros(1)
+			self.amp_frac = np.zeros(1)
+			self.kfelds_frac = np.zeros(1)
+			self.opx_frac = np.zeros(1)
+			self.cpx_frac = np.zeros(1)
+			self.mica_frac = np.zeros(1)
+			self.garnet_frac = np.zeros(1)
+			self.sulphide_frac = np.zeros(1)
+			self.graphite_frac = np.zeros(1)
+			self.ol_frac = np.zeros(1)
+			self.mixture_frac = np.zeros(1)
+			self.other_frac = np.zeros(1)
+
+			SEEL.quartz_water = np.zeros(1)
+			SEEL.plag_water = np.zeros(1)
+			SEEL.amp_water = np.zeros(1)
+			SEEL.kfelds_water = np.zeros(1)
+			SEEL.garnet_water = np.zeros(1)
+			SEEL.opx_water = np.zeros(1)
+			SEEL.cpx_water = np.zeros(1)
+			SEEL.mica_water = np.zeros(1)
+			SEEL.sulphide_water = np.zeros(1)
+			SEEL.graphite_water = np.zeros(1)
+			SEEL.ol_water = np.zeros(1)
+			SEEL.mixture_water = np.zeros(1)
+			SEEL.other_water = np.zeros(1)
+			
+			SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
+			SEEL.garnet_water,  SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.sulphide_water,
+				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water]
+				   
+			SEEL.granite_param1 = np.zeros(1)
+			SEEL.granulite_param1 = np.zeros(1)
+			SEEL.sandstone_param1 = np.zeros(1)
+			SEEL.gneiss_param1 = np.zeros(1)
+			SEEL.amphibolite_param1 = np.zeros(1)
+			SEEL.basalt_param1 = np.zeros(1)
+			SEEL.mud_param1 = np.zeros(1)
+			SEEL.gabbro_param1 = np.zeros(1)
+			SEEL.other_rock_param1 = np.zeros(1)
+			
+			SEEL.param1_rock_list = [SEEL.granite_param1, SEEL.granulite_param1, SEEL.sandstone_param1, SEEL.gneiss_param1, SEEL.amphibolite_param1,
+			SEEL.basalt_param1, SEEL.mud_param1, SEEL.gabbro_param1, SEEL.other_rock_param1]
+			
+			SEEL.quartz_param1 = np.zeros(1)
+			SEEL.plag_param1 = np.zeros(1)
+			SEEL.amp_param1 = np.zeros(1)
+			SEEL.kfelds_param1 = np.zeros(1)
+			SEEL.garnet_param1 = np.zeros(1)
+			SEEL.opx_param1 = np.zeros(1)
+			SEEL.cpx_param1 = np.zeros(1)
+			SEEL.mica_param1 = np.zeros(1)
+			SEEL.sulphide_param1 = np.zeros(1)
+			SEEL.graphite_param1 = np.zeros(1)
+			SEEL.ol_param1 = np.zeros(1)
+			SEEL.mixture_param1 = np.zeros(1)
+			SEEL.other_param1 = np.zeros(1)
+			
+			SEEL.param1_mineral_list = [SEEL.quartz_param1,SEEL.plag_param1,SEEL.amp_param1,SEEL.kfelds_param1,SEEL.garnet_param1,SEEL.opx_param1,SEEL.cpx_param1,SEEL.mica_param1,
+			SEEL.sulphide_param1,SEEL.graphite_param1,SEEL.ol_param1,SEEL.mixture_param1,SEEL.other_param1]			
+			
+			SEEL.granite_param2 = np.zeros(1)
+			SEEL.granulite_param2 = np.zeros(1)
+			SEEL.sandstone_param2 = np.zeros(1)
+			SEEL.gneiss_param2 = np.zeros(1)
+			SEEL.amphibolite_param2 = np.zeros(1)
+			SEEL.basalt_param2 = np.zeros(1)
+			SEEL.mud_param2 = np.zeros(1)
+			SEEL.gabbro_param2 = np.zeros(1)
+			SEEL.other_rock_param2 = np.zeros(1)
+			
+			SEEL.param2_rock_list = [SEEL.granite_param2, SEEL.granulite_param2, SEEL.sandstone_param2, SEEL.gneiss_param2, SEEL.amphibolite_param2,
+			SEEL.basalt_param2, SEEL.mud_param2, SEEL.gabbro_param2, SEEL.other_rock_param2]
+			
+			SEEL.quartz_param2 = np.zeros(1)
+			SEEL.plag_param2 = np.zeros(1)
+			SEEL.amp_param2 = np.zeros(1)
+			SEEL.kfelds_param2 = np.zeros(1)
+			SEEL.garnet_param2 = np.zeros(1)
+			SEEL.opx_param2 = np.zeros(1)
+			SEEL.cpx_param2 = np.zeros(1)
+			SEEL.mica_param2 = np.zeros(1)
+			SEEL.sulphide_param2 = np.zeros(1)
+			SEEL.graphite_param2 = np.zeros(1)
+			SEEL.ol_param2 = np.zeros(1)
+			SEEL.mixture_param2 = np.zeros(1)
+			SEEL.other_param2 = np.zeros(1)
+			
+			SEEL.param2_mineral_list = [SEEL.quartz_param2,SEEL.plag_param2,SEEL.amp_param2,SEEL.kfelds_param2,SEEL.garnet_param2,SEEL.opx_param2,SEEL.cpx_param2,SEEL.mica_param2,
+			SEEL.sulphide_param2,SEEL.graphite_param2,SEEL.ol_param2,SEEL.mixture_param2,SEEL.other_param2]		
+			
+			self.melt_fluid_mass_frac = np.zeros(1)
+
+			self.bckgr_res = np.zeros(1)
+			
+			SEEL.phs_mix_method = 0
+			SEEL.phs_melt_mix_method = 0
+			
+			SEEL.melt_fluid_m = np.ones(1) * 5
+			
+			SEEL.granite_m = np.ones(1) * 4
+			SEEL.granulite_m = np.ones(1) * 4
+			SEEL.sandstone_m = np.ones(1) * 4
+			SEEL.gneiss_m = np.ones(1) * 4
+			SEEL.amphibolite_m = np.ones(1) * 4
+			SEEL.basalt_m = np.ones(1) * 4
+			SEEL.mud_m = np.ones(1) * 4
+			SEEL.gabbro_m = np.ones(1) * 4
+			SEEL.other_rock_m = np.ones(1) * 4
+			
+			SEEL.quartz_m = np.ones(1) * 1
+			SEEL.plag_m = np.ones(1) * 2.5
+			SEEL.amp_m = np.ones(1) * 4
+			SEEL.kfelds_m = np.ones(1) * 2.5
+			SEEL.opx_m = np.ones(1) * 4
+			SEEL.cpx_m = np.ones(1) * 4
+			SEEL.mica_m = np.ones(1) * 4
+			SEEL.garnet_m = np.ones(1) * 4
+			SEEL.sulphide_m = np.ones(1) * 6
+			SEEL.graphite_m = np.ones(1) * 6
+			SEEL.ol_m = np.ones(1) * 6
+			SEEL.mixture_m = np.ones(1) * 6
+			SEEL.other_m = np.ones(1) * 6
+			
+			self.depth = np.array([26.0])
+			self.p = np.array([1])
+			self.T = np.array([500.0])
+			
+			SEEL.o2_buffer = 0
+
+		elif SEEL.arguments_load == True:
+
+			data_comp_file = self.read_csv(filename = self.composition_args_path, delim = ',')
+
+			for i in range(1,len(data_comp_file)):
+
+				if data_comp_file[i][2] == 'SEEL':
+					if data_comp_file[i][3] == 'float':
+						setattr(SEEL, data_comp_file[i][0], np.array([float(data_comp_file[i][1])]))
+					elif data_comp_file[i][3] == 'int':
+						setattr(SEEL, data_comp_file[i][0], int(data_comp_file[i][1]))
+
+				elif data_comp_file[i][2] == 'self':
+					if data_comp_file[i][3] == 'float':
+						if ('frac' in data_comp_file[i][0]) == True:
+							setattr(self, data_comp_file[i][0], np.array([float(data_comp_file[i][1])/1e2]))
+						else:
+							if data_comp_file[i][0] == 'p':
+								setattr(self, data_comp_file[i][0], np.array([float(data_comp_file[i+1][1]) / 26.0]))
+							else:
+								setattr(self, data_comp_file[i][0], np.array([float(data_comp_file[i][1])]))
+					elif data_comp_file[i][3] == 'int':
+						setattr(self, data_comp_file[i][0], int(data_comp_file[i][1]))
 
 
-		self.rock_cond_selections = [CATE.granite_cond_selection, CATE.granulite_cond_selection, CATE.sandstone_cond_selection, CATE.gneiss_cond_selection,
-				   CATE.amphibolite_cond_selection, CATE.basalt_cond_selection, CATE.mud_cond_selection, CATE.gabbro_cond_selection, CATE.other_rock_cond_selection]
+		SEEL.rock_cond_selections = [SEEL.granite_cond_selection, SEEL.granulite_cond_selection, SEEL.sandstone_cond_selection, SEEL.gneiss_cond_selection,
+				   SEEL.amphibolite_cond_selection, SEEL.basalt_cond_selection, SEEL.mud_cond_selection, SEEL.gabbro_cond_selection, SEEL.other_rock_cond_selection]
 
-		self.minerals_cond_selections = [CATE.quartz_cond_selection, CATE.plag_cond_selection, CATE.amp_cond_selection, CATE.kfelds_cond_selection, CATE.pyx_cond_selection,
-				   CATE.mica_cond_selection, CATE.clay_cond_selection, CATE.carbonate_cond_selection, CATE.garnet_cond_selection, CATE.sulphide_cond_selection,
-				   CATE.graphite_cond_selection, CATE.other_cond_selection]
+		SEEL.minerals_cond_selections = [SEEL.quartz_cond_selection, SEEL.plag_cond_selection, SEEL.amp_cond_selection, SEEL.kfelds_cond_selection, SEEL.opx_cond_selection,
+				   SEEL.cpx_cond_selection, SEEL.mica_cond_selection, SEEL.garnet_cond_selection, SEEL.sulphide_cond_selection,
+				   SEEL.graphite_cond_selection, SEEL.ol_cond_selection, SEEL.mixture_cond_selection, SEEL.other_cond_selection]
+
+		self.composition_set = False
+
+		#Reading parameter files...
+
+		self.read_cond_models()
+		self.read_params()
 		
 	def read_csv(self,filename,delim):
 
@@ -285,19 +398,19 @@ class CATE(object):
 		self.mineral_num = 15
 
 		#Creating empty arrays for appending new data.
-		CATE.name = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
+		SEEL.name = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
 		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
-		CATE.type = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
+		SEEL.type = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
 		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
-		CATE.t_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
+		SEEL.t_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
 		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
-		CATE.t_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
+		SEEL.t_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
 		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
@@ -391,13 +504,13 @@ class CATE(object):
 		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 
 		#Filling up the arrays.
-		for i in range(0,len(CATE.type)):
+		for i in range(0,len(SEEL.type)):
 			count = 1
-			for j in range(0,len(CATE.type[i])):
-				CATE.name[i][count-1] = self.cond_data_array[i][count][0]
-				CATE.type[i][count-1] = self.cond_data_array[i][count][1]
-				CATE.t_min[i][count-1] = float(self.cond_data_array[i][count][2])
-				CATE.t_max[i][count-1] = float(self.cond_data_array[i][count][3])
+			for j in range(0,len(SEEL.type[i])):
+				SEEL.name[i][count-1] = self.cond_data_array[i][count][0]
+				SEEL.type[i][count-1] = self.cond_data_array[i][count][1]
+				SEEL.t_min[i][count-1] = float(self.cond_data_array[i][count][2])
+				SEEL.t_max[i][count-1] = float(self.cond_data_array[i][count][3])
 				self.p_min[i][count-1] = float(self.cond_data_array[i][count][4])
 				self.p_max[i][count-1] = float(self.cond_data_array[i][count][5])
 				self.w_calib[i][count-1] = int(self.cond_data_array[i][count][6])
@@ -435,18 +548,18 @@ class CATE(object):
 		self.avog = float(params_dat[2][1])
 		self.boltz = float(params_dat[3][1])
 		self.el_q = float(params_dat[4][1])
-		CATE.spreadsheet = str(params_dat[5][1])
+		SEEL.spreadsheet = str(params_dat[5][1])
 		self.mu = 4.0 * np.pi * 10**(-7)
 
 	def check_composition(self):
 
 		continue_adjusting = True
 
-		if CATE.solid_phase_method == 0:
+		if SEEL.solid_phase_method == 0:
 
 			pass
 
-		elif CATE.solid_phase_method == 1:
+		elif SEEL.solid_phase_method == 1:
 
 			tot = self.granite_frac[0] + self.granulite_frac[0] + self.sandstone_frac[0] +\
 			self.gneiss_frac[0] + self.amphibolite_frac[0] + self.basalt_frac[0] + self.mud_frac[0] +\
@@ -455,7 +568,7 @@ class CATE(object):
 			if (tot <= 0.99) and (tot >= 1.01):
 				QMessageBox.about(self, "Warning!", "The total number of does not add up to 100%. Currently it is:  " + str(tot*1e2))
 				continue_adjusting = False
-		elif CATE.solid_phase_method == 2:
+		elif SEEL.solid_phase_method == 2:
 
 			tot = self.quartz_frac[0] + self.plag_frac[0] + self.amp_frac[0] + self.kfelds_frac[0] +\
 			self.opx_frac[0] + self.cpx_frac[0] + self.mica_frac[0] + self.garnet_frac[0] + self.sulphide_frac[0] + self.graphite_frac[0] +\
@@ -482,29 +595,29 @@ class CATE(object):
 
 		cond_fluids = np.zeros(len(self.T))
 
-		if CATE.type[0][CATE.fluid_cond_selection] == '0':
+		if SEEL.type[0][SEEL.fluid_cond_selection] == '0':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_pol[0][CATE.fluid_cond_selection],
-								   E = self.h_pol[0][CATE.fluid_cond_selection])
+								   sigma = self.sigma_pol[0][SEEL.fluid_cond_selection],
+								   E = self.h_pol[0][SEEL.fluid_cond_selection])
 			
-		elif CATE.type[0][CATE.fluid_cond_selection] == '1':
+		elif SEEL.type[0][SEEL.fluid_cond_selection] == '1':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_pol[0][CATE.fluid_cond_selection],
-								   E = self.h_pol[0][CATE.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_p[0][CATE.fluid_cond_selection],
-								   E = self.h_p[0][CATE.fluid_cond_selection])
+								   sigma = self.sigma_pol[0][SEEL.fluid_cond_selection],
+								   E = self.h_pol[0][SEEL.fluid_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_p[0][SEEL.fluid_cond_selection],
+								   E = self.h_p[0][SEEL.fluid_cond_selection])
 			
-		elif CATE.type[0][CATE.fluid_cond_selection] == '3':
+		elif SEEL.type[0][SEEL.fluid_cond_selection] == '3':
 
-			if ('*' in CATE.name[0][CATE.fluid_cond_selection]) == True:
+			if ('*' in SEEL.name[0][SEEL.fluid_cond_selection]) == True:
 
-				fluids_odd_function = CATE.name[0][CATE.fluid_cond_selection].replace('*','')
+				fluids_odd_function = SEEL.name[0][SEEL.fluid_cond_selection].replace('*','')
 
 			else:
 
-				fluids_odd_function = CATE.name[0][CATE.fluid_cond_selection]
+				fluids_odd_function = SEEL.name[0][SEEL.fluid_cond_selection]
 
 			cond_fluids[idx_node] = eval(fluids_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], salinity = self.salinity_fluid[idx_node], method = method)')
 	
@@ -519,29 +632,29 @@ class CATE(object):
 
 		cond_melt = np.zeros(len(self.T))
 
-		if CATE.type[1][CATE.melt_cond_selection] == '0':
+		if SEEL.type[1][SEEL.melt_cond_selection] == '0':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_pol[1][CATE.melt_cond_selection],
-								   E = self.h_pol[1][CATE.melt_cond_selection])
+								   sigma = self.sigma_pol[1][SEEL.melt_cond_selection],
+								   E = self.h_pol[1][SEEL.melt_cond_selection])
 			
-		elif CATE.type[1][CATE.melt_cond_selection] == '1':
+		elif SEEL.type[1][SEEL.melt_cond_selection] == '1':
 
 			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_pol[1][CATE.melt_cond_selection],
-								   E = self.h_pol[1][CATE.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_p[1][CATE.melt_cond_selection],
-								   E = self.h_p[1][CATE.melt_cond_selection])
+								   sigma = self.sigma_pol[1][SEEL.melt_cond_selection],
+								   E = self.h_pol[1][SEEL.melt_cond_selection]) + self.calculate_arrhenian_single(T = self.T[idx_node],
+								   sigma = self.sigma_p[1][SEEL.melt_cond_selection],
+								   E = self.h_p[1][SEEL.melt_cond_selection])
 			
-		elif CATE.type[1][CATE.melt_cond_selection] == '3':
+		elif SEEL.type[1][SEEL.melt_cond_selection] == '3':
 
-			if ('*' in CATE.name[1][CATE.melt_cond_selection]) == True:
+			if ('*' in SEEL.name[1][SEEL.melt_cond_selection]) == True:
 
-				melt_odd_function = CATE.name[1][CATE.melt_cond_selection].replace('*','')
+				melt_odd_function = SEEL.name[1][SEEL.melt_cond_selection].replace('*','')
 
 			else:
 
-				melt_odd_function = CATE.name[1][CATE.melt_cond_selection]
+				melt_odd_function = SEEL.name[1][SEEL.melt_cond_selection]
 
 			cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node],' +
 			'Melt_CO2 = self.co2_melt, Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], method = method)')
@@ -559,13 +672,13 @@ class CATE(object):
 
 		rock_sub_idx = rock_idx - self.fluid_num
 
-		if CATE.type[rock_idx][self.rock_cond_selections[rock_sub_idx]] == '0':
+		if SEEL.type[rock_idx][self.rock_cond_selections[rock_sub_idx]] == '0':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[rock_idx][self.rock_cond_selections[rock_sub_idx]],
 								   E = self.h_pol[rock_idx][self.rock_cond_selections[rock_sub_idx]])
 			
-		elif CATE.type[rock_idx][self.rock_cond_selections[rock_sub_idx]] == '1':
+		elif SEEL.type[rock_idx][self.rock_cond_selections[rock_sub_idx]] == '1':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[rock_idx][self.rock_cond_selections[rock_sub_idx]],
@@ -573,15 +686,15 @@ class CATE(object):
 								   sigma = self.sigma_p[rock_idx][self.rock_cond_selections[rock_sub_idx]],
 								   E = self.h_p[rock_idx][self.rock_cond_selections[rock_sub_idx]])
 			
-		elif CATE.type[rock_idx][self.rock_cond_selections[rock_sub_idx]] == '3':
+		elif SEEL.type[rock_idx][self.rock_cond_selections[rock_sub_idx]] == '3':
 
-			if ('*' in CATE.name[rock_idx][self.rock_cond_selections[rock_sub_idx]]) == True:
+			if ('*' in SEEL.name[rock_idx][self.rock_cond_selections[rock_sub_idx]]) == True:
 
-				odd_function = CATE.name[rock_idx][self.rock_cond_selections[rock_sub_idx]].replace('*','')
+				odd_function = SEEL.name[rock_idx][self.rock_cond_selections[rock_sub_idx]].replace('*','')
 
 			else:
 
-				odd_function = CATE.name[rock_idx][self.rock_cond_selections[rock_sub_idx]]
+				odd_function = SEEL.name[rock_idx][self.rock_cond_selections[rock_sub_idx]]
 
 			cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], method = method)')
 
@@ -598,13 +711,13 @@ class CATE(object):
 
 		min_sub_idx = min_idx - self.fluid_num - self.rock_num
 
-		if CATE.type[min_idx][self.minerals_cond_selections[min_sub_idx]] == '0':
+		if SEEL.type[min_idx][self.minerals_cond_selections[min_sub_idx]] == '0':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[min_idx][self.minerals_cond_selections[min_sub_idx]],
 								   E = self.h_pol[min_idx][self.minerals_cond_selections[min_sub_idx]])
 			
-		elif CATE.type[min_idx][self.minerals_cond_selections[min_sub_idx]] == '1':
+		elif SEEL.type[min_idx][self.minerals_cond_selections[min_sub_idx]] == '1':
 
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[min_idx][self.minerals_cond_selections[min_sub_idx]],
@@ -612,15 +725,15 @@ class CATE(object):
 								   sigma = self.sigma_p[min_idx][self.minerals_cond_selections[min_sub_idx]],
 								   E = self.h_p[min_idx][self.minerals_cond_selections[min_sub_idx]])
 			
-		elif CATE.type[min_idx][self.minerals_cond_selections[min_sub_idx]] == '3':
+		elif SEEL.type[min_idx][self.minerals_cond_selections[min_sub_idx]] == '3':
 
-			if ('*' in CATE.name[min_idx][self.minerals_cond_selections[min_sub_idx]]) == True:
+			if ('*' in SEEL.name[min_idx][self.minerals_cond_selections[min_sub_idx]]) == True:
 
-				odd_function = CATE.name[min_idx][self.minerals_cond_selections[min_sub_idx]].replace('*','')
+				odd_function = SEEL.name[min_idx][self.minerals_cond_selections[min_sub_idx]].replace('*','')
 
 			else:
 
-				odd_function = CATE.name[min_idx][self.minerals_cond_selections[min_sub_idx]]
+				odd_function = SEEL.name[min_idx][self.minerals_cond_selections[min_sub_idx]]
 
 			cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], method = method)')
 
@@ -651,20 +764,20 @@ class CATE(object):
 				
 			for i in range(start_idx,end_idx):
 			
-				if CATE.solid_phase_method == 1:
+				if SEEL.solid_phase_method == 1:
 					phase_list = [self.granite_frac[i],self.granulite_frac[i],self.sandstone_frac[i],
 					self.gneiss_frac[i], self.amphibolite_frac[i], self.basalt_frac[i], self.mud_frac[i],
 					 self.gabbro_frac[i], self.other_rock_frac[i]]
-					m_list = [CATE.granite_m[i],CATE.granulite_m[i],CATE.sandstone_m[i],
-					CATE.gneiss_m[i], CATE.amphibolite_m[i], CATE.basalt_m[i], self.mud_m[i],
-					 self.gabbro_m[i], CATE.other_rock_m[i]]
-				elif CATE.solid_phase_method == 2:
+					m_list = [SEEL.granite_m[i],SEEL.granulite_m[i],SEEL.sandstone_m[i],
+					SEEL.gneiss_m[i], SEEL.amphibolite_m[i], SEEL.basalt_m[i], self.mud_m[i],
+					 self.gabbro_m[i], SEEL.other_rock_m[i]]
+				elif SEEL.solid_phase_method == 2:
 					phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
 					self.opx_frac[i], self.cpx_frac[0], self.mica_frac[i], self.garnet_frac[i],
 					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.mixture_frac[i], self.other_frac[i]]
-					m_list = [CATE.quartz_m[i], CATE.plag_m[i], CATE.amp_m[i], CATE.kfelds_m[i],
-					CATE.opx_m[i], CATE.cpx_m[i], CATE.mica_m[i], CATE.garnet_m[i],
-					CATE.sulphide_m[i], CATE.graphite_m[i], CATE.ol_m[i], CATE.mixture_m[i], CATE.other_m[i]]
+					m_list = [SEEL.quartz_m[i], SEEL.plag_m[i], SEEL.amp_m[i], SEEL.kfelds_m[i],
+					SEEL.opx_m[i], SEEL.cpx_m[i], SEEL.mica_m[i], SEEL.garnet_m[i],
+					SEEL.sulphide_m[i], SEEL.graphite_m[i], SEEL.ol_m[i], SEEL.mixture_m[i], SEEL.other_m[i]]
 					
 				frac_abundant = max(phase_list) #fraction of abundant mineral
 				idx_max_ph = phase_list.index(frac_abundant) #index of the abundant mineral
@@ -677,78 +790,78 @@ class CATE(object):
 				else:
 					m_abundant = 1
 
-				if CATE.solid_phase_method == 1:
+				if SEEL.solid_phase_method == 1:
 					
 					if idx_max_ph == 0:
-						CATE.granite_m[idx_node] = m_abundant
+						SEEL.granite_m[idx_node] = m_abundant
 					elif idx_max_ph == 1:
-						CATE.granulite_m[idx_node] = m_abundant
+						SEEL.granulite_m[idx_node] = m_abundant
 					elif idx_max_ph == 2:
-						CATE.sandstone_m[idx_node] = m_abundant
+						SEEL.sandstone_m[idx_node] = m_abundant
 					elif idx_max_ph == 3:
-						CATE.gneiss_m[idx_node] = m_abundant
+						SEEL.gneiss_m[idx_node] = m_abundant
 					elif idx_max_ph == 4:
-						CATE.amphibolite_m[idx_node] = m_abundant
+						SEEL.amphibolite_m[idx_node] = m_abundant
 					elif idx_max_ph == 5:
-						CATE.basalt_m[idx_node] = m_abundant
+						SEEL.basalt_m[idx_node] = m_abundant
 					elif idx_max_ph == 6:
-						CATE.mud_m[idx_node] = m_abundant
+						SEEL.mud_m[idx_node] = m_abundant
 					elif idx_max_ph == 7:
-						CATE.gabbro_m[idx_node] = m_abundant
+						SEEL.gabbro_m[idx_node] = m_abundant
 					elif idx_max_ph == 8:
-						CATE.other_rock_m[idx_node] = m_abundant
+						SEEL.other_rock_m[idx_node] = m_abundant
 					
-					self.bulk_cond[idx_node] = (self.granite_cond[idx_node]*(self.granite_frac[idx_node]**CATE.granite_m[idx_node])) +\
-					(self.granulite_cond[idx_node]*(self.granulite_frac[idx_node]**CATE.granulite_m[idx_node])) +\
-					(self.sandstone_cond[idx_node]*(self.sandstone_frac[idx_node]**CATE.sandstone_m[idx_node])) +\
-					(self.gneiss_cond[idx_node]*(self.gneiss_frac[idx_node]**CATE.gneiss_m[idx_node])) +\
-					(self.amphibolite_cond[idx_node]*(self.amphibolite_frac[idx_node]**CATE.amphibolite_m[idx_node])) +\
-					(self.basalt_cond[idx_node]*(self.basalt_frac[idx_node]**CATE.basalt_m[idx_node])) +\
-					(self.mud_cond[idx_node]*(self.mud_frac[idx_node]**CATE.mud_m[idx_node])) +\
-					(self.gabbro_cond[idx_node]*(self.gabbro_frac[idx_node]**CATE.gabbro_m[idx_node])) +\
-					(self.other_rock_cond[idx_node]*(self.other_rock_frac[idx_node]**CATE.other_rock_m[idx_node]))
+					self.bulk_cond[idx_node] = (self.granite_cond[idx_node]*(self.granite_frac[idx_node]**SEEL.granite_m[idx_node])) +\
+					(self.granulite_cond[idx_node]*(self.granulite_frac[idx_node]**SEEL.granulite_m[idx_node])) +\
+					(self.sandstone_cond[idx_node]*(self.sandstone_frac[idx_node]**SEEL.sandstone_m[idx_node])) +\
+					(self.gneiss_cond[idx_node]*(self.gneiss_frac[idx_node]**SEEL.gneiss_m[idx_node])) +\
+					(self.amphibolite_cond[idx_node]*(self.amphibolite_frac[idx_node]**SEEL.amphibolite_m[idx_node])) +\
+					(self.basalt_cond[idx_node]*(self.basalt_frac[idx_node]**SEEL.basalt_m[idx_node])) +\
+					(self.mud_cond[idx_node]*(self.mud_frac[idx_node]**SEEL.mud_m[idx_node])) +\
+					(self.gabbro_cond[idx_node]*(self.gabbro_frac[idx_node]**SEEL.gabbro_m[idx_node])) +\
+					(self.other_rock_cond[idx_node]*(self.other_rock_frac[idx_node]**SEEL.other_rock_m[idx_node]))
 				
-				elif CATE.solid_phase_method == 2:
+				elif SEEL.solid_phase_method == 2:
 					if idx_max_ph == 0:
-						CATE.quartz_m[idx_node] = m_abundant
+						SEEL.quartz_m[idx_node] = m_abundant
 					elif idx_max_ph == 1:
-						CATE.plag_m[idx_node] = m_abundant
+						SEEL.plag_m[idx_node] = m_abundant
 					elif idx_max_ph == 2:
-						CATE.amp_m[idx_node] = m_abundant
+						SEEL.amp_m[idx_node] = m_abundant
 					elif idx_max_ph == 3:
-						CATE.kfelds_m[idx_node] = m_abundant
+						SEEL.kfelds_m[idx_node] = m_abundant
 					elif idx_max_ph == 4:
-						CATE.opx_m[idx_node] = m_abundant
+						SEEL.opx_m[idx_node] = m_abundant
 					elif idx_max_ph == 5:
-						CATE.cpx_m[idx_node] = m_abundant
+						SEEL.cpx_m[idx_node] = m_abundant
 					elif idx_max_ph == 6:
-						CATE.mica_m[idx_node] = m_abundant
+						SEEL.mica_m[idx_node] = m_abundant
 					elif idx_max_ph == 7:
-						CATE.garnet_m[idx_node] = m_abundant
+						SEEL.garnet_m[idx_node] = m_abundant
 					elif idx_max_ph == 8:
-						CATE.sulphide_m[idx_node] = m_abundant
+						SEEL.sulphide_m[idx_node] = m_abundant
 					elif idx_max_ph == 9:
-						CATE.graphite_m[idx_node] = m_abundant
+						SEEL.graphite_m[idx_node] = m_abundant
 					elif idx_max_ph == 10:
-						CATE.ol_m[idx_node] = m_abundant
+						SEEL.ol_m[idx_node] = m_abundant
 					elif idx_max_ph == 11:
-						CATE.mixture_m[idx_node] = m_abundant
+						SEEL.mixture_m[idx_node] = m_abundant
 					elif idx_max_ph == 12:
-						CATE.other_m[idx_node] = m_abundant
+						SEEL.other_m[idx_node] = m_abundant
 						
-					self.bulk_cond[idx_node] = (self.quartz_cond[idx_node]*(self.quartz_frac[idx_node]**CATE.quartz_m[idx_node])) +\
-					(self.plag_cond[idx_node]*(self.plag_frac[idx_node]**CATE.plag_m[idx_node])) +\
-					(self.amp_cond[idx_node]*(self.amp_frac[idx_node]**CATE.amp_m[idx_node])) +\
-					(self.kfelds_cond[idx_node]*(self.kfelds_frac[idx_node]**CATE.kfelds_m[idx_node])) +\
-					(self.opx_cond[idx_node]*(self.opx_frac[idx_node]**CATE.opx_m[idx_node])) +\
-					(self.cpx_cond[idx_node]*(self.cpx_frac[idx_node]**CATE.cpx_m[idx_node])) +\
-					(self.mica_cond[idx_node]*(self.mica_frac[idx_node]**CATE.mica_m[idx_node])) +\
-					(self.garnet_cond[idx_node]*(self.garnet_frac[idx_node]**CATE.garnet_m[idx_node])) +\
-					(self.sulphide_cond[idx_node]*(self.sulphide_frac[idx_node]**CATE.sulphide_m[idx_node])) +\
-					(self.graphite_cond[idx_node]*(self.graphite_frac[idx_node]**CATE.graphite_m[idx_node])) +\
-					(self.ol_cond[idx_node]*(self.ol_frac[idx_node]**CATE.ol_m[idx_node])) +\
-					(self.mixture_cond[idx_node]*(self.mixture_frac[idx_node]**CATE.mixture_m[idx_node])) +\
-					(self.other_cond[idx_node]*(self.other_frac[idx_node]**CATE.other_m[idx_node]))
+					self.bulk_cond[idx_node] = (self.quartz_cond[idx_node]*(self.quartz_frac[idx_node]**SEEL.quartz_m[idx_node])) +\
+					(self.plag_cond[idx_node]*(self.plag_frac[idx_node]**SEEL.plag_m[idx_node])) +\
+					(self.amp_cond[idx_node]*(self.amp_frac[idx_node]**SEEL.amp_m[idx_node])) +\
+					(self.kfelds_cond[idx_node]*(self.kfelds_frac[idx_node]**SEEL.kfelds_m[idx_node])) +\
+					(self.opx_cond[idx_node]*(self.opx_frac[idx_node]**SEEL.opx_m[idx_node])) +\
+					(self.cpx_cond[idx_node]*(self.cpx_frac[idx_node]**SEEL.cpx_m[idx_node])) +\
+					(self.mica_cond[idx_node]*(self.mica_frac[idx_node]**SEEL.mica_m[idx_node])) +\
+					(self.garnet_cond[idx_node]*(self.garnet_frac[idx_node]**SEEL.garnet_m[idx_node])) +\
+					(self.sulphide_cond[idx_node]*(self.sulphide_frac[idx_node]**SEEL.sulphide_m[idx_node])) +\
+					(self.graphite_cond[idx_node]*(self.graphite_frac[idx_node]**SEEL.graphite_m[idx_node])) +\
+					(self.ol_cond[idx_node]*(self.ol_frac[idx_node]**SEEL.ol_m[idx_node])) +\
+					(self.mixture_cond[idx_node]*(self.mixture_frac[idx_node]**SEEL.mixture_m[idx_node])) +\
+					(self.other_cond[idx_node]*(self.other_frac[idx_node]**SEEL.other_m[idx_node]))
 					
 		elif method == 1:
 			
@@ -763,11 +876,11 @@ class CATE(object):
 				
 			for i in range(start_idx,end_idx):
 				
-				if CATE.solid_phase_method == 1:
+				if SEEL.solid_phase_method == 1:
 					list_i = [self.granite_cond[i], self.granulite_cond[i], self.sandstone_cond[i],
 					self.gneiss_cond[i],self.amphibolite_cond[i], self.basalt_cond[i], self.mud_cond[i],
 					  self.gabbro_cond, self.other_rock_cond[i]]
-				elif CATE.solid_phase_method == 2:
+				elif SEEL.solid_phase_method == 2:
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
 					self.garnet_cond[i],self.sulphide_cond[i],self.graphite_cond[i],self.ol_cond[i], self.mixture_cond[i], self.other_cond[i]]				
@@ -786,7 +899,7 @@ class CATE(object):
 					
 						list_i = np.delete(list_i, np.argwhere(list_i == 0))
 						
-				if CATE.solid_phase_method == 1:
+				if SEEL.solid_phase_method == 1:
 				
 					self.bulk_cond[i] = (((self.granite_frac[i] / (self.granite_cond[i] + (2*min_local))) +\
 					(self.granulite_frac[i] / (self.granulite_cond[i] + (2*min_local))) +\
@@ -799,7 +912,7 @@ class CATE(object):
 					(self.other_rock_frac[i] / (self.other_rock_cond[i] + (2*min_local))))**(-1.0)) -\
 					2.0*min_local
 						
-				elif CATE.solid_phase_method == 2:
+				elif SEEL.solid_phase_method == 2:
 				
 					self.bulk_cond[i] = (((self.quartz_frac[i] / (self.quartz_cond[i] + (2*min_local))) +\
 					(self.plag_frac[i] / (self.plag_cond[i] + (2*min_local))) +\
@@ -830,11 +943,11 @@ class CATE(object):
 				
 			for i in range(start_idx,end_idx):
 				
-				if CATE.solid_phase_method == 1:
+				if SEEL.solid_phase_method == 1:
 					list_i = [self.granite_cond[i], self.granulite_cond[i], self.sandstone_cond[i],
 					self.gneiss_cond[i],self.amphibolite_cond[i], self.basalt_cond[i], self.mud_cond[i],
 					  self.gabbro_cond, self.other_rock_cond[i]]
-				elif CATE.solid_phase_method == 2:
+				elif SEEL.solid_phase_method == 2:
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
 					self.garnet_cond[i],self.sulphide_cond[i],
@@ -854,7 +967,7 @@ class CATE(object):
 					
 						list_i = np.delete(list_i, np.argwhere(list_i == 0))
 						
-				if CATE.solid_phase_method == 1:
+				if SEEL.solid_phase_method == 1:
 				
 					self.bulk_cond[i] = (((self.granite_frac[i] / (self.granite_cond[i] + (2*max_local))) +\
 					(self.granulite_frac[i] / (self.granulite_cond[i] + (2*max_local))) +\
@@ -867,7 +980,7 @@ class CATE(object):
 					(self.other_rock_frac[i] / (self.other_rock_cond[i] + (2*max_local))))**(-1.0)) -\
 					2.0*max_local
 						
-				elif CATE.solid_phase_method == 2:
+				elif SEEL.solid_phase_method == 2:
 				
 					self.bulk_cond[i] = (((self.quartz_frac[i] / (self.quartz_cond[i] + (2*max_local))) +\
 					(self.plag_frac[i] / (self.plag_cond[i] + (2*max_local))) +\
@@ -889,7 +1002,7 @@ class CATE(object):
 		
 			#Parallel model for maximum, minimum bounds and neutral w/o errors
 			
-			if CATE.solid_phase_method == 1:
+			if SEEL.solid_phase_method == 1:
 				self.bulk_cond[idx_node] = (self.granite_frac[idx_node]*self.granite_cond[idx_node]) +\
 				(self.granulite_frac[idx_node]*self.granulite_cond[idx_node]) +\
 				(self.sandstone_frac[idx_node]*self.sandstone_cond[idx_node]) +\
@@ -900,7 +1013,7 @@ class CATE(object):
 				(self.gabbro_frac[idx_node]*self.gabbro_cond[idx_node]) +\
 				(self.other_rock_frac[idx_node]*self.other_rock_cond[idx_node])
 				
-			elif CATE.solid_phase_method == 2:
+			elif SEEL.solid_phase_method == 2:
 			
 				self.bulk_cond[idx_node] = (self.quartz_frac[idx_node]*self.quartz_cond[idx_node]) +\
 				(self.plag_frac[idx_node]*self.plag_cond[idx_node]) +\
@@ -928,7 +1041,7 @@ class CATE(object):
 				end_idx = sol_idx + 1
 
 			#Perpendicular model for maximum, minimum bounds and neutral w/o errors				
-			if CATE.solid_phase_method == 1:
+			if SEEL.solid_phase_method == 1:
 				for i in range(start_idx,end_idx):
 					if self.granite_frac[i] == 0.0:
 						self.granite_cond[i] = -999
@@ -959,7 +1072,7 @@ class CATE(object):
 				(self.gabbro_frac[idx_node] / self.gabbro_cond[idx_node]) +\
 				(self.other_rock_frac[idx_node] / self.other_rock_cond[idx_node]))
 				
-			elif CATE.solid_phase_method == 2:
+			elif SEEL.solid_phase_method == 2:
 			
 				for i in range(start_idx,end_idx):
 					if self.quartz_frac[i] == 0.0:
@@ -1007,7 +1120,7 @@ class CATE(object):
 		
 			#Random model for maximum, minimum bounds and neutral w/o errors
 			
-			if CATE.solid_phase_method == 1:
+			if SEEL.solid_phase_method == 1:
 				
 				self.bulk_cond[idx_node] = (self.granite_cond[idx_node]**self.granite_frac[idx_node]) *\
 				(self.granulite_cond[idx_node]**self.granulite_frac[idx_node]) *\
@@ -1019,7 +1132,7 @@ class CATE(object):
 				(self.gabbro_cond[idx_node]**self.gabbro_frac[idx_node]) *\
 				(self.other_rock_cond[idx_node]**self.other_rock_frac[idx_node]) 
 				
-			elif CATE.solid_phase_method == 2:
+			elif SEEL.solid_phase_method == 2:
 
 				self.bulk_cond[idx_node] = (self.quartz_cond[idx_node]**self.quartz_frac[idx_node]) *\
 				(self.plag_cond[idx_node]**self.plag_frac[idx_node]) *\
@@ -1047,14 +1160,14 @@ class CATE(object):
 		#checking if there's any melt/fluid on the list at all.
 		if np.mean(self.melt_fluid_mass_frac) != 0:
 			
-			if CATE.fluid_or_melt_method == 0:
+			if SEEL.fluid_or_melt_method == 0:
 				
 				dens = iapws.iapws08.SeaWater(T = self.T[idx_node], P = self.p[idx_node], S = 0)
 				self.dens_melt_fluid[idx_node] = dens.rho / 1e3
 				
-			elif CATE.fluid_or_melt_method == 1:
+			elif SEEL.fluid_or_melt_method == 1:
 				
-				self.dens_melt_dry = float(self.dens_mat[1][CATE.melt_cond_selection]) / 1e3 #index 1 is equate to melt
+				self.dens_melt_dry = float(self.dens_mat[1][SEEL.melt_cond_selection]) / 1e3 #index 1 is equate to melt
 				#Determining xvol, first have to calculate the density of the melt from Sifre et al. (2014)
 				
 				self.dens_melt_fluid[idx_node] = (((self.h2o_melt[idx_node] * 1e-4) / 1e2) * 1.4) +\
@@ -1084,9 +1197,9 @@ class CATE(object):
 
 					if self.melt_fluid_mass_frac[i] != 0.0:
 
-						p = np.log10(1.0 - self.melt_fluid_frac[i]**CATE.melt_fluid_m[i]) / np.log10(1.0 - self.melt_fluid_frac[i])
+						p = np.log10(1.0 - self.melt_fluid_frac[i]**SEEL.melt_fluid_m[i]) / np.log10(1.0 - self.melt_fluid_frac[i])
 
-						self.bulk_cond[i] = (self.bulk_cond[i] * (1.0 - self.melt_fluid_frac[i])**p) + (self.melt_fluid_cond[i] * (self.melt_fluid_frac[i]**CATE.melt_fluid_m[i]))
+						self.bulk_cond[i] = (self.bulk_cond[i] * (1.0 - self.melt_fluid_frac[i])**p) + (self.melt_fluid_cond[i] * (self.melt_fluid_frac[i]**SEEL.melt_fluid_m[i]))
 							
 			elif melt_method == 1:
 
@@ -1139,16 +1252,16 @@ class CATE(object):
 
 			index = None
 
-		if CATE.fluid_or_melt_method == 0:
+		if SEEL.fluid_or_melt_method == 0:
 			self.melt_fluid_cond = self.calculate_fluids_conductivity(method= method, sol_idx = index)
-		elif CATE.fluid_or_melt_method == 1:
+		elif SEEL.fluid_or_melt_method == 1:
 			self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
 	
-		if CATE.solid_phase_method == 0:
+		if SEEL.solid_phase_method == 0:
 
-			self.phase_mixing_function(method == -1, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = index)
+			self.phase_mixing_function(method == -1, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 			
-		elif CATE.solid_phase_method == 1:
+		elif SEEL.solid_phase_method == 1:
 		
 			if self.granite_frac[0] != 0:
 				self.granite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 2, sol_idx = index)
@@ -1196,9 +1309,9 @@ class CATE(object):
 				self.other_rock_cond = np.array([0])
 				
 		
-			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = index)
+			self.phase_mixing_function(method == SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 			
-		elif CATE.solid_phase_method == 2:
+		elif SEEL.solid_phase_method == 2:
 		
 			if self.quartz_frac[0] != 0:
 				self.quartz_cond = self.calculate_mineral_conductivity(method = method, min_idx= 11, sol_idx = index)
@@ -1266,7 +1379,7 @@ class CATE(object):
 				self.other_cond = np.array([0])
 	
 				
-			self.phase_mixing_function(method == CATE.phs_mix_method, melt_method = CATE.phs_melt_mix_method, indexing_method= method, sol_idx = index)
+			self.phase_mixing_function(method == SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 		
 		self.cond_calculated = True
 
@@ -1278,8 +1391,8 @@ class CATE(object):
 
 			for i in range(1,len(self.init_params)):
 
-				if self.init_params[i][2] == 'CATE':
-					val = getattr(CATE,self.init_params[i][0])
+				if self.init_params[i][2] == 'SEEL':
+					val = getattr(SEEL,self.init_params[i][0])
 				elif self.init_params[i][2] == 'self':
 					val = getattr(self,self.init_params[i][0])
 				try:
@@ -1314,7 +1427,7 @@ class CATE(object):
 
 		for i in range(0,len(self.T)):
 
-			if CATE.solid_phase_method == 1:
+			if SEEL.solid_phase_method == 1:
 
 				self.granite_frac = np.ones(len(self.T)) * self.granite_frac[0]
 				self.granulite_frac = np.ones(len(self.T)) * self.granulite_frac[0]
@@ -1326,17 +1439,17 @@ class CATE(object):
 				self.gabbro_frac = np.ones(len(self.T)) * self.gabbro_frac[0]
 				self.other_rock_frac = np.ones(len(self.T)) * self.other_rock_frac[0]
 
-				CATE.granite_m = np.ones(len(self.T)) * CATE.granite_m[0]
-				CATE.granulite_m = np.ones(len(self.T)) * CATE.granulite_m[0]
-				CATE.sandstone_m = np.ones(len(self.T)) * CATE.sandstone_m[0]
-				CATE.gneiss_m = np.ones(len(self.T)) * CATE.gneiss_m[0]
-				CATE.amphibolite_m = np.ones(len(self.T)) * CATE.amphibolite_m[0]
-				CATE.basalt_m = np.ones(len(self.T)) * CATE.basalt_m[0]
-				CATE.mud_m = np.ones(len(self.T)) * CATE.mud_m[0]
-				CATE.gabbro_m = np.ones(len(self.T)) * CATE.gabbro_m[0]
-				CATE.other_rock_m = np.ones(len(self.T)) * CATE.other_rock_m[0]
+				SEEL.granite_m = np.ones(len(self.T)) * SEEL.granite_m[0]
+				SEEL.granulite_m = np.ones(len(self.T)) * SEEL.granulite_m[0]
+				SEEL.sandstone_m = np.ones(len(self.T)) * SEEL.sandstone_m[0]
+				SEEL.gneiss_m = np.ones(len(self.T)) * SEEL.gneiss_m[0]
+				SEEL.amphibolite_m = np.ones(len(self.T)) * SEEL.amphibolite_m[0]
+				SEEL.basalt_m = np.ones(len(self.T)) * SEEL.basalt_m[0]
+				SEEL.mud_m = np.ones(len(self.T)) * SEEL.mud_m[0]
+				SEEL.gabbro_m = np.ones(len(self.T)) * SEEL.gabbro_m[0]
+				SEEL.other_rock_m = np.ones(len(self.T)) * SEEL.other_rock_m[0]
 
-			elif CATE.solid_phase_method == 2:
+			elif SEEL.solid_phase_method == 2:
 
 				self.quartz_frac = np.ones(len(self.T)) * self.quartz_frac[0]
 				self.plag_frac = np.ones(len(self.T)) * self.plag_frac[0]
@@ -1351,20 +1464,20 @@ class CATE(object):
 				self.sulphide_frac = np.ones(len(self.T)) * self.sulphide_frac[0]
 				self.other_frac = np.ones(len(self.T)) * self.other_frac[0]
 
-				CATE.quartz_m = np.ones(len(self.T)) * CATE.quartz_m[0]
-				CATE.plag_m = np.ones(len(self.T)) * CATE.plag_m[0]
-				CATE.amp_m = np.ones(len(self.T)) * CATE.amp_m[0]
-				CATE.kfelds_m = np.ones(len(self.T)) * CATE.kfelds_m[0]
-				CATE.garnet_m = np.ones(len(self.T)) * CATE.garnet_m[0]
-				CATE.pyx_m = np.ones(len(self.T)) * CATE.pyx_m[0]
-				CATE.mica_m = np.ones(len(self.T)) * CATE.mica_m[0]
-				CATE.clay_m = np.ones(len(self.T)) * CATE.clay_m[0]
-				CATE.carbonate_m = np.ones(len(self.T)) * CATE.carbonate_m[0]
-				CATE.graphite_m = np.ones(len(self.T)) * CATE.graphite_m[0]
-				CATE.sulphide_m = np.ones(len(self.T)) * CATE.sulphide_m[0]
-				CATE.other_m = np.ones(len(self.T)) * CATE.other_m[0]
+				SEEL.quartz_m = np.ones(len(self.T)) * SEEL.quartz_m[0]
+				SEEL.plag_m = np.ones(len(self.T)) * SEEL.plag_m[0]
+				SEEL.amp_m = np.ones(len(self.T)) * SEEL.amp_m[0]
+				SEEL.kfelds_m = np.ones(len(self.T)) * SEEL.kfelds_m[0]
+				SEEL.garnet_m = np.ones(len(self.T)) * SEEL.garnet_m[0]
+				SEEL.pyx_m = np.ones(len(self.T)) * SEEL.pyx_m[0]
+				SEEL.mica_m = np.ones(len(self.T)) * SEEL.mica_m[0]
+				SEEL.clay_m = np.ones(len(self.T)) * SEEL.clay_m[0]
+				SEEL.carbonate_m = np.ones(len(self.T)) * SEEL.carbonate_m[0]
+				SEEL.graphite_m = np.ones(len(self.T)) * SEEL.graphite_m[0]
+				SEEL.sulphide_m = np.ones(len(self.T)) * SEEL.sulphide_m[0]
+				SEEL.other_m = np.ones(len(self.T)) * SEEL.other_m[0]
 
-			CATE.melt_fluid_m = np.ones(len(self.T)) * CATE.melt_fluid_m[0]
+			SEEL.melt_fluid_m = np.ones(len(self.T)) * SEEL.melt_fluid_m[0]
 			self.melt_fluid_mass_frac = np.ones(len(self.T)) * self.melt_fluid_mass_frac[0]
 			self.salinity_fluid = np.ones(len(self.T)) * self.salinity_fluid[0]
 			self.co2_melt = np.ones(len(self.T)) * self.co2_melt[0]
@@ -1383,5 +1496,3 @@ class CATE(object):
 		filesave_results.writelines(lines)
 		filesave_results.close()
 		print("Files are saved at the chosen location...")
-
-RUN_PROGRAM = CATE()
