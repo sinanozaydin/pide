@@ -2,7 +2,7 @@
 
 import os
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'cate_src')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'seel_src')
 
 import sys, csv, platform, warnings
 import numpy as np
@@ -13,30 +13,30 @@ import iapws
 sys.path.append(core_path_ext)
 
 #importing odd melt/fluid functions
-from cond_models.melt_odd import * 
-from cond_models.fluids_odd import * 
+from seel_src.cond_models.melt_odd import * 
+from seel_src.cond_models.fluids_odd import * 
 #importing odd rock functions
-from cond_models.rocks.granite_odd import * 
-from cond_models.rocks.granulite_odd import *
-from cond_models.rocks.sandstone_odd import *
-from cond_models.rocks.gneiss_odd import *
-from cond_models.rocks.amphibolite_odd import *
-from cond_models.rocks.basalt_odd import *
-from cond_models.rocks.mud_odd import *
-from cond_models.rocks.gabbro_odd import *
-from cond_models.rocks.other_rocks_odd import *
+from seel_src.cond_models.rocks.granite_odd import * 
+from seel_src.cond_models.rocks.granulite_odd import *
+from seel_src.cond_models.rocks.sandstone_odd import *
+from seel_src.cond_models.rocks.gneiss_odd import *
+from seel_src.cond_models.rocks.amphibolite_odd import *
+from seel_src.cond_models.rocks.basalt_odd import *
+from seel_src.cond_models.rocks.mud_odd import *
+from seel_src.cond_models.rocks.gabbro_odd import *
+from seel_src.cond_models.rocks.other_rocks_odd import *
 #importing odd mineral functions
-from cond_models.minerals.quartz_odd import *
-from cond_models.minerals.plag_odd import *
-from cond_models.minerals.amp_odd import *
-from cond_models.minerals.kfelds_odd import *
-from cond_models.minerals.opx_odd import *
-from cond_models.minerals.cpx_odd import *
-from cond_models.minerals.mica_odd import *
-from cond_models.minerals.garnet_odd import *
-from cond_models.minerals.ol_odd import *
-from cond_models.minerals.mixtures_odd import *
-from cond_models.minerals.other_odd import *
+from seel_src.cond_models.minerals.quartz_odd import *
+from seel_src.cond_models.minerals.plag_odd import *
+from seel_src.cond_models.minerals.amp_odd import *
+from seel_src.cond_models.minerals.kfelds_odd import *
+from seel_src.cond_models.minerals.opx_odd import *
+from seel_src.cond_models.minerals.cpx_odd import *
+from seel_src.cond_models.minerals.mica_odd import *
+from seel_src.cond_models.minerals.garnet_odd import *
+from seel_src.cond_models.minerals.ol_odd import *
+from seel_src.cond_models.minerals.mixtures_odd import *
+from seel_src.cond_models.minerals.other_odd import *
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
 
@@ -55,9 +55,9 @@ class SEEL(object):
 	
 	def __init__(self, core_path = core_path_ext):
 
-		args_input = sys.argv
 		self.core_path = core_path
-
+				
+		self.home()
 		
 	def home(self):
 		
@@ -68,239 +68,6 @@ class SEEL(object):
 
 		self.init_params = self.read_csv(filename = os.path.join(self.core_path,'init_param.csv'),delim = ',') #loading the blueprint parameter file.
 		
-		if SEEL.arguments_load == False:
-
-			SEEL.fluid_cond_selection = 0
-			SEEL.melt_cond_selection = 0
-
-			SEEL.fluid_or_melt_method = 0
-			SEEL.solid_phase_method = 2
-
-			SEEL.granite_cond_selection = 0
-			SEEL.granulite_cond_selection = 0
-			SEEL.sandstone_cond_selection = 0
-			SEEL.gneiss_cond_selection = 0
-			SEEL.amphibolite_cond_selection = 0
-			SEEL.basalt_cond_selection = 0
-			SEEL.mud_cond_selection = 0
-			SEEL.gabbro_cond_selection = 0
-			SEEL.other_rock_cond_selection = 0
-
-			SEEL.quartz_cond_selection = 0
-			SEEL.plag_cond_selection = 0
-			SEEL.amp_cond_selection = 0
-			SEEL.kfelds_cond_selection = 0
-			SEEL.opx_cond_selection = 0
-			SEEL.cpx_cond_selection = 0
-			SEEL.mica_cond_selection = 0
-			SEEL.garnet_cond_selection = 0
-			SEEL.sulphide_cond_selection = 0
-			SEEL.graphite_cond_selection = 0
-			SEEL.ol_cond_selection = 0
-			SEEL.mixture_cond_selection = 0
-			SEEL.other_cond_selection = 0
-			
-			SEEL.ol_calib = 3
-			SEEL.px_gt_calib = 2
-			SEEL.feldspar_calib = 2
-
-			self.salinity_fluid = np.zeros(1)
-			self.k2o_melt = np.zeros(1)
-			self.co2_melt = np.zeros(1)
-			self.h2o_melt = np.zeros(1)
-			self.na2o_melt = np.zeros(1)
-			
-			self.granite_frac = np.ones(1) * 0.8
-			self.granulite_frac = np.ones(1) * 0.2
-			self.sandstone_frac = np.zeros(1)
-			self.gneiss_frac = np.zeros(1)
-			self.amphibolite_frac = np.zeros(1)
-			self.basalt_frac = np.zeros(1)
-			self.mud_frac = np.zeros(1)
-			self.gabbro_frac = np.zeros(1)
-			self.other_rock_frac = np.zeros(1)
-
-			SEEL.granite_water = np.zeros(1)
-			SEEL.granulite_water = np.zeros(1)
-			SEEL.sandstone_water = np.zeros(1)
-			SEEL.gneiss_water = np.zeros(1)
-			SEEL.amphibolite_water = np.zeros(1)
-			SEEL.basalt_water = np.zeros(1)
-			SEEL.mud_water = np.zeros(1)
-			SEEL.gabbro_water = np.zeros(1)
-			SEEL.other_rock_water = np.zeros(1)
-			
-			SEEL.rock_water_list = [SEEL.granite_water, SEEL.granulite_water,
-			SEEL.sandstone_water, SEEL.gneiss_water, SEEL.amphibolite_water, SEEL.basalt_water,
-			SEEL.mud_water, SEEL.gabbro_water, SEEL.other_rock_water]
-			
-			self.quartz_frac = np.zeros(1)
-			self.plag_frac = np.zeros(1)
-			self.amp_frac = np.zeros(1)
-			self.kfelds_frac = np.zeros(1)
-			self.opx_frac = np.zeros(1)
-			self.cpx_frac = np.zeros(1)
-			self.mica_frac = np.zeros(1)
-			self.garnet_frac = np.zeros(1)
-			self.sulphide_frac = np.zeros(1)
-			self.graphite_frac = np.zeros(1)
-			self.ol_frac = np.zeros(1)
-			self.mixture_frac = np.zeros(1)
-			self.other_frac = np.zeros(1)
-
-			SEEL.quartz_water = np.zeros(1)
-			SEEL.plag_water = np.zeros(1)
-			SEEL.amp_water = np.zeros(1)
-			SEEL.kfelds_water = np.zeros(1)
-			SEEL.garnet_water = np.zeros(1)
-			SEEL.opx_water = np.zeros(1)
-			SEEL.cpx_water = np.zeros(1)
-			SEEL.mica_water = np.zeros(1)
-			SEEL.sulphide_water = np.zeros(1)
-			SEEL.graphite_water = np.zeros(1)
-			SEEL.ol_water = np.zeros(1)
-			SEEL.mixture_water = np.zeros(1)
-			SEEL.other_water = np.zeros(1)
-			
-			SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
-			SEEL.garnet_water,  SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.sulphide_water,
-				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water]
-				   
-			SEEL.granite_param1 = np.zeros(1)
-			SEEL.granulite_param1 = np.zeros(1)
-			SEEL.sandstone_param1 = np.zeros(1)
-			SEEL.gneiss_param1 = np.zeros(1)
-			SEEL.amphibolite_param1 = np.zeros(1)
-			SEEL.basalt_param1 = np.zeros(1)
-			SEEL.mud_param1 = np.zeros(1)
-			SEEL.gabbro_param1 = np.zeros(1)
-			SEEL.other_rock_param1 = np.zeros(1)
-			
-			SEEL.param1_rock_list = [SEEL.granite_param1, SEEL.granulite_param1, SEEL.sandstone_param1, SEEL.gneiss_param1, SEEL.amphibolite_param1,
-			SEEL.basalt_param1, SEEL.mud_param1, SEEL.gabbro_param1, SEEL.other_rock_param1]
-			
-			SEEL.quartz_param1 = np.zeros(1)
-			SEEL.plag_param1 = np.zeros(1)
-			SEEL.amp_param1 = np.zeros(1)
-			SEEL.kfelds_param1 = np.zeros(1)
-			SEEL.garnet_param1 = np.zeros(1)
-			SEEL.opx_param1 = np.zeros(1)
-			SEEL.cpx_param1 = np.zeros(1)
-			SEEL.mica_param1 = np.zeros(1)
-			SEEL.sulphide_param1 = np.zeros(1)
-			SEEL.graphite_param1 = np.zeros(1)
-			SEEL.ol_param1 = np.zeros(1)
-			SEEL.mixture_param1 = np.zeros(1)
-			SEEL.other_param1 = np.zeros(1)
-			
-			SEEL.param1_mineral_list = [SEEL.quartz_param1,SEEL.plag_param1,SEEL.amp_param1,SEEL.kfelds_param1,SEEL.garnet_param1,SEEL.opx_param1,SEEL.cpx_param1,SEEL.mica_param1,
-			SEEL.sulphide_param1,SEEL.graphite_param1,SEEL.ol_param1,SEEL.mixture_param1,SEEL.other_param1]			
-			
-			SEEL.granite_param2 = np.zeros(1)
-			SEEL.granulite_param2 = np.zeros(1)
-			SEEL.sandstone_param2 = np.zeros(1)
-			SEEL.gneiss_param2 = np.zeros(1)
-			SEEL.amphibolite_param2 = np.zeros(1)
-			SEEL.basalt_param2 = np.zeros(1)
-			SEEL.mud_param2 = np.zeros(1)
-			SEEL.gabbro_param2 = np.zeros(1)
-			SEEL.other_rock_param2 = np.zeros(1)
-			
-			SEEL.param2_rock_list = [SEEL.granite_param2, SEEL.granulite_param2, SEEL.sandstone_param2, SEEL.gneiss_param2, SEEL.amphibolite_param2,
-			SEEL.basalt_param2, SEEL.mud_param2, SEEL.gabbro_param2, SEEL.other_rock_param2]
-			
-			SEEL.quartz_param2 = np.zeros(1)
-			SEEL.plag_param2 = np.zeros(1)
-			SEEL.amp_param2 = np.zeros(1)
-			SEEL.kfelds_param2 = np.zeros(1)
-			SEEL.garnet_param2 = np.zeros(1)
-			SEEL.opx_param2 = np.zeros(1)
-			SEEL.cpx_param2 = np.zeros(1)
-			SEEL.mica_param2 = np.zeros(1)
-			SEEL.sulphide_param2 = np.zeros(1)
-			SEEL.graphite_param2 = np.zeros(1)
-			SEEL.ol_param2 = np.zeros(1)
-			SEEL.mixture_param2 = np.zeros(1)
-			SEEL.other_param2 = np.zeros(1)
-			
-			SEEL.param2_mineral_list = [SEEL.quartz_param2,SEEL.plag_param2,SEEL.amp_param2,SEEL.kfelds_param2,SEEL.garnet_param2,SEEL.opx_param2,SEEL.cpx_param2,SEEL.mica_param2,
-			SEEL.sulphide_param2,SEEL.graphite_param2,SEEL.ol_param2,SEEL.mixture_param2,SEEL.other_param2]		
-			
-			self.melt_fluid_mass_frac = np.zeros(1)
-
-			self.bckgr_res = np.zeros(1)
-			
-			SEEL.phs_mix_method = 0
-			SEEL.phs_melt_mix_method = 0
-			
-			SEEL.melt_fluid_m = np.ones(1) * 5
-			
-			SEEL.granite_m = np.ones(1) * 4
-			SEEL.granulite_m = np.ones(1) * 4
-			SEEL.sandstone_m = np.ones(1) * 4
-			SEEL.gneiss_m = np.ones(1) * 4
-			SEEL.amphibolite_m = np.ones(1) * 4
-			SEEL.basalt_m = np.ones(1) * 4
-			SEEL.mud_m = np.ones(1) * 4
-			SEEL.gabbro_m = np.ones(1) * 4
-			SEEL.other_rock_m = np.ones(1) * 4
-			
-			SEEL.quartz_m = np.ones(1) * 1
-			SEEL.plag_m = np.ones(1) * 2.5
-			SEEL.amp_m = np.ones(1) * 4
-			SEEL.kfelds_m = np.ones(1) * 2.5
-			SEEL.opx_m = np.ones(1) * 4
-			SEEL.cpx_m = np.ones(1) * 4
-			SEEL.mica_m = np.ones(1) * 4
-			SEEL.garnet_m = np.ones(1) * 4
-			SEEL.sulphide_m = np.ones(1) * 6
-			SEEL.graphite_m = np.ones(1) * 6
-			SEEL.ol_m = np.ones(1) * 6
-			SEEL.mixture_m = np.ones(1) * 6
-			SEEL.other_m = np.ones(1) * 6
-			
-			self.depth = np.array([26.0])
-			self.p = np.array([1])
-			self.T = np.array([500.0])
-			
-			SEEL.o2_buffer = 0
-
-		elif SEEL.arguments_load == True:
-
-			data_comp_file = self.read_csv(filename = self.composition_args_path, delim = ',')
-
-			for i in range(1,len(data_comp_file)):
-
-				if data_comp_file[i][2] == 'SEEL':
-					if data_comp_file[i][3] == 'float':
-						setattr(SEEL, data_comp_file[i][0], np.array([float(data_comp_file[i][1])]))
-					elif data_comp_file[i][3] == 'int':
-						setattr(SEEL, data_comp_file[i][0], int(data_comp_file[i][1]))
-
-				elif data_comp_file[i][2] == 'self':
-					if data_comp_file[i][3] == 'float':
-						if ('frac' in data_comp_file[i][0]) == True:
-							setattr(self, data_comp_file[i][0], np.array([float(data_comp_file[i][1])/1e2]))
-						else:
-							if data_comp_file[i][0] == 'p':
-								setattr(self, data_comp_file[i][0], np.array([float(data_comp_file[i+1][1]) / 26.0]))
-							else:
-								setattr(self, data_comp_file[i][0], np.array([float(data_comp_file[i][1])]))
-					elif data_comp_file[i][3] == 'int':
-						setattr(self, data_comp_file[i][0], int(data_comp_file[i][1]))
-
-
-		SEEL.rock_cond_selections = [SEEL.granite_cond_selection, SEEL.granulite_cond_selection, SEEL.sandstone_cond_selection, SEEL.gneiss_cond_selection,
-				   SEEL.amphibolite_cond_selection, SEEL.basalt_cond_selection, SEEL.mud_cond_selection, SEEL.gabbro_cond_selection, SEEL.other_rock_cond_selection]
-
-		SEEL.minerals_cond_selections = [SEEL.quartz_cond_selection, SEEL.plag_cond_selection, SEEL.amp_cond_selection, SEEL.kfelds_cond_selection, SEEL.opx_cond_selection,
-				   SEEL.cpx_cond_selection, SEEL.mica_cond_selection, SEEL.garnet_cond_selection, SEEL.sulphide_cond_selection,
-				   SEEL.graphite_cond_selection, SEEL.ol_cond_selection, SEEL.mixture_cond_selection, SEEL.other_cond_selection]
-
-		self.composition_set = False
-
-		#Reading parameter files...
-
 		self.read_cond_models()
 		self.read_params()
 		
@@ -401,107 +168,107 @@ class SEEL(object):
 		SEEL.name = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		SEEL.type = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		SEEL.t_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		SEEL.t_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.p_min = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.p_max = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.w_calib = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.mg_cond = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.sigma_i =  [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.sigma_i_err =  [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.h_i =  [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.h_i_err =  [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.sigma_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.sigma_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.h_pol = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.h_pol_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.sigma_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.sigma_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.h_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.h_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.r = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.r_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.alpha_p = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.alpha_p_err = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.wtype = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 		self.dens_mat = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 		   [None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-		    [None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
 
 		#Filling up the arrays.
 		for i in range(0,len(SEEL.type)):

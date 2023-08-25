@@ -63,8 +63,7 @@ class bcolors:
 	
 #Version 0.1, June. 2023.
 #SEEL - (S)ynthetic (E)lectrical (E)arth (L)ibrary
-#Program written by Sinan Ozaydin (Macquarie University, School of Natural Sciences
-#sciences, Australia).
+#Program written by Sinan Ozaydin (University of Sydney, School of Geosciences, Australia).
 
 #Indentation method: hard tabs ('\t')
 
@@ -76,9 +75,10 @@ print(bcolors.GREEN + '#############################################')
 print(' ')
 print(' ')
 print(' ')
-print(bcolors.GREEN + '                  SEEL 0.1')
+print(bcolors.GREEN + '                  SEEL_GUI 0.1')
 print(' ')
-print(bcolors.BLUE + '            Synthetic Electrical Earth Library')
+print(bcolors.BLUE + '        Synthetic Electrical Earth Library')
+print(bcolors.RED + '            Graphical User Interface')
 print(' ')
 print(' ')
 print(' ')
@@ -159,9 +159,6 @@ class SEEL(QMainWindow):
 		self.water_calib_pop = None
 
 		watercalibMenu.addAction(watercalibButton)
-
-		
-		
 
 		self.home()
 		
