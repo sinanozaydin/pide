@@ -14,9 +14,7 @@ def Dai2009_wetPyropeGarnet(T, P, water, param1, param2, fo2 = None, fo2_ref = N
 	E_dai = [128000.0,70000.0]
 	V_dai = [2.50e3,-0.57e3]
 
-	h2o = water / (1e4) #from ppm to wt%
-
-	cond_wet = (A_dai[1] * (h2o**r_dai_gt) * np.exp(-((E_dai[1]) + (P*V_dai[1])) / (R_const * T)))
+	cond_wet = (A_dai[1] * (water**r_dai_gt) * np.exp(-((E_dai[1]) + (P*V_dai[1])) / (R_const * T)))
 	cond_dry = (A_dai[0] * (1-(B*P)) * np.exp(-((E_dai[0]) + (P*V_dai[0])) / (R_const * T)))
 
 	cond = cond_dry + cond_wet
@@ -33,7 +31,7 @@ def Fullea2011_DryGarnet_param1_Fe(T, P, water, param1, param2, fo2 = None, fo2_
 	e_i_fullea = 205000.0
 
 	b_ful = [2.6,-15.33,80.4,-194.6,202.6,-75.0]
-	dv_ful = 2.5 * 1e3
+	dv_ful = 2.5 * 1e-6
 	
 	fe_pol_fullea = (b_ful[0] + (b_ful[1] * param1) + (b_ful[2] * (param1**2.0)) + (b_ful[3]* (param1**3.0)) +\
 	(b_ful[4]* (param1**4.0)) + (b_ful[5]* (param1**5.0)) + (dv_ful * P)) * 1e5
@@ -53,9 +51,7 @@ def Liu2021_WetAlmandineGarnet_param1_Fe(T, P, water, param1, param2, fo2 = None
 	n = 4.25
 	alpha = -4000.0
 	beta = -15000.0
-	
-	water = water / 1e4 #converting it to wt%
-	
+		
 	cond = (10**sigma) * (param1**n) * (water) * np.exp(-(E - (alpha * (param1**(1.0/3.0))) - (beta * (water**(1.0/3.0)))) / (R_const * T))
 	
 	return cond

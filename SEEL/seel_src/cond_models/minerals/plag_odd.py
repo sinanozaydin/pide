@@ -25,7 +25,9 @@ def Hu2022_WetPlagioclase_Na_param1(T, P, water, param1, param2, fo2 = None, fo2
 
 		T = T[0]
 		P = P[0]
-
+		param1 = param1[0]
+		water = water[0]
+		
 		cond = np.zeros(len(T))
 
 		for i in range(0,len(T)):
@@ -33,14 +35,14 @@ def Hu2022_WetPlagioclase_Na_param1(T, P, water, param1, param2, fo2 = None, fo2
 			if T[i] <= tcrit:
 				cond[i] = (sigma1 * (param1[i]**beta1) *  np.exp(-(E1 + (alpha1 * param1[i])) / (R_const * T[i]))) + (sigma_wet * (water[i]**r) * np.exp(-E_wet / (R_const * T[i])))
 			else:
-				cond[i] = (sigma2 * (param1[i]**beta2) *  np.exp(-(E1 + (alpha2 * param1[i])) / (R_const * T[i]))) + (sigma_wet * (water[i]**r) * np.exp(-E_wet / (R_const * T[i])))
+				cond[i] = (sigma2 * (param1[i]**beta2) *  np.exp(-(E2 + (alpha2 * param1[i])) / (R_const * T[i]))) + (sigma_wet * (water[i]**r) * np.exp(-E_wet / (R_const * T[i])))
 
 	elif method == 'index':
 
 		if T <= tcrit:
 			cond = (sigma1 * (param1**beta1) *  np.exp(-(E1 + (alpha1 * param1)) / (R_const * T))) + (sigma_wet * (water**r) * np.exp(-E_wet / (R_const * T)))
 		else:
-			cond = (sigma2 * (param1**beta2) *  np.exp(-(E1 + (alpha2 * param1)) / (R_const * T))) + (sigma_wet * (water**r) * np.exp(-E_wet / (R_const * T)))
+			cond = (sigma2 * (param1**beta2) *  np.exp(-(E2 + (alpha2 * param1)) / (R_const * T))) + (sigma_wet * (water**r) * np.exp(-E_wet / (R_const * T)))
 
 	
 	return cond

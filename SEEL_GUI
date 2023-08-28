@@ -270,7 +270,7 @@ class SEEL(QMainWindow):
 			SEEL.other_water = np.zeros(1)
 			
 			SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
-			SEEL.garnet_water,  SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.sulphide_water,
+			SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.garnet_water, SEEL.sulphide_water,
 				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water]
 				   
 			SEEL.granite_param1 = np.zeros(1)
@@ -300,7 +300,7 @@ class SEEL(QMainWindow):
 			SEEL.mixture_param1 = np.zeros(1)
 			SEEL.other_param1 = np.zeros(1)
 			
-			SEEL.param1_mineral_list = [SEEL.quartz_param1,SEEL.plag_param1,SEEL.amp_param1,SEEL.kfelds_param1,SEEL.garnet_param1,SEEL.opx_param1,SEEL.cpx_param1,SEEL.mica_param1,
+			SEEL.param1_mineral_list = [SEEL.quartz_param1,SEEL.plag_param1,SEEL.amp_param1,SEEL.kfelds_param1,SEEL.opx_param1,SEEL.cpx_param1,SEEL.mica_param1,SEEL.garnet_param1,
 			SEEL.sulphide_param1,SEEL.graphite_param1,SEEL.ol_param1,SEEL.mixture_param1,SEEL.other_param1]			
 			
 			SEEL.granite_param2 = np.zeros(1)
@@ -330,7 +330,7 @@ class SEEL(QMainWindow):
 			SEEL.mixture_param2 = np.zeros(1)
 			SEEL.other_param2 = np.zeros(1)
 			
-			SEEL.param2_mineral_list = [SEEL.quartz_param2,SEEL.plag_param2,SEEL.amp_param2,SEEL.kfelds_param2,SEEL.garnet_param2,SEEL.opx_param2,SEEL.cpx_param2,SEEL.mica_param2,
+			SEEL.param2_mineral_list = [SEEL.quartz_param2,SEEL.plag_param2,SEEL.amp_param2,SEEL.kfelds_param2,SEEL.opx_param2,SEEL.cpx_param2,SEEL.mica_param2,SEEL.garnet_param2,
 			SEEL.sulphide_param2,SEEL.graphite_param2,SEEL.ol_param2,SEEL.mixture_param2,SEEL.other_param2]		
 			
 			self.melt_fluid_mass_frac = np.zeros(1)
@@ -1764,11 +1764,11 @@ class SEEL(QMainWindow):
 
 			if ('fo2' in odd_function) == True:
 
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], SEEL.mineral_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node] / water_corr_factor, param1 = SEEL.param1_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], param2 = SEEL.param2_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, param1 = SEEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEEL.param2_mineral_list[min_sub_idx][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
 
 			else:
 
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], SEEL.mineral_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node] / water_corr_factor, param1 = SEEL.param1_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], param2 = SEEL.param2_mineral_list[SEEL.minerals_cond_selections[min_sub_idx]][idx_node], method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, param1 = SEEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEEL.param2_mineral_list[min_sub_idx][idx_node], method = method)')
 
 		return cond
 		
@@ -3816,8 +3816,8 @@ class WATER_PHS_POP(QWidget):
 			SEEL.mud_water, SEEL.gabbro_water, SEEL.other_rock_water]
 			
 		SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
-			SEEL.garnet_water, SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.sulphide_water,
-				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water] #cansu
+			 SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.garnet_water, SEEL.sulphide_water,
+				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water]
 				   
 class OPTIONAL_PARAM_POP(QWidget):
 
@@ -4166,6 +4166,19 @@ class OPTIONAL_PARAM_POP(QWidget):
 					QMessageBox.about(self,"Warning!","Enter a value above 0")
 			except ValueError:
 				QMessageBox.about(self,"Warning!","Please enter a value that can be converted to floating number.")
+				
+				
+		SEEL.param1_mineral_list = [SEEL.quartz_param1,SEEL.plag_param1,SEEL.amp_param1,SEEL.kfelds_param1,SEEL.opx_param1,SEEL.cpx_param1,SEEL.mica_param1,SEEL.garnet_param1,
+			SEEL.sulphide_param1,SEEL.graphite_param1,SEEL.ol_param1,SEEL.mixture_param1,SEEL.other_param1]		
+		SEEL.param2_mineral_list = [SEEL.quartz_param2,SEEL.plag_param2,SEEL.amp_param2,SEEL.kfelds_param2,SEEL.opx_param2,SEEL.cpx_param2,SEEL.mica_param2,SEEL.garnet_param2,
+			SEEL.sulphide_param2,SEEL.graphite_param2,SEEL.ol_param2,SEEL.mixture_param2,SEEL.other_param2]
+			
+		SEEL.param1_rock_list = [SEEL.granite_param1, SEEL.granulite_param1, SEEL.sandstone_param1, SEEL.gneiss_param1, SEEL.amphibolite_param1,
+			SEEL.basalt_param1, SEEL.mud_param1, SEEL.gabbro_param1, SEEL.other_rock_param1]
+		SEEL.param2_rock_list = [SEEL.granite_param2, SEEL.granulite_param2, SEEL.sandstone_param2, SEEL.gneiss_param2, SEEL.amphibolite_param2,
+			SEEL.basalt_param2, SEEL.mud_param2, SEEL.gabbro_param2, SEEL.other_rock_param2]
+				
+		
 				
 class FUG_POP(QWidget):
 

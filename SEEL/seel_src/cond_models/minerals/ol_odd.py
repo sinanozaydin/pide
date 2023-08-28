@@ -15,27 +15,24 @@ def Dai2014_DryandWetOlivine_param1_fo2_param2_fo2ref(T, P, water, param1, param
 	r_dai = 0.8
 	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
 	q_dry = 0.16666 #Taken from Constable (2006)
-	h2o = water / (1e4)
 	
 	#Changing fo2 to complex to avoid Runtime errors
 	fo2 = np.array(fo2, dtype = np.complex)
-	fo2_ref = np.array(fo2ref, dtype = np.complex)
+	fo2_ref = np.array(fo2_ref, dtype = np.complex)
 
 	dai_ref = ((10.0**0.48) * np.exp(-((e1_dai) + (p_ref*dv_dai2014)) / (R_const * T))) + (10.0**2.84 * np.exp(-((e2_dai) + (p_ref*dv_dai2014)) / (R_const * T)))
-	cond_wet = (dai_ref * (h2o / (cw_ref))**(r_dai) * (fo2/fo2_ref)**(q_dai)) *  np.exp(- ((P - p_ref) * dv_dai2014) / (R_const*T))
+	cond_wet = (dai_ref * (water / (cw_ref))**(r_dai) * (fo2/fo2_ref)**(q_dai)) *  np.exp(- ((P - p_ref) * dv_dai2014) / (R_const*T))
 	dai_dry =  10**2.4 * ((fo2/fo2_ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
 	
 	cond = np.real(dai_dry + cond_wet)
 
 	return cond
 	
-def Dai2020_WetOlivine_200ppmTi(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2020_WetOlivine_200ppmTi_fo2(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	dv_dai2014 = -0.86 * 1e3 # m^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
 	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
 	q_dry = 0.16666 #Taken from Constable (2006)
-
-	h2o = water / (1e4)
 
 	A_dai_200 = 3.01
 
@@ -43,9 +40,29 @@ def Dai2020_WetOlivine_200ppmTi(T, P, water, param1, param2, fo2 = None, fo2_ref
 
 	E_dai_200 = 87000.0
 
-	cond_wet = (10.0 ** A_dai_200) * ((h2o)**r_dai_200) * np.exp(-(E_dai_200) / (R_const * T))
+	cond_wet = (10.0 ** A_dai_200) * ((water)**r_dai_200) * np.exp(-(E_dai_200) / (R_const * T))
 
-	dai_dry =  10**2.4 * ((fo2/fo2ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
+	dai_dry =  10**2.4 * ((fo2/fo2_ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
+
+	cond = dai_dry + cond_wet
+
+	return cond
+	
+def Dai2020_WetOlivine_683ppmTi_fo2(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+
+	dv_dai2014 = -0.86 * 1e3 # m^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
+	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
+	q_dry = 0.16666 #Taken from Constable (2006)
+
+	A_dai_200 = 3.01
+
+	r_dai_200 = 0.51
+
+	E_dai_200 = 87000.0
+
+	cond_wet = (10.0 ** A_dai_200) * ((water)**r_dai_200) * np.exp(-(E_dai_200) / (R_const * T))
+
+	dai_dry =  10**2.4 * ((fo2/fo2_ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
 
 	cond = dai_dry + cond_wet
 
@@ -62,12 +79,10 @@ def Poe2010_DryandWetOlivine(T, P, water, param1, param2, fo2 = None, fo2_ref = 
 	alpha_1 = 1180
 	alpha_2 = 1430
 	alpha_3 = 700
-	
-	water = water / 1e4
-	
-	cond_1 = (sigma_1[0] * water * np.exp(-(E1[0] + (alpha_1 * water))) / (R_const*T)) + (sigma_1·[1] * water * np.exp(-(E1[1] + (alpha_1 * water)) / (R_const*T)))
-	cond_2 = (sigma_2[0] * water * np.exp(-(E2[0] + (alpha_2 * water))) / (R_const*T)) + (sigma_1·[1] * water * np.exp(-(E1[1] + (alpha_1 * water)) / (R_const*T)))
-	cond_3 = (sigma_3[0] * water * np.exp(-(E3[0] + (alpha_3 * water))) / (R_const*T)) + (sigma_1·[1] * water * np.exp(-(E1[1] + (alpha_1 * water)) / (R_const*T)))
+		
+	cond_1 = (10**sigma_1[0] * np.exp(-(E1[0])) / (R_const*T)) + (10**sigma_1[1] * water * np.exp(-(E1[1] + (alpha_1 * water)) / (R_const*T)))
+	cond_2 = (10**sigma_2[0] * np.exp(-(E2[0])) / (R_const*T)) + (10**sigma_2[1] * water * np.exp(-(E2[1] + (alpha_2 * water)) / (R_const*T)))
+	cond_3 = (10**sigma_3[0] * np.exp(-(E3[0])) / (R_const*T)) + (10**sigma_3[1] * water * np.exp(-(E3[1] + (alpha_3 * water)) / (R_const*T)))
 		
 	cond = (cond_1*cond_2*cond_3)**(1.0/3.0)
 	
@@ -119,12 +134,14 @@ def Pommier2018_ShearedDryOlivine(T, P, water, param1, param2, fo2 = None, fo2_r
 
 	E = [126400.0,122700.0,114500.0]
 
-	sigma = np.zeros((3,len(T)))
+	
 
-	for i in range(0,3):
-		sigma[i] = A[i] * np.exp(-E[i] / (R_const*T))
+	
+	sigma0 = A[0] * np.exp(-E[0] / (R_const*T))
+	sigma1 = A[1] * np.exp(-E[1] / (R_const*T))
+	sigma2 = A[2] * np.exp(-E[2] / (R_const*T))
 
-	cond = (sigma[0] * sigma[1] * sigma[2])**(1.0/3.0)
+	cond = (sigma0 * sigma1 * sigma2)**(1.0/3.0)
 
 	return cond
 	
@@ -152,9 +169,7 @@ def Fei2020_WetOlivineIonic_Isotropic(T, P, water, param1, param2, fo2 = None, f
 	E2 = 139e3
 	dv2 = 0.3e3
 	r = 1.3
-	
-	water = water / 1e4 #converting to wt%
-	
+		
 	cond = ((sigma1 / T) * (water ** r) * np.exp(-(E1 + (P*dv1)) / (R_const*T))) +\
 		((sigma2) * np.exp(-(E2 + (P*dv2)) / (R_const*T)))
 		
