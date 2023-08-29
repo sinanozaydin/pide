@@ -54,14 +54,26 @@ def TyburczyWaff1983_DryTholeiite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,
 	sigma_0_high = 2.15e5
 	E_high = 153000.0
 	dv_high = -0.06
+	
+	if method == 'array':
+		P = P[0]
+		T = T[0]
 
-	cond = np.zeros(len(T))
-	for i in range(0,len(T)):
+		cond = np.zeros(len(T))
 
-		if P[i] < 0.9:
-			cond[i] = sigma_0_low * np.exp(-(E_low + (dv_low * P[i] * 1e3)) / (R_const * T[i]))
+		for i in range(0,len(T)):
+	
+			if P[i] < 0.9:
+				cond[i] = sigma_0_low * np.exp(-(E_low + (dv_low * P[i] * 1e3)) / (R_const * T[i]))
+			else:
+				cond[i] = sigma_0_high * np.exp(-(E_high + (dv_high * P[i] * 1e3)) / (R_const * T[i]))
+				
+	elif method == 'index':
+	
+		if P < 0.9:
+			cond = sigma_0_low * np.exp(-(E_low + (dv_low * P * 1e3)) / (R_const * T))
 		else:
-			cond[i] = sigma_0_high * np.exp(-(E_high + (dv_high * P[i] * 1e3)) / (R_const * T[i]))
+			cond = sigma_0_high * np.exp(-(E_high + (dv_high * P * 1e3)) / (R_const * T))
 
 	return cond
 
@@ -74,14 +86,26 @@ def TyburczyWaff1983_DryAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,m
 	sigma_0_high = 6.61e3
 	E_high = 117000.0
 	dv_high = 3.25
+	
+	if method == 'array':
 
-	cond = np.zeros(len(T))
-	for i in range(0,len(T)):
-
+		T = T[0]
+		P = P[0]
+		
+		cond = np.zeros(len(T))
+		for i in range(0,len(T)):
+	
+			if P[i] < 0.9:
+				cond[i] = sigma_0_low * np.exp(-(E_low + (dv_low * P[i] * 1e3)) / (R_const * T[i]))
+			else:
+				cond[i] = sigma_0_high * np.exp(-(E_high + (dv_high * P[i] * 1e3)) / (R_const * T[i]))
+				
+	elif method == 'index':
+	
 		if P[i] < 0.9:
-			cond[i] = sigma_0_low * np.exp(-(E_low + (dv_low * P[i] * 1e3)) / (R_const * T[i]))
+			cond = sigma_0_low * np.exp(-(E_low + (dv_low * P * 1e3)) / (R_const * T))
 		else:
-			cond[i] = sigma_0_high * np.exp(-(E_high + (dv_high * P[i] * 1e3)) / (R_const * T[i]))
+			cond = sigma_0_high * np.exp(-(E_high + (dv_high * P * 1e3)) / (R_const * T))
 
 	return cond
 

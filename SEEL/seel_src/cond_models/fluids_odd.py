@@ -49,6 +49,7 @@ def Sinmyo2016(T, P, salinity, method):
 			cond = 10**(A + (B/T) + (D * (np.log10(rho_water))) + np.log10(lambda_0))
 	elif method == 'array':
 		cond = np.zeros(len(T))
+		
 		for i in range(0,len(T)):
 			if salinity[i] > 0:
 				cond[i] =  10**(A + (B/T[i]) + (C * np.log10(salinity[i])) + (D * (np.log10(rho_water[i]))) + np.log10(lambda_0[i]))

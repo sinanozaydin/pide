@@ -71,7 +71,7 @@ class SEEL(object):
 		self.read_cond_models()
 		self.read_params()
 		
-		#creating default values
+		#setting up default values for the SEEL object
 		self.set_temperature(900.0) #in Kelvin
 		self.set_pressure(1.0) #in GPa
 		self.set_mineral_conductivity_choice()
@@ -83,8 +83,12 @@ class SEEL(object):
 		self.set_param2_mineral()
 		self.set_param1_rock()
 		self.set_param2_rock()
+		self.set_melt_fluid_conductivity_choice()
+		self.set_melt_fluid_frac()
+		self.set_melt_properties()
+		self.set_fluid_properties()
+		self.set_phase_interconnectivities()
 		
-				
 	def read_csv(self,filename,delim):
 
 		#Simple function for reading csv files and give out filtered output for given delimiter (delim)
@@ -527,6 +531,55 @@ class SEEL(object):
 		
 		return self.name[min_index]
 		
+	def list_rock_econd_models(self, rock_name):
+		
+		if (rock_name == 'granite'):
+			rock_idx = 2
+		elif (rock_name == 'granulite'):
+			rock_idx = 3
+		elif (rock_name == 'sandstone'):
+			rock_idx = 4
+		elif (rock_name == 'gneiss'):
+			rock_idx = 5
+		elif (rock_name == 'amphibolite'):
+			rock_idx = 6
+		elif (rock_name == 'basalt'):
+			rock_idx = 7
+		elif (rock_name == 'mud'):
+			rock_idx = 8
+		elif (rock_name == 'gabbro'):
+			rock_idx = 9
+		elif (rock_name == 'other_rock'):
+			rock_idx = 10
+			
+		def print_lists(rock_idx):
+		
+			for i in range(0,len(self.name[rock_idx])):
+				print(str(i) + '.  ' + self.name[rock_idx][i])
+			
+		print_lists(rock_idx = rock_idx)
+		
+		return self.name[rock_idx]
+		
+	def list_melt_econd_models(self):
+	
+		for i in range(0,len(self.name[1])):
+			print(str(i) + '.  ' + self.name[1][i])
+			
+		return self.name[1]
+		
+	def list_fluid_econd_models(self):
+	
+		for i in range(0,len(self.name[0])):
+			print(str(i) + '.  ' + self.name[0][i])
+			
+		return self.name[0]
+		
+	def set_melt_fluid_conductivity_choice(self,**kwargs):
+	
+		SEEL.melt_cond_selection = kwargs.pop('melt', 0)
+		SEEL.fluid_cond_selection = kwargs.pop('fluid', 0)
+		
 	def set_mineral_conductivity_choice(self,**kwargs):
 	
 		SEEL.ol_cond_selection = kwargs.pop('ol', 0)
@@ -670,7 +723,48 @@ class SEEL(object):
 		SEEL.param2_rock_list = [SEEL.granite_param2, SEEL.granulite_param2,
 			SEEL.sandstone_param2, SEEL.gneiss_param2, SEEL.amphibolite_param2, SEEL.basalt_param2,
 			SEEL.mud_param2, SEEL.gabbro_param2, SEEL.other_rock_param2]
+			
+	def set_melt_fluid_frac(self, **kwargs):
+	
+		self.melt_fluid_mass_frac = np.array(kwargs.pop('frac', 0))
+			
+	def set_melt_properties(self, **kwargs):
+	
+		self.co2_melt = np.array(kwargs.pop('co2', 0)) #in ppm
+		self.h2o_melt = np.array(kwargs.pop('water', 0)) #in ppm
+		self.na2o_melt = np.array(kwargs.pop('na2o', 0)) #in wt
+		self.k2o_melt = np.array(kwargs.pop('k2o', 0)) #in wt
+				
+	def set_fluid_properties(self, **kwargs):
+	
+		self.salinity_fluid = np.array(kwargs.pop('salinity', 0))
 		
+	def set_phase_interconnectivities(self,**kwargs):
+	
+		SEEL.ol_m = np.array(kwargs.pop('ol', 4))
+		SEEL.opx_m = np.array(kwargs.pop('opx', 4))
+		SEEL.cpx_m = np.array(kwargs.pop('cpx', 4))
+		SEEL.garnet_m = np.array(kwargs.pop('garnet', 4))
+		SEEL.mica_m = np.array(kwargs.pop('mica', 4))
+		SEEL.amp_m = np.array(kwargs.pop('amp', 4))
+		SEEL.quartz_m = np.array(kwargs.pop('quartz', 4))
+		SEEL.plag_m = np.array(kwargs.pop('plag', 4))
+		SEEL.kfelds_m = np.array(kwargs.pop('kfelds', 4))
+		SEEL.sulphide_m = np.array(kwargs.pop('sulphide', 4))
+		SEEL.graphite_m = np.array(kwargs.pop('graphite', 4))
+		SEEL.mixture_m = np.array(kwargs.pop('mixture', 4))
+		SEEL.other_m = np.array(kwargs.pop('other', 4))
+		
+		SEEL.granite_m = np.array(kwargs.pop('granite', 4))
+		SEEL.granulite_m = np.array(kwargs.pop('granulite', 4))
+		SEEL.sandstone_m = np.array(kwargs.pop('sandstone', 4))
+		SEEL.gneiss_m = np.array(kwargs.pop('gneiss', 4))
+		SEEL.amphibolite_m = np.array(kwargs.pop('amphibolite', 4))
+		SEEL.basalt_m = np.array(kwargs.pop('basalt', 4))
+		SEEL.mud_m = np.array(kwargs.pop('mud', 4))
+		SEEL.gabbro_m = np.array(kwargs.pop('gabbro', 4))
+		SEEL.other_rock_m = np.array(kwargs.pop('other_rock', 4))
+
 	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
 
 		if (sigma == 0.0) and (E == 0.0):
@@ -691,7 +785,7 @@ class SEEL(object):
 
 		if SEEL.type[0][SEEL.fluid_cond_selection] == '0':
 
-			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_fluids[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[0][SEEL.fluid_cond_selection],
 								   E = self.h_i[0][SEEL.fluid_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[0][SEEL.fluid_cond_selection],
@@ -699,7 +793,7 @@ class SEEL(object):
 			
 		elif SEEL.type[0][SEEL.fluid_cond_selection] == '1':
 
-			self.melt_fluid_cond[idx_node] =  self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_fluids[idx_node] =  self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[0][SEEL.fluid_cond_selection],
 								   E = self.h_i[0][SEEL.fluid_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[0][SEEL.fluid_cond_selection],
@@ -743,7 +837,7 @@ class SEEL(object):
 
 		if SEEL.type[1][SEEL.melt_cond_selection] == '0':
 
-			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_melt[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[1][SEEL.melt_cond_selection],
 								   E = self.h_i[1][SEEL.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][SEEL.melt_cond_selection],
@@ -751,7 +845,7 @@ class SEEL(object):
 			
 		elif SEEL.type[1][SEEL.melt_cond_selection] == '1':
 
-			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_melt[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[1][SEEL.melt_cond_selection],
 								   E = self.h_i[1][SEEL.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][SEEL.melt_cond_selection],

@@ -1617,7 +1617,7 @@ class SEEL(QMainWindow):
 
 		if SEEL.type[1][SEEL.melt_cond_selection] == '0':
 
-			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_melt[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[1][SEEL.melt_cond_selection],
 								   E = self.h_i[1][SEEL.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][SEEL.melt_cond_selection],
@@ -1625,7 +1625,7 @@ class SEEL(QMainWindow):
 			
 		elif SEEL.type[1][SEEL.melt_cond_selection] == '1':
 
-			self.melt_fluid_cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_melt[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[1][SEEL.melt_cond_selection],
 								   E = self.h_i[1][SEEL.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][SEEL.melt_cond_selection],
