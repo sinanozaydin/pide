@@ -109,15 +109,6 @@ def TyburczyWaff1983_DryAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,m
 
 	return cond
 
-def Gaillard2005_DrySilicateMelt_K2O(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
-
-	a = 0.172 - (0.105 * Melt_K2O)
-	b = 4.742 - (0.6 * Melt_K2O)
-
-	cond = 10.0**(a + (b * (1.0/T)))
-
-	return cond
-
 def Guo2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
 	cond = 10**(5.23 - (0.56 * (Melt_H2O**0.6)) - ((8130.4 - (1462.7*(Melt_H2O**0.6)) + ((581.3 - (12.7*Melt_H2O**2)) * P)) / T))
@@ -168,12 +159,12 @@ def Laumonier2015_WetDacite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method
 
 def Gaillard2004_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
-	P = P * 1e3
+	P = P * 1e3 #to MPa
 
-	Ea = (-2925 * np.log(Melt_H2O)) + 64132.0
+	Ea = (-2925.0 * np.log(Melt_H2O)) + 64132.0
 	sigma_0 = (-78.9 * np.log(Melt_H2O)) + 754.0
 
-	cond = sigma_0 * np.exp((-Ea + (20*P)) / (R_const * T))
+	cond = sigma_0 * np.exp((-Ea - (20*P)) / (R_const * T))
 
 	return cond
 

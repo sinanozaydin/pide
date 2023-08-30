@@ -17,8 +17,8 @@ temp = np.arange(1200,1800,5)
 a = SEEL.SEEL() #creating the initial object
 a.set_melt_fluid_frac(frac = [1.0])
 a.set_temperature(temp) #settin temperature array in K
-a.set_pressure(1.0)
-a.set_melt_properties(co2 = np.ones(len(temp)) * 10.4e4, water = np.ones(len(temp)) * 3e4, na2o = np.ones(len(temp)) * 0.1, k2o = np.ones(len(temp)) * 0.05)
+a.set_pressure(1)
+a.set_melt_properties(co2 = np.ones(len(temp)) * 0, water = np.ones(len(temp)) * 1e4, na2o = np.ones(len(temp)) * 0.1)
 
 list_melt_models = a.list_melt_econd_models() #listing all melt electrical conductivity methods
 list_fluid_models = a.list_fluid_econd_models() #listing all fluid electrical conductivity methods
@@ -26,7 +26,7 @@ list_fluid_models = a.list_fluid_econd_models() #listing all fluid electrical co
 cond_melt_lists = []
 cond_fluid_lists = []
 
-for i in range(5,len(list_melt_models)):
+for i in range(0,len(list_melt_models)):
 	a.set_melt_fluid_conductivity_choice(melt = i)
 	cond = a.calculate_melt_conductivity(method = 'array')
 	cond_melt_lists.append(cond)
@@ -43,13 +43,11 @@ for i in range(0,len(list_fluid_models)):
 	cond_fluid_lists.append(cond)
 	
 	
-
-	
 fig = plt.figure(figsize = (15,10))
 ax = plt.subplot(121)
 ax0 = ax.twiny()
 for i in range(0,len(cond_melt_lists)):
-	ax.plot(1e4/temp, cond_melt_lists[i], label = list_melt_models[i+5])
+	ax.plot(1e4/temp, cond_melt_lists[i], label = list_melt_models[i])
 ax.set_yscale('log')
 ax.set_xlabel('10000/T [$K^{-1}$]')
 ax.set_ylabel('Conductivity [S/m]')

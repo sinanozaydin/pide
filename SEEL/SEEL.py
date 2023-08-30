@@ -83,6 +83,8 @@ class SEEL(object):
 		self.set_param2_mineral()
 		self.set_param1_rock()
 		self.set_param2_rock()
+		self.set_melt_or_fluid_mode(mode = 1) #default choice is melt - 1
+		self.set_solid_phase_method(mode = 2) #default choice is mineral - 2
 		self.set_melt_fluid_conductivity_choice()
 		self.set_melt_fluid_frac()
 		self.set_melt_properties()
@@ -727,6 +729,14 @@ class SEEL(object):
 	def set_melt_fluid_frac(self, **kwargs):
 	
 		self.melt_fluid_mass_frac = np.array(kwargs.pop('frac', 0))
+		
+	def set_melt_or_fluid_mode(self,mode):
+	
+		SEEL.fluid_or_melt_method = mode
+		
+	def set_solid_phase_method(self,mode):
+	
+		SEEL.solid_phase_method = mode
 			
 	def set_melt_properties(self, **kwargs):
 	
@@ -1632,132 +1642,130 @@ class SEEL(object):
 		elif method == 'array':
 
 			index = None
-
-		if SEEL.fluid_or_melt_method == 0:
-			self.melt_fluid_cond = self.calculate_fluids_conductivity(method= method, sol_idx = index)
-		elif SEEL.fluid_or_melt_method == 1:
-			self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
-	
-		if SEEL.solid_phase_method == 0:
-
-			self.phase_mixing_function(method == -1, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
-			
-		elif SEEL.solid_phase_method == 1:
 		
-			if self.granite_frac[0] != 0:
+		if np.mean(self.melt_fluid_mass_frac) != 0.0:
+			if SEEL.fluid_or_melt_method == 0:
+				self.melt_fluid_cond = self.calculate_fluids_conductivity(method= method, sol_idx = index)
+			elif SEEL.fluid_or_melt_method == 1:
+				self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
+	
+		
+		if SEEL.solid_phase_method == 1:
+		
+			if np.mean(self.granite_frac) != 0:
 				self.granite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 2, sol_idx = index)
 			else:
-				self.granite_cond = np.array([0])
+				self.granite_cond = np.zeros(len(self.T))
 				
-			if self.granulite_frac[0] != 0:
+			if np.mean(self.granulite_frac) != 0:
 				self.granulite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 3, sol_idx = index)
 			else:
-				self.granulite_cond = np.array([0])
+				self.granulite_cond = np.zeros(len(self.T))
 				
-			if self.sandstone_frac[0] != 0:
+			if np.mean(self.sandstone_frac) != 0:
 				self.sandstone_cond = self.calculate_rock_conductivity(method = method, rock_idx= 4, sol_idx = index)
 			else:
-				self.sandstone_cond = np.array([0])
+				self.sandstone_cond = np.zeros(len(self.T))
 				
-			if self.gneiss_frac[0] != 0:
+			if np.mean(self.gneiss_frac) != 0:
 				self.gneiss_cond = self.calculate_rock_conductivity(method = method, rock_idx= 5, sol_idx = index)
 			else:
-				self.gneiss_cond = np.array([0])
+				self.gneiss_cond = np.zeros(len(self.T))
 				
-			if self.amphibolite_frac[0] != 0:
+			if np.mean(self.amphibolite_frac) != 0:
 				self.amphibolite_cond = self.calculate_rock_conductivity(method = method, rock_idx= 6, sol_idx = index)
 			else:
-				self.amphibolite_cond = np.array([0])
+				self.amphibolite_cond = np.zeros(len(self.T))
 
-			if self.basalt_frac[0] != 0:
+			if np.mean(self.basalt_frac) != 0:
 				self.basalt_cond = self.calculate_rock_conductivity(method = method, rock_idx= 7, sol_idx = index)
 			else:
-				self.basalt_cond = np.array([0])
+				self.basalt_cond = np.zeros(len(self.T))
 
-			if self.mud_frac[0] != 0:
+			if np.mean(self.mud_frac) != 0:
 				self.mud_cond = self.calculate_rock_conductivity(method = method, rock_idx= 8, sol_idx = index)
 			else:
-				self.mud_cond = np.array([0])
+				self.mud_cond = np.zeros(len(self.T))
 
-			if self.gabbro_frac[0] != 0:
+			if np.mean(self.gabbro_frac) != 0:
 				self.gabbro_cond = self.calculate_rock_conductivity(method = method, rock_idx= 9, sol_idx = index)
 			else:
-				self.gabbro_cond = np.array([0])
+				self.gabbro_cond = np.zeros(len(self.T))
 				
-			if self.other_rock_frac[0] != 0:
+			if np.mean(self.other_rock_frac) != 0:
 				self.other_rock_cond = self.calculate_rock_conductivity(method = method, rock_idx= 10, sol_idx = index)
 			else:
-				self.other_rock_cond = np.array([0])
+				self.other_rock_cond = np.zeros(len(self.T))
 				
 		
 			self.phase_mixing_function(method == SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 			
 		elif SEEL.solid_phase_method == 2:
 		
-			if self.quartz_frac[0] != 0:
+			if np.mean(self.quartz_frac) != 0:
 				self.quartz_cond = self.calculate_mineral_conductivity(method = method, min_idx= 11, sol_idx = index)
 			else:
-				self.quartz_cond = np.array([0])
+				self.quartz_cond = np.zeros(len(self.T))
 				
-			if self.plag_frac[0] != 0:
+			if np.mean(self.plag_frac) != 0:
 				self.plag_cond = self.calculate_mineral_conductivity(method = method, min_idx= 12, sol_idx = index)
 			else:
-				self.plag_cond = np.array([0])
+				self.plag_cond = np.zeros(len(self.T))
 				
-			if self.amp_frac[0] != 0:
+			if np.mean(self.amp_frac) != 0:
 				self.amp_cond = self.calculate_mineral_conductivity(method = method, min_idx= 13, sol_idx = index)
 			else:
-				self.amp_cond = np.array([0])
+				self.amp_cond = np.zeros(len(self.T))
 				
-			if self.kfelds_frac[0] != 0:
+			if np.mean(self.kfelds_frac) != 0:
 				self.kfelds_cond = self.calculate_mineral_conductivity(method = method, min_idx= 14, sol_idx = index)
 			else:
-				self.kfelds_cond = np.array([0])
+				self.kfelds_cond = np.zeros(len(self.T))
 				
-			if self.opx_frac[0] != 0:
+			if np.mean(self.opx_frac) != 0:
 				self.opx_cond = self.calculate_mineral_conductivity(method = method, min_idx= 15, sol_idx = index)
 			else:
-				self.opx_cond = np.array([0])
+				self.opx_cond = np.zeros(len(self.T))
 				
-			if self.cpx_frac[0] != 0:
+			if np.mean(self.cpx_frac) != 0:
 				self.cpx_cond = self.calculate_mineral_conductivity(method = method, min_idx= 16, sol_idx = index)
 			else:
-				self.cpx_cond = np.array([0])
+				self.cpx_cond = np.zeros(len(self.T))
 				
-			if self.mica_frac[0] != 0:
+			if np.mean(self.mica_frac) != 0:
 				self.mica_cond = self.calculate_mineral_conductivity(method = method, min_idx= 17, sol_idx = index)
 			else:
-				self.mica_cond = np.array([0])
+				self.mica_cond = np.zeros(len(self.T))
 				
-			if self.garnet_frac[0] != 0:
+			if np.mean(self.garnet_frac) != 0:
 				self.garnet_cond = self.calculate_mineral_conductivity(method = method, min_idx= 18, sol_idx = index)
 			else:
-				self.garnet_cond = np.array([0])
+				self.garnet_cond = np.zeros(len(self.T))
 
-			if self.sulphide_frac[0] != 0:
+			if np.mean(self.sulphide_frac) != 0:
 				self.sulphide_cond = self.calculate_mineral_conductivity(method = method, min_idx= 19, sol_idx = index)
 			else:
-				self.sulphide_cond = np.array([0])
+				self.sulphide_cond = np.zeros(len(self.T))
 
-			if self.graphite_frac[0] != 0:
+			if np.mean(self.graphite_frac) != 0:
 				self.graphite_cond = self.calculate_mineral_conductivity(method = method, min_idx= 20, sol_idx = index)
 			else:
-				self.graphite_cond = np.array([0])
+				self.graphite_cond = np.zeros(len(self.T))
 
-			if self.ol_frac[0] != 0:
+			if np.mean(self.ol_frac) != 0:
 				self.ol_cond = self.calculate_mineral_conductivity(method = method, min_idx= 21, sol_idx = index)
 			else:
-				self.ol_cond = np.array([0])
+				self.ol_cond = np.zeros(len(self.T))
 				
-			if self.mixture_frac[0] != 0:
+			if np.mean(self.mixture_frac) != 0:
 				self.mixture_cond = self.calculate_mineral_conductivity(method = method, min_idx= 22, sol_idx = index)
 			else:
-				self.mixture_cond = np.array([0])
+				self.mixture_cond = np.zeros(len(self.T))
 	
-			if self.other_frac[0] != 0:
+			if np.mean(self.other_frac) != 0:
 				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 23, sol_idx = index)
 			else:
-				self.other_cond = np.array([0])
+				self.other_cond = np.zeros(len(self.T))
 	
 				
 			self.phase_mixing_function(method == SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
