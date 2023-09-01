@@ -2146,12 +2146,12 @@ class SEEL(QMainWindow):
 					(self.opx_frac[i] / (self.opx_cond[i] + (2*max_local))) +\
 					(self.cpx_frac[i] / (self.cpx_cond[i] + (2*max_local))) +\
 					(self.mica_frac[i] / (self.mica_cond[i] + (2*max_local))) +\
-					(self.garnet_frac[i] / (self.garnet_cond[i] + (2*min_local))) +\
-					(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*min_local))) +\
-					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*min_local))) +\
-					(self.ol_frac[i] / (self.ol_cond[i] + (2*min_local))) +\
-					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*min_local))) +\
-					(self.other_frac[i] / (self.other_cond[i] + (2*min_local)))					
+					(self.garnet_frac[i] / (self.garnet_cond[i] + (2*max_local))) +\
+					(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*max_local))) +\
+					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*max_local))) +\
+					(self.ol_frac[i] / (self.ol_cond[i] + (2*max_local))) +\
+					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*max_local))) +\
+					(self.other_frac[i] / (self.other_cond[i] + (2*max_local)))					
 					)**(-1.0)) -\
 					2.0*max_local
 					
@@ -2343,9 +2343,8 @@ class SEEL(QMainWindow):
 
 			for i in range(start_idx,end_idx):
 				if self.melt_fluid_mass_frac[i] != 0.0:
-					self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i] / 1e3))))
-	
-	
+					self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i]))))
+	 
 			if melt_method == 0:
 
 				#Modified Archie's Law taken from Glover et al. (2000) from eq. 8
@@ -2587,7 +2586,7 @@ class SEEL(QMainWindow):
 				self.other_rock_cond = np.array([0])
 				
 		
-			self.phase_mixing_function(method == SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
+			self.phase_mixing_function(method = SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
 			
 		elif SEEL.solid_phase_method == 2:
 		
@@ -2657,7 +2656,7 @@ class SEEL(QMainWindow):
 				self.other_cond = np.array([0])
 	
 				
-			self.phase_mixing_function(method == SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
+			self.phase_mixing_function(method = SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = 0)
 		
 		self.cond_calculated = True
 	

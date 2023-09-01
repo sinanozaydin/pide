@@ -26,12 +26,12 @@ import matplotlib.pyplot as plt
 
 temp = np.arange(600,1300,5) #setting up temperature array
 a = SEEL.SEEL() #creating the initial object
-a.set_composition_solid_mineral(ol_frac = [1.0]) #setting composition
+a.set_composition_solid_mineral(ol = [1.0]) #setting composition
 a.set_temperature(temp) #settin temperature array in K
 a.set_pressure(1.0)
 a.set_param1_mineral(ol = np.ones(len(temp)) * 0)
 a.set_mineral_water(ol = np.ones(len(temp)) * 100)
-idx_ol = a.match_mineral_index('ol') #getting olivine index
+idx_ol = a.get_mineral_index('ol') #getting olivine index
 list_olivine_models = a.list_mineral_econd_models('ol') #listing all olivine electrical conductivity methods
 
 cond_olivine_lists = []
@@ -42,9 +42,9 @@ for i in range(0,len(list_olivine_models)):
 	cond_olivine_lists.append(cond)
 	
 	
-a.set_composition_solid_mineral(opx_frac = [1.0])	
+a.set_composition_solid_mineral(opx = [1.0])	
 a.set_mineral_water(opx = np.ones(len(temp)) * 100)
-idx_opx = a.match_mineral_index('opx') #getting olivine index
+idx_opx = a.get_mineral_index('opx') #getting olivine index
 list_opx_models = a.list_mineral_econd_models('opx') #listing all olivine electrical conductivity methods
 
 cond_opx_lists = []

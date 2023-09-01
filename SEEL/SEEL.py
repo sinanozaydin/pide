@@ -4,7 +4,7 @@ import os
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'seel_src')
 
-import sys, csv, platform, warnings
+import sys, csv, platform, warnings, itertools
 import numpy as np
 import iapws
 
@@ -54,12 +54,338 @@ warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many Runtim
 class SEEL(object):
 	
 	def __init__(self, core_path = core_path_ext):
+	
+		"""
+		This is the core object to create to use the functions of SEL.
+		
+		---------------------------------- -----------------------------------------
+		Methods                             Description
+		---------------------------------- -------------------------------------------
+		set_temperature                     Function to set temperature. When making
+											a calculation, it is best to set the 
+											temperature first, since all the other
+											parameters are adjusted to the length
+											of the temperature array, if they do
+											not match in length.
+											Unit: Kelvin
+											
+		set_pressure                        Function to set pressure.
+											Unit: GPa
+		
+		set_composition_solid_mineral       Function to set the modal composition
+											of a mineral assemblage. 
+											Unit: Fraction (0 to 1)
+		set_composition_solid_rock          Function to set the composition of a
+											rock mixture.
+											Unit: Fraction (0 to 1)
+		
+		
+		set_watercalib                      Function to set water corrections
+											due to the choice of water measurement
+											calibration. Integer.
+											
+											Olivine:
+											0:Withers2012
+											1:Bell2003
+											2:Paterson1980
+											3:Default choice of the conductivity model
+											
+											Pyroxenes and Garnet:
+											0:Bell1995
+											1:Paterson1980
+											2:Default hoice of the conductivity model
+											
+											Feldspars (Plagioclase and K-Feldspar)
+											0:Johnson2003
+											1:Mosenfelder2015
+											2:Default hoice of the conductivity model
+											
+		set_o2_buffer                       Function to set oxygen fugacity buffer.
+											
+											0: FMQ
+											1: IW: Hirsch (1991)
+											2: QIF
+											3: NNO: Li et al. (1998)
+											4: MMO: Xu et al. (2000)
+											
+		get_mineral_index                   Function to get the index of the mineral in
+											mineral lists used in conductivity calulcation
+											methods.
+											
+											Input: mineral name
+											ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											graphite,sulphide,mixture,other
+											
+											Returns: mineral index
+											
+		get_rock_index                      Function to get the index of the mineral in
+											mineral lists.
+											Input: rock name
+											granite,granulite,sandstone,gneiss,amphibolite,
+											basalt,mud(mudstone/shale),gabbro,other_rock
+											
+											Returns: rock index
+		
+		list_mineral_econd_models           Functions that lists the available electrical
+											conductivity models for the given mineral index.
+											
+											Input: mineral name
+											ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											graphite,sulphide,mixture,other
+											
+											Prints and returns: list of electrical conductivity
+											models for the chosen mineral.
+											
+		list_rock_econd_models              Functions that lists the available electrical
+											conductivity models for the given rock index.
+											
+											Input: rock name
+											granite,granulite,sandstone,gneiss,amphibolite,
+											basalt,mud(mudstone/shale),gabbro,other_rock
+											
+											Prints and returns: list of electrical conductivity
+											models for the chosen rock.
+											
+		list_melt_econd_models              Functions that lists the available electrical
+											conductivity models for melts.
+											
+											Prints and returns: list of electrical conductivity
+											models for the melt.
+											
+		list_fluid_econd_models             Functions that lists the available electrical
+											conductivity models for fluids.
+											
+											Prints and returns: list of electrical conductivity
+											models for the fluid.
+											
+		set_melt_fluid_conductivity_choice  Function to set the electrical conductivity choice
+											for melts.
+		
+											Input: model index for,
+											melt,fluid
+											
+		set_mineral_conductivity_choice     Function to set the electrical conductivity choice
+											for minerals.
+											
+											Input: model index for,
+											ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											graphite,sulphide,mixture,other
+											
+		set_rock_conductivity_choice        Function to set the electrical conductivity choice
+											for minerals.
+											
+											Input: model index for,
+											granite,granulite,sandstone,gneiss,amphibolite,
+											basalt,mud(mudstone/shale),gabbro,other_rock
+											
+		set_mineral_water                   Function to set the water content for minerals.
+		
+											Input:
+											ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											graphite,sulphide,mixture,other
+											
+		set_rock_water                      Function to set the water content for minerals.
+		
+											Input:
+											granite,granulite,sandstone,gneiss,amphibolite,
+											basalt,mud(mudstone/shale),gabbro,other_rock
+											
+		set_param1_mineral                  Function to set the param1 for minerals. These 
+		                                    denote to specific parameters that is required
+		                                    by the chosen electrical conductivity model.
+		                                    These parameters are indicated in the csv files
+		                                    with _param1_X
+		                                    
+		                                    Input:
+		                                    ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											graphite,sulphide,mixture,other
+											Unit: Varies
+											
+		set_param2_mineral                  Function to set the param2 for minerals. These 
+		                                    denote to specific parameters that is required
+		                                    by the chosen electrical conductivity model.
+		                                    These parameters are indicated in the csv files
+		                                    with _param2_X
+		                                    
+		                                    Input:
+		                                    ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											graphite,sulphide,mixture,other
+											Unit: Varies
+											
+		set_param1_rock                     Function to set the param1 for rocks. These 
+		                                    denote to specific parameters that is required
+		                                    by the chosen electrical conductivity model.
+		                                    These parameters are indicated in the csv files
+		                                    with _param1_X
+		                                    
+		                                    Input:
+		                                    granite,granulite,sandstone,gneiss,amphibolite,
+											basalt,mud(mudstone/shale),gabbro,other_rock
+											Unit: Varies
+											
+		set_param2_rock                     Function to set the param2 for rocks. These 
+		                                    denote to specific parameters that is required
+		                                    by the chosen electrical conductivity model.
+		                                    These parameters are indicated in the csv files
+		                                    with _param2_X
+		                                    
+		                                    Input:
+		                                    granite,granulite,sandstone,gneiss,amphibolite,
+											basalt,mud(mudstone/shale),gabbro,other_rock
+											Unit: Varies
+											
+		set_melt_fluid_frac                 Function to set melt/fluid mass fraction
+		
+											Input:
+											'melt', 'fluid'
+											Unit:Fraction (0 to 1)
+											
+										
+		set_melt_or_fluid_mode              Function to define if you are going to use
+											melt or fluid in the matrix.
+											
+											Input:
+											'melt', 'fluid'
+											
+		set_melt_properties                 Function to set some of the properties of the melt.
+		
+		                                    Input:
+		                                    'co2' - in ppm
+		                                    'water' - in ppm
+		                                    'na2o' - in wt%
+		                                    'k2o' - in wt%
+		                                    
+		set_fluid_properties                Function to set some of the properties of the fluid.
+		
+											Input:
+											'salinity' - in wt%
+											
+													
+		set_solid_phase_method              Function to set whether to mix minerals or rocks in
+											the solid phases. The two cannot be intermixed.
+											
+											Input:
+											'mineral','rock'
+											
+												
+		set_phase_interconnectivities       Function to set interconnectivities via the cementation
+											exponent included in The Generalized Archie's Law
+											or Modified Archie's Law.
+											
+											Input:
+											ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											graphite,sulphide,mixture,other,granite,granulite,sandstone,gneiss,amphibolite,
+											basalt,mud(mudstone/shale),gabbro,other_rock,fluid,melt
+											
+											Unit: Float bigger than 1
+											
+		set_solid_phs_mix_method           Function to set solid phases mixing function.
+		
+											Input:
+											Index number denoting to the chosen phases mixing function
+											Unit: Integer
+											
+		set_solid_melt_fluid_mix_method     Function to set solid-fluid phases mixing function.
+		
+											Input:
+											Index number denoting to the chosen phases mixing function
+											Unit: Integer
+											
+		list_phs_mix_methods                Function to get a list of phase mixing functions for solid
+											phases.
+											
+											Returns and prints:
+											List of strings related to phase mixing functions
+											
+									
+		list_phs_melt_fluid_mix_methods     Function to get a list of solid-fluid phase mixing
+											functions
+											
+											Returns and prints:
+											List of strings related to solid-fluid phase mixing functions		
+											
+		calculate_arrhenian_single          Function to calculate a simple arrhenian function in form:
+		
+											cond = sigma * water**r * exp(-(E + (alpha*water)**1/3) / RT)
+											
+											Input: 
+											T - temperature in Kelvin
+											sigma - preexponential term in log10(S/m)
+											E - activation enthalpy in J/mol
+											r - water exponent (unitless)
+											alpha - water activation enthalpy modifier in J/mol
+											water - water content of the phase in ppm
+											
+											Returns:
+											Conductivity in S/m
+											
+		calculate_fluids_conductivity       Function to calculate conductivity of fluids.
+		
+											Input:
+											method - 'array','index'
+											this entry denotes to whether calculation will be made
+											with an array or a single value (index)
+											
+											Returns:
+											Conductivity in S/m
+											
+		calculate_melt_conductivity         Function to calculate conductivity of melts.
+		
+											Input:
+											method - 'array','index'
+											this entry denotes to whether calculation will be made
+											with an array or a single value (index)
+											
+											Returns:
+											Conductivity in S/m
+											
+		calculate_mineral_conductivity      Function to calculate conductivity of minerals.
+		
+											Input:
+											method - 'array','index'
+											this entry denotes to whether calculation will be made
+											with an array or a single value (index)
+											
+											min_idx - Index denotes to the mineral chosen. in Integer
+											
+											Returns:
+											Conductivity in S/m
+											
+		calculate_rock_conductivity         Function to calculate conductivity of rocks.
+		
+											Input:
+											method - 'array','index'
+											this entry denotes to whether calculation will be made
+											with an array or a single value (index)
+											
+											rock_idx - Index denotes to the rock chosen. in Integer
+											
+											Returns:
+											Conductivity in S/m
+											
+		calculate_conductivity              Function to calculate bulk conductivity of the arraged medium.
+		
+		
+											Input:
+											method - 'array','index'
+											this entry denotes to whether calculation will be made
+											with an array or a single value (index)
+											
+											Returns:
+											Conductivity in S/m
+											
+											
+		
+							
+		
+		
+		"""
 
 		self.core_path = core_path
 				
-		self.home()
+		self.form_object()
 		
-	def home(self):
+	def form_object(self):
 		
 		#Setting up initial variables.
 
@@ -72,24 +398,30 @@ class SEEL(object):
 		self.read_params()
 		
 		#setting up default values for the SEEL object
-		self.set_temperature(900.0) #in Kelvin
-		self.set_pressure(1.0) #in GPa
+		self.set_temperature(np.ones(1) * 900.0) #in Kelvin
+		self.set_pressure(np.ones(1) * 1.0) #in GPa
 		self.set_mineral_conductivity_choice()
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
+		self.set_rock_water()
 		self.set_watercalib()
 		self.set_o2_buffer()
 		self.set_param1_mineral()
 		self.set_param2_mineral()
 		self.set_param1_rock()
 		self.set_param2_rock()
-		self.set_melt_or_fluid_mode(mode = 1) #default choice is melt - 1
-		self.set_solid_phase_method(mode = 2) #default choice is mineral - 2
+		self.set_melt_or_fluid_mode(mode = 'melt') #default choice is melt - 1
+		self.set_solid_phase_method(mode = 'mineral') #default choice is mineral - 2
+		self.set_solid_phs_mix_method(method = 0)
+		self.set_solid_melt_fluid_mix_method(method = 0)
 		self.set_melt_fluid_conductivity_choice()
 		self.set_melt_fluid_frac()
 		self.set_melt_properties()
 		self.set_fluid_properties()
 		self.set_phase_interconnectivities()
+		
+		#Some check for temperature being the controlling array errors.
+		self.temperature_default = True
 		
 	def read_csv(self,filename,delim):
 
@@ -143,7 +475,6 @@ class SEEL(object):
 		self.mixture_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'mixtures.csv'),delim = ',')
 		self.other_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'other.csv'),delim = ',')
 		
-
 		self.cond_data_array = [self.fluid_cond_data, self.melt_cond_data, self.granite_cond_data, self.granulite_cond_data,
 			  self.sandstone_cond_data, self.gneiss_cond_data, self.amphibolite_cond_data, self.basalt_cond_data, self.mud_cond_data,
 			   self.gabbro_cond_data, self.other_rock_cond_data, self.quartz_cond_data, self.plag_cond_data,
@@ -331,8 +662,8 @@ class SEEL(object):
 		params_dat = self.read_csv(os.path.join(self.core_path, 'params.csv'), delim = ',')
 
 		self.g = float(params_dat[0][1]) # in kg/
-		self.R = float(params_dat[1][1])
-		self.avog = float(params_dat[2][1])
+		self.R = float(params_dat[1][1]) # in JK-1 mol-1
+		self.avog = float(params_dat[2][1]) 
 		self.boltz = float(params_dat[3][1])
 		self.el_q = float(params_dat[4][1])
 		SEEL.spreadsheet = str(params_dat[5][1])
@@ -341,20 +672,23 @@ class SEEL(object):
 	def set_composition_solid_mineral(self, **kwargs):
 	
 		#Enter composition in fraction 0.6 == 60% volumetric percentage
+		
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
 	
-		self.ol_frac = np.array(kwargs.pop('ol_frac', 0.0))
-		self.opx_frac = np.array(kwargs.pop('opx_frac', 0.0))
-		self.cpx_frac = np.array(kwargs.pop('cpx_frac', 0.0))
-		self.garnet_frac = np.array(kwargs.pop('garnet_frac', 0.0))
-		self.mica_frac = np.array(kwargs.pop('mica_frac', 0.0))
-		self.amp_frac = np.array(kwargs.pop('amp_frac', 0.0))
-		self.quartz_frac = np.array(kwargs.pop('quartz_frac', 0.0))
-		self.plag_frac = np.array(kwargs.pop('plag_frac', 0.0))
-		self.kfelds_frac = np.array(kwargs.pop('kfelds_frac', 0.0))
-		self.graphite_frac = np.array(kwargs.pop('graphite_frac', 0.0))
-		self.sulphide_frac = np.array(kwargs.pop('sulphide_frac', 0.0))
-		self.mixture_frac = np.array(kwargs.pop('mixture_frac', 0.0))
-		self.other_frac = np.array(kwargs.pop('other_frac', 0.0))
+		SEEL.ol_frac = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_frac')
+		SEEL.opx_frac = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_frac')
+		SEEL.cpx_frac = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_frac')
+		SEEL.garnet_frac = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_frac')
+		SEEL.mica_frac = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_frac')
+		SEEL.amp_frac = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_frac')
+		SEEL.quartz_frac = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_frac')
+		SEEL.plag_frac = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_frac')
+		SEEL.kfelds_frac = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_frac')
+		SEEL.sulphide_frac = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_frac')
+		SEEL.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
+		SEEL.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
+		SEEL.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
 		
 		bool_composition = self.check_composition(method = 'mineral')
 
@@ -366,16 +700,19 @@ class SEEL(object):
 	def set_composition_solid_rock(self, **kwargs):
 	
 		#Enter composition in fraction 0.6 == 60% volumetric percentage
+		
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
 	
-		self.granite_frac = np.array(kwargs.pop('granite_frac', 0.0))
-		self.granulite_frac = np.array(kwargs.pop('granulite_frac', 0.0))
-		self.sandstone_frac = np.array(kwargs.pop('sandstone_frac', 0.0))
-		self.gneiss_frac = np.array(kwargs.pop('gneiss_frac', 0.0))
-		self.amphibolite_frac = np.array(kwargs.pop('amphibolite_frac', 0.0))
-		self.basalt_frac = np.array(kwargs.pop('basalt_frac', 0.0))
-		self.mud_frac = np.array(kwargs.pop('mud_frac', 0.0))
-		self.gabbro_frac = np.array(kwargs.pop('gabbro_frac', 0.0))
-		self.other_rock_frac = np.array(kwargs.pop('other_rock_frac', 0.0))
+		SEEL.granite_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_frac')
+		SEEL.granulite_frac = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_frac')
+		SEEL.sandstone_frac = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_frac')
+		SEEL.gneiss_frac = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_frac')
+		SEEL.amphibolite_frac = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_frac')
+		SEEL.basalt_frac = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_frac')
+		SEEL.mud_frac = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
+		SEEL.gabbro_frac = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
+		SEEL.other_rock_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_frac')
 	
 		
 		bool_composition = self.check_composition(method = 'rock')
@@ -392,6 +729,8 @@ class SEEL(object):
 			self.T = T
 		except TypeError:
 			self.T = np.array(T)
+			
+		self.temperature_default = False
 		
 	def set_pressure(self,P):
 		
@@ -401,7 +740,7 @@ class SEEL(object):
 			t_check = self.check_p_n_T()
 			if t_check == False:
 				raise ValueError('The arrays of pressure and temperature are not the same...')
-				sys.exit()
+				
 		except TypeError:
 			try:
 				self.p = np.ones(len(self.T)) * P
@@ -423,9 +762,21 @@ class SEEL(object):
 		SEEL.px_gt_calib = kwargs.pop('px-gt', 2)
 		SEEL.feldspar_calib = kwargs.pop('feldspar', 2)
 		
+		if (SEEL.ol_calib < 0) or (SEEL.ol_calib > 3):
+			raise ValueError('The olivine calibration method has entered incorrectly. The value has to be 0-Withers2012, 1-Bell2003, 2-Paterson1980 or 3-Default')
+			
+		if (SEEL.px_gt_calib < 0) or (SEEL.px_gt_calib > 2):
+			raise ValueError('The pyroxene-garnet calibration method has entered incorrectly. The value has to be 0-Bell1995 1-Paterson1980 or 2-Default.')
+			
+		if (SEEL.feldspar_calib < 0) or (SEEL.feldspar_calib > 2):
+			raise ValueError('The feldspar calibration method has entered incorrectly. The value has to be 0-Johnson2003 1-Mosenfelder2015 or 2-Default.')
+		
 	def set_o2_buffer(self,**kwargs):
 		
 		SEEL.o2_buffer = kwargs.pop('o2_buffer', 0)
+		
+		if (SEEL.o2_buffer < 0) or (SEEL.o2_buffer > 4):
+			raise ValueError('The oxygen fugacity buffer has entered incorrectly. The value has to be 0-FMQ, 1-IW, 2-QIF, 3-NNO, 4-MMO')
 
 	def check_composition(self, method = None):
 
@@ -460,7 +811,7 @@ class SEEL(object):
 
 		return continue_adjusting
 	
-	def match_mineral_index(self, mineral_name):
+	def get_mineral_index(self, mineral_name):
 	
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
 			min_index = 21
@@ -495,6 +846,33 @@ class SEEL(object):
 			
 		return min_index
 		
+	def get_rock_index(self, rock_name):
+	
+		if (rock_name == 'granite'):
+			rock_index = 2
+		elif (rock_name == 'granulite'):
+			rock_index = 3
+		elif (rock_name == 'sandstone'):
+			rock_index = 4
+		elif (rock_name == 'gneiss'):
+			rock_index = 5
+		elif (rock_name == 'amphibolite'):
+			rock_index = 6
+		elif (rock_name == 'basalt'):
+			rock_index = 7
+		elif (rock_name == 'mud'):
+			rock_index = 8
+		elif (rock_name == 'gabbro'):
+			rock_index = 9
+		elif (rock_name == 'other_rock'):
+			rock_index = 10
+			
+		else:
+		
+			raise ValueError('There is no such a mineral specifier called :' + rock_name)
+			
+		return rock_index
+		
 	def list_mineral_econd_models(self, mineral_name):
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
@@ -523,6 +901,9 @@ class SEEL(object):
 			min_index = 22
 		elif (mineral_name == 'other') or (mineral_name == 'other'):
 			min_index = 23
+			
+		else:
+			raise ValueError('There is no such a mineral specifier called :' + mineral_name)
 			
 		def print_lists(min_idx):
 		
@@ -554,6 +935,11 @@ class SEEL(object):
 		elif (rock_name == 'other_rock'):
 			rock_idx = 10
 			
+		else:
+		
+			raise ValueError('There is no such a mineral specifier called :' + rock_name)
+		
+		print('Conductivity models for the selected rock:')
 		def print_lists(rock_idx):
 		
 			for i in range(0,len(self.name[rock_idx])):
@@ -565,13 +951,15 @@ class SEEL(object):
 		
 	def list_melt_econd_models(self):
 	
+		print('Conductivity models for melts:')
 		for i in range(0,len(self.name[1])):
 			print(str(i) + '.  ' + self.name[1][i])
 			
 		return self.name[1]
 		
 	def list_fluid_econd_models(self):
-	
+		
+		print('Conductivity models for fluids:')
 		for i in range(0,len(self.name[0])):
 			print(str(i) + '.  ' + self.name[0][i])
 			
@@ -581,6 +969,14 @@ class SEEL(object):
 	
 		SEEL.melt_cond_selection = kwargs.pop('melt', 0)
 		SEEL.fluid_cond_selection = kwargs.pop('fluid', 0)
+		
+		if (SEEL.melt_cond_selection < 0) or (SEEL.melt_cond_selection > len(self.name[1])):
+		
+			raise ValueError('Bad entry for melt conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[1])))
+			
+		if (SEEL.fluid_cond_selection < 0) or (SEEL.fluid_cond_selection > len(self.name[0])):
+		
+			raise ValueError('Bad entry for fluid conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[0])))
 		
 	def set_mineral_conductivity_choice(self,**kwargs):
 	
@@ -602,6 +998,18 @@ class SEEL(object):
 				   SEEL.cpx_cond_selection, SEEL.mica_cond_selection, SEEL.garnet_cond_selection, SEEL.sulphide_cond_selection,
 				   SEEL.graphite_cond_selection, SEEL.ol_cond_selection, SEEL.mixture_cond_selection, SEEL.other_cond_selection]
 				   
+		self.mineral_conductivity_choice_check()
+		
+	def mineral_conductivity_choice_check(self):
+		
+		mineral_idx = list(range(11,24))
+		mineral_names = ['qtz','plag','amp','kfelds','opx','cpx','mica','garnet','sulphide','graphite','ol','mixture','other']
+		
+		for i in range(0,len(SEEL.minerals_cond_selections)):
+		
+			if (SEEL.minerals_cond_selections[i] < 0) or (SEEL.minerals_cond_selections[i] > len(self.name[mineral_idx[i]])):
+			
+				raise ValueError('Bad entry for mineral conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[mineral_idx[i]])) + ' for the mineral ' + mineral_names[i])
 	
 	def set_rock_conductivity_choice(self,**kwargs):
 	
@@ -618,21 +1026,38 @@ class SEEL(object):
 		SEEL.rock_cond_selections = [SEEL.granite_cond_selection, SEEL.granulite_cond_selection, SEEL.sandstone_cond_selection, SEEL.gneiss_cond_selection,
 				   SEEL.amphibolite_cond_selection, SEEL.basalt_cond_selection, SEEL.mud_cond_selection, SEEL.gabbro_cond_selection, SEEL.other_rock_cond_selection]
 				   
+				   
+		self.rock_conductivity_choice_check()		   
+		
+	def rock_conductivity_choice_check(self):
+		
+		rock_idx = list(range(2,12))
+		rock_names = ['granite','granulite','sandstone','gneiss','amphibolite','basalt','mud','gabbro','other_rock']
+		
+		for i in range(0,len(SEEL.rock_cond_selections)):
+		
+			if (SEEL.rock_cond_selections[i] < 0) or (SEEL.rock_cond_selections[i] > len(self.name[rock_idx[i]])):
+			
+				raise ValueError('Bad entry for rock conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[rock_idx[i]])) + ' for the rock ' + rock_names[i])
+				   
 	def set_mineral_water(self, **kwargs):
 	
-		SEEL.ol_water = np.array(kwargs.pop('ol', 0))
-		SEEL.opx_water = np.array(kwargs.pop('opx', 0))
-		SEEL.cpx_water = np.array(kwargs.pop('cpx', 0))
-		SEEL.garnet_water = np.array(kwargs.pop('garnet', 0))
-		SEEL.mica_water = np.array(kwargs.pop('mica', 0))
-		SEEL.amp_water = np.array(kwargs.pop('amp', 0))
-		SEEL.quartz_water = np.array(kwargs.pop('quartz', 0))
-		SEEL.plag_water = np.array(kwargs.pop('plag', 0))
-		SEEL.kfelds_water = np.array(kwargs.pop('kfelds', 0))
-		SEEL.sulphide_water = np.array(kwargs.pop('sulphide', 0))
-		SEEL.graphite_water = np.array(kwargs.pop('graphite', 0))
-		SEEL.mixture_water = np.array(kwargs.pop('mixture', 0))
-		SEEL.other_water = np.array(kwargs.pop('other', 0))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		SEEL.ol_water = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_water')
+		SEEL.opx_water = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_water')
+		SEEL.cpx_water = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_water')
+		SEEL.garnet_water = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_water')
+		SEEL.mica_water = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_water')
+		SEEL.amp_water = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_water')
+		SEEL.quartz_water = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_water')
+		SEEL.plag_water = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_water')
+		SEEL.kfelds_water = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_water')
+		SEEL.sulphide_water = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_water')
+		SEEL.graphite_water = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_water')
+		SEEL.mixture_water = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_water')
+		SEEL.other_water = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_water')
 
 		SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
 			 SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.garnet_water, SEEL.sulphide_water,
@@ -640,15 +1065,18 @@ class SEEL(object):
 				   
 	def set_rock_water(self, **kwargs):
 	
-		SEEL.granite_water = np.array(kwargs.pop('granite', 0))
-		SEEL.granulite_water = np.array(kwargs.pop('granulite', 0))
-		SEEL.sandstone_water = np.array(kwargs.pop('sandstone', 0))
-		SEEL.gneiss_water = np.array(kwargs.pop('gneiss', 0))
-		SEEL.amphibolite_water = np.array(kwargs.pop('amphibolite', 0))
-		SEEL.basalt_water = np.array(kwargs.pop('basalt', 0))
-		SEEL.mud_water = np.array(kwargs.pop('mud', 0))
-		SEEL.gabbro_water = np.array(kwargs.pop('gabbro', 0))
-		SEEL.other_rock_water = np.array(kwargs.pop('other_rock', 0))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		SEEL.granite_water = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_water')
+		SEEL.granulite_water = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_water')
+		SEEL.sandstone_water = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_water')
+		SEEL.gneiss_water = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_water')
+		SEEL.amphibolite_water = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_water')
+		SEEL.basalt_water = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_water')
+		SEEL.mud_water = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_water')
+		SEEL.gabbro_water = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_water')
+		SEEL.other_rock_water = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_water')
 		
 		SEEL.rock_water_list = [SEEL.granite_water, SEEL.granulite_water,
 			SEEL.sandstone_water, SEEL.gneiss_water, SEEL.amphibolite_water, SEEL.basalt_water,
@@ -656,19 +1084,22 @@ class SEEL(object):
 			
 	def set_param1_mineral(self, **kwargs):
 	
-		SEEL.ol_param1 = np.array(kwargs.pop('ol', 0))
-		SEEL.opx_param1 = np.array(kwargs.pop('opx', 0))
-		SEEL.cpx_param1 = np.array(kwargs.pop('cpx', 0))
-		SEEL.garnet_param1 = np.array(kwargs.pop('garnet', 0))
-		SEEL.mica_param1 = np.array(kwargs.pop('mica', 0))
-		SEEL.amp_param1 = np.array(kwargs.pop('amp', 0))
-		SEEL.quartz_param1 = np.array(kwargs.pop('quartz', 0))
-		SEEL.plag_param1 = np.array(kwargs.pop('plag', 0))
-		SEEL.kfelds_param1 = np.array(kwargs.pop('kfelds', 0))
-		SEEL.sulphide_param1 = np.array(kwargs.pop('sulphide', 0))
-		SEEL.graphite_param1 = np.array(kwargs.pop('graphite', 0))
-		SEEL.mixture_param1 = np.array(kwargs.pop('mixture', 0))
-		SEEL.other_param1 = np.array(kwargs.pop('other', 0))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		SEEL.ol_param1 = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param1')
+		SEEL.opx_param1 = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param1')
+		SEEL.cpx_param1 = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param1')
+		SEEL.garnet_param1 = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param1')
+		SEEL.mica_param1 = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param1')
+		SEEL.amp_param1 = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param1')
+		SEEL.quartz_param1 = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param1')
+		SEEL.plag_param1 = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param1')
+		SEEL.kfelds_param1 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param1')
+		SEEL.sulphide_param1 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param1')
+		SEEL.graphite_param1 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param1')
+		SEEL.mixture_param1 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param1')
+		SEEL.other_param1 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param1')
 		
 		SEEL.param1_mineral_list = [SEEL.quartz_param1, SEEL.plag_param1, SEEL.amp_param1, SEEL.kfelds_param1,
 			 SEEL.opx_param1, SEEL.cpx_param1, SEEL.mica_param1, SEEL.garnet_param1, SEEL.sulphide_param1,
@@ -676,15 +1107,18 @@ class SEEL(object):
 				   
 	def set_param1_rock(self, **kwargs):
 	
-		SEEL.granite_param1 = np.array(kwargs.pop('granite', 0))
-		SEEL.granulite_param1 = np.array(kwargs.pop('granulite', 0))
-		SEEL.sandstone_param1 = np.array(kwargs.pop('sandstone', 0))
-		SEEL.gneiss_param1 = np.array(kwargs.pop('gneiss', 0))
-		SEEL.amphibolite_param1 = np.array(kwargs.pop('amphibolite', 0))
-		SEEL.basalt_param1 = np.array(kwargs.pop('basalt', 0))
-		SEEL.mud_param1 = np.array(kwargs.pop('mud', 0))
-		SEEL.gabbro_param1 = np.array(kwargs.pop('gabbro', 0))
-		SEEL.other_rock_param1 = np.array(kwargs.pop('other_rock', 0))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		SEEL.granite_param1 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param1')
+		SEEL.granulite_param1 = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param1')
+		SEEL.sandstone_param1 = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param1')
+		SEEL.gneiss_param1 = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param1')
+		SEEL.amphibolite_param1 = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param1')
+		SEEL.basalt_param1 = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param1')
+		SEEL.mud_param1 = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param1')
+		SEEL.gabbro_param1 = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param1')
+		SEEL.other_rock_param1 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_param1')
 		
 		SEEL.param1_rock_list = [SEEL.granite_param1, SEEL.granulite_param1,
 			SEEL.sandstone_param1, SEEL.gneiss_param1, SEEL.amphibolite_param1, SEEL.basalt_param1,
@@ -692,19 +1126,22 @@ class SEEL(object):
 			
 	def set_param2_mineral(self, **kwargs):
 	
-		SEEL.ol_param2 = np.array(kwargs.pop('ol', 0))
-		SEEL.opx_param2 = np.array(kwargs.pop('opx', 0))
-		SEEL.cpx_param2 = np.array(kwargs.pop('cpx', 0))
-		SEEL.garnet_param2 = np.array(kwargs.pop('garnet', 0))
-		SEEL.mica_param2 = np.array(kwargs.pop('mica', 0))
-		SEEL.amp_param2 = np.array(kwargs.pop('amp', 0))
-		SEEL.quartz_param2 = np.array(kwargs.pop('quartz', 0))
-		SEEL.plag_param2 = np.array(kwargs.pop('plag', 0))
-		SEEL.kfelds_param2 = np.array(kwargs.pop('kfelds', 0))
-		SEEL.sulphide_param2 = np.array(kwargs.pop('sulphide', 0))
-		SEEL.graphite_param2 = np.array(kwargs.pop('graphite', 0))
-		SEEL.mixture_param2 = np.array(kwargs.pop('mixture', 0))
-		SEEL.other_param2 = np.array(kwargs.pop('other', 0))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		SEEL.ol_param2 = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param2')
+		SEEL.opx_param2 = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param2')
+		SEEL.cpx_param2 = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param2')
+		SEEL.garnet_param2 = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param2')
+		SEEL.mica_param2 = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param2')
+		SEEL.amp_param2 = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param2')
+		SEEL.quartz_param2 = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param2')
+		SEEL.plag_param2 = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param2')
+		SEEL.kfelds_param2 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param2')
+		SEEL.sulphide_param2 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param2')
+		SEEL.graphite_param2 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param2')
+		SEEL.mixture_param2 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param2')
+		SEEL.other_param2 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param2')
 		
 		SEEL.param2_mineral_list = [SEEL.quartz_param2, SEEL.plag_param2, SEEL.amp_param2, SEEL.kfelds_param2,
 			SEEL.opx_param2, SEEL.cpx_param2, SEEL.mica_param2, SEEL.garnet_param2, SEEL.sulphide_param2,
@@ -712,15 +1149,18 @@ class SEEL(object):
 				   
 	def set_param2_rock(self, **kwargs):
 	
-		SEEL.granite_param2 = np.array(kwargs.pop('granite', 0))
-		SEEL.granulite_param2 = np.array(kwargs.pop('granulite', 0))
-		SEEL.sandstone_param2 = np.array(kwargs.pop('sandstone', 0))
-		SEEL.gneiss_param2 = np.array(kwargs.pop('gneiss', 0))
-		SEEL.amphibolite_param2 = np.array(kwargs.pop('amphibolite', 0))
-		SEEL.basalt_param2 = np.array(kwargs.pop('basalt', 0))
-		SEEL.mud_param2 = np.array(kwargs.pop('mud', 0))
-		SEEL.gabbro_param2 = np.array(kwargs.pop('gabbro', 0))
-		SEEL.other_rock_param2 = np.array(kwargs.pop('other_rock', 0))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		SEEL.granite_param2 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param2')
+		SEEL.granulite_param2 = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param2')
+		SEEL.sandstone_param2 = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param2')
+		SEEL.gneiss_param2 = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param2')
+		SEEL.amphibolite_param2 = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param2')
+		SEEL.basalt_param2 = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param2')
+		SEEL.mud_param2 = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param2')
+		SEEL.gabbro_param2 = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param2')
+		SEEL.other_rock_param2 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_param2')
 		
 		SEEL.param2_rock_list = [SEEL.granite_param2, SEEL.granulite_param2,
 			SEEL.sandstone_param2, SEEL.gneiss_param2, SEEL.amphibolite_param2, SEEL.basalt_param2,
@@ -728,53 +1168,177 @@ class SEEL(object):
 			
 	def set_melt_fluid_frac(self, **kwargs):
 	
-		self.melt_fluid_mass_frac = np.array(kwargs.pop('frac', 0))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		self.melt_fluid_mass_frac = self.array_modifier(input = kwargs.pop('frac', 0), array = self.T, varname = 'melt_fluid_mass_frac')
+		
+		if len(np.flatnonzero(self.melt_fluid_mass_frac < 0)) != 0:
+		
+			raise ValueError('There is a value entered for melt/fluid fraction that is below zero.')
 		
 	def set_melt_or_fluid_mode(self,mode):
 	
-		SEEL.fluid_or_melt_method = mode
+		if mode == 'melt':
+			SEEL.fluid_or_melt_method = 1
+		elif mode == 'fluid':
+			SEEL.fluid_or_melt_method = 0
+		else:
+			raise ValueError("You have to enter 'melt' or 'fluid' as strings.")
 		
 	def set_solid_phase_method(self,mode):
 	
-		SEEL.solid_phase_method = mode
+		if mode == 'mineral':
+			SEEL.solid_phase_method = 2
+		elif mode == 'rock':
+			SEEL.solid_phase_method = 1
+		else:
+			raise ValueError("You have to enter 'mineral' or 'rock' as strings.")
 			
 	def set_melt_properties(self, **kwargs):
 	
-		self.co2_melt = np.array(kwargs.pop('co2', 0)) #in ppm
-		self.h2o_melt = np.array(kwargs.pop('water', 0)) #in ppm
-		self.na2o_melt = np.array(kwargs.pop('na2o', 0)) #in wt
-		self.k2o_melt = np.array(kwargs.pop('k2o', 0)) #in wt
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		self.co2_melt = self.array_modifier(input = kwargs.pop('co2', 0), array = self.T, varname = 'co2_melt')  #in ppm
+		self.h2o_melt = self.array_modifier(input = kwargs.pop('water', 0), array = self.T, varname = 'h2o_melt')  #in ppm
+		self.na2o_melt = self.array_modifier(input = kwargs.pop('na2o', 0), array = self.T, varname = 'na2o_melt')  #in wt
+		self.k2o_melt = self.array_modifier(input = kwargs.pop('k2o', 0), array = self.T, varname = 'k2o_melt')  #in wt
+		
+		list_of_values = [self.co2_melt,self.h2o_melt,self.na2o_melt,self.k2o_melt]
+		
+		for i in range(0,len(list_of_values)):
+			if len(np.flatnonzero(list_of_values[i] < 0)) != 0:
+			
+				raise ValueError('There is a value entered in melt properties that is below zero.')
 				
 	def set_fluid_properties(self, **kwargs):
 	
-		self.salinity_fluid = np.array(kwargs.pop('salinity', 0))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+	
+		self.salinity_fluid = self.array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
+		
+		if len(np.flatnonzero(self.salinity_fluid < 0)) != 0:
+		
+			raise ValueError('There is a value entered for fluid properties that is below zero.')
 		
 	def set_phase_interconnectivities(self,**kwargs):
 	
-		SEEL.ol_m = np.array(kwargs.pop('ol', 4))
-		SEEL.opx_m = np.array(kwargs.pop('opx', 4))
-		SEEL.cpx_m = np.array(kwargs.pop('cpx', 4))
-		SEEL.garnet_m = np.array(kwargs.pop('garnet', 4))
-		SEEL.mica_m = np.array(kwargs.pop('mica', 4))
-		SEEL.amp_m = np.array(kwargs.pop('amp', 4))
-		SEEL.quartz_m = np.array(kwargs.pop('quartz', 4))
-		SEEL.plag_m = np.array(kwargs.pop('plag', 4))
-		SEEL.kfelds_m = np.array(kwargs.pop('kfelds', 4))
-		SEEL.sulphide_m = np.array(kwargs.pop('sulphide', 4))
-		SEEL.graphite_m = np.array(kwargs.pop('graphite', 4))
-		SEEL.mixture_m = np.array(kwargs.pop('mixture', 4))
-		SEEL.other_m = np.array(kwargs.pop('other', 4))
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
 		
-		SEEL.granite_m = np.array(kwargs.pop('granite', 4))
-		SEEL.granulite_m = np.array(kwargs.pop('granulite', 4))
-		SEEL.sandstone_m = np.array(kwargs.pop('sandstone', 4))
-		SEEL.gneiss_m = np.array(kwargs.pop('gneiss', 4))
-		SEEL.amphibolite_m = np.array(kwargs.pop('amphibolite', 4))
-		SEEL.basalt_m = np.array(kwargs.pop('basalt', 4))
-		SEEL.mud_m = np.array(kwargs.pop('mud', 4))
-		SEEL.gabbro_m = np.array(kwargs.pop('gabbro', 4))
-		SEEL.other_rock_m = np.array(kwargs.pop('other_rock', 4))
-
+		SEEL.ol_m = self.array_modifier(input = kwargs.pop('ol', 4), array = self.T, varname = 'ol_m') 
+		SEEL.opx_m = self.array_modifier(input = kwargs.pop('opx', 4), array = self.T, varname = 'opx_m') 
+		SEEL.cpx_m = self.array_modifier(input = kwargs.pop('cpx', 4), array = self.T, varname = 'cpx_m') 
+		SEEL.garnet_m = self.array_modifier(input = kwargs.pop('garnet', 4), array = self.T, varname = 'garnet_m') 
+		SEEL.mica_m = self.array_modifier(input = kwargs.pop('mica', 4), array = self.T, varname = 'mica_m') 
+		SEEL.amp_m = self.array_modifier(input = kwargs.pop('amp', 4), array = self.T, varname = 'amp_m') 
+		SEEL.quartz_m = self.array_modifier(input = kwargs.pop('quartz', 4), array = self.T, varname = 'quartz_m') 
+		SEEL.plag_m = self.array_modifier(input = kwargs.pop('plag', 4), array = self.T, varname = 'plag_m') 
+		SEEL.kfelds_m = self.array_modifier(input = kwargs.pop('kfelds', 4), array = self.T, varname = 'kfelds_m') 
+		SEEL.sulphide_m = self.array_modifier(input = kwargs.pop('sulphide', 4), array = self.T, varname = 'sulphide_m') 
+		SEEL.graphite_m = self.array_modifier(input = kwargs.pop('graphite', 4), array = self.T, varname = 'graphite_m') 
+		SEEL.mixture_m = self.array_modifier(input = kwargs.pop('mixture', 4), array = self.T, varname = 'mixture_m') 
+		SEEL.other_m = self.array_modifier(input = kwargs.pop('other', 4), array = self.T, varname = 'other_m') 
+		
+		SEEL.granite_m = self.array_modifier(input = kwargs.pop('granite', 4), array = self.T, varname = 'granite_m') 
+		SEEL.granulite_m = self.array_modifier(input = kwargs.pop('granulite', 4), array = self.T, varname = 'granulite_m') 
+		SEEL.sandstone_m = self.array_modifier(input = kwargs.pop('sandstone', 4), array = self.T, varname = 'sandstone_m') 
+		SEEL.gneiss_m = self.array_modifier(input = kwargs.pop('gneiss', 4), array = self.T, varname = 'gneiss_m') 
+		SEEL.amphibolite_m = self.array_modifier(input = kwargs.pop('amphibolite', 4), array = self.T, varname = 'amphibolite_m') 
+		SEEL.basalt_m = self.array_modifier(input = kwargs.pop('basalt', 4), array = self.T, varname = 'basalt_m') 
+		SEEL.mud_m = self.array_modifier(input = kwargs.pop('mud', 4), array = self.T, varname = 'mud_m') 
+		SEEL.gabbro_m = self.array_modifier(input = kwargs.pop('gabbro', 4), array = self.T, varname = 'gabbro_m') 
+		SEEL.other_rock_m = self.array_modifier(input = kwargs.pop('other_rock', 4), array = self.T, varname = 'other_rock_m') 
+		
+		overlookError = kwargs.pop('overlookError', False)
+		
+		if SEEL.fluid_or_melt_method == 0:
+			SEEL.melt_fluid_m = self.array_modifier(input = kwargs.pop('fluid', 4), array = self.T, varname = 'melt_fluid_m') 
+		elif SEEL.fluid_or_melt_method == 1:
+			SEEL.melt_fluid_m = self.array_modifier(input = kwargs.pop('melt', 4), array = self.T, varname = 'melt_fluid_m') 
+		
+		if overlookError == False:
+			list_of_values = [self.ol_m,self.opx_m,self.cpx_m,self.garnet_m,self.mica_m,self.amp_m,self.quartz_m,self.plag_m,self.kfelds_m,
+			self.sulphide_m,self.graphite_m,self.mixture_m,self.other_m]
+			
+			for i in range(0,len(list_of_values)):
+			
+				if len(np.flatnonzero(list_of_values[i] < 1)) != 0:
+				
+					raise ValueError('There is a value entered in phase interconnectivities that apperas to be below 1.')
+			
+	
+	def set_solid_phs_mix_method(self, method):
+	
+		SEEL.phs_mix_method = method
+		
+		if (SEEL.phs_mix_method < 0) or (SEEL.phs_mix_method > 6):
+		
+			raise ValueError('The solid phase mixing method is not entered correctly, the value is not between 0 and 6')
+		
+	def set_solid_melt_fluid_mix_method(self, method):
+	
+		SEEL.phs_melt_mix_method = method
+		
+		if (SEEL.phs_melt_mix_method < 0) or (SEEL.phs_melt_mix_method > 6):
+		
+			raise ValueError('The solid-fluid phase mixing method is not entered correctly, the value is not between 0 and 6')
+		
+	def list_phs_mix_methods(self):
+	
+		phs_mix_list = ["Generalized Archie's Law (Glover, 2010)","Hashin-Shtrikman Lower Bound (Berryman, 1995)",
+		"Hashin-Shtrikman Upper Bound (Berryman, 1995)","Parallel Model (Guegen and Palciauskas, 1994)",
+		"Perpendicular Model (Guegen and Palciauskas, 1994)","Random Model (Guegen and Palciauskas, 1994)"]
+		
+		print('Solid Phases Mixing Models:')
+		for i in range(0,len(phs_mix_list)):
+			print(str(i) + '.  ' + phs_mix_list[i])
+		
+		return phs_mix_list
+		
+	def list_phs_melt_fluid_mix_methods(self):
+	
+		phs_melt_mix_list = ["Modified Archie's Law (Glover et al., 2000)","Tubes Model (ten Grotenhuis et al., 2005)",
+		"Spheres Model (ten Grotenhuis et al., 2005)","Modified Brick-layer Model (Schilling et al., 1997)",
+		"Hashin-Shtrikman Upper-Bound (Glover et al., 2000)","Hashin-Shtrikman Lower-Bound (Glover et al., 2000)"]
+		
+		print('Solid-Fluid/Melt Mixing models:')
+		for i in range(0,len(phs_melt_mix_list)):
+			print(str(i) + '.  ' + phs_melt_mix_list[i])
+		
+		return phs_melt_mix_list
+		
+	def array_modifier(self, input, array, varname):
+	
+		if type(input) == int:
+			
+			ret_array = np.ones(len(array)) * input
+			
+		elif type(input) == float:
+			
+			ret_array = np.ones(len(array)) * input
+			
+		elif type(input) == list:
+		
+			ret_array = np.array(input)
+			if len(ret_array) != len(array):
+				
+				raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
+			
+		elif type(input) == np.ndarray:
+		
+			ret_array = input
+			if len(ret_array) != len(array):
+				raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
+			
+		return ret_array
+		
+	def suggestion_temp_array(self):
+	
+		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
+		
 	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
 
 		if (sigma == 0.0) and (E == 0.0):
@@ -790,6 +1354,8 @@ class SEEL(object):
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
+		else:
+			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
 
 		cond_fluids = np.zeros(len(self.T))
 
@@ -831,6 +1397,8 @@ class SEEL(object):
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
+		else:
+			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
 
 		cond_melt = np.zeros(len(self.T))
 		
@@ -885,6 +1453,11 @@ class SEEL(object):
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
+		else:
+			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
+
+		if (rock_idx < 2) or (rock_idx > 10):
+			raise ValueError("The index chosen for rock conductivity does not appear to be correct. It has to be a value between 2 and 10.")
 
 		cond = np.zeros(len(self.T))
 
@@ -931,9 +1504,9 @@ class SEEL(object):
 				odd_function = SEEL.name[rock_idx][SEEL.rock_cond_selections[rock_sub_idx]]
 
 			if ('fo2' in odd_function) == True:
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.rock_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node] / water_corr_factor, param1 = SEEL.param1_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param2 = SEEL.param2_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.rock_water_list[rock_sub_idx][idx_node] / water_corr_factor, param1 = SEEL.param1_rock_list[rock_sub_idx][idx_node], param2 = SEEL.param2_rock_list[rock_sub_idx][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
 			else:
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.rock_water_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node] / water_corr_factor, param1 = SEEL.param1_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], param2 = SEEL.param2_rock_list[SEEL.rock_cond_selections[rock_sub_idx]][idx_node], method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.rock_water_list[rock_sub_idx][idx_node] / water_corr_factor, param1 = SEEL.param1_rock_list[rock_sub_idx][idx_node], param2 = SEEL.param2_rock_list[rock_sub_idx][idx_node], method = method)')
 		
 		return cond
 	
@@ -945,6 +1518,11 @@ class SEEL(object):
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
+		else:
+			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
+
+		if (min_idx < 11) or (min_idx > 23):
+			raise ValueError("The index chosen for mineral conductivity does not appear to be correct. It has to be a value between 11 and 23.")
 
 		cond = np.zeros(len(self.T))
 
@@ -1139,7 +1717,7 @@ class SEEL(object):
 			idx_node = None
 		elif indexing_method == 'index':
 			idx_node = sol_idx
-			
+		
 		if method == 0:
 
 			#Calculating phase exponent of the abundant mineral to make connectedness equal to unity.
@@ -1164,7 +1742,7 @@ class SEEL(object):
 					 self.gabbro_m[i], SEEL.other_rock_m[i]]
 				elif SEEL.solid_phase_method == 2:
 					phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
-					self.opx_frac[i], self.cpx_frac[0], self.mica_frac[i], self.garnet_frac[i],
+					self.opx_frac[i], self.cpx_frac[i], self.mica_frac[i], self.garnet_frac[i],
 					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.mixture_frac[i], self.other_frac[i]]
 					m_list = [SEEL.quartz_m[i], SEEL.plag_m[i], SEEL.amp_m[i], SEEL.kfelds_m[i],
 					SEEL.opx_m[i], SEEL.cpx_m[i], SEEL.mica_m[i], SEEL.garnet_m[i],
@@ -1380,12 +1958,12 @@ class SEEL(object):
 					(self.opx_frac[i] / (self.opx_cond[i] + (2*max_local))) +\
 					(self.cpx_frac[i] / (self.cpx_cond[i] + (2*max_local))) +\
 					(self.mica_frac[i] / (self.mica_cond[i] + (2*max_local))) +\
-					(self.garnet_frac[i] / (self.garnet_cond[i] + (2*min_local))) +\
-					(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*min_local))) +\
-					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*min_local))) +\
-					(self.ol_frac[i] / (self.ol_cond[i] + (2*min_local))) +\
-					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*min_local))) +\
-					(self.other_frac[i] / (self.other_cond[i] + (2*min_local)))					
+					(self.garnet_frac[i] / (self.garnet_cond[i] + (2*max_local))) +\
+					(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*max_local))) +\
+					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*max_local))) +\
+					(self.ol_frac[i] / (self.ol_cond[i] + (2*max_local))) +\
+					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*max_local))) +\
+					(self.other_frac[i] / (self.other_cond[i] + (2*max_local)))					
 					)**(-1.0)) -\
 					2.0*max_local
 					
@@ -1560,13 +2138,13 @@ class SEEL(object):
 				
 				self.dens_melt_dry = float(self.dens_mat[1][SEEL.melt_cond_selection]) / 1e3 #index 1 is equate to melt
 				#Determining xvol, first have to calculate the density of the melt from Sifre et al. (2014)
-				
+
 				self.dens_melt_fluid[idx_node] = (((self.h2o_melt[idx_node] * 1e-4) / 1e2) * 1.4) +\
 				(((self.co2_melt[idx_node] * 1e-4) / 1e2) * 2.4) + (1 - (((self.h2o_melt[idx_node] * 1e-4) +\
 				(self.co2_melt[idx_node] * 1e-4)) / 1e2)) * self.dens_melt_dry #calculating how much volatiles changed its density
-				
+			
 			if indexing_method == 'array':
-				self.melt_fuid_frac = np.zeros(len(self.melt_fluid_mass_frac))
+				self.melt_fluid_frac = np.zeros(len(self.melt_fluid_mass_frac))
 				start_idx = 0
 				end_idx = len(self.T)
 			elif indexing_method == 'index':
@@ -1577,9 +2155,8 @@ class SEEL(object):
 
 			for i in range(start_idx,end_idx):
 				if self.melt_fluid_mass_frac[i] != 0.0:
-					self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i] / 1e3))))
-	
-	
+					self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i]))))
+			
 			if melt_method == 0:
 
 				#Modified Archie's Law taken from Glover et al. (2000) from eq. 8
@@ -1632,16 +2209,17 @@ class SEEL(object):
 				self.bulk_cond[idx_node] = self.bulk_cond[idx_node] * (1 +\
 				((3 * self.melt_fluid_frac[idx_node] * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])) /\
 				(3 * self.bulk_cond[idx_node] + (vol_matrix * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])))))
-								
+			
 	def calculate_conductivity(self, method = None):
 
 		if method == 'index':
-
 			index = 0
-
-		elif method == 'array':
-
+		elif method == 'array'
 			index = None
+		else:
+			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
+		
+		self.calculate_density_solid()
 		
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
 			if SEEL.fluid_or_melt_method == 0:
@@ -1649,7 +2227,6 @@ class SEEL(object):
 			elif SEEL.fluid_or_melt_method == 1:
 				self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
 	
-		
 		if SEEL.solid_phase_method == 1:
 		
 			if np.mean(self.granite_frac) != 0:
@@ -1696,9 +2273,8 @@ class SEEL(object):
 				self.other_rock_cond = self.calculate_rock_conductivity(method = method, rock_idx= 10, sol_idx = index)
 			else:
 				self.other_rock_cond = np.zeros(len(self.T))
-				
-		
-			self.phase_mixing_function(method == SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
+						
+			self.phase_mixing_function(method = SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 			
 		elif SEEL.solid_phase_method == 2:
 		
@@ -1766,11 +2342,73 @@ class SEEL(object):
 				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 23, sol_idx = index)
 			else:
 				self.other_cond = np.zeros(len(self.T))
-	
-				
-			self.phase_mixing_function(method == SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
+					
+			self.phase_mixing_function(method = SEEL.phs_mix_method, melt_method = SEEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 		
 		self.cond_calculated = True
+
+		return self.bulk_cond
+		
+	def calculate_density_solid(self):
+		
+		if SEEL.solid_phase_method == 1:
+		
+			dens_list = [float(self.dens_mat[2][SEEL.granite_cond_selection])/1e3,
+			float(self.dens_mat[3][SEEL.granulite_cond_selection])/1e3,
+			float(self.dens_mat[4][SEEL.sandstone_cond_selection])/1e3,
+			float(self.dens_mat[5][SEEL.gneiss_cond_selection])/1e3,
+			float(self.dens_mat[6][SEEL.amphibolite_cond_selection])/1e3,
+			float(self.dens_mat[7][SEEL.basalt_cond_selection])/1e3,
+			float(self.dens_mat[8][SEEL.mud_cond_selection])/1e3,
+			float(self.dens_mat[9][SEEL.gabbro_cond_selection])/1e3,
+			float(self.dens_mat[10][SEEL.other_rock_cond_selection])/1e3]
+			
+			self.density_solids = np.zeros(len(self.T))
+			
+			for i in range(0,len(self.T)):
+			
+				density_indv = 0.0
+				
+				phase_list = [self.granite_frac[i],self.granulite_frac[i],self.sandstone_frac[i],
+						self.gneiss_frac[i], self.amphibolite_frac[i], self.basalt_frac[i], self.mud_frac[i],
+						 self.gabbro_frac[i], self.other_rock_frac[i]]
+				
+				for j in range(0,len(phase_list)):
+					density_indv = density_indv + (phase_list[j] * dens_list[j])
+					
+				self.density_solids[i] = density_indv
+				
+			
+		elif SEEL.solid_phase_method == 2:
+		
+			dens_list = [float(self.dens_mat[11][SEEL.quartz_cond_selection])/1e3,
+			float(self.dens_mat[12][SEEL.plag_cond_selection])/1e3,
+			float(self.dens_mat[13][SEEL.amp_cond_selection])/1e3,
+			float(self.dens_mat[14][SEEL.kfelds_cond_selection])/1e3,
+			float(self.dens_mat[15][SEEL.opx_cond_selection])/1e3,
+			float(self.dens_mat[16][SEEL.cpx_cond_selection])/1e3,
+			float(self.dens_mat[17][SEEL.mica_cond_selection])/1e3,
+			float(self.dens_mat[18][SEEL.garnet_cond_selection])/1e3,
+			float(self.dens_mat[19][SEEL.sulphide_cond_selection])/1e3,
+			float(self.dens_mat[20][SEEL.graphite_cond_selection])/1e3,
+			float(self.dens_mat[21][SEEL.ol_cond_selection])/1e3,
+			float(self.dens_mat[22][SEEL.mixture_cond_selection])/1e3,
+			float(self.dens_mat[23][SEEL.other_cond_selection])/1e3] 
+						
+			self.density_solids = np.zeros(len(self.T))
+			
+			for i in range(0,len(self.T)):
+			
+				density_indv = 0.0
+				
+				phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
+					self.opx_frac[i], self.cpx_frac[i], self.mica_frac[i], self.garnet_frac[i],
+					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.mixture_frac[i], self.other_frac[i]]
+				
+				for j in range(0,len(phase_list)):
+					density_indv = density_indv + (phase_list[j] * dens_list[j])
+					
+				self.density_solids[i] = density_indv
 		
 	def calculate_fugacity(self,mode):
 
