@@ -690,11 +690,23 @@ class SEEL(object):
 		SEEL.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
 		SEEL.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
 		
+		overlookError = kwargs.pop('overlookError', False)
+		
+		if overlookError != False:
+			mineral_frac_list = [SEEL.quartz_frac,SEEL.opx_frac,SEEL.cpx_frac,SEEL.garnet_frac,SEEL.mica_frac,
+			SEEL.amp_frac,SEEL.quartz_frac,SEEL.plag_frac,SEEL.kfelds_frac,SEEL.sulphide_frac,SEEL.graphite_frac,SEEL.mixture_frac,
+			SEEL.other_frac]
+			
+			for i in range(0,len(mineral_frac_list)):
+				if len(np.flatnonzero(mineral_frac_list[i] < 0)) != 0:
+				
+					raise ValueError('There is a value entered in mineral fraction contents that is below zero.')
+		
 		bool_composition = self.check_composition(method = 'mineral')
 
 		if bool_composition == False:
 		
-			raise ValueError('Some of the values entered in mineral composition do not add up to 1.')
+			raise ValueError('The values entered in mineral composition do not add up to 1.')
 			
 	
 	def set_composition_solid_rock(self, **kwargs):
@@ -713,13 +725,23 @@ class SEEL(object):
 		SEEL.mud_frac = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
 		SEEL.gabbro_frac = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
 		SEEL.other_rock_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_frac')
-	
+		
+		overlookError = kwargs.pop('overlookError', False)
+		
+		if overlookError != False:
+			rock_frac_list = [SEEL.granite_frac,SEEL.granulite_frac,SEEL.sandstone_frac,SEEL.gneiss_frac,SEEL.amphibolite_frac,
+			SEEL.basalt_frac,SEEL.mud_frac,SEEL.gabbro_frac,SEEL.other_rock_frac]
+			
+			for i in range(0,len(rock_frac_list)):
+				if len(np.flatnonzero(rock_frac_list[i] < 0)) != 0:
+				
+					raise ValueError('There is a value entered in rock fraction contents that is below zero.')
 		
 		bool_composition = self.check_composition(method = 'rock')
 
 		if bool_composition == False:
 		
-			raise ValueError('Some of the values entered in mineral composition do not add up to 1.')
+			raise ValueError('The entered in rock composition do not add up to 1.')
 			
 			
 	def set_temperature(self,T):
@@ -729,6 +751,10 @@ class SEEL(object):
 			self.T = T
 		except TypeError:
 			self.T = np.array(T)
+			
+		if len(np.flatnonzero(self.T < 0)) != 0:
+		
+			raise ValueError('There is a value entered in temperature contents that is below zero.')
 			
 		self.temperature_default = False
 		
@@ -1058,10 +1084,19 @@ class SEEL(object):
 		SEEL.graphite_water = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_water')
 		SEEL.mixture_water = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_water')
 		SEEL.other_water = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_water')
+		
+		overlookError = kwargs.pop('overlookError', False)
 
 		SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
 			 SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.garnet_water, SEEL.sulphide_water,
 				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water]
+	
+		if overlookError == False:
+					
+			for i in range(0,len(SEEL.mineral_water_list)):
+				if len(np.flatnonzero(SEEL.mineral_water_list[i] < 0)) != 0:
+				
+					raise ValueError('There is a value entered in mineral water contents that is below zero.')
 				   
 	def set_rock_water(self, **kwargs):
 	
@@ -1081,6 +1116,17 @@ class SEEL(object):
 		SEEL.rock_water_list = [SEEL.granite_water, SEEL.granulite_water,
 			SEEL.sandstone_water, SEEL.gneiss_water, SEEL.amphibolite_water, SEEL.basalt_water,
 			SEEL.mud_water, SEEL.gabbro_water, SEEL.other_rock_water]
+			
+	def set_bulk_water(self,value):
+	
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+			
+		self.bulk_water = self.array_modifier(input = value, array = self.T, varname = 'bulk_water')
+		
+		if len(np.flatnonzero(self.bulk_water < 0)) != 0:
+				
+			raise ValueError('There is a value entered in bulk_water content that is below zero.')
 			
 	def set_param1_mineral(self, **kwargs):
 	
@@ -1205,12 +1251,16 @@ class SEEL(object):
 		self.na2o_melt = self.array_modifier(input = kwargs.pop('na2o', 0), array = self.T, varname = 'na2o_melt')  #in wt
 		self.k2o_melt = self.array_modifier(input = kwargs.pop('k2o', 0), array = self.T, varname = 'k2o_melt')  #in wt
 		
-		list_of_values = [self.co2_melt,self.h2o_melt,self.na2o_melt,self.k2o_melt]
+		overlookError = kwargs.pop('overlookError', False)
 		
-		for i in range(0,len(list_of_values)):
-			if len(np.flatnonzero(list_of_values[i] < 0)) != 0:
+		if overlookError == False:
+		
+			list_of_values = [self.co2_melt,self.h2o_melt,self.na2o_melt,self.k2o_melt]
 			
-				raise ValueError('There is a value entered in melt properties that is below zero.')
+			for i in range(0,len(list_of_values)):
+				if len(np.flatnonzero(list_of_values[i] < 0)) != 0:
+				
+					raise ValueError('There is a value entered in melt properties that is below zero.')
 				
 	def set_fluid_properties(self, **kwargs):
 	
@@ -2214,7 +2264,7 @@ class SEEL(object):
 
 		if method == 'index':
 			index = 0
-		elif method == 'array'
+		elif method == 'array':
 			index = None
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
