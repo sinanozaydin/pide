@@ -4,7 +4,7 @@ import os
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'seel_src')
 
-import sys, csv, platform, warnings, itertools
+import sys, csv, platform, warnings
 import numpy as np
 import iapws
 
@@ -37,6 +37,8 @@ from seel_src.cond_models.minerals.garnet_odd import *
 from seel_src.cond_models.minerals.ol_odd import *
 from seel_src.cond_models.minerals.mixtures_odd import *
 from seel_src.cond_models.minerals.other_odd import *
+#importing water-partitioning odd functions
+from seel_src.water_partitioning.water_part_odd import *
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
 
@@ -191,46 +193,46 @@ class SEEL(object):
 											basalt,mud(mudstone/shale),gabbro,other_rock
 											
 		set_param1_mineral                  Function to set the param1 for minerals. These 
-		                                    denote to specific parameters that is required
-		                                    by the chosen electrical conductivity model.
-		                                    These parameters are indicated in the csv files
-		                                    with _param1_X
-		                                    
-		                                    Input:
-		                                    ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											denote to specific parameters that is required
+											by the chosen electrical conductivity model.
+											These parameters are indicated in the csv files
+											with _param1_X
+											
+											Input:
+											ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
 											graphite,sulphide,mixture,other
 											Unit: Varies
 											
 		set_param2_mineral                  Function to set the param2 for minerals. These 
-		                                    denote to specific parameters that is required
-		                                    by the chosen electrical conductivity model.
-		                                    These parameters are indicated in the csv files
-		                                    with _param2_X
-		                                    
-		                                    Input:
-		                                    ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
+											denote to specific parameters that is required
+											by the chosen electrical conductivity model.
+											These parameters are indicated in the csv files
+											with _param2_X
+											
+											Input:
+											ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
 											graphite,sulphide,mixture,other
 											Unit: Varies
 											
 		set_param1_rock                     Function to set the param1 for rocks. These 
-		                                    denote to specific parameters that is required
-		                                    by the chosen electrical conductivity model.
-		                                    These parameters are indicated in the csv files
-		                                    with _param1_X
-		                                    
-		                                    Input:
-		                                    granite,granulite,sandstone,gneiss,amphibolite,
+											denote to specific parameters that is required
+											by the chosen electrical conductivity model.
+											These parameters are indicated in the csv files
+											with _param1_X
+											
+											Input:
+											granite,granulite,sandstone,gneiss,amphibolite,
 											basalt,mud(mudstone/shale),gabbro,other_rock
 											Unit: Varies
 											
 		set_param2_rock                     Function to set the param2 for rocks. These 
-		                                    denote to specific parameters that is required
-		                                    by the chosen electrical conductivity model.
-		                                    These parameters are indicated in the csv files
-		                                    with _param2_X
-		                                    
-		                                    Input:
-		                                    granite,granulite,sandstone,gneiss,amphibolite,
+											denote to specific parameters that is required
+											by the chosen electrical conductivity model.
+											These parameters are indicated in the csv files
+											with _param2_X
+											
+											Input:
+											granite,granulite,sandstone,gneiss,amphibolite,
 											basalt,mud(mudstone/shale),gabbro,other_rock
 											Unit: Varies
 											
@@ -249,12 +251,12 @@ class SEEL(object):
 											
 		set_melt_properties                 Function to set some of the properties of the melt.
 		
-		                                    Input:
-		                                    'co2' - in ppm
-		                                    'water' - in ppm
-		                                    'na2o' - in wt%
-		                                    'k2o' - in wt%
-		                                    
+											Input:
+											'co2' - in ppm
+											'water' - in ppm
+											'na2o' - in wt%
+											'k2o' - in wt%
+											
 		set_fluid_properties                Function to set some of the properties of the fluid.
 		
 											Input:
@@ -396,6 +398,7 @@ class SEEL(object):
 		
 		self.read_cond_models()
 		self.read_params()
+		self.read_water_part()
 		
 		#setting up default values for the SEEL object
 		self.set_temperature(np.ones(1) * 900.0) #in Kelvin
@@ -403,6 +406,7 @@ class SEEL(object):
 		self.set_mineral_conductivity_choice()
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
+		self.set_bulk_water(0.0)
 		self.set_rock_water()
 		self.set_watercalib()
 		self.set_o2_buffer()
@@ -668,6 +672,83 @@ class SEEL(object):
 		self.el_q = float(params_dat[4][1])
 		SEEL.spreadsheet = str(params_dat[5][1])
 		self.mu = 4.0 * np.pi * 10**(-7)
+		
+	def read_water_part(self):
+	
+		
+		self.ol_min_partitioning_list = ['amp_part.csv','opx_part.csv','cpx_part.csv','mica_part.csv','gt_part.csv']
+		self.ol_min_part_index = [13,15,16,17,18] #mineral indexes for the file read
+		self.melt_partitioning_list = ['opx_melt_part.csv','cpx_melt_part.csv','gt_melt_part.csv', 'ol_melt_part.csv']
+		self.melt_min_part_index = [15,16,18,21] #mineral indexes for the file read
+		
+		self.water_ol_part_name = []
+		self.water_ol_part_type = []
+		self.water_ol_part_function = []
+		self.water_ol_part_pchange = []
+		
+		index_read = 0
+		for i in range(11,24):
+		
+			if (i in self.ol_min_part_index) == True:
+				data = self.read_csv(os.path.join(self.core_path, 'water_partitioning', self.ol_min_partitioning_list[index_read]), delim = ',')
+				index_read = index_read + 1
+				data_name = []
+				data_type = []
+				data_function_1 = []
+				data_pchange = []
+
+				for j in range(1,len(data)):
+					data_name.append(data[j][0])
+					data_type.append(int(data[j][1]))
+					data_function_1.append(float(data[j][2]))
+					data_pchange.append(float(data[j][3]))
+					
+				self.water_ol_part_name.append(data_name)
+				self.water_ol_part_type.append(data_type)
+				self.water_ol_part_function.append(data_function_1)
+				self.water_ol_part_pchange.append(data_pchange)
+				
+			else:
+			
+				self.water_ol_part_name.append(None)
+				self.water_ol_part_type.append(None)
+				self.water_ol_part_function.append(None)
+				self.water_ol_part_pchange.append(None)
+						
+		self.water_melt_part_name = []
+		self.water_melt_part_type = []
+		self.water_melt_part_function = []
+		self.water_melt_part_pchange = []
+		
+		index_read = 0
+		for i in range(11,24):
+		
+			if (i in self.melt_min_part_index) == True:
+				data = self.read_csv(os.path.join(self.core_path, 'water_partitioning', self.melt_partitioning_list[index_read]), delim = ',')
+				index_read = index_read + 1
+				data_name = []
+				data_type = []
+				data_function_1 = []
+				data_pchange = []
+
+				for j in range(1,len(data)):
+					data_name.append(data[j][0])
+					data_type.append(int(data[j][1]))
+					data_function_1.append(float(data[j][2]))
+					data_pchange.append(float(data[j][3]))
+					
+				self.water_melt_part_name.append(data_name)
+				self.water_melt_part_type.append(data_type)
+				self.water_melt_part_function.append(data_function_1)
+				self.water_melt_part_pchange.append(data_pchange)
+				
+			else:
+			
+				self.water_melt_part_name.append(None)
+				self.water_melt_part_type.append(None)
+				self.water_melt_part_function.append(None)
+				self.water_melt_part_pchange.append(None)
+			
 		
 	def set_composition_solid_mineral(self, **kwargs):
 	
@@ -1388,6 +1469,10 @@ class SEEL(object):
 	def suggestion_temp_array(self):
 	
 		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
+		
+	def distribute_water(self):
+	
+		pass
 		
 	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
 

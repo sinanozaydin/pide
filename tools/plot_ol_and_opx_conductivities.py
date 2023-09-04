@@ -42,7 +42,7 @@ for i in range(0,len(list_olivine_models)):
 	cond_olivine_lists.append(cond)
 	
 	
-a.set_composition_solid_mineral(opx = [1.0])	
+a.set_composition_solid_mineral(opx = 1)	
 a.set_mineral_water(opx = np.ones(len(temp)) * 100)
 idx_opx = a.get_mineral_index('opx') #getting olivine index
 list_opx_models = a.list_mineral_econd_models('opx') #listing all olivine electrical conductivity methods

@@ -1,0 +1,3 @@
+#ModelName,ModelType,Function1,Pchange(GPa),Description
+Hirschmann2009_OlMelt,0,0.0017,0,Hirschmann2009 Average single value of melt/ol
+Tenner2012_OlMelt,0,0.0085,0,Tenner2012 Average single value of melt/ol

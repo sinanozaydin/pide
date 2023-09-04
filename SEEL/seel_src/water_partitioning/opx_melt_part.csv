@@ -1,0 +1,4 @@
+#ModelName,ModelType,Function1,Pchange(GPa),Description
+Hirschmann2009_OpxMelt,1,0,0,Hirschmann2009 Al-in-opx dependent function of melt/opx
+Tenner2012_OpxMelt,0,0.00515,0,Tenner2012 Average single value of melt/opx
+Novella2014_OpxMelt,1,0,0,Novella2014 Al-in-opx dependent function of melt/opx

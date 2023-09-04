@@ -1,0 +1,7 @@
+#ModelName,ModelType,Function1,Pchange(GPa),Description
+Hirschmann2009_CpxMelt,1,0,0,Hirschmann2009 Al-in-opx dependent function of melt/opx
+Tenner2012_CpxMelt,0,0.00515,0,Tenner2012 Average single value of melt/opx
+OLeary2010_CpxMelt1,0,0.0477,0,OLeary2010 aluminous upper endmember melt/cpx ratio
+OLeary2010_CpxMelt2,0,0.0228,0,OLeary2010 aluminous lower endmember melt/cpx ratio
+OLeary2010_CpxMelt3,0,0.0071,0,OLeary2010 non-aluminous upper endmember melt/cpx ratio
+OLeary2010_CpxMelt4,0,0.0045,0,OLeary2010 non-aluminous lower endmember melt/cpx ratio
