@@ -421,7 +421,7 @@ class SEEL(object):
 		self.set_solid_phs_mix_method(method = 0)
 		self.set_solid_melt_fluid_mix_method(method = 0)
 		self.set_melt_fluid_conductivity_choice()
-		self.set_melt_fluid_frac()
+		self.set_melt_fluid_frac(0)
 		self.set_melt_properties()
 		self.set_fluid_properties()
 		self.set_phase_interconnectivities()
@@ -1224,7 +1224,7 @@ class SEEL(object):
 		self.bulk_water = self.array_modifier(input = value, array = self.T, varname = 'bulk_water')
 		self.solid_water = self.array_modifier(input = value, array = self.T, varname = 'solid_water')
 		
-		self.set_mineral_water()#Running an empty run of this to equate the ol_water arrays with the defined T
+		self.set_mineral_water() #Running an empty run of this to equate the length of mineral water arrays with the defined T
 		
 		if len(np.flatnonzero(self.bulk_water < 0)) != 0:
 				
@@ -1314,12 +1314,12 @@ class SEEL(object):
 			SEEL.sandstone_param2, SEEL.gneiss_param2, SEEL.amphibolite_param2, SEEL.basalt_param2,
 			SEEL.mud_param2, SEEL.gabbro_param2, SEEL.other_rock_param2]
 			
-	def set_melt_fluid_frac(self, **kwargs):
+	def set_melt_fluid_frac(self, value):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 	
-		self.melt_fluid_mass_frac = self.array_modifier(input = kwargs.pop('frac', 0), array = self.T, varname = 'melt_fluid_mass_frac')
+		self.melt_fluid_mass_frac = self.array_modifier(input = value, array = self.T, varname = 'melt_fluid_mass_frac')
 		
 		if len(np.flatnonzero(self.melt_fluid_mass_frac < 0)) != 0:
 		
@@ -2728,11 +2728,13 @@ class SEEL(object):
 			
 		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (SEEL.fluid_or_melt_method == 1):
 		
+			self.melt_water = np.zeros(len(self.T))
+		
 			#peridotite melt partitioning
 			self.d_per_melt = (self.ol_frac_wt * self.d_melt_ol) +\
 					(self.opx_frac_wt * self.d_melt_opx) +\
 					(self.cpx_frac_wt * self.d_melt_cpx) +\
-					(self.gt_frac_wt * self.d_melt_gt)
+					(self.garnet_frac_wt * self.d_melt_garnet)
 					
 			self.melt_water[idx_node] = self.calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
 

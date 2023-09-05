@@ -33,7 +33,7 @@ a.set_bulk_water(np.linspace(100,1000,len(temp)))
 a.mantle_water_distribute(method = 'array') #can extract a.ol_water, a.opx_water from this object now
 
 fig = plt.figure(figsize = (15,10))
-ax = plt.subplot(121)
+ax = plt.subplot2grid(211)
 ax.plot(a.ol_water,temp-273.15, label = 'ol')
 ax.plot(a.opx_water,temp-273.15, label = 'opx')
 ax.plot(a.cpx_water,temp-273.15, label = 'cpx')
@@ -50,7 +50,7 @@ cond = a.calculate_conductivity(method = 'array')
 a.set_bulk_water(0)
 cond_dry = a.calculate_conductivity(method = 'array')
 
-ax2 = plt.subplot(122)
+ax2 = plt.subplot(212)
 ax2.plot(cond,temp-273.15,label = 'Wet')
 ax2.plot(cond_dry,temp-273.15,label = 'Dry')
 ax2.set_xscale('log')
@@ -58,4 +58,26 @@ ax2.set_xlabel('Conductivity [S/m]')
 ax2.set_ylabel('Temperature [$C^{\circ}$]')
 ax2.grid()
 ax2.legend()
+
+
+
+a.set_melt_fluid_frac(0.02)
+a.set_mantle_water_partitions(opx_ol = 3, cpx_ol = 6, garnet_ol = 0)
+a.set_bulk_water(np.linspace(100,1000,len(temp)))
+a.mantle_water_distribute(method = 'array')
+cond_with_melt = a.calculate_conductivity
+
+ax3 = plt.subplot(221)
+ax3.plot(a.ol_water,temp-273.15, label = 'ol')
+ax3.plot(a.opx_water,temp-273.15, label = 'opx')
+ax3.plot(a.cpx_water,temp-273.15, label = 'cpx')
+ax3.plot(a.garnet_water,temp-273.15, label = 'garnet')
+ax3.plot(a.bulk_water,temp-273.15,linestyle = '--', linewidth = 3, label = 'Bulk', color = 'k')
+ax3.plot(a.solid_water,temp-273.15,linestyle = '--', linewidth = 3, label = 'Solid')
+ax3.plot(a.melt_water,temp-273.15,linestyle = '--', linewidth = 3, label = 'Solid')
+
+
+
+ax4 = plt.subplot(222)
+
 plt.show()
