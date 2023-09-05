@@ -400,6 +400,7 @@ class SEEL(object):
 		self.read_params()
 		self.read_water_part()
 		
+		self.object_formed = False
 		#setting up default values for the SEEL object
 		self.set_temperature(np.ones(1) * 900.0) #in Kelvin
 		self.set_pressure(np.ones(1) * 1.0) #in GPa
@@ -407,6 +408,7 @@ class SEEL(object):
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
 		self.set_bulk_water(0.0)
+		self.set_alopx(0)
 		self.set_rock_water()
 		self.set_watercalib()
 		self.set_o2_buffer()
@@ -423,6 +425,9 @@ class SEEL(object):
 		self.set_melt_properties()
 		self.set_fluid_properties()
 		self.set_phase_interconnectivities()
+		self.set_mantle_water_partitions()
+		self.object_formed = True
+
 		
 		#Some check for temperature being the controlling array errors.
 		self.temperature_default = True
@@ -688,26 +693,26 @@ class SEEL(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 	
-		SEEL.ol_frac = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_frac')
-		SEEL.opx_frac = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_frac')
-		SEEL.cpx_frac = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_frac')
-		SEEL.garnet_frac = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_frac')
-		SEEL.mica_frac = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_frac')
-		SEEL.amp_frac = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_frac')
-		SEEL.quartz_frac = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_frac')
-		SEEL.plag_frac = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_frac')
-		SEEL.kfelds_frac = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_frac')
-		SEEL.sulphide_frac = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_frac')
-		SEEL.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
-		SEEL.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
-		SEEL.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
+		self.ol_frac = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_frac')
+		self.opx_frac = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_frac')
+		self.cpx_frac = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_frac')
+		self.garnet_frac = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_frac')
+		self.mica_frac = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_frac')
+		self.amp_frac = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_frac')
+		self.quartz_frac = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_frac')
+		self.plag_frac = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_frac')
+		self.kfelds_frac = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_frac')
+		self.sulphide_frac = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_frac')
+		self.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
+		self.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
+		self.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
 		if overlookError != False:
-			mineral_frac_list = [SEEL.quartz_frac,SEEL.opx_frac,SEEL.cpx_frac,SEEL.garnet_frac,SEEL.mica_frac,
-			SEEL.amp_frac,SEEL.quartz_frac,SEEL.plag_frac,SEEL.kfelds_frac,SEEL.sulphide_frac,SEEL.graphite_frac,SEEL.mixture_frac,
-			SEEL.other_frac]
+			mineral_frac_list = [self.quartz_frac,self.opx_frac,self.cpx_frac,self.garnet_frac,self.mica_frac,
+			self.amp_frac,self.quartz_frac,self.plag_frac,self.kfelds_frac,self.sulphide_frac,self.graphite_frac,self.mixture_frac,
+			self.other_frac]
 			
 			for i in range(0,len(mineral_frac_list)):
 				if len(np.flatnonzero(mineral_frac_list[i] < 0)) != 0:
@@ -728,21 +733,21 @@ class SEEL(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 	
-		SEEL.granite_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_frac')
-		SEEL.granulite_frac = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_frac')
-		SEEL.sandstone_frac = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_frac')
-		SEEL.gneiss_frac = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_frac')
-		SEEL.amphibolite_frac = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_frac')
-		SEEL.basalt_frac = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_frac')
-		SEEL.mud_frac = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
-		SEEL.gabbro_frac = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
-		SEEL.other_rock_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_frac')
+		self.granite_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_frac')
+		self.granulite_frac = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_frac')
+		self.sandstone_frac = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_frac')
+		self.gneiss_frac = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_frac')
+		self.amphibolite_frac = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_frac')
+		self.basalt_frac = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_frac')
+		self.mud_frac = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
+		self.gabbro_frac = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
+		self.other_rock_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_frac')
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
 		if overlookError != False:
-			rock_frac_list = [SEEL.granite_frac,SEEL.granulite_frac,SEEL.sandstone_frac,SEEL.gneiss_frac,SEEL.amphibolite_frac,
-			SEEL.basalt_frac,SEEL.mud_frac,SEEL.gabbro_frac,SEEL.other_rock_frac]
+			rock_frac_list = [self.granite_frac,self.granulite_frac,self.sandstone_frac,self.gneiss_frac,self.amphibolite_frac,
+			self.basalt_frac,self.mud_frac,self.gabbro_frac,self.other_rock_frac]
 			
 			for i in range(0,len(rock_frac_list)):
 				if len(np.flatnonzero(rock_frac_list[i] < 0)) != 0:
@@ -818,14 +823,16 @@ class SEEL(object):
 			
 	def set_mantle_water_partitions(self,**kwargs):
 	
-		self.d_water_opx_ol_choice = kwargs.pop('d_water_opx_ol_choice', 0)
-		self.d_water_cpx_ol_choice = kwargs.pop('d_water_cpx_ol_choice', 0)
-		self.d_water_garnet_ol_choice = kwargs.pop('d_water_garnet_ol_choice', 0)
+		self.d_water_opx_ol_choice = kwargs.pop('opx_ol', 0)
+		self.d_water_cpx_ol_choice = kwargs.pop('cpx_ol', 0)
+		self.d_water_garnet_ol_choice = kwargs.pop('garnet_ol', 0)
 		
-		self.d_water_ol_melt_choice = kwargs.pop('d_water_ol_melt_choice',0)
-		self.d_water_opx_melt_choice = kwargs.pop('d_water_opx_melt_choice',0)
-		self.d_water_cpx_melt_choice = kwargs.pop('d_water_cpx_melt_choice',0)
-		self.d_water_garnet_melt_choice = kwargs.pop('d_water_garnet_melt_choice',0)
+		self.d_water_ol_melt_choice = kwargs.pop('ol_melt',0)
+		self.d_water_opx_melt_choice = kwargs.pop('opx_melt',0)
+		self.d_water_cpx_melt_choice = kwargs.pop('cpx_melt',0)
+		self.d_water_garnet_melt_choice = kwargs.pop('garnet_melt',0)
+		
+		self.load_mantle_water_partitions(method = 'array')
 
 	def check_composition(self, method = None):
 
@@ -954,6 +961,7 @@ class SEEL(object):
 		else:
 			raise ValueError('There is no such a mineral specifier called :' + mineral_name)
 			
+		print(color.RED + 'Electrical conductivity models for the given mineral: ' + mineral_name + color.END)
 		def print_lists(min_idx):
 		
 			for i in range(0,len(self.name[min_idx])):
@@ -988,31 +996,97 @@ class SEEL(object):
 		
 			raise ValueError('There is no such a mineral specifier called :' + rock_name)
 		
-		print('Conductivity models for the selected rock:')
+		print(color.RED +'Conductivity models for the selected rock:' + color.END)
 		def print_lists(rock_idx):
 		
 			for i in range(0,len(self.name[rock_idx])):
 				print(str(i) + '.  ' + self.name[rock_idx][i])
-			
+			print('                 ')
+			print('                 ')
 		print_lists(rock_idx = rock_idx)
 		
 		return self.name[rock_idx]
 		
 	def list_melt_econd_models(self):
 	
-		print('Conductivity models for melts:')
+		print(color.RED +'Conductivity models for melts:' + color.END)
 		for i in range(0,len(self.name[1])):
 			print(str(i) + '.  ' + self.name[1][i])
+			
+		print('                 ')
+		print('                 ')
 			
 		return self.name[1]
 		
 	def list_fluid_econd_models(self):
 		
-		print('Conductivity models for fluids:')
+		print(color.BLUE +'Conductivity models for fluids:' + color.END)
 		for i in range(0,len(self.name[0])):
 			print(str(i) + '.  ' + self.name[0][i])
 			
+		print('                 ')
+		print('                 ')
+		
 		return self.name[0]
+		
+	def list_mantle_water_partitions_solid(self, mineral_name):
+	
+		if (mineral_name == 'opx') or (mineral_name == 'orthopyroxene'):
+			min_index = 4
+			min_str = 'Opx/Ol'
+		elif (mineral_name == 'cpx') or (mineral_name == 'clinopyroxene'):
+			min_index = 5
+			min_str = 'Cpx/Ol'
+		elif (mineral_name == 'garnet') or (mineral_name == 'gt'):
+			min_index = 7
+			min_str = 'Garnet/Ol'
+		else:
+			raise AttributeError('There is no mantle water partition coefficients for the chosen mineral: ' + mineral_name)
+			
+		def print_lists(min_idx):
+			
+			print(color.RED + 'Mantle solid-state water partition coefficients for the mineral: ' + mineral_name + color.END)
+			for i in range(0,len(self.water_ol_part_name[min_idx])):
+				if self.water_ol_part_type[min_index][i] == 0:
+					print(str(i) + '.  ' + self.water_ol_part_name[min_index][i] + ' -  Type ' + str(self.water_ol_part_type[min_index][i]) + '  -  ' + min_str + ': ' + str(self.water_ol_part_function[min_index][i]))
+				else:
+					print(str(i) + '.  ' + self.water_ol_part_name[min_index][i] + ' -  Type ' + str(self.water_ol_part_type[min_index][i]))
+			print('                 ')
+			print('                 ')	
+		print_lists(min_idx = min_index)
+		
+		return self.water_ol_part_name[min_index]
+		
+	def list_mantle_water_partitions_melt(self, mineral_name):
+		
+		print('Mantle melt/NAMs water partition coefficients for the mineral: ' + mineral_name)
+		
+		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
+			min_index = 10
+			min_str = 'Ol/Melt'
+		elif (mineral_name == 'opx') or (mineral_name == 'orthopyroxene'):
+			min_index = 4
+			min_str = 'Opx/Melt'
+		elif (mineral_name == 'cpx') or (mineral_name == 'clinopyroxene'):
+			min_index = 5
+			min_str = 'Cpx/Melt'
+		elif (mineral_name == 'garnet') or (mineral_name == 'gt'):
+			min_index = 7
+			min_str = 'Garnet/Melt'
+		else:
+			raise AttributeError('There is no mantle water partition coefficients for the chosen mineral: ' + mineral_name)
+			
+		def print_lists(min_idx):
+		
+			for i in range(0,len(self.water_melt_part_name[min_idx])):
+				if self.water_melt_part_type[min_index][i] == 0:
+					print(str(i) + '.  ' + self.water_melt_part_name[min_index][i] + ' -  Type ' + str(self.water_melt_part_type[min_index][i]) + '  -  ' + min_str + ': ' + str(self.water_melt_part_function[min_index][i]))
+				else:
+					print(str(i) + '.  ' + self.water_melt_part_name[min_index][i] + ' -  Type ' + str(self.water_melt_part_type[min_index][i]) + '  -  Specific Function.' )
+					
+		print_lists(min_idx = min_index)
+		
+		return self.water_melt_part_name[min_index]
 		
 	def set_melt_fluid_conductivity_choice(self,**kwargs):
 	
@@ -1142,10 +1216,15 @@ class SEEL(object):
 			
 	def set_bulk_water(self,value):
 	
+		#Running this function overrides the individual mineral water contents until another action is taken.
+	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 			
 		self.bulk_water = self.array_modifier(input = value, array = self.T, varname = 'bulk_water')
+		self.solid_water = self.array_modifier(input = value, array = self.T, varname = 'solid_water')
+		
+		self.set_mineral_water()#Running an empty run of this to equate the ol_water arrays with the defined T
 		
 		if len(np.flatnonzero(self.bulk_water < 0)) != 0:
 				
@@ -1295,6 +1374,13 @@ class SEEL(object):
 		if len(np.flatnonzero(self.salinity_fluid < 0)) != 0:
 		
 			raise ValueError('There is a value entered for fluid properties that is below zero.')
+			
+	def set_alopx(self,value = 0):
+	
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+			
+		self.al_opx = self.array_modifier(input = value, array = self.T, varname = 'al_opx') 
 		
 	def set_phase_interconnectivities(self,**kwargs):
 	
@@ -1412,9 +1498,6 @@ class SEEL(object):
 	
 		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
 		
-	def distribute_water(self):
-	
-		pass
 		
 	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
 
@@ -2555,6 +2638,78 @@ class SEEL(object):
 
 		return self.fo2
 		
+	def load_mantle_water_partitions(self, method, **kwargs):
+	
+		sol_idx = kwargs.pop('sol_idx', 0)
+	
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+	
+		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (SEEL.fluid_or_melt_method == 1):
+		
+			#calculating melt/nams water partitioning coefficients if theres any melt in the equilibrium 
+		
+			if self.water_melt_part_type[4][self.d_water_opx_melt_choice] == 0: #index 4 because it is in 4th index at the minerals list
+				
+				self.d_melt_opx = self.water_melt_part_function[4][self.d_water_opx_melt_choice] * np.ones(len(self.T))
+				
+			else:
+				
+				self.d_melt_opx = eval(self.water_melt_part_name[4][self.d_water_opx_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[4][self.d_water_opx_melt_choice], d_opx_ol = None, method = method)')
+			
+			if self.water_melt_part_type[5][self.d_water_cpx_melt_choice] == 0:
+			
+				self.d_melt_cpx = self.water_melt_part_function[5][self.d_water_cpx_melt_choice] * np.ones(len(self.T))
+				
+			else:
+				
+				self.d_melt_cpx = eval(self.water_melt_part_name[5][self.d_water_cpx_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[5][self.d_water_cpx_melt_choice], d_opx_ol = None, method = method)')
+			
+			if self.water_melt_part_type[7][self.d_water_garnet_melt_choice] == 0:
+			
+				self.d_melt_garnet = self.water_melt_part_function[7][self.d_water_garnet_melt_choice] * np.ones(len(self.T))
+				
+			else:
+				
+				self.d_melt_garnet = eval(self.water_melt_part_name[10][self.d_water_ol_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[7][self.d_water_garnet_melt_choice], d_opx_ol = None, method = method)')
+			
+			if self.water_melt_part_type[10][self.d_water_ol_melt_choice] == 0:
+			
+				self.d_melt_ol = self.water_melt_part_function[10][self.d_water_ol_melt_choice] * np.ones(len(self.T))
+				
+			else:
+				
+				self.d_melt_ol = eval(self.water_melt_part_name + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[10][self.d_water_ol_melt_choice], d_opx_ol = None, method = method)')
+		
+		#determining chosen nam/olivine water partitioning coefficients.
+		if self.water_ol_part_type[4][self.d_water_opx_ol_choice] == 0:
+		
+			self.d_opx_ol = self.water_ol_part_function[4][self.d_water_opx_ol_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_opx_ol = eval(self.water_ol_part_name[4][self.d_water_cpx_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[4][self.d_water_opx_ol_choice], d_opx_ol = 0, method = method)')
+		
+		if self.water_ol_part_type[5][self.d_water_cpx_ol_choice] == 0:
+		
+			self.d_cpx_ol = self.water_ol_part_function[5][self.d_water_cpx_ol_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_cpx_ol = eval(self.water_ol_part_name[5][self.d_water_garnet_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[5][self.d_water_cpx_ol_choice], d_opx_ol = self.d_opx_ol[idx_node], method = method)')
+		
+		if self.water_ol_part_type[7][self.d_water_garnet_ol_choice] == 0:
+		
+			self.d_garnet_ol = self.water_ol_part_function[7][self.d_water_garnet_ol_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_garnet_ol = eval(self.water_ol_part_name[7][self.d_water_garnet_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[7][self.d_water_garnet_ol_choice], d_opx_ol = self.d_opx_ol[idx_node], method = method)')
+		
+		self.mantle_water_partitions_default = False
+		
 	def mantle_water_distribute(self, method, **kwargs):
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -2564,26 +2719,61 @@ class SEEL(object):
 		elif method == 'index':
 			idx_node = sol_idx
 			
-		if np.mean(self.melt_fluid_frac) != 0.0:
+		#Converting fractions to water holding species that has an exchange with coexisting melt. 
+		#Calculation of equilibrium of water with other minerals are not constrained.
+		self.ol_frac_wt = self.ol_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
+		self.opx_frac_wt = self.opx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
+		self.cpx_frac_wt = self.cpx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
+		self.garnet_frac_wt = self.garnet_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
+			
+		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (SEEL.fluid_or_melt_method == 1):
 		
-			#Converting fractions to water holding species that has an exchange with coexisting melt.
-			self.ol_frac_wt = self.ol_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
-			self.opx_frac_wt = self.opx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
-			self.cpx_frac_wt = self.cpx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
-			self.garnet_frac_wt = self.garnet_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
-			
+			#peridotite melt partitioning
+			self.d_per_melt = (self.ol_frac_wt * self.d_melt_ol) +\
+					(self.opx_frac_wt * self.d_melt_opx) +\
+					(self.cpx_frac_wt * self.d_melt_cpx) +\
+					(self.gt_frac_wt * self.d_melt_gt)
+					
+			self.melt_water[idx_node] = self.calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
 
-			if self.water_melt_part_type[4][self.d_water_opx_melt_choice] == 0:
+			#reassigning the zero mass frac melt layers using pre-mapped indexing array.
+			if idx_node == None:
+				self.melt_water[self.melt_fluid_mass_frac <= 0.0] = 0.0
 				
-				self.d_opx_melt = self.water_melt_part_function[4][self.d_water_opx_melt_choice] * np.ones(len(self.T))
+			self.solid_water[idx_node] = (self.bulk_water[idx_node] * self.d_per_melt[idx_node]) /\
+				(self.melt_fluid_mass_frac[idx_node] + ((1.0 - self.melt_fluid_mass_frac[idx_node]) * self.d_per_melt[idx_node]))
 				
-			else:
-				
-				self.d_opx_melt = eval(self.water_melt_part_name + '(al_opx, P = , p_change = self.water_melt_part_pchange[4][self.d_water_opx_melt_choice], d_opx_ol = None, method = method)')
-			
-			
-		pass #cansu
+		else:
+		
+			self.solid_water[idx_node] = self.bulk_water[idx_node]
+		
+		#calculating olivine water content from bulk water using mineral partitioning contents
 
+		SEEL.ol_water[idx_node] = self.solid_water[idx_node] / (self.ol_frac_wt[idx_node] + ((self.opx_frac_wt[idx_node] * self.d_opx_ol[idx_node]) + (self.cpx_frac_wt[idx_node] * self.d_cpx_ol[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_ol[idx_node])))
+		
+		#calculating opx water content
+		SEEL.opx_water[idx_node] = SEEL.ol_water[idx_node] * self.d_opx_ol[idx_node]
+		SEEL.opx_water[self.opx_frac == 0] = 0.0
+		
+		#calculating cpx water content
+		SEEL.cpx_water[idx_node] = SEEL.ol_water[idx_node] * self.d_cpx_ol[idx_node]
+		SEEL.cpx_water[self.cpx_frac == 0] = 0.0
+		
+		#calculating cpx water content
+		SEEL.garnet_water[idx_node] = SEEL.ol_water[idx_node] * self.d_garnet_ol[idx_node]
+		SEEL.garnet_water[self.garnet_frac == 0] = 0.0
+					
+	def calculate_melt_water(self, h2o_bulk, melt_mass_frac, d_per_melt):
+
+		#Calculating the h2o content of melt that is in equilibrium with the entered solid-mixture, from Sifre et al. (2014)
+		melt_water = h2o_bulk / (melt_mass_frac + ((1.0 - melt_mass_frac) * d_per_melt))
+
+		return melt_water
+			
+	def calculate_mantle_water_solubility(self,reference_mineral):
+	
+		pass
+		
 	def savetextfile(self):
 
 		if self.write_file_save_name != '':
@@ -2697,3 +2887,16 @@ class SEEL(object):
 		filesave_results.writelines(lines)
 		filesave_results.close()
 		print("Files are saved at the chosen location...")
+		
+
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'

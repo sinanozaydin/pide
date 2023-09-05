@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
-import numpy as np
+import numpy as np 
 
-def Ozaydin2020_Opx1(al_opx, P,  p_change, d_opx_ol, method):
+#al_opx - Al2O3 content in Opx
+#p - pressure in GPa
+#p_change - functional change at defined p_chage (GPa)
+#d_opx_ol - partition coefficient between opx and olivine
+#method - array or index
+
+def Ozaydin2020_Opx1(al_opx, p,  p_change, d_opx_ol, method):
 
 	part = (1.393 * al_opx) + 1.947 
 	
