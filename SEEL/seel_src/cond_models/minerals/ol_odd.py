@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Dai2014_DryandWetOlivine_param1_fo2_param2_fo2ref(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2014_DryandWetOlivine_param1_fo2_param2_fo2ref(T, P, water, xFe ,param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	dv_dai2014 = -0.86 * 1e3 # cm^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
 	p_ref = 4.0
@@ -28,7 +28,7 @@ def Dai2014_DryandWetOlivine_param1_fo2_param2_fo2ref(T, P, water, param1, param
 
 	return cond
 	
-def Dai2020_WetOlivine_200ppmTi_fo2(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2020_WetOlivine_200ppmTi_fo2(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	dv_dai2014 = -0.86 * 1e3 # m^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
 	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
@@ -48,7 +48,7 @@ def Dai2020_WetOlivine_200ppmTi_fo2(T, P, water, param1, param2, fo2 = None, fo2
 
 	return cond
 	
-def Dai2020_WetOlivine_683ppmTi_fo2(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2020_WetOlivine_683ppmTi_fo2(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	dv_dai2014 = -0.86 * 1e3 # m^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
 	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
@@ -68,7 +68,7 @@ def Dai2020_WetOlivine_683ppmTi_fo2(T, P, water, param1, param2, fo2 = None, fo2
 
 	return cond
 	
-def Poe2010_DryandWetOlivine(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Poe2010_DryandWetOlivine(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = [146e3,126e3]
 	E2 = [112e3,150e3]
@@ -88,7 +88,7 @@ def Poe2010_DryandWetOlivine(T, P, water, param1, param2, fo2 = None, fo2_ref = 
 	
 	return cond
 	
-def Constable2006_dryOlivine_fo2(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Constable2006_dryOlivine_fo2(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	e = 1.602e-19 #charge of the electron in coulombs
 	k = 8.617e-5
@@ -104,16 +104,16 @@ def Constable2006_dryOlivine_fo2(T, P, water, param1, param2, fo2 = None, fo2_re
 
 	return cond
 
-def Dai2014_DryOlivine_param1_xfe(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2014_DryOlivine_param1_xfe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
-	sigma_dai2014c = 10**(2.77 + (-1.19 * param1))
-	e_dai2014c = 162000.0 + (-63000 * param1)
+	sigma_dai2014c = 10**(2.77 + (-1.19 * xFe))
+	e_dai2014c = 162000.0 + (-63000 * xFe)
 
 	cond = sigma_dai2014c * np.exp(-(e_dai2014c) / (R_const * T))
 
 	return cond
 
-def Fullea2011_DryOlivine_param1_xfe(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Fullea2011_DryOlivine_param1_xfe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	sigma_i_fullea = 10**4.73
 	sigma_pol_fullea = 10**2.7 #average value of used models Fullea et al. (2011)
@@ -122,13 +122,13 @@ def Fullea2011_DryOlivine_param1_xfe(T, P, water, param1, param2, fo2 = None, fo
 
 	a_ful = [1.642,0.246,-4.85,3.259] #polynomial coefficients that calculates the fe-dependency of act. enthalpies from Omura et al (1989)
 	dv_ful = 0.68 * 1e-6
-	fe_pol_fullea = (a_ful[0] + (a_ful[1] * param1) + (a_ful[2] * (param1**2.0)) + (a_ful[3]* (param1**3.0)) + (P * dv_ful)) * 1e5
+	fe_pol_fullea = (a_ful[0] + (a_ful[1] * xFe) + (a_ful[2] * (xFe**2.0)) + (a_ful[3]* (xFe**3.0)) + (P * dv_ful)) * 1e5
 
 	cond = (sigma_i_fullea * np.exp(-e_i_fullea / (R_const * T))) + (sigma_pol_fullea * np.exp(-fe_pol_fullea / (R_const * T)))
 
 	return cond
 	
-def Pommier2018_ShearedDryOlivine(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Pommier2018_ShearedDryOlivine(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	A = [284.0,780.0,261.0]
 
@@ -145,7 +145,7 @@ def Pommier2018_ShearedDryOlivine(T, P, water, param1, param2, fo2 = None, fo2_r
 
 	return cond
 	
-def Yoshino2012_DryOlivine_param1_xfe(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Yoshino2012_DryOlivine_param1_xfe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	#Conductivity model from Yoshino et al. (2012, JGR:SE)
 	#Function does not contain the effects of pressure since it has almost no effect.
@@ -156,11 +156,11 @@ def Yoshino2012_DryOlivine_param1_xfe(T, P, water, param1, param2, fo2 = None, f
 	H_yosh = 196000.0
 	alpha_yosh = 149000.0
 
-	cond = (A0_yosh) * param1 * np.exp(- ((H_yosh) - ((alpha_yosh) * param1**(0.33))) / (R_const * T))
+	cond = (A0_yosh) * xFe * np.exp(- ((H_yosh) - ((alpha_yosh) * xFe**(0.33))) / (R_const * T))
 
 	return cond
 	
-def Fei2020_WetOlivineIonic_Isotropic(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Fei2020_WetOlivineIonic_Isotropic(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	sigma1 = 10**11.1
 	E1 = 372e3

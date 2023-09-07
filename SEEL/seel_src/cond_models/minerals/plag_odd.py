@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Hu2022_WetPlagioclase_Na_param1(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Hu2022_WetPlagioclase_Na_param1(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	r = 1.47
 	sigma_wet = 9139.0
@@ -47,7 +47,7 @@ def Hu2022_WetPlagioclase_Na_param1(T, P, water, param1, param2, fo2 = None, fo2
 	
 	return cond
 	
-def Hu2015_DryAnorthite(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Hu2015_DryAnorthite(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	sigma_list = np.array([4.62,4.43,4.36])
 	P_list = np.array([1,2,3])
@@ -77,7 +77,7 @@ def Hu2015_DryAnorthite(T, P, water, param1, param2, fo2 = None, fo2_ref = None,
 		
 	return cond
 	
-def Hu2011_DryAlbite(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Hu2011_DryAlbite(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	sigma_list = np.array([4,3.92,3.89])
 	P_list = np.array([1,2,3])

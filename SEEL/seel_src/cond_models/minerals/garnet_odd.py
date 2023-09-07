@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 	
-def Dai2009_wetPyropeGarnet(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2009_wetPyropeGarnet(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	#water has to be converted to wt%
 
@@ -21,7 +21,7 @@ def Dai2009_wetPyropeGarnet(T, P, water, param1, param2, fo2 = None, fo2_ref = N
 
 	return cond
 	
-def Fullea2011_DryGarnet_param1_Fe(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Fullea2011_DryGarnet_param1_Fe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	#param1 is xFE = feo / (feo+mgo)
 
@@ -33,15 +33,15 @@ def Fullea2011_DryGarnet_param1_Fe(T, P, water, param1, param2, fo2 = None, fo2_
 	b_ful = [2.6,-15.33,80.4,-194.6,202.6,-75.0]
 	dv_ful = 2.5 * 1e-6
 	
-	fe_pol_fullea = (b_ful[0] + (b_ful[1] * param1) + (b_ful[2] * (param1**2.0)) + (b_ful[3]* (param1**3.0)) +\
-	(b_ful[4]* (param1**4.0)) + (b_ful[5]* (param1**5.0)) + (dv_ful * P)) * 1e5
+	fe_pol_fullea = (b_ful[0] + (b_ful[1] * xFe) + (b_ful[2] * (xFe**2.0)) + (b_ful[3]* (xFe**3.0)) +\
+	(b_ful[4]* (xFe**4.0)) + (b_ful[5]* (xFe**5.0)) + (dv_ful * P)) * 1e5
 
 	cond = (sigma_i_fullea * np.exp(-e_i_fullea / (R_const * T))) +\
 	 (sigma_pol_fullea * np.exp(-fe_pol_fullea / (R_const * T)))
 
 	return cond
 	
-def Liu2021_WetAlmandineGarnet_param1_Fe(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Liu2021_WetAlmandineGarnet_param1_Fe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	#param1 is xFE = feo / (feo+mgo)
 	#water has to be converted to wt%
@@ -52,7 +52,7 @@ def Liu2021_WetAlmandineGarnet_param1_Fe(T, P, water, param1, param2, fo2 = None
 	alpha = -4000.0
 	beta = -15000.0
 		
-	cond = (10**sigma) * (param1**n) * (water) * np.exp(-(E - (alpha * (param1**(1.0/3.0))) - (beta * (water**(1.0/3.0)))) / (R_const * T))
+	cond = (10**sigma) * (xFe**n) * (water) * np.exp(-(E - (alpha * (xFe**(1.0/3.0))) - (beta * (water**(1.0/3.0)))) / (R_const * T))
 	
 	return cond
 	

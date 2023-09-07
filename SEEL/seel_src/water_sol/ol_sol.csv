@@ -1,0 +1,12 @@
+ModelName,h2ofug_dependency,o2fug_dependency,wcalib
+Ferot2012_OlSol,N,N,2
+Gaetani2014_OlSol,Y,Y,0
+Zhao2004_OlSol,Y,N,0
+Ardia2012_OlSol,N,N,2
+PadronNavarta2017_OlSol,N,N,1
+Mosenfelder2006_OlSol,Y,N,1
+Kohlstedt1996_OlSol,Y,N,0
+Kohlstedt1996_Bali2008_OlSol,Y,N,1
+Yang2015_H2O_OlSol,N,N,1
+Yang2015_H2O_CH4_OlSol,N,N,1
+FromOpx,N,N,0

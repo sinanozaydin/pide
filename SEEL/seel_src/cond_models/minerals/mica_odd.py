@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Li2016_Phlogopite(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Li2016_Phlogopite(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	A_li_001 = 10**10.15
 	A_li_010 = 10**8.41
@@ -22,7 +22,7 @@ def Li2016_Phlogopite(T, P, water, param1, param2, fo2 = None, fo2_ref = None, m
 
 	return cond
 
-def Li2017_Phlogopite_param1_F(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Li2017_Phlogopite_param1_F(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	A_li = 10**8.59
 	E_li = 191000.0

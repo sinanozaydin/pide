@@ -39,6 +39,11 @@ from seel_src.cond_models.minerals.mixtures_odd import *
 from seel_src.cond_models.minerals.other_odd import *
 #importing water-partitioning odd functions
 from seel_src.water_partitioning.water_part_odd import *
+#importing misc functions
+from seel_src.misc_func.fh2o import *
+#importing mineral solubility functions
+from seel_src.water_sol.ol_sol import *
+
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
 
@@ -399,6 +404,7 @@ class SEEL(object):
 		self.read_cond_models()
 		self.read_params()
 		self.read_water_part()
+		self.read_mineral_water_solubility()
 		
 		self.object_formed = False
 		#setting up default values for the SEEL object
@@ -412,6 +418,7 @@ class SEEL(object):
 		self.set_rock_water()
 		self.set_watercalib()
 		self.set_o2_buffer()
+		self.set_xfe_mineral()
 		self.set_param1_mineral()
 		self.set_param2_mineral()
 		self.set_param1_rock()
@@ -426,6 +433,7 @@ class SEEL(object):
 		self.set_fluid_properties()
 		self.set_phase_interconnectivities()
 		self.set_mantle_water_partitions()
+		self.set_mantle_water_solubility()
 		self.object_formed = True
 
 		
@@ -611,7 +619,6 @@ class SEEL(object):
 		
 	def read_water_part(self):
 	
-		
 		self.ol_min_partitioning_list = ['opx_part.csv','cpx_part.csv','gt_part.csv']
 		self.ol_min_part_index = [15,16,18] #mineral indexes for the file read
 		self.melt_partitioning_list = ['opx_melt_part.csv','cpx_melt_part.csv','gt_melt_part.csv', 'ol_melt_part.csv']
@@ -685,7 +692,49 @@ class SEEL(object):
 				self.water_melt_part_function.append(None)
 				self.water_melt_part_pchange.append(None)
 			
+	def read_mineral_water_solubility(self):
+	
+		self.mineral_sol_file_list = ['opx_sol.csv','cpx_sol.csv','garnet_sol.csv','ol_sol.csv']
+		self.mineral_sol_index = [15,16,18,21] #mineral indexes for the file read
 		
+		self.mineral_sol_name = []
+		self.mineral_sol_fug = []
+		self.mineral_sol_o2_fug = []
+		self.mineral_sol_calib = []
+		
+		index_read = 0
+		for i in range(11,24):
+		
+			if (i in self.mineral_sol_index) == True:
+				data = self.read_csv(os.path.join(self.core_path, 'water_sol', self.mineral_sol_file_list[index_read]), delim = ',')
+				index_read = index_read + 1
+				sol_name = []
+				sol_fug = []
+				sol_o2_fug = []
+				sol_calib = []
+
+				for j in range(1,len(data)):
+					sol_name.append(data[j][0])
+					sol_fug.append(str(data[j][1]))
+					sol_o2_fug.append(str(data[j][2]))
+					sol_calib.append(int(data[j][3]))
+					
+				self.mineral_sol_name.append(sol_name)
+				self.mineral_sol_fug.append(sol_fug)
+				self.mineral_sol_o2_fug.append(sol_o2_fug)
+				self.mineral_sol_calib.append(sol_calib)
+				
+			else:
+			
+				self.mineral_sol_name.append(None)
+				self.mineral_sol_fug.append(None)
+				self.mineral_sol_o2_fug.append(None)
+				self.mineral_sol_calib.append(None)
+				
+	def set_parameter(self, param_name, value):
+		
+		setattr(self, param_name, self.array_modifier(input = value, array=self.T,varname = param_name))
+	
 	def set_composition_solid_mineral(self, **kwargs):
 	
 		#Enter composition in fraction 0.6 == 60% volumetric percentage
@@ -706,6 +755,15 @@ class SEEL(object):
 		self.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
 		self.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
 		self.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
+		
+		#Converting fractions to water holding species that has an exchange with coexisting melt. 
+		#Calculation of equilibrium of water with other minerals are not constrained.
+		self.ol_frac_wt = self.ol_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
+		self.opx_frac_wt = self.opx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
+		self.cpx_frac_wt = self.cpx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
+		self.garnet_frac_wt = self.garnet_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
+		self.plag_frac_wt = self.plag_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
+		self.kfelds_frac_wt = self.kfelds_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
@@ -774,6 +832,7 @@ class SEEL(object):
 			raise ValueError('There is a value entered in temperature contents that is below zero.')
 			
 		self.temperature_default = False
+		self.water_fugacity_calculated = False
 		
 	def set_pressure(self,P):
 		
@@ -789,7 +848,19 @@ class SEEL(object):
 				self.p = np.ones(len(self.T)) * P
 			except TypeError:
 				self.p = np.ones(1) * P
+		
+		self.set_depth(depth = 'auto')
+		self.water_fugacity_calculated = False
+	
+	def set_depth(self,depth):
+	
+		if depth == 'auto':
+			self.depth = self.p * 33.0
 			
+		else:
+		
+			self.depth = self.array_modifier(input = depth, array = self.T, varname = 'depth')
+	
 	def check_p_n_T(self):
 	
 		if len(self.T) != len(self.p):
@@ -820,6 +891,13 @@ class SEEL(object):
 		
 		if (SEEL.o2_buffer < 0) or (SEEL.o2_buffer > 4):
 			raise ValueError('The oxygen fugacity buffer has entered incorrectly. The value has to be 0-FMQ, 1-IW, 2-QIF, 3-NNO, 4-MMO')
+			
+	def set_mantle_water_solubility(self,**kwargs):
+	
+		self.ol_sol_choice = kwargs.pop('ol', 0)
+		self.opx_sol_choice = kwargs.pop('opx', 0)
+		self.cpx_sol_choice = kwargs.pop('cpx', 0)
+		self.garnet_sol_choice = kwargs.pop('garnet', 0)
 			
 	def set_mantle_water_partitions(self,**kwargs):
 	
@@ -1088,6 +1166,31 @@ class SEEL(object):
 		
 		return self.water_melt_part_name[min_index]
 		
+	def list_mantle_water_solubilities(self, mineral_name):
+	
+		print('Mantle NAM water solubility for: ' + mineral_name)
+		
+		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
+			min_index = 10
+		elif (mineral_name == 'opx') or (mineral_name == 'orthopyroxene'):
+			min_index = 4
+		elif (mineral_name == 'cpx') or (mineral_name == 'clinopyroxene'):
+			min_index = 5
+		elif (mineral_name == 'garnet') or (mineral_name == 'gt'):
+			min_index = 7
+		else:
+			raise AttributeError('There is no mantle water solubility adjust for the chosen mineral: ' + mineral_name)
+		
+		
+		def print_lists(min_idx):
+		
+			for i in range(0,len(self.mineral_sol_name[min_idx])):
+				print(str(i) + '.  ' + self.mineral_sol_name[min_idx][i])
+				
+		print_lists(min_idx = min_index)
+		
+		return self.mineral_sol_name[min_index]
+		
 	def set_melt_fluid_conductivity_choice(self,**kwargs):
 	
 		SEEL.melt_cond_selection = kwargs.pop('melt', 0)
@@ -1229,6 +1332,29 @@ class SEEL(object):
 		if len(np.flatnonzero(self.bulk_water < 0)) != 0:
 				
 			raise ValueError('There is a value entered in bulk_water content that is below zero.')
+			
+	def set_xfe_mineral(self, **kwargs):
+	
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+			
+		SEEL.ol_xfe = self.array_modifier(input = kwargs.pop('ol', 0.1), array = self.T, varname = 'ol_xfe')
+		SEEL.opx_xfe = self.array_modifier(input = kwargs.pop('opx', 0.1), array = self.T, varname = 'opx_xfe')
+		SEEL.cpx_xfe = self.array_modifier(input = kwargs.pop('cpx', 0.1), array = self.T, varname = 'cpx_xfe')
+		SEEL.garnet_xfe = self.array_modifier(input = kwargs.pop('garnet', 0.1), array = self.T, varname = 'garnet_xfe')
+		SEEL.mica_xfe = self.array_modifier(input = kwargs.pop('mica', 0.1), array = self.T, varname = 'mica_xfe')
+		SEEL.amp_xfe = self.array_modifier(input = kwargs.pop('amp', 0.1), array = self.T, varname = 'amp_xfe')
+		SEEL.quartz_xfe = self.array_modifier(input = kwargs.pop('quartz', 0.1), array = self.T, varname = 'quartz_xfe')
+		SEEL.plag_xfe = self.array_modifier(input = kwargs.pop('plag', 0.1), array = self.T, varname = 'plag_xfe')
+		SEEL.kfelds_xfe = self.array_modifier(input = kwargs.pop('kfelds', 0.1), array = self.T, varname = 'kfelds_xfe')
+		SEEL.sulphide_xfe = self.array_modifier(input = kwargs.pop('sulphide', 0.1), array = self.T, varname = 'sulphide_xfe')
+		SEEL.graphite_xfe = self.array_modifier(input = kwargs.pop('graphite', 0.1), array = self.T, varname = 'graphite_xfe')
+		SEEL.mixture_xfe = self.array_modifier(input = kwargs.pop('mixture', 0.1), array = self.T, varname = 'mixture_xfe')
+		SEEL.other_xfe = self.array_modifier(input = kwargs.pop('other', 0.1), array = self.T, varname = 'other_xfe')
+		
+		SEEL.xfe_mineral_list = [SEEL.quartz_xfe, SEEL.plag_xfe, SEEL.amp_xfe, SEEL.kfelds_xfe,
+			 SEEL.opx_xfe, SEEL.cpx_xfe, SEEL.mica_xfe, SEEL.garnet_xfe, SEEL.sulphide_xfe,
+				   SEEL.graphite_xfe, SEEL.ol_xfe, SEEL.mixture_xfe, SEEL.other_xfe]
 			
 	def set_param1_mineral(self, **kwargs):
 	
@@ -1735,11 +1861,11 @@ class SEEL(object):
 
 			if ('fo2' in odd_function) == True:
 
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, param1 = SEEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEEL.param2_mineral_list[min_sub_idx][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = self.xfe_mineral_list[min_sub_idx][idx_node], param1 = SEEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEEL.param2_mineral_list[min_sub_idx][idx_node], fo2 = self.calculate_fugacity(SEEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
 
 			else:
 
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, param1 = SEEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEEL.param2_mineral_list[min_sub_idx][idx_node], fo2 = None, fo2_ref = None, method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = self.xfe_mineral_list[min_sub_idx][idx_node], param1 = SEEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEEL.param2_mineral_list[min_sub_idx][idx_node], fo2 = None, fo2_ref = None, method = method)')
 
 		return cond
 		
@@ -2638,6 +2764,16 @@ class SEEL(object):
 
 		return self.fo2
 		
+	def calculate_water_fugacity(self):
+	
+		if self.water_fugacity_calculated == False:
+		
+			self.water_fugacity = Pitzer_and_Sterner_1994_PureWaterEOS(T = self.T, P = self.p)
+			
+			self.water_fugacity_calculated = True
+		
+		
+		
 	def load_mantle_water_partitions(self, method, **kwargs):
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -2718,14 +2854,7 @@ class SEEL(object):
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
-			
-		#Converting fractions to water holding species that has an exchange with coexisting melt. 
-		#Calculation of equilibrium of water with other minerals are not constrained.
-		self.ol_frac_wt = self.ol_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
-		self.opx_frac_wt = self.opx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
-		self.cpx_frac_wt = self.cpx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
-		self.garnet_frac_wt = self.garnet_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac)
-			
+						
 		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (SEEL.fluid_or_melt_method == 1):
 		
 			self.melt_water = np.zeros(len(self.T))
@@ -2772,9 +2901,151 @@ class SEEL(object):
 
 		return melt_water
 			
-	def calculate_mantle_water_solubility(self,reference_mineral):
+	def calculate_mineral_water_solubility(self, method, mineral_name, **kwargs):
 	
+		sol_idx = kwargs.pop('sol_idx', 0)
+	
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+			
+		if mineral_name == 'ol':
+			
+			min_idx = 10
+			if self.mineral_sol_fug[self.ol_sol_choice] == 'Y':
+				if self.water_fugacity_calculated == False:
+					self.calculate_water_fugacity()
+				water_fug = self.water_fugacity	
+				
+			else:
+			
+				water_fug = np.zeros(1)
+					
+			if self.mineral_sol_o2_fug[self.ol_sol_choice] == 'Y':
+			
+				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
+				
+			else:
+				o2_fug = np.zeros(1)
+				
+			if ('From' in self.mineral_sol_name[min_idx][self.ol_sol_choice]) == True:
+			
+				if ('Opx' in self.mineral_sol_name[min_idx][self.ol_sol_choice]) == True:
+				
+					self.max_ol_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") / self.d_opx_ol
+					
+			else:
+				try:
+					self.max_ol_water = eval(self.mineral_sol_name[min_idx][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node],method = 'array')")
+				except AttributeError:
+					raise AttributeError('You have to enter ti_ol as a different parameter by the SEEL.set_parameter method')
+		elif mineral_name == 'opx':
+			
+			min_idx = 4
+			if self.mineral_sol_fug[self.opx_sol_choice] == 'Y':
+				if self.water_fugacity_calculated == False:
+					self.calculate_water_fugacity()
+				water_fug = self.water_fugacity	
+				
+			else:
+			
+				water_fug = np.zeros(1)
+					
+			if self.mineral_sol_o2_fug[self.opx_sol_choice] == 'Y':
+			
+				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
+				
+			else:
+				o2_fug = np.zeros(1)
+				
+			if ('From' in self.mineral_sol_name[min_idx][self.opx_sol_choice]) == True:
+			
+				if ('Ol' in self.mineral_sol_name[min_idx][self.opx_sol_choice]) == True:
+				
+					self.max_opx_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * self.d_opx_ol
+					
+			else:
+				
+				self.max_opx_water = eval(self.mineral_sol_name[min_idx][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], method = 'array')")
 		
+			
+		elif mineral_name == 'cpx':
+			
+			min_idx = 5
+			if self.mineral_sol_fug[self.cpx_sol_choice] == 'Y':
+				if self.water_fugacity_calculated == False:
+					self.calculate_water_fugacity()
+				water_fug = self.water_fugacity	
+				
+			else:
+			
+				water_fug = np.zeros(1)
+					
+			if self.mineral_sol_o2_fug[self.cpx_sol_choice] == 'Y':
+			
+				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
+				
+			else:
+				o2_fug = np.zeros(1)
+			
+				
+			if ('From' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
+			
+				if ('Ol' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
+				
+					self.max_cpx_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * self.d_cpx_ol
+					
+				elif ('Opx' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
+				
+					self.max_cpx_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * (self.d_cpx_ol/self.d_opx_ol)
+					
+			else:
+				
+				self.max_opx_water = eval(self.mineral_sol_name[min_idx][self.cpx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], method = 'array')")
+			
+		elif mineral_name == 'garnet':
+			
+			min_idx = 7
+			if self.mineral_sol_fug[self.garnet_sol_choice] == 'Y':
+				if self.water_fugacity_calculated == False:
+					self.calculate_water_fugacity()
+				water_fug = self.water_fugacity	
+				
+			else:
+			
+				water_fug = np.zeros(1)
+					
+			if self.mineral_sol_o2_fug[self.garnet_sol_choice] == 'Y':
+			
+				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
+				
+			else:
+				o2_fug = np.zeros(1)	
+				
+			if ('From' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
+			
+				if ('Ol' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
+				
+					self.max_garnet_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * self.d_garnet_ol
+					
+				elif ('Opx' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
+				
+					self.max_garnet_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * (self.d_garnet_ol/self.d_opx_ol)
+					
+			else:
+				
+				self.max_garnet_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], method = 'array')")
+			
+			
+	def calculate_bulk_mantle_water_solubility(self, method, **kwargs):
+	
+		self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)
+		self.calculate_mineral_water_solubility(mineral_name = 'opx', method = method)
+		self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
+		self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
+		self.max_bulk_water = (self.max_ol_water * self.ol_frac) + (self.opx_h2o * self.opx_frac) + (self.cpx_h2o * self.cpx_frac) + (self.gt_h2o * self.gt_frac)
+		print(self.max_bulk_water)
 		
 	def savetextfile(self):
 
@@ -2801,20 +3072,6 @@ class SEEL(object):
 			filesave_composition.close()
 
 			print("Files are saved at the chosen location ")
-
-	def read_pt_file(self):
-
-		data_pt = self.read_csv(filename = self.pt_file, delim = ',')
-
-		self.p = np.zeros(len(data_pt) - 1)
-		self.T = np.zeros(len(data_pt) - 1)
-		self.depth = np.zeros(len(data_pt) - 1)
-
-		for i in range(1,len(data_pt)):
-
-			self.p[i-1] = data_pt[i][0]
-			self.depth[i-1] = data_pt[i][1]
-			self.T[i-1] = data_pt[i][2]
 
 	def duplicate_composition_for_pt_file(self):
 
