@@ -2774,7 +2774,7 @@ class SEEL(object):
 			
 	def calculate_mantle_water_solubility(self,reference_mineral):
 	
-		pass
+		
 		
 	def savetextfile(self):
 
