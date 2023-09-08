@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 temp = np.arange(1200,1800,5)
 a = SEEL.SEEL() #creating the initial object
-a.set_melt_fluid_frac(frac = [1.0])
+a.set_melt_fluid_frac(1.0)
 a.set_temperature(temp) #settin temperature array in K
 a.set_pressure(1)
 a.set_melt_properties(co2 = np.ones(len(temp)) * 0, water = np.ones(len(temp)) * 1e4, na2o = np.ones(len(temp)) * 0.1)
