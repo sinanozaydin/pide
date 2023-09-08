@@ -22,7 +22,7 @@ def Gaetani2014_OlSol(T,P,depth,h2o_fug,o2_fug,fe_ol,ti_ol,method):
 	max_ol_h2o = max_ol_h2o * 0.0613895 #Converting to ppm wt
 
 	return max_ol_h2o
-
+	
 def Zhao2004_OlSol(T,P,depth,h2o_fug,o2_fug,fe_ol,ti_ol,method):
 
 	A_zhao = 90
