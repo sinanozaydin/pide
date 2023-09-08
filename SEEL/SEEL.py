@@ -43,6 +43,7 @@ from seel_src.water_partitioning.water_part_odd import *
 from seel_src.misc_func.fh2o import *
 #importing mineral solubility functions
 from seel_src.water_sol.ol_sol import *
+from seel_src.water_sol.opx_sol import * 
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -2913,7 +2914,7 @@ class SEEL(object):
 		if mineral_name == 'ol':
 			
 			min_idx = 10
-			if self.mineral_sol_fug[self.ol_sol_choice] == 'Y':
+			if self.mineral_sol_fug[min_idx][self.ol_sol_choice] == 'Y':
 				if self.water_fugacity_calculated == False:
 					self.calculate_water_fugacity()
 				water_fug = self.water_fugacity	
@@ -2922,7 +2923,7 @@ class SEEL(object):
 			
 				water_fug = np.zeros(1)
 					
-			if self.mineral_sol_o2_fug[self.ol_sol_choice] == 'Y':
+			if self.mineral_sol_o2_fug[min_idx][self.ol_sol_choice] == 'Y':
 			
 				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
 				
@@ -2943,7 +2944,7 @@ class SEEL(object):
 		elif mineral_name == 'opx':
 			
 			min_idx = 4
-			if self.mineral_sol_fug[self.opx_sol_choice] == 'Y':
+			if self.mineral_sol_fug[min_idx][self.opx_sol_choice] == 'Y':
 				if self.water_fugacity_calculated == False:
 					self.calculate_water_fugacity()
 				water_fug = self.water_fugacity	
@@ -2952,7 +2953,7 @@ class SEEL(object):
 			
 				water_fug = np.zeros(1)
 					
-			if self.mineral_sol_o2_fug[self.opx_sol_choice] == 'Y':
+			if self.mineral_sol_o2_fug[min_idx][self.opx_sol_choice] == 'Y':
 			
 				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
 				
@@ -2967,13 +2968,13 @@ class SEEL(object):
 					
 			else:
 				
-				self.max_opx_water = eval(self.mineral_sol_name[min_idx][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], method = 'array')")
+				self.max_opx_water = eval(self.mineral_sol_name[min_idx][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], al_opx = None, method = 'array')")
 		
 			
 		elif mineral_name == 'cpx':
 			
 			min_idx = 5
-			if self.mineral_sol_fug[self.cpx_sol_choice] == 'Y':
+			if self.mineral_sol_fug[min_idx][self.cpx_sol_choice] == 'Y':
 				if self.water_fugacity_calculated == False:
 					self.calculate_water_fugacity()
 				water_fug = self.water_fugacity	
@@ -2982,7 +2983,7 @@ class SEEL(object):
 			
 				water_fug = np.zeros(1)
 					
-			if self.mineral_sol_o2_fug[self.cpx_sol_choice] == 'Y':
+			if self.mineral_sol_o2_fug[min_idx][self.cpx_sol_choice] == 'Y':
 			
 				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
 				
@@ -3007,7 +3008,7 @@ class SEEL(object):
 		elif mineral_name == 'garnet':
 			
 			min_idx = 7
-			if self.mineral_sol_fug[self.garnet_sol_choice] == 'Y':
+			if self.mineral_sol_fug[min_idx][self.garnet_sol_choice] == 'Y':
 				if self.water_fugacity_calculated == False:
 					self.calculate_water_fugacity()
 				water_fug = self.water_fugacity	
@@ -3016,7 +3017,7 @@ class SEEL(object):
 			
 				water_fug = np.zeros(1)
 					
-			if self.mineral_sol_o2_fug[self.garnet_sol_choice] == 'Y':
+			if self.mineral_sol_o2_fug[min_idx][self.garnet_sol_choice] == 'Y':
 			
 				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
 				
