@@ -8,6 +8,9 @@ Demouchy2017_Cpx,0,10.6,0,Demouchy2017 average single value of cpx/ol at 3 GPa a
 Demouchy2017_Cpx2,1,0,0,Demouchy2017 average value of cpx/opx at 3 GPa and 1373 K with aluminous opx-cpx-gt assemblage
 Hauri2006_Cpx,0,14.92,0,Hauri2006 average single value of cpx/ol at 0.5-1.6 GPa and 1298-1643 K with aluminous-opx-cpx-ol-melt assemblage
 Kovacs2012_Cpx,1,0,0,Kovacs2012 average single value of cpx/opx at 2.5-4 GPa and 1273-1423 K with aluminous ol-opx-cpx-gt assemblage
+Liu2020_Cpx1_NNO,1,0,0,Liu2020 cpx/opx derived cpx paritioning rates at 1-3 Gpa and 1073-1373 K with non-aluminous ol-opx-cpx-gt assembalge P-dependent function
+Liu2020_Cpx1_NNO_Low_Pressure,0,0.67,0,Liu2020 cpx/opx derived average value cpx paritioning rates at 0.2 Gpa and 1073 K with non-aluminous ol-opx-cpx-gt assembalge 
+Liu2020_Cpx2_IW,0,1.6095,0,Liu2020 cpx/opx derived average value cpx paritioning rates at 1-3 Gpa and 1073-1373 K with non-aluminous ol-opx-cpx-gt assembalge at IW buffer
 Novella2014_Cpx,0,3.19,0,Novella2014 average single value of cpx/ol at 6 GPa and 1673 K with aluminous-opx-cpx-ol-gt assemblage
 Novella2014_Cpx2,1,0,0,Novella2014 average value of cpx/opx at 6 GPa and 1673 K with aluminous opx-cpx-gt-melt assemblage
 Tenner2009_Cpx,1,0,0,Tenner2009 average value of cpx/opx at 4 GPa and 1678-1708 K with aluminous cpx-opx-melt assemblage

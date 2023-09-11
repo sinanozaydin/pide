@@ -120,3 +120,11 @@ def Novella2014_OpxMelt(al_opx, p,  p_change, d_opx_ol, method):
 	part = (0.0028 * al_opx) + 0.0033
 	
 	return part
+	
+def Liu2020_Cpx1_NNO(al_opx, p,  p_change, d_opx_ol, method):
+
+	p_fit = [-0.11721592, 2.04730658]
+	
+	part = (p_fit[0] * p) + p_fit[1]
+	
+	return part

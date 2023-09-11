@@ -490,6 +490,10 @@ class SEEL(object):
 		self.sulphides_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'sulphides.csv'),delim = ',')
 		self.graphite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'graphite.csv'),delim = ',')
 		self.ol_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'ol.csv'),delim = ',')
+		self.spinel_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'spinel.csv'),delim = ',')
+		self.wadsleyite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'wadsleyite.csv'),delim = ',')
+		self.ringwoodite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'ringwoodite.csv'),delim = ',')
+		self.perovskite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'perovskite.csv'),delim = ',')
 		self.mixture_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'mixtures.csv'),delim = ',')
 		self.other_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'other.csv'),delim = ',')
 		
@@ -497,8 +501,8 @@ class SEEL(object):
 			  self.sandstone_cond_data, self.gneiss_cond_data, self.amphibolite_cond_data, self.basalt_cond_data, self.mud_cond_data,
 			   self.gabbro_cond_data, self.other_rock_cond_data, self.quartz_cond_data, self.plag_cond_data,
 			  self.amp_cond_data, self.kfelds_cond_data, self.opx_cond_data, self.cpx_cond_data, self.mica_cond_data,
-			  self.garnet_cond_data, self.sulphides_cond_data, self.graphite_cond_data, self.ol_cond_data, self.mixture_cond_data,
-			  self.other_cond_data]
+			  self.garnet_cond_data, self.sulphides_cond_data, self.graphite_cond_data, self.ol_cond_data, self.spinel_cond_data, self.wadsleyite_cond_data,
+			  self.ringwoodite_cond_data, self.perovskite_cond_data, self.mixture_cond_data, self.other_cond_data]
 
 		len_fluid = len(self.fluid_cond_data) - 1 
 		len_melt = len(self.melt_cond_data) - 1
@@ -528,17 +532,22 @@ class SEEL(object):
 		len_sulphides = len(self.sulphides_cond_data) - 1
 		len_graphite = len(self.graphite_cond_data) - 1
 		len_ol = len(self.ol_cond_data) - 1
+		len_sp = len(self.spinel_cond_data) - 1
+		len_wad = len(self.wadsleyite_cond_data) - 1
+		len_ring = len(self.perovskite_cond_data) - 1
+		len_perov = len(self.ringwoodite_cond_data) - 1
 		len_mixture = len(self.mixture_cond_data) - 1
 		len_other = len(self.other_cond_data) - 1
 
-		self.mineral_num = 15
+		self.mineral_num = 16
 		
 		def create_nan_array():
 		
 			array = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 			[None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_mixture, [None] * len_other]
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_sp, [None] * len_wad, [None] * len_ring, 
+			[None] * len_perov, [None] * len_mixture, [None] * len_other]
 			
 			return array
 
@@ -755,23 +764,30 @@ class SEEL(object):
 		self.sulphide_frac = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_frac')
 		self.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
 		self.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
+		self.sp_frac = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_frac')
+		self.wad_frac = self.array_modifier(input = kwargs.pop('wad', 0), array = self.T, varname = 'wad_frac')
+		self.ring_frac = self.array_modifier(input = kwargs.pop('ring', 0), array = self.T, varname = 'ring_frac')
+		self.perov_frac = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_frac')
 		self.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
 		
 		#Converting fractions to water holding species that has an exchange with coexisting melt. 
 		#Calculation of equilibrium of water with other minerals are not constrained.
-		self.ol_frac_wt = self.ol_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
-		self.opx_frac_wt = self.opx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
-		self.cpx_frac_wt = self.cpx_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
-		self.garnet_frac_wt = self.garnet_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
-		self.plag_frac_wt = self.plag_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
-		self.kfelds_frac_wt = self.kfelds_frac / (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac)
+		wt_all = (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac + self.wad_frac + self.ring_frac)
+		self.ol_frac_wt = self.ol_frac / wt_all
+		self.opx_frac_wt = self.opx_frac / wt_all
+		self.cpx_frac_wt = self.cpx_frac / wt_all
+		self.garnet_frac_wt = self.garnet_frac / wt_all
+		self.plag_frac_wt = self.plag_frac / wt_all
+		self.kfelds_frac_wt = self.kfelds_frac / wt_all
+		self.wad_frac_wt = self.wad_frac / wt_all
+		self.ring_frac_wt = self.ring_frac / wt_all
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
 		if overlookError != False:
 			mineral_frac_list = [self.quartz_frac,self.opx_frac,self.cpx_frac,self.garnet_frac,self.mica_frac,
-			self.amp_frac,self.quartz_frac,self.plag_frac,self.kfelds_frac,self.sulphide_frac,self.graphite_frac,self.mixture_frac,
-			self.other_frac]
+			self.amp_frac,self.quartz_frac,self.plag_frac,self.kfelds_frac,self.sulphide_frac,self.graphite_frac,self.mixture_frac, self.ol_frac, self.sp_frac,
+			self.wad_frac, self.ring_frac, self.perov_frac, self.other_frac]
 			
 			for i in range(0,len(mineral_frac_list)):
 				if len(np.flatnonzero(mineral_frac_list[i] < 0)) != 0:
@@ -934,7 +950,7 @@ class SEEL(object):
 			
 			tot = self.quartz_frac + self.plag_frac + self.amp_frac + self.kfelds_frac +\
 			self.opx_frac + self.cpx_frac + self.mica_frac + self.garnet_frac + self.sulphide_frac + self.graphite_frac +\
-			self.ol_frac + self.mixture_frac + self.other_frac
+			self.ol_frac + self.sp_frac + self.wad_frac + self.ring_frac + self.perov_frac + self.mixture_frac + self.other_frac
 
 			if any(item <= 0.99 for item in tot) == True:
 			
@@ -970,10 +986,18 @@ class SEEL(object):
 			min_index = 19
 		elif (mineral_name == 'graphite') or (mineral_name == 'Graphite'):
 			min_index = 20
-		elif (mineral_name == 'mixture') or (mineral_name == 'mixtures'):
+		elif (mineral_name == 'spinel') or (mineral_name == 'sp'):
 			min_index = 22
-		elif (mineral_name == 'other') or (mineral_name == 'other'):
+		elif (mineral_name == 'wadsleyite') or (mineral_name == 'wad'):
 			min_index = 23
+		elif (mineral_name == 'ringwoodite') or (mineral_name == 'ring'):
+			min_index = 24
+		elif (mineral_name == 'perovskite') or (mineral_name == 'perov'):
+			min_index = 25
+		elif (mineral_name == 'mixture') or (mineral_name == 'mixtures'):
+			min_index = 26
+		elif (mineral_name == 'other') or (mineral_name == 'other'):
+			min_index = 27
 			
 		else:
 		
@@ -1032,10 +1056,18 @@ class SEEL(object):
 			min_index = 19
 		elif (mineral_name == 'graphite') or (mineral_name == 'Graphite'):
 			min_index = 20
-		elif (mineral_name == 'mixture') or (mineral_name == 'mixtures'):
+		elif (mineral_name == 'spinel') or (mineral_name == 'sp'):
 			min_index = 22
-		elif (mineral_name == 'other') or (mineral_name == 'other'):
+		elif (mineral_name == 'wadsleyite') or (mineral_name == 'wad'):
 			min_index = 23
+		elif (mineral_name == 'ringwoodite') or (mineral_name == 'ring'):
+			min_index = 24
+		elif (mineral_name == 'perovskite') or (mineral_name == 'perov'):
+			min_index = 25
+		elif (mineral_name == 'mixture') or (mineral_name == 'mixtures'):
+			min_index = 26
+		elif (mineral_name == 'other') or (mineral_name == 'other'):
+			min_index = 27
 			
 		else:
 			raise ValueError('There is no such a mineral specifier called :' + mineral_name)
@@ -1218,19 +1250,24 @@ class SEEL(object):
 		SEEL.kfelds_cond_selection = kwargs.pop('kfelds', 0)
 		SEEL.sulphide_cond_selection = kwargs.pop('sulphide', 0)
 		SEEL.graphite_cond_selection = kwargs.pop('graphite', 0)
+		SEEL.sp_cond_selection = kwargs.pop('sp',0)
+		SEEL.wad_cond_selection = kwargs.pop('wad',0)
+		SEEL.ring_cond_selection = kwargs.pop('ring',0)
+		SEEL.perov_cond_selection = kwargs.pop('perov',0)
 		SEEL.mixture_cond_selection = kwargs.pop('mixture', 0)
 		SEEL.other_cond_selection = kwargs.pop('other', 0)
 		
 		SEEL.minerals_cond_selections = [SEEL.quartz_cond_selection, SEEL.plag_cond_selection, SEEL.amp_cond_selection, SEEL.kfelds_cond_selection, SEEL.opx_cond_selection,
 				   SEEL.cpx_cond_selection, SEEL.mica_cond_selection, SEEL.garnet_cond_selection, SEEL.sulphide_cond_selection,
-				   SEEL.graphite_cond_selection, SEEL.ol_cond_selection, SEEL.mixture_cond_selection, SEEL.other_cond_selection]
+				   SEEL.graphite_cond_selection, SEEL.ol_cond_selection, SEEL.sp_cond_selection, SEEL.wad_cond_selection, SEEL.ring_cond_selection, SEEL.perov_cond_selection,
+				   SEEL.mixture_cond_selection, SEEL.other_cond_selection]
 				   
 		self.mineral_conductivity_choice_check()
 		
 	def mineral_conductivity_choice_check(self):
 		
-		mineral_idx = list(range(11,24))
-		mineral_names = ['qtz','plag','amp','kfelds','opx','cpx','mica','garnet','sulphide','graphite','ol','mixture','other']
+		mineral_idx = list(range(11,28))
+		mineral_names = ['qtz','plag','amp','kfelds','opx','cpx','mica','garnet','sulphide','graphite','ol','sp','wad','ring','perov','mixture','other']
 		
 		for i in range(0,len(SEEL.minerals_cond_selections)):
 		
@@ -1283,6 +1320,10 @@ class SEEL(object):
 		SEEL.kfelds_water = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_water')
 		SEEL.sulphide_water = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_water')
 		SEEL.graphite_water = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_water')
+		SEEL.sp_water = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_water')
+		SEEL.wad_water = self.array_modifier(input = kwargs.pop('wad', 0), array = self.T, varname = 'wad_water')
+		SEEL.ring_water = self.array_modifier(input = kwargs.pop('ring', 0), array = self.T, varname = 'ring_water')
+		SEEL.perov_water = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_water')
 		SEEL.mixture_water = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_water')
 		SEEL.other_water = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_water')
 		
@@ -1290,7 +1331,8 @@ class SEEL(object):
 
 		SEEL.mineral_water_list = [SEEL.quartz_water, SEEL.plag_water, SEEL.amp_water, SEEL.kfelds_water,
 			 SEEL.opx_water, SEEL.cpx_water, SEEL.mica_water, SEEL.garnet_water, SEEL.sulphide_water,
-				   SEEL.graphite_water, SEEL.ol_water, SEEL.mixture_water, SEEL.other_water]
+				   SEEL.graphite_water, SEEL.ol_water, SEEL.sp_water, SEEL.wad_water, SEEL.ring_water, SEEL.perov_water,
+				   SEEL.mixture_water, SEEL.other_water]
 	
 		if overlookError == False:
 					
@@ -1350,12 +1392,16 @@ class SEEL(object):
 		SEEL.kfelds_xfe = self.array_modifier(input = kwargs.pop('kfelds', 0.1), array = self.T, varname = 'kfelds_xfe')
 		SEEL.sulphide_xfe = self.array_modifier(input = kwargs.pop('sulphide', 0.1), array = self.T, varname = 'sulphide_xfe')
 		SEEL.graphite_xfe = self.array_modifier(input = kwargs.pop('graphite', 0.1), array = self.T, varname = 'graphite_xfe')
+		SEEL.sp_xfe = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_xfe')
+		SEEL.wad_xfe = self.array_modifier(input = kwargs.pop('wad', 0.1), array = self.T, varname = 'wad_xfe')
+		SEEL.ring_xfe = self.array_modifier(input = kwargs.pop('ring', 0.1), array = self.T, varname = 'ring_xfe')
+		SEEL.perov_xfe = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_xfe')
 		SEEL.mixture_xfe = self.array_modifier(input = kwargs.pop('mixture', 0.1), array = self.T, varname = 'mixture_xfe')
 		SEEL.other_xfe = self.array_modifier(input = kwargs.pop('other', 0.1), array = self.T, varname = 'other_xfe')
 		
 		SEEL.xfe_mineral_list = [SEEL.quartz_xfe, SEEL.plag_xfe, SEEL.amp_xfe, SEEL.kfelds_xfe,
 			 SEEL.opx_xfe, SEEL.cpx_xfe, SEEL.mica_xfe, SEEL.garnet_xfe, SEEL.sulphide_xfe,
-				   SEEL.graphite_xfe, SEEL.ol_xfe, SEEL.mixture_xfe, SEEL.other_xfe]
+				   SEEL.graphite_xfe, SEEL.ol_xfe, SEEL.sp_xfe, SEEL.wad_xfe, SEEL.ring_xfe, SEEL.perov_xfe, SEEL.mixture_xfe, SEEL.other_xfe]
 			
 	def set_param1_mineral(self, **kwargs):
 	
@@ -1373,12 +1419,16 @@ class SEEL(object):
 		SEEL.kfelds_param1 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param1')
 		SEEL.sulphide_param1 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param1')
 		SEEL.graphite_param1 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param1')
+		SEEL.sp_param1 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param1')
+		SEEL.wad_param1 = self.array_modifier(input = kwargs.pop('wad', 0.1), array = self.T, varname = 'wad_param1')
+		SEEL.ring_param1 = self.array_modifier(input = kwargs.pop('ring', 0.1), array = self.T, varname = 'ring_param1')
+		SEEL.perov_param1 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param1')
 		SEEL.mixture_param1 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param1')
 		SEEL.other_param1 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param1')
 		
 		SEEL.param1_mineral_list = [SEEL.quartz_param1, SEEL.plag_param1, SEEL.amp_param1, SEEL.kfelds_param1,
 			 SEEL.opx_param1, SEEL.cpx_param1, SEEL.mica_param1, SEEL.garnet_param1, SEEL.sulphide_param1,
-				   SEEL.graphite_param1, SEEL.ol_param1, SEEL.mixture_param1, SEEL.other_param1]
+				   SEEL.graphite_param1, SEEL.ol_param1, SEEL.sp_param1, SEEL.wad_param1, SEEL.ring_param1, SEEL.perov_param1, SEEL.mixture_param1, SEEL.other_param1]
 				   
 	def set_param1_rock(self, **kwargs):
 	
@@ -1415,12 +1465,16 @@ class SEEL(object):
 		SEEL.kfelds_param2 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param2')
 		SEEL.sulphide_param2 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param2')
 		SEEL.graphite_param2 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param2')
+		SEEL.sp_param2 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param2')
+		SEEL.wad_param2 = self.array_modifier(input = kwargs.pop('wad', 0.1), array = self.T, varname = 'wad_param2')
+		SEEL.ring_param2 = self.array_modifier(input = kwargs.pop('ring', 0.1), array = self.T, varname = 'ring_param2')
+		SEEL.perov_param2 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param2')
 		SEEL.mixture_param2 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param2')
 		SEEL.other_param2 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param2')
 		
 		SEEL.param2_mineral_list = [SEEL.quartz_param2, SEEL.plag_param2, SEEL.amp_param2, SEEL.kfelds_param2,
 			SEEL.opx_param2, SEEL.cpx_param2, SEEL.mica_param2, SEEL.garnet_param2, SEEL.sulphide_param2,
-				   SEEL.graphite_param2, SEEL.ol_param2, SEEL.mixture_param2, SEEL.other_param2]
+				   SEEL.graphite_param2, SEEL.ol_param2, SEEL.sp_param2, SEEL.wad_param2, SEEL.ring_param2, SEEL.perov_param2, SEEL.mixture_param2, SEEL.other_param2]
 				   
 	def set_param2_rock(self, **kwargs):
 	
@@ -1525,7 +1579,11 @@ class SEEL(object):
 		SEEL.kfelds_m = self.array_modifier(input = kwargs.pop('kfelds', 4), array = self.T, varname = 'kfelds_m') 
 		SEEL.sulphide_m = self.array_modifier(input = kwargs.pop('sulphide', 4), array = self.T, varname = 'sulphide_m') 
 		SEEL.graphite_m = self.array_modifier(input = kwargs.pop('graphite', 4), array = self.T, varname = 'graphite_m') 
-		SEEL.mixture_m = self.array_modifier(input = kwargs.pop('mixture', 4), array = self.T, varname = 'mixture_m') 
+		SEEL.mixture_m = self.array_modifier(input = kwargs.pop('mixture', 4), array = self.T, varname = 'mixture_m')
+		SEEL.sp_m = self.array_modifier(input = kwargs.pop('sp', 4), array = self.T, varname = 'sp_m')
+		SEEL.wad_m = self.array_modifier(input = kwargs.pop('wad', 4), array = self.T, varname = 'wad_m')
+		SEEL.ring_m = self.array_modifier(input = kwargs.pop('ring', 4), array = self.T, varname = 'ring_m')
+		SEEL.perov_m = self.array_modifier(input = kwargs.pop('perov', 4), array = self.T, varname = 'perov_m')
 		SEEL.other_m = self.array_modifier(input = kwargs.pop('other', 4), array = self.T, varname = 'other_m') 
 		
 		SEEL.granite_m = self.array_modifier(input = kwargs.pop('granite', 4), array = self.T, varname = 'granite_m') 
@@ -1546,8 +1604,8 @@ class SEEL(object):
 			SEEL.melt_fluid_m = self.array_modifier(input = kwargs.pop('melt', 4), array = self.T, varname = 'melt_fluid_m') 
 		
 		if overlookError == False:
-			list_of_values = [self.ol_m,self.opx_m,self.cpx_m,self.garnet_m,self.mica_m,self.amp_m,self.quartz_m,self.plag_m,self.kfelds_m,
-			self.sulphide_m,self.graphite_m,self.mixture_m,self.other_m]
+			list_of_values = [SEEL.ol_m,SEEL.opx_m,SEEL.cpx_m,SEEL.garnet_m,SEEL.mica_m,SEEL.amp_m,SEEL.quartz_m,SEEL.plag_m,SEEL.kfelds_m,
+			SEEL.sulphide_m,SEEL.graphite_m, SEEL.sp_m, SEEL.wad_m,SEEL.ring_m,SEEL.perov_m, SEEL.mixture_m,SEEL.other_m]
 			
 			for i in range(0,len(list_of_values)):
 			
@@ -2030,10 +2088,12 @@ class SEEL(object):
 				elif SEEL.solid_phase_method == 2:
 					phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
 					self.opx_frac[i], self.cpx_frac[i], self.mica_frac[i], self.garnet_frac[i],
-					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.mixture_frac[i], self.other_frac[i]]
+					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.sp_frac[i], self.wad_frac[i], self.ring_frac[i], self.perov_frac[i],
+					self.mixture_frac[i], self.other_frac[i]]
 					m_list = [SEEL.quartz_m[i], SEEL.plag_m[i], SEEL.amp_m[i], SEEL.kfelds_m[i],
 					SEEL.opx_m[i], SEEL.cpx_m[i], SEEL.mica_m[i], SEEL.garnet_m[i],
-					SEEL.sulphide_m[i], SEEL.graphite_m[i], SEEL.ol_m[i], SEEL.mixture_m[i], SEEL.other_m[i]]
+					SEEL.sulphide_m[i], SEEL.graphite_m[i], SEEL.ol_m[i], SEEL.sp_m[i], SEEL.wad_m[i], SEEL.ring_m[i], SEEL.perov_m[i],
+					SEEL.mixture_m[i], SEEL.other_m[i]]
 					
 				frac_abundant = max(phase_list) #fraction of abundant mineral
 				idx_max_ph = phase_list.index(frac_abundant) #index of the abundant mineral
@@ -2101,8 +2161,16 @@ class SEEL(object):
 					elif idx_max_ph == 10:
 						SEEL.ol_m[idx_node] = m_abundant
 					elif idx_max_ph == 11:
-						SEEL.mixture_m[idx_node] = m_abundant
+						SEEL.sp_m[idx_node] = m_abundant
 					elif idx_max_ph == 12:
+						SEEL.wad_m[idx_node] = m_abundant
+					elif idx_max_ph == 13:
+						SEEL.ring_m[idx_node] = m_abundant
+					elif idx_max_ph == 14:
+						SEEL.perov_m[idx_node] = m_abundant
+					elif idx_max_ph == 15:
+						SEEL.mixture_m[idx_node] = m_abundant
+					elif idx_max_ph == 16:
 						SEEL.other_m[idx_node] = m_abundant
 						
 					self.bulk_cond[idx_node] = (self.quartz_cond[idx_node]*(self.quartz_frac[idx_node]**SEEL.quartz_m[idx_node])) +\
@@ -2116,6 +2184,10 @@ class SEEL(object):
 					(self.sulphide_cond[idx_node]*(self.sulphide_frac[idx_node]**SEEL.sulphide_m[idx_node])) +\
 					(self.graphite_cond[idx_node]*(self.graphite_frac[idx_node]**SEEL.graphite_m[idx_node])) +\
 					(self.ol_cond[idx_node]*(self.ol_frac[idx_node]**SEEL.ol_m[idx_node])) +\
+					(self.sp_cond[idx_node]*(self.sp_frac[idx_node]**SEEL.sp_m[idx_node])) +\
+					(self.wad_cond[idx_node]*(self.wad_frac[idx_node]**SEEL.wad_m[idx_node])) +\
+					(self.ring_cond[idx_node]*(self.ring_frac[idx_node]**SEEL.ring_m[idx_node])) +\
+					(self.perov_cond[idx_node]*(self.perov_frac[idx_node]**SEEL.perov_m[idx_node])) +\
 					(self.mixture_cond[idx_node]*(self.mixture_frac[idx_node]**SEEL.mixture_m[idx_node])) +\
 					(self.other_cond[idx_node]*(self.other_frac[idx_node]**SEEL.other_m[idx_node]))
 					
@@ -2139,7 +2211,8 @@ class SEEL(object):
 				elif SEEL.solid_phase_method == 2:
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
-					self.garnet_cond[i],self.sulphide_cond[i],self.graphite_cond[i],self.ol_cond[i], self.mixture_cond[i], self.other_cond[i]]				
+					self.garnet_cond[i],self.sulphide_cond[i],self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i], self.wad_cond[i],
+					self.ring_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
 					
 				while True:
 				
@@ -2181,6 +2254,10 @@ class SEEL(object):
 					(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*min_local))) +\
 					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*min_local))) +\
 					(self.ol_frac[i] / (self.ol_cond[i] + (2*min_local))) +\
+					(self.sp_frac[i] / (self.sp_cond[i] + (2*min_local))) +\
+					(self.wad_frac[i] / (self.wad_cond[i] + (2*min_local))) +\
+					(self.ring_frac[i] / (self.ring_cond[i] + (2*min_local))) +\
+					(self.perov_frac[i] / (self.perov_cond[i] + (2*min_local))) +\
 					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*min_local))) +\
 					(self.other_frac[i] / (self.other_cond[i] + (2*min_local)))
 					)**(-1.0)) -\
@@ -2207,7 +2284,8 @@ class SEEL(object):
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
 					self.garnet_cond[i],self.sulphide_cond[i],
-					self.graphite_cond[i],self.ol_cond[i], self.mixture_cond[i], self.other_cond[i]]				
+					self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i], self.wad_cond[i],
+					self.ring_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
 					
 				while True:
 				
@@ -2249,6 +2327,10 @@ class SEEL(object):
 					(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*max_local))) +\
 					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*max_local))) +\
 					(self.ol_frac[i] / (self.ol_cond[i] + (2*max_local))) +\
+					(self.sp_frac[i] / (self.sp_cond[i] + (2*max_local))) +\
+					(self.wad_frac[i] / (self.wad_cond[i] + (2*max_local))) +\
+					(self.ring_frac[i] / (self.ring_cond[i] + (2*max_local))) +\
+					(self.perov_frac[i] / (self.perov_cond[i] + (2*max_local))) +\
 					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*max_local))) +\
 					(self.other_frac[i] / (self.other_cond[i] + (2*max_local)))					
 					)**(-1.0)) -\
@@ -2282,6 +2364,10 @@ class SEEL(object):
 				(self.sulphide_frac[idx_node]*self.sulphide_cond[idx_node]) +\
 				(self.graphite_frac[idx_node]*self.graphite_cond[idx_node]) +\
 				(self.ol_frac[idx_node]*self.ol_cond[idx_node]) +\
+				(self.sp_frac[idx_node]*self.sp_cond[idx_node]) +\
+				(self.wad_frac[idx_node]*self.wad_cond[idx_node]) +\
+				(self.ring_frac[idx_node]*self.ring_cond[idx_node]) +\
+				(self.perov_frac[idx_node]*self.perov_cond[idx_node]) +\
 				(self.mixture_frac[idx_node]*self.mixture_cond[idx_node]) +\
 				(self.other_frac[idx_node]*self.other_cond[idx_node])
 				
@@ -2353,6 +2439,14 @@ class SEEL(object):
 						self.graphite_cond[i] = -999
 					if self.ol_frac[i] == 0.0:
 						self.ol_cond[i] = -999
+					if self.sp_frac[i] == 0.0:
+						self.sp_cond[i] = -999
+					if self.wad_frac[i] == 0.0:
+						self.wad_cond[i] = -999
+					if self.ring_frac[i] == 0.0:
+						self.ring_cond[i] = -999
+					if self.perov_frac[i] == 0.0:
+						self.perov_cond[i] = -999
 					if self.mixture_frac[i] == 0.0:
 						self.mixture_cond[i] = -999
 					if self.other_frac[i] == 0.0:
@@ -2369,6 +2463,10 @@ class SEEL(object):
 				(self.sulphide_frac[idx_node] / self.sulphide_cond[idx_node]) +\
 				(self.graphite_frac[idx_node] / self.graphite_cond[idx_node]) +\
 				(self.ol_frac[idx_node] / self.ol_cond[idx_node]) +\
+				(self.sp_frac[idx_node] / self.sp_cond[idx_node]) +\
+				(self.wad_frac[idx_node] / self.wad_cond[idx_node]) +\
+				(self.ring_frac[idx_node] / self.ring_cond[idx_node]) +\
+				(self.perov_frac[idx_node] / self.perov_cond[idx_node]) +\
 				(self.mixture_frac[idx_node] / self.mixture_cond[idx_node]) +\
 				(self.other_frac[idx_node] / self.other_cond[idx_node]))
 				
@@ -2401,6 +2499,10 @@ class SEEL(object):
 				(self.sulphide_cond[idx_node]**self.sulphide_frac[idx_node]) *\
 				(self.graphite_cond[idx_node]**self.graphite_frac[idx_node]) *\
 				(self.ol_cond[idx_node]**self.ol_frac[idx_node]) *\
+				(self.sp_cond[idx_node]**self.sp_frac[idx_node]) *\
+				(self.wad_cond[idx_node]**self.wad_frac[idx_node]) *\
+				(self.ring_cond[idx_node]**self.ring_frac[idx_node]) *\
+				(self.perov_cond[idx_node]**self.perov_frac[idx_node]) *\
 				(self.mixture_cond[idx_node]**self.mixture_frac[idx_node]) *\
 				(self.other_cond[idx_node]**self.other_frac[idx_node])
 				
@@ -2620,13 +2722,33 @@ class SEEL(object):
 			else:
 				self.ol_cond = np.zeros(len(self.T))
 				
+			if np.mean(self.sp_frac) != 0:
+				self.sp_cond = self.calculate_mineral_conductivity(method = method, min_idx= 22, sol_idx = index)
+			else:
+				self.sp_cond = np.zeros(len(self.T))
+				
+			if np.mean(self.wad_frac) != 0:
+				self.wad_cond = self.calculate_mineral_conductivity(method = method, min_idx= 23, sol_idx = index)
+			else:
+				self.wad_cond = np.zeros(len(self.T))
+				
+			if np.mean(self.ring_frac) != 0:
+				self.ring_cond = self.calculate_mineral_conductivity(method = method, min_idx= 24, sol_idx = index)
+			else:
+				self.ring_cond = np.zeros(len(self.T))
+				
+			if np.mean(self.ol_frac) != 0:
+				self.perov_cond = self.calculate_mineral_conductivity(method = method, min_idx= 25, sol_idx = index)
+			else:
+				self.perov_cond = np.zeros(len(self.T))
+				
 			if np.mean(self.mixture_frac) != 0:
-				self.mixture_cond = self.calculate_mineral_conductivity(method = method, min_idx= 22, sol_idx = index)
+				self.mixture_cond = self.calculate_mineral_conductivity(method = method, min_idx= 26, sol_idx = index)
 			else:
 				self.mixture_cond = np.zeros(len(self.T))
 	
 			if np.mean(self.other_frac) != 0:
-				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 23, sol_idx = index)
+				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 27, sol_idx = index)
 			else:
 				self.other_cond = np.zeros(len(self.T))
 					
@@ -2679,8 +2801,12 @@ class SEEL(object):
 			float(self.dens_mat[19][SEEL.sulphide_cond_selection])/1e3,
 			float(self.dens_mat[20][SEEL.graphite_cond_selection])/1e3,
 			float(self.dens_mat[21][SEEL.ol_cond_selection])/1e3,
-			float(self.dens_mat[22][SEEL.mixture_cond_selection])/1e3,
-			float(self.dens_mat[23][SEEL.other_cond_selection])/1e3] 
+			float(self.dens_mat[22][SEEL.sp_cond_selection])/1e3,
+			float(self.dens_mat[23][SEEL.wad_cond_selection])/1e3,
+			float(self.dens_mat[24][SEEL.ring_cond_selection])/1e3,
+			float(self.dens_mat[25][SEEL.perov_cond_selection])/1e3,
+			float(self.dens_mat[26][SEEL.mixture_cond_selection])/1e3,
+			float(self.dens_mat[27][SEEL.other_cond_selection])/1e3] 
 						
 			self.density_solids = np.zeros(len(self.T))
 			
@@ -2690,7 +2816,8 @@ class SEEL(object):
 				
 				phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
 					self.opx_frac[i], self.cpx_frac[i], self.mica_frac[i], self.garnet_frac[i],
-					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.mixture_frac[i], self.other_frac[i]]
+					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.sp_frac[i], self.wad_frac[i],
+					self.ring_frac[i], self.perov_frac[i], self.mixture_frac[i], self.other_frac[i]]
 				
 				for j in range(0,len(phase_list)):
 					density_indv = density_indv + (phase_list[j] * dens_list[j])
@@ -2901,6 +3028,26 @@ class SEEL(object):
 		melt_water = h2o_bulk / (melt_mass_frac + ((1.0 - melt_mass_frac) * d_per_melt))
 
 		return melt_water
+		
+	def conditional_fugacity_calculations(self, min_idx, sol_choice):
+	
+		if self.mineral_sol_fug[min_idx][sol_choice] == 'Y':
+				if self.water_fugacity_calculated == False:
+					self.calculate_water_fugacity()
+				water_fug = self.water_fugacity	
+				
+		else:
+		
+			water_fug = np.zeros(1)
+				
+		if self.mineral_sol_o2_fug[min_idx][sol_choice] == 'Y':
+		
+			o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
+			
+		else:
+			o2_fug = np.zeros(1)
+			
+		return water_fug, o2_fug
 			
 	def calculate_mineral_water_solubility(self, method, mineral_name, **kwargs):
 	
@@ -2914,27 +3061,15 @@ class SEEL(object):
 		if mineral_name == 'ol':
 			
 			min_idx = 10
-			if self.mineral_sol_fug[min_idx][self.ol_sol_choice] == 'Y':
-				if self.water_fugacity_calculated == False:
-					self.calculate_water_fugacity()
-				water_fug = self.water_fugacity	
-				
-			else:
-			
-				water_fug = np.zeros(1)
-					
-			if self.mineral_sol_o2_fug[min_idx][self.ol_sol_choice] == 'Y':
-			
-				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
-				
-			else:
-				o2_fug = np.zeros(1)
+			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.ol_sol_choice)
 				
 			if ('From' in self.mineral_sol_name[min_idx][self.ol_sol_choice]) == True:
 			
 				if ('Opx' in self.mineral_sol_name[min_idx][self.ol_sol_choice]) == True:
 				
-					self.max_ol_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") / self.d_opx_ol
+					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
+				
+					self.max_ol_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug,fe_ol = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')") / self.d_opx_ol
 					
 			else:
 				try:
@@ -2944,99 +3079,68 @@ class SEEL(object):
 		elif mineral_name == 'opx':
 			
 			min_idx = 4
-			if self.mineral_sol_fug[min_idx][self.opx_sol_choice] == 'Y':
-				if self.water_fugacity_calculated == False:
-					self.calculate_water_fugacity()
-				water_fug = self.water_fugacity	
-				
-			else:
-			
-				water_fug = np.zeros(1)
-					
-			if self.mineral_sol_o2_fug[min_idx][self.opx_sol_choice] == 'Y':
-			
-				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
-				
-			else:
-				o2_fug = np.zeros(1)
+			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.opx_sol_choice)
 				
 			if ('From' in self.mineral_sol_name[min_idx][self.opx_sol_choice]) == True:
 			
 				if ('Ol' in self.mineral_sol_name[min_idx][self.opx_sol_choice]) == True:
 				
-					self.max_opx_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * self.d_opx_ol
+					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
+					
+					self.max_opx_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_opx_ol
 					
 			else:
 				
-				self.max_opx_water = eval(self.mineral_sol_name[min_idx][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], al_opx = None, method = 'array')")
+				self.max_opx_water = eval(self.mineral_sol_name[min_idx][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')")
 		
 			
 		elif mineral_name == 'cpx':
 			
 			min_idx = 5
-			if self.mineral_sol_fug[min_idx][self.cpx_sol_choice] == 'Y':
-				if self.water_fugacity_calculated == False:
-					self.calculate_water_fugacity()
-				water_fug = self.water_fugacity	
-				
-			else:
 			
-				water_fug = np.zeros(1)
-					
-			if self.mineral_sol_o2_fug[min_idx][self.cpx_sol_choice] == 'Y':
-			
-				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
-				
-			else:
-				o2_fug = np.zeros(1)
+			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.cpx_sol_choice)
 			
 				
 			if ('From' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
 			
 				if ('Ol' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
+					
+					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
 				
-					self.max_cpx_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * self.d_cpx_ol
+					self.max_cpx_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_cpx_ol
 					
 				elif ('Opx' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
 				
-					self.max_cpx_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * (self.d_cpx_ol/self.d_opx_ol)
+					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
+				
+					self.max_cpx_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * (self.d_cpx_ol/self.d_opx_ol)
 					
 			else:
 				
-				self.max_opx_water = eval(self.mineral_sol_name[min_idx][self.cpx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], method = 'array')")
+				self.max_cpx_water = eval(self.mineral_sol_name[min_idx][self.cpx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.cpx_xfe[idx_node], al_opx = self.al_cpx[idx_node], method = 'array')")
 			
 		elif mineral_name == 'garnet':
 			
 			min_idx = 7
-			if self.mineral_sol_fug[min_idx][self.garnet_sol_choice] == 'Y':
-				if self.water_fugacity_calculated == False:
-					self.calculate_water_fugacity()
-				water_fug = self.water_fugacity	
-				
-			else:
-			
-				water_fug = np.zeros(1)
-					
-			if self.mineral_sol_o2_fug[min_idx][self.garnet_sol_choice] == 'Y':
-			
-				o2_fug = self.calculate_fugacity(mode = SEEL.o2_buffer)
-				
-			else:
-				o2_fug = np.zeros(1)	
+			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.garnet_sol_choice)
 				
 			if ('From' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
 			
 				if ('Ol' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
 				
-					self.max_garnet_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * self.d_garnet_ol
+					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
+				
+					self.max_garnet_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_garnet_ol
 					
 				elif ('Opx' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
 				
-					self.max_garnet_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, method = 'array')") * (self.d_garnet_ol/self.d_opx_ol)
+					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
+				
+					self.max_garnet_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')") * (self.d_garnet_ol/self.d_opx_ol)
 					
 			else:
 				
-				self.max_garnet_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], method = 'array')")
+				self.max_garnet_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_garnet = self.garnet_xfe[idx_node], method = 'array')")
 			
 			
 	def calculate_bulk_mantle_water_solubility(self, method, **kwargs):
@@ -3045,9 +3149,8 @@ class SEEL(object):
 		self.calculate_mineral_water_solubility(mineral_name = 'opx', method = method)
 		self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
 		self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
-		self.max_bulk_water = (self.max_ol_water * self.ol_frac) + (self.opx_h2o * self.opx_frac) + (self.cpx_h2o * self.cpx_frac) + (self.gt_h2o * self.gt_frac)
-		print(self.max_bulk_water)
-		
+		self.max_bulk_water = (self.max_ol_water * self.ol_frac) + (self.max_opx_water * self.opx_frac) + (self.max_cpx_water * self.cpx_frac) + (self.max_garnet_water * self.gt_frac)
+
 	def savetextfile(self):
 
 		if self.write_file_save_name != '':
