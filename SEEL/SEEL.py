@@ -1866,7 +1866,7 @@ class SEEL(object):
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
 
-		if (min_idx < 11) or (min_idx > 23):
+		if (min_idx < 11) or (min_idx > 27):
 			raise ValueError("The index chosen for mineral conductivity does not appear to be correct. It has to be a value between 11 and 23.")
 
 		cond = np.zeros(len(self.T))
