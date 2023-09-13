@@ -2869,7 +2869,6 @@ class SEEL(object):
 
 					self.fo2[i] = 10**((self.A_FMQ_high / self.T[i]) + self.B_FMQ_high + ((self.C_FMQ_high * ((self.p[i]*1e4) - 1)) / self.T[i]))
 
-
 		elif (mode == 2):
 
 			self.fo2 = np.zeros(len(self.T))
@@ -2899,8 +2898,6 @@ class SEEL(object):
 			self.water_fugacity = Pitzer_and_Sterner_1994_PureWaterEOS(T = self.T, P = self.p)
 			
 			self.water_fugacity_calculated = True
-		
-		
 		
 	def load_mantle_water_partitions(self, method, **kwargs):
 	
@@ -3021,6 +3018,10 @@ class SEEL(object):
 		#calculating cpx water content
 		SEEL.garnet_water[idx_node] = SEEL.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		SEEL.garnet_water[self.garnet_frac == 0] = 0.0
+		
+	def transition_zone_water_distribute(self, method, **kwargs):
+	
+		pass
 					
 	def calculate_melt_water(self, h2o_bulk, melt_mass_frac, d_per_melt):
 
@@ -3239,7 +3240,6 @@ class SEEL(object):
 			self.na2o_melt = np.ones(len(self.T)) * self.na2o_melt[0]
 			self.k2o_melt = np.ones(len(self.T)) * self.k2o_melt[0]
 
-		
 	def write_results(self):
 
 		lines = ['Bulk_Cond[S/m],Melt_Fluid_Cond[S/m],Solid_Cond[S/m],T[K],Depth[km],P[GPa]\n']
