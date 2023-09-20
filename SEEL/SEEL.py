@@ -503,7 +503,7 @@ class SEEL(object):
 			  self.amp_cond_data, self.kfelds_cond_data, self.opx_cond_data, self.cpx_cond_data, self.mica_cond_data,
 			  self.garnet_cond_data, self.sulphides_cond_data, self.graphite_cond_data, self.ol_cond_data, self.spinel_cond_data, self.wadsleyite_cond_data,
 			  self.ringwoodite_cond_data, self.perovskite_cond_data, self.mixture_cond_data, self.other_cond_data]
-
+			  
 		len_fluid = len(self.fluid_cond_data) - 1 
 		len_melt = len(self.melt_cond_data) - 1
 
@@ -534,12 +534,12 @@ class SEEL(object):
 		len_ol = len(self.ol_cond_data) - 1
 		len_sp = len(self.spinel_cond_data) - 1
 		len_wds = len(self.wadsleyite_cond_data) - 1
-		len_rwd = len(self.perovskite_cond_data) - 1
-		len_perov = len(self.ringwoodite_cond_data) - 1
+		len_rwd = len(self.ringwoodite_cond_data) - 1
+		len_perov = len(self.perovskite_cond_data) - 1
 		len_mixture = len(self.mixture_cond_data) - 1
 		len_other = len(self.other_cond_data) - 1
-
-		self.mineral_num = 16
+		
+		self.mineral_num = 17
 		
 		def create_nan_array():
 		
@@ -578,11 +578,13 @@ class SEEL(object):
 		self.alpha_p_err = create_nan_array()
 		self.wtype = create_nan_array()
 		self.dens_mat = create_nan_array()
-
+		
 		#Filling up the arrays.
 		for i in range(0,len(SEEL.type)):
 			count = 1
+			
 			for j in range(0,len(SEEL.type[i])):
+
 				SEEL.name[i][count-1] = self.cond_data_array[i][count][0]
 				SEEL.type[i][count-1] = self.cond_data_array[i][count][1]
 				SEEL.t_min[i][count-1] = float(self.cond_data_array[i][count][2])
