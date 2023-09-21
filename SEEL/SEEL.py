@@ -3021,9 +3021,6 @@ class SEEL(object):
 		SEEL.garnet_water[idx_node] = SEEL.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		SEEL.garnet_water[self.garnet_frac == 0] = 0.0
 		
-	def transition_zone_water_distribute(self, method, **kwargs):
-	
-		pass
 					
 	def calculate_melt_water(self, h2o_bulk, melt_mass_frac, d_per_melt):
 
