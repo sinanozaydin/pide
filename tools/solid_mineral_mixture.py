@@ -2,7 +2,7 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEEL')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
 
 sys.path.append(core_path_ext)
 
@@ -33,13 +33,13 @@ sys.path.append(core_path_ext)
 # other_rock: other rocks
 
 
-import SEEL
+import SEL
 import numpy as np
 import matplotlib.pyplot as plt
 
 temp = np.arange(600,1300,5) #setting up temperature array
 temp_melt = np.arange(1300,1800,5)
-a = SEEL.SEEL() #creating the initial object
+a = SEL.SEL() #creating the initial object
 
 a.set_temperature(temp) #settin temperature array in K
 a.set_pressure(1.0)

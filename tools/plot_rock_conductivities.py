@@ -2,11 +2,11 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEEL')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
 
 sys.path.append(core_path_ext)
 
-import SEEL
+import SEL
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 #other:other
 
 temp = np.arange(600,1300,5) #setting up temperature array
-a = SEEL.SEEL() #creating the initial object
+a = SEL.SEL() #creating the initial object
 a.set_composition_solid_rock(granite = 1) #setting composition
 a.set_temperature(temp) #settin temperature array in K
 a.set_pressure(1.0)

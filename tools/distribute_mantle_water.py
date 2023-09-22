@@ -2,16 +2,16 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEEL')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
 
 sys.path.append(core_path_ext)
 
-import SEEL
+import SEL
 import numpy as np
 import matplotlib.pyplot as plt
 
 temp = np.arange(600,1300,5) 
-a = SEEL.SEEL() #creating the initial object
+a = SEL.SEL() #creating the initial object
 a.set_temperature(temp)
 a.set_composition_solid_mineral(ol = 0.6, opx = 0.25, cpx = 0.1, garnet = 0.05) #setting composition
 a.set_phase_interconnectivities(ol = 1, opx = 2, cpx = 4, gt = 4, melt = 1)

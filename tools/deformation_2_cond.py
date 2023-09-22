@@ -2,13 +2,13 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEEL')
-core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEEL/seel_src')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
+core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL/sel_src')
 sys.path.append(core_path_ext)
 sys.path.append(core_path_ext_2)
 
-import SEEL
-from seel_src.deformation.deform_cond import plastic_strain_2_conductivity
+import SEL
+from sel_src.deformation.deform_cond import plastic_strain_2_conductivity
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -20,7 +20,7 @@ strains_log = np.log10(strains)
 
 
 temp = np.array([800]) #setting up temperature array
-a = SEEL.SEEL() #creating the initial object
+a = SEL.SEL() #creating the initial object
 a.set_composition_solid_mineral(ol = [1.0]) #setting composition
 a.set_temperature(temp) #settin temperature array in K
 a.set_pressure(1.0)

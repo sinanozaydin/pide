@@ -1,1 +1,1 @@
-# CATE
+# SEL - Synthetic Earth Library
