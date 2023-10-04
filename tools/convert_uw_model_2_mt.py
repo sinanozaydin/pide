@@ -10,6 +10,7 @@ sys.path.append(core_path_ext_2)
 
 import SEL
 from sel_src.geodyn.read_uw_model import *
+from sel_src.geodyn.interpolate_fields import interpolate_2d_fields
 
 #setting up source folder of the files
 source_folder = os.path.join('.','example_data','uwconversion')
@@ -47,15 +48,15 @@ melt_array = setup_uw_data_array_PROJ(melt_data)
 strain_rate_array = setup_uw_data_array_PROJ(strain_rate_data)
 temp_array = setup_uw_data_array_PROJ(temp_data) #mesh
 pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gigapascal
-stress_array = setup_uw_data_array_PROJ(stress_data) 
 
-
-#Plotting fields if want to.
 
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b')
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = pstrain_array, cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'binary')
-# plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm')
+# plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'regular_array',plot_save = True)
 # plot_2D_underworld_Field(x_array = mesh_center[0], y_array = mesh_center[1], Field = pressure_array, cblimit_up = 10, cblimit_down = 0, log_bool=False, cb_name = 'coolwarm')
 
+#Converting larger arrays into mesh_center locations.
+temp_array = interpolate_2d_fields(mesh,temp_array,mesh_center)
+melt_array = interpolate_2d_fields(mesh,melt_array,mesh_center)
+pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 
-print(len(temp_array))

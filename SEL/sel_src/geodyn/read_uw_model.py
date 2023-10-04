@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, csv
+import sys, csv, os
 import numpy as np
 import h5py
 
@@ -93,7 +93,7 @@ def setup_2d_mesh(mesh_data):
 	mesh_array = np.array(list(mesh_data['vertices']))
 	mesh_x_array = mesh_array[:,0]
 	mesh_y_array = -1 * mesh_array[:,1] #changing the minus direction in the Earth.
-
+	
 	print('#######################')
 	print('Setting up the mesh parameters...')
 	for i in range(0,3):
@@ -159,15 +159,20 @@ def setup_uw_data_array_PROJ(data):
 	
 	return array
 	
-def plot_2D_underworld_Field(x_array = None, y_array = None, Field = None,cblimit_up = None, cblimit_down = None, log_bool = False,cb_name = 'coolwarm'):
+def plot_2D_underworld_Field(x_array = None, y_array = None, Field = None,cblimit_up = None, cblimit_down = None, log_bool = False,cb_name = 'coolwarm',**kwargs):
 
 	import matplotlib.pyplot as plt
 	import matplotlib.colors as colors
+	
+	plot_save = kwargs.pop('plot_save', False)
+	label = kwargs.pop('label', 'Interpolated_UW_Figure.png')
 
 	fig = plt.figure(figsize = (12,7))
 	ax = plt.subplot(111)
 	ax.set_ylim(np.amax(y_array),np.amin(y_array))
 	ax.set_xlim(np.amin(x_array),np.amax(x_array))
+	ax.set_ylabel('Depth [km]')
+	ax.set_xlabel('Distance [km]')
 	if log_bool == True:
 		cax = ax.scatter(x_array, y_array ,c = Field, cmap = cb_name, norm=colors.LogNorm(), marker = 's', linewidth = 0.005, edgecolor = 'k')
 	elif log_bool == False:
@@ -185,5 +190,8 @@ def plot_2D_underworld_Field(x_array = None, y_array = None, Field = None,cblimi
 		bondary = np.linspace(cblimit_down, cblimit_up)
 		cbar_cax = fig.colorbar(cax,boundaries=bondary ,orientation="vertical", pad=0.05, ax = ax)
 		
-		
-	plt.show()
+	if plot_save == False:
+		plt.show()
+	elif plot_save == True:
+		plt.savefig(label, dpi = 300)
+		print('The file is saved as: ' + label + ' at location: ' + os.getcwd())
