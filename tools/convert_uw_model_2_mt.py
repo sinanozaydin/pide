@@ -9,8 +9,8 @@ sys.path.append(core_path_ext)
 sys.path.append(core_path_ext_2)
 
 import SEL
-from sel_src.geodyn.read_uw_model import *
-from sel_src.geodyn.interpolate_fields import interpolate_2d_fields
+from geodyn.read_uw_model import *
+from geodyn.interpolate_fields import interpolate_2d_fields
 
 #setting up source folder of the files
 source_folder = os.path.join('.','example_data','uwconversion')
@@ -56,7 +56,8 @@ pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gi
 # plot_2D_underworld_Field(x_array = mesh_center[0], y_array = mesh_center[1], Field = pressure_array, cblimit_up = 10, cblimit_down = 0, log_bool=False, cb_name = 'coolwarm')
 
 #Converting larger arrays into mesh_center locations.
-temp_array = interpolate_2d_fields(mesh,temp_array,mesh_center)
-melt_array = interpolate_2d_fields(mesh,melt_array,mesh_center)
-pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
+# temp_array = interpolate_2d_fields(mesh,temp_array,mesh_center)
+# melt_array = interpolate_2d_fields(mesh,melt_array,mesh_center)
+# pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 
+print(material_names)
