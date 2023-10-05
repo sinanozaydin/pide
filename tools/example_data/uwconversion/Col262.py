@@ -268,29 +268,6 @@ Oceanic_Upper_Crust.add_melt_modifier(solidii.Crustal_Solidus, liquidii.Crustal_
                                                                                         viscosityChange = 1e-3)
 Oceanic_Upper_Crust.stressLimiter = 300. * u.megapascal
 
-# +
-# #Oceanic Lower-Crust (This wasn't in the file?)
-# Oceanic_Lower_Crust = Model.add_material(name="Oceanic Lower-Crust", shape=GEO.shapes.Polygon([
-#                                                               (586 * u.kilometer,-13 * u.kilometer),
-#                                                               (1536 * u.kilometer,-13 * u.kilometer),
-#                                                               (1536 * u.kilometer,-20 * u.kilometer),
-#                                                               (577 * u.kilometer,-20 * u.kilometer)]))
-# Oceanic_Lower_Crust.density = 3200 * u.kilogram / u.metre**3
-# Oceanic_Lower_Crust.radiogenicHeatProd = 0.0 * u.watt / u.meter**3
-# Oceanic_Lower_Crust.diffusivity = 1e-6 * u.metre**2 / u.second 
-# Oceanic_Lower_Crust.capacity = 1000. * u.joule / (u.kelvin * u.kilogram)
-# Oceanic_Lower_Crust.viscosity = 2e21 * u.pascal * u.second
-# Oceanic_Lower_Crust.plasticity = pl.Rey_et_al_2014_LowerCrust
-# Oceanic_Lower_Crust.add_melt_modifier(solidii.Crustal_Solidus, liquidii.Crustal_Liquidus, 
-#                                                                                       latentHeatFusion=250.0 * u.kilojoules / u.kilogram / u.kelvin,
-#                                                                                       meltFraction=0.2,
-#                                                                                       meltFractionLimit=0.3,
-#                                                                                       meltExpansion=0.13, 
-#                                                                                       viscosityChangeX1 = 0.15,
-#                                                                                       viscosityChangeX2 = 0.30,
-#                                                                                       viscosityChange = 1e-3)
-# Oceanic_Lower_Crust.stressLimiter = 150. * u.megapascal
-# -
 
 #Continental Sediments UP
 Continental_Sediments_UP_Object = Model.add_material(name="Continental Upper Crust Upper Plate", shape=GEO.shapes.Polygon([

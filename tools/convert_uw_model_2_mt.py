@@ -9,6 +9,7 @@ sys.path.append(core_path_ext)
 sys.path.append(core_path_ext_2)
 
 import SEL
+from material import Material
 from geodyn.read_uw_model import *
 from geodyn.interpolate_fields import interpolate_2d_fields
 
@@ -41,14 +42,16 @@ mesh, mesh_center, x_mesh, y_mesh, borders_mesh = setup_2d_mesh(mesh_data)
 #getting material_array
 material_array, air_material_idx = setup_material(material_data, material_names)
 
+"""
 #getting strain array
 pstrain_array = setup_uw_data_array_PROJ(pstrain_data)
 stress_array = setup_uw_data_array_PROJ(stress_data)
 melt_array = setup_uw_data_array_PROJ(melt_data)
 strain_rate_array = setup_uw_data_array_PROJ(strain_rate_data)
+
 temp_array = setup_uw_data_array_PROJ(temp_data) #mesh
 pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gigapascal
-
+"""
 
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b')
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = pstrain_array, cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'binary')
@@ -60,4 +63,27 @@ pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gi
 # melt_array = interpolate_2d_fields(mesh,melt_array,mesh_center)
 # pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 
-print(material_names)
+# sel_object = SEL.SEL()
+# list_garnet_models = sel_object.list_mineral_econd_models('garnet')
+# list_cpx_models = sel_object.list_mineral_econd_models('cpx')
+# list_ol_models = sel_object.list_mineral_econd_models('ol')
+# list_opx_models = sel_object.list_mineral_econd_models('opx')
+
+#Eclogite object
+#index 17 garnet is Liu2022 Wet
+Eclogite_Object = Material(name = 'Eclogite_Object', mineral_or_rock = 'mineral', composition = {'garnet':0.6,'cpx':0.4}, interconnectivities = {'garnet':1, 'cpx':1.5}, 
+el_cond_selections = {'garnet':17,'cpx':0}, water = {'garnet':50,'cpx':0}, xfe = {'garnet':0.2, 'cpx':0.5}, phase_mixing_idx = 0)
+
+Lithospheric_Mantle_Object = Material(name = 'Lithospheric_Mantle_Object', mineral_or_rock = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
+interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0)
+
+Asthenospheric_Mantle_Object = Material(name = 'Asthenospheric_Mantle_Object', mineral_or_rock = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
+interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0)
+
+Mantle_Wedge_Object = Material(name = 'Mantle_Wedge_Object', mineral_or_rock = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
+interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':'solubility'}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0)
+
+Oceanic_Sediment = Material(name = 'Oceanic_Sediment', mineral_or_rock = 'rock', )
