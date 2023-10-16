@@ -2,7 +2,7 @@
 
 import numpy as np
 
-def interpolate_2d_fields(mesh_field, vals, mesh_out):
+def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 
 	#Function to interpolate a larger data array defined by np.meshgrid(mesh_field) and associated values(vals)
 
@@ -17,6 +17,6 @@ def interpolate_2d_fields(mesh_field, vals, mesh_out):
 			
 	points_interp = np.column_stack((np.array(points_x), np.array(points_y)))
 	
-	interp_vals = griddata(points_interp, vals, (mesh_out[0],mesh_out[1]),method = 'linear')
+	interp_vals = griddata(points_interp, vals, (mesh_out[0],mesh_out[1]),method = method)
 	
 	return interp_vals

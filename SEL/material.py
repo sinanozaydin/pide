@@ -4,28 +4,54 @@ import SEL
 
 class Material(object):
 
-	def __init__(self, name = "Unnamed", mineral_or_rock = 'mineral', composition = {'ol':1}, interconnectivities = {'ol':1}, el_cond_selections = {'ol':0}, water_distr = False,
-	water = {'ol':30}, xfe = {'ol':0.9}, phase_mixing_idx = 0, **kwargs):
+	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, interconnectivities = None, el_cond_selections = None, water_distr = False,
+	water = None, xfe = None, phase_mixing_idx = 0, **kwargs):
 	
 		self.mineral_list = ['ol','opx','cpx','garnet','mica','amp','quartz','plag','kfelds','sulphide','graphite','mixture','sp','wds','rwd','perov','other','bulk']
-	
+		self.rock_list = ['granite', 'granulite', 'sandstone', 'gneiss', 'amphibolite', 'basalt', 'mud', 'gabbro', 'other_rock']
 		self.name = name
-		self.mineral_or_rock = mineral_or_rock
+		self.material_index = material_index
+		self.calculation_type = calculation_type
 		
+		if composition == None:
+			if self.calculation_type == 'rock':
+				composition = {'granite':1}
+			else:
+				composition = {'ol':1}
 		self._composition = None
 		self.composition = composition
 		
+		if interconnectivities == None:
+			if self.calculation_type == 'rock':
+				interconnectivities = {'granite':1}
+			else:
+				interconnectivities = {'ol':1}
 		self._interconnectivities = None
 		self.interconnectivities = interconnectivities
 		
+		if el_cond_selections == None:
+			if self.calculation_type == 'rock':
+				el_cond_selections = {'granite':0}
+			else:
+				el_cond_selections = {'ol':0}
 		self._el_cond_selections = None
 		self.el_cond_selections = el_cond_selections
 		
 		self.water_distr = water_distr
 		
+		if water == None:
+			if self.calculation_type == 'rock':
+				water = {'granite':0}
+			else:
+				water = {'ol':0}
 		self._water = None
 		self.water = water
 		
+		if xfe == None:
+			if self.calculation_type == 'rock':
+				xfe = {'granite':0.1}
+			else:
+				xfe = {'ol':0.1}
 		self._xfe = None
 		self.xfe = xfe
 		
@@ -37,21 +63,46 @@ class Material(object):
 		
 		self.mantle_water_sol_ref = kwargs.pop('mantle_water_sol_ref', 'ol')
 		
-		self.surpassing_resistivity = kwargs.pop('surpassing_resistivity',100)
+		self.resistivity_medium = kwargs.pop('resistivity_medium', None)
+		
+		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
+		
+			raise AttributeError('Calculation type is selected as value. You have to set resistivity medium as a floating number in Ohm meters.')
 			
-	def check_mineral_vals(self,value,type):
+	def check_vals(self,value,type):
 		
 		for item in value:
-			if (item in self.mineral_list) == False:
-				raise ValueError('The mineral ' + item + ' is wrongly defined in the composition dictionary. The possible mineral names are:' + str(self.mineral_list))
 			
-		for item in self.mineral_list:
-			if item not in value:
-				if type == 'comp':
-					value[item] = 0
-				elif type == 'archie':
-					value[item] = 8.0
-					
+			if self.calculation_type == 'mineral':
+				if (item in self.mineral_list) == False:
+					raise ValueError('The mineral ' + item + ' is wrongly defined in the composition dictionary. The possible mineral names are:' + str(self.mineral_list))
+			elif self.calculation_type == 'rock':
+				if (item in self.rock_list) == False:
+					print(self.rock_list)
+					print(item)
+					raise ValueError('The rock ' + item + ' is wrongly defined in the composition dictionary. The possible rock names are:' + str(self.rock_list))
+			elif self.calculation_type == 'value':
+				pass
+			else:
+				raise ValueError('The calculation type is wrongly defined. It has to be one of those three: 1.mineral, 2.rock, 3.value.')
+		
+		if self.calculation_type == 'mineral':
+			list2check = self.mineral_list
+		elif self.calculation_type == 'rock':
+			list2check = self.rock_list
+		else:
+			list2check = None
+		
+		if list2check != None:
+			for item in list2check:
+				if item not in value:
+					if type == 'comp':
+						value[item] = 0
+					elif type == 'archie':
+						value[item] = 8.0
+		else:
+			value = None
+			
 		return value
 		
 	#attributes listing here
@@ -61,7 +112,7 @@ class Material(object):
 		
 	@composition.setter
 	def composition(self, value):
-		self._composition = self.check_mineral_vals(value=value,type = 'comp')
+		self._composition = self.check_vals(value=value,type = 'comp')
 		
 	@property
 	def interconnectivities(self):
@@ -69,7 +120,7 @@ class Material(object):
 		
 	@interconnectivities.setter
 	def interconnectivities(self, value):
-		self._interconnectivities = self.check_mineral_vals(value=value,type = 'archie')
+		self._interconnectivities = self.check_vals(value=value,type = 'archie')
 		
 	@property
 	def el_cond_selections(self):
@@ -77,7 +128,7 @@ class Material(object):
 		
 	@el_cond_selections.setter
 	def el_cond_selections(self, value):
-		self._el_cond_selections = self.check_mineral_vals(value=value,type = 'comp')
+		self._el_cond_selections = self.check_vals(value=value,type = 'comp')
 		
 	@property
 	def xfe(self):
@@ -85,7 +136,8 @@ class Material(object):
 		
 	@xfe.setter
 	def xfe(self, value):
-		self._xfe = self.check_mineral_vals(value=value,type = 'comp')
+		self._xfe = self.check_vals(value=value,type = 'comp')
+		
 		
 	@property
 	def solid_phase_mixing_idx(self):
@@ -94,6 +146,10 @@ class Material(object):
 	@solid_phase_mixing_idx.setter
 	def solid_phase_mixing_idx(self, value):
 		self._solid_phase_mixing_idx = value
+		
+		
+		
+		
 		
 
 		
