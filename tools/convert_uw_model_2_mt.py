@@ -67,7 +67,7 @@ pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 material_array = interpolate_2d_fields(mesh,material_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 strain_rate_array = interpolate_2d_fields(mesh_center,strain_rate_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 
-# plot_2D_underworld_Field(x_array = mesh_center[0], y_array = mesh_center[1], Field = strain_rate_array, cblimit_up = np.amax(strain_rate_array), cblimit_down = np.amin(strain_rate_array), log_bool=True, cb_name = 'coolwarm')
+plot_2D_underworld_Field(x_array = mesh_center[0], y_array = mesh_center[1], Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b',plot_save = True, label = 'material.png')
 
 sel_object = SEL.SEL()
 # list_garnet_models = sel_object.list_mineral_econd_models('garnet')
@@ -95,7 +95,7 @@ el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, 
 
 Mantle_Wedge_Object = Material(name = 'Mantle_Wedge_Object', material_index = 6, calculation_type = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
-el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':'solubility'}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0)
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water = {'bulk':200}, water_distr = True, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0)
 
 Oceanic_Sediment = Material(name = 'Oceanic_Sediment',material_index = 7, calculation_type = 'value', resistivity_medium = 50.0)
 
@@ -119,7 +119,7 @@ el_cond_selections = {'granite':0}, phase_mixing_idx = 0)
 Continental_Lower_Crust_LP_Object = Material(name = 'Continental_Lower_Crust_LP_Object', material_index = 15,calculation_type = 'rock', composition = {'granulite':1.0},interconnectivities = {'granulite':1},
 el_cond_selections = {'granulite':0}, phase_mixing_idx = 0)
 
-#NotSure 
+# #NotSure 
 Decollement_UP = Material(name = 'Decollement_UP',material_index = 16, calculation_type = 'value', resistivity_medium = 100.0)
 
 Fault = Material(name = 'Fault', material_index = 17, calculation_type = 'value', resistivity_medium = 100.0)
@@ -128,8 +128,13 @@ Fault = Material(name = 'Fault', material_index = 17, calculation_type = 'value'
 material_object_list = [Eclogite_Object,Lithospheric_Mantle_Object,Asthenospheric_Mantle_Object,Mantle_Wedge_Object,Oceanic_Sediment,Oceanic_Upper_Crust, Continental_Sediments_UP_Object,
 Continental_Upper_Crust_UP_Object,Continental_Lower_Crust_UP_Object,Decollement_LP,Continental_Sediments_LP_Object,Continental_Upper_Crust_LP_Object,
 Continental_Lower_Crust_LP_Object,Decollement_UP,Fault]
-material_object_list = [Eclogite_Object,Lithospheric_Mantle_Object]
+
+material_skip_list = [None, 5, 50,None,None,None, None,None,None,None,None,None,None,None,None]
+# material_object_list = [Eclogite_Object, Oceanic_Upper_Crust,Mantle_Wedge_Object, Decollement_UP]
 
 #creating model_object
-mt_model_object = Model(material_list = material_object_list, material_array = material_array, T = temp_array, P = pressure_array, melt = melt_array, p_strain = pstrain_array, strain_rate = strain_rate_array)
-mt_model_object.calculate_background_conductivity()
+mt_model_object = Model(material_list = material_object_list, material_array = material_array, T = temp_array, P = pressure_array, melt = melt_array, p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
+backgr_cond = mt_model_object.calculate_conductivity(type = 'background')
+
+
+plot_2D_underworld_Field(x_array = mesh_center[0], y_array = mesh_center[1], Field = backgr_cond, cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',plot_save = True,label = 'cond.png')

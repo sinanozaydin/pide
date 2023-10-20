@@ -4,7 +4,7 @@ import SEL
 
 class Material(object):
 
-	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, interconnectivities = None, el_cond_selections = None, water_distr = False,
+	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, water_distr = False,
 	water = None, xfe = None, phase_mixing_idx = 0, **kwargs):
 	
 		self.mineral_list = ['ol','opx','cpx','garnet','mica','amp','quartz','plag','kfelds','sulphide','graphite','mixture','sp','wds','rwd','perov','other','bulk']
@@ -47,6 +47,24 @@ class Material(object):
 		self._water = None
 		self.water = water
 		
+		if param1 == None:
+			if self.calculation_type == 'rock':
+				param1 = {'granite':0}
+			else:
+				param1 = {'ol':0}
+				
+		self._param1 = None
+		self.param1 = param1
+				
+		if param2 == None:
+			if self.calculation_type == 'rock':
+				param2 = {'granite':0}
+			else:
+				param2 = {'ol':0}
+		
+		self._param2 = None
+		self.param2 = param2
+		
 		if xfe == None:
 			if self.calculation_type == 'rock':
 				xfe = {'granite':0.1}
@@ -65,6 +83,10 @@ class Material(object):
 		
 		self.resistivity_medium = kwargs.pop('resistivity_medium', None)
 		
+		self.water_calib = kwargs.pop('water_calib', {'ol':3,'px-gt':2,'feldspar':2})
+		
+		self.o2_buffer = kwargs.pop('o2_buffer', 0)
+		
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
 			raise AttributeError('Calculation type is selected as value. You have to set resistivity medium as a floating number in Ohm meters.')
@@ -78,8 +100,6 @@ class Material(object):
 					raise ValueError('The mineral ' + item + ' is wrongly defined in the composition dictionary. The possible mineral names are:' + str(self.mineral_list))
 			elif self.calculation_type == 'rock':
 				if (item in self.rock_list) == False:
-					print(self.rock_list)
-					print(item)
 					raise ValueError('The rock ' + item + ' is wrongly defined in the composition dictionary. The possible rock names are:' + str(self.rock_list))
 			elif self.calculation_type == 'value':
 				pass
@@ -121,6 +141,30 @@ class Material(object):
 	@interconnectivities.setter
 	def interconnectivities(self, value):
 		self._interconnectivities = self.check_vals(value=value,type = 'archie')
+		
+	@property
+	def param1(self):
+		return self._param1
+		
+	@param1.setter
+	def param1(self, value):
+		self._param1 = self.check_vals(value=value,type = 'comp')
+		
+	@property
+	def param2(self):
+		return self._param2
+		
+	@param2.setter
+	def param2(self, value):
+		self._param2 = self.check_vals(value=value,type = 'comp')
+		
+	@property
+	def water(self):
+		return self._water
+		
+	@water.setter
+	def water(self, value):
+		self._water = self.check_vals(value=value,type = 'comp')
 		
 	@property
 	def el_cond_selections(self):

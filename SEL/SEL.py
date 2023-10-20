@@ -382,11 +382,6 @@ class SEL(object):
 											Returns:
 											Conductivity in S/m
 											
-											
-		
-							
-		
-		
 		"""
 
 		self.core_path = core_path
@@ -818,7 +813,7 @@ class SEL(object):
 		self.basalt_frac = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_frac')
 		self.mud_frac = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
 		self.gabbro_frac = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
-		self.other_rock_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_frac')
+		self.other_rock_frac = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_frac')
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
@@ -904,9 +899,10 @@ class SEL(object):
 		if (SEL.feldspar_calib < 0) or (SEL.feldspar_calib > 2):
 			raise ValueError('The feldspar calibration method has entered incorrectly. The value has to be 0-Johnson2003 1-Mosenfelder2015 or 2-Default.')
 		
-	def set_o2_buffer(self,**kwargs):
+	def set_o2_buffer(self, o2_buffer = 0):
 		
-		SEL.o2_buffer = kwargs.pop('o2_buffer', 0)
+		# SEL.o2_buffer = kwargs.pop('o2_buffer', 0)
+		SEL.o2_buffer = o2_buffer
 		
 		if (SEL.o2_buffer < 0) or (SEL.o2_buffer > 4):
 			raise ValueError('The oxygen fugacity buffer has entered incorrectly. The value has to be 0-FMQ, 1-IW, 2-QIF, 3-NNO, 4-MMO')

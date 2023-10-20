@@ -195,3 +195,4 @@ def plot_2D_underworld_Field(x_array = None, y_array = None, Field = None,cblimi
 	elif plot_save == True:
 		plt.savefig(label, dpi = 300)
 		print('The file is saved as: ' + label + ' at location: ' + os.getcwd())
+		
