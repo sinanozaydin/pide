@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+import numpy as np
+import os
+
+def plot_2D_underworld_Field_scatter(x_array = None, y_array = None, Field = None,cblimit_up = None, cblimit_down = None, log_bool = False,cb_name = 'coolwarm',**kwargs):
+
+	import matplotlib.pyplot as plt
+	import matplotlib.colors as colors
+	
+	plot_save = kwargs.pop('plot_save', False)
+	label = kwargs.pop('label', 'Interpolated_UW_Figure.png')
+
+	fig = plt.figure(figsize = (12,7))
+	ax = plt.subplot(111)
+	ax.set_ylim(np.amax(y_array),np.amin(y_array))
+	ax.set_xlim(np.amin(x_array),np.amax(x_array))
+	ax.set_ylabel('Depth [km]')
+	ax.set_xlabel('Distance [km]')
+	if log_bool == True:
+		cax = ax.scatter(x_array, y_array ,c = Field, cmap = cb_name, norm=colors.LogNorm(), marker = 's', linewidth = 0.005, edgecolor = 'k')
+	elif log_bool == False:
+		cax = ax.scatter(x_array, y_array ,c = Field, cmap = cb_name, marker = 's', linewidth = 0.005, edgecolor = 'k')
+	cax.set_clim(cblimit_down,cblimit_up)
+
+	if log_bool == True:
+		bondary = np.logspace(np.log10(cblimit_down),np.log10(cblimit_up))
+		tick_array = np.arange(np.log10(cblimit_down),np.log10(cblimit_up)+1, 1)
+		tick_array_list = 10.0**tick_array
+		cbar_cax = fig.colorbar(cax,boundaries=bondary ,orientation="vertical", pad=0.05,
+		ticks = tick_array_list, ax = ax)
+		
+	elif log_bool == False:
+		bondary = np.linspace(cblimit_down, cblimit_up)
+		cbar_cax = fig.colorbar(cax,boundaries=bondary ,orientation="vertical", pad=0.05, ax = ax)
+		
+	if plot_save == False:
+		plt.show()
+	elif plot_save == True:
+		plt.savefig(label, dpi = 300)
+		print('The file is saved as: ' + label + ' at location: ' + os.getcwd())
+		
+
+def plot_2D_underworld_Field(xmesh = None, ymesh = None, Field = None,cblimit_up = None, cblimit_down = None, log_bool = False,cb_name = 'coolwarm',**kwargs):
+
+	import matplotlib.pyplot as plt
+	import matplotlib.colors as colors
+	
+	plot_save = kwargs.pop('plot_save', False)
+	label = kwargs.pop('label', 'Interpolated_UW_Figure.png')
+	cbar_label = kwargs.pop('cbar_label',None)
+		
+	fnew = np.squeeze(Field, axis=2)
+	
+	contains_nan = np.isnan(fnew).any()
+	
+	if contains_nan == True:
+	
+		from scipy.interpolate import griddata
+		#interpolating 
+		
+		xi = xmesh
+		yi = ymesh
+		x_i,  y_i = np.meshgrid(xmesh,ymesh)
+		
+		mask = np.isnan(fnew)
+		points = np.column_stack((x_i[~mask], y_i[~mask]))
+		values = fnew[~mask]
+				
+		fnew = griddata(points, values, (x_i, y_i),method = 'linear')
+		
+	else:
+	
+		xi = xmesh
+		yi = ymesh
+
+	fig = plt.figure(figsize = (12,7))
+	ax = plt.subplot(111)
+	if log_bool == True:
+		cax = ax.pcolormesh(xi, yi, fnew, cmap = cb_name, norm=colors.LogNorm())
+	elif log_bool == False:
+		cax = ax.pcolor(xi, yi, fnew, cmap = cb_name)
+		
+	cax.set_clim(cblimit_down,cblimit_up)
+	ax.set_ylim(np.amax(ymesh),np.amin(ymesh))
+	ax.set_xlim(np.amin(xmesh),np.amax(xmesh))
+	ax.set_ylabel('Depth [km]')
+	ax.set_xlabel('Distance [km]')
+	
+	if log_bool == True:
+		bondary = np.logspace(np.log10(cblimit_down),np.log10(cblimit_up))
+		tick_array = np.arange(np.log10(cblimit_down),np.log10(cblimit_up)+1, 1)
+		tick_array_list = 10.0**tick_array
+		cbar_cax = fig.colorbar(cax,boundaries=bondary ,orientation="vertical", pad=0.05,
+		ticks = tick_array_list, ax = ax,label = cbar_label)
+	elif log_bool == False:
+		bondary = np.linspace(cblimit_down, cblimit_up)
+		cbar_cax = fig.colorbar(cax,boundaries=bondary ,orientation="vertical", pad=0.05, ax = ax,label = cbar_label)
+		
+	if plot_save == False:
+		plt.show()
+	elif plot_save == True:
+		plt.savefig(label, dpi = 300)
+		print('The file is saved as: ' + label + ' at location: ' + os.getcwd())
+	

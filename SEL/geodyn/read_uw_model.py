@@ -130,7 +130,7 @@ def setup_2d_mesh(mesh_data):
 	mesh = np.meshgrid(x_mesh, y_mesh)
 	mesh_center = np.meshgrid(x_mesh_centers, y_mesh_centers)
 	
-	return mesh, mesh_center, x_mesh, y_mesh, borders_mesh
+	return mesh, mesh_center, x_mesh, y_mesh, x_mesh_centers, y_mesh_centers, borders_mesh
 		
 def setup_material(material_data, material_names):
 

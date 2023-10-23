@@ -13,6 +13,7 @@ from material import Material
 from model import Model
 from geodyn.read_uw_model import *
 from geodyn.interpolate_fields import interpolate_2d_fields
+from geodyn.plot_models import *
 
 #setting up source folder of the files
 source_folder = os.path.join('.','example_data','uwconversion')
@@ -38,7 +39,7 @@ material_h5= material_fnm, strain_h5 = pstrain_fnm, stress_h5 = stress_fnm, melt
 material_names = read_uw_material_names_from_py_input(py_start_fnm)
 
 #reading 2d mesh params mesh itself, mesh_centers mesh, array in x direction, array in y direction, borders of the mesh[max_x, min_x, max_y, min_y]
-mesh, mesh_center, x_mesh, y_mesh, borders_mesh = setup_2d_mesh(mesh_data)
+mesh, mesh_center, x_mesh, y_mesh, x_mesh_centers, y_mesh_centers, borders_mesh = setup_2d_mesh(mesh_data)
 
 #getting material_array
 material_array, air_material_idx = setup_material(material_data, material_names)
@@ -67,7 +68,8 @@ pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 material_array = interpolate_2d_fields(mesh,material_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 strain_rate_array = interpolate_2d_fields(mesh_center,strain_rate_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 
-plot_2D_underworld_Field(x_array = mesh_center[0], y_array = mesh_center[1], Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b',plot_save = True, label = 'material.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'temperature.png',cbar_label = 'Temperature [C]', plot_save = True)
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b',label = 'material.png', cbar_label = 'Material Index',plot_save = True)
 
 sel_object = SEL.SEL()
 # list_garnet_models = sel_object.list_mineral_econd_models('garnet')
@@ -136,5 +138,4 @@ material_skip_list = [None, 5, 50,None,None,None, None,None,None,None,None,None,
 mt_model_object = Model(material_list = material_object_list, material_array = material_array, T = temp_array, P = pressure_array, melt = melt_array, p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background')
 
-
-plot_2D_underworld_Field(x_array = mesh_center[0], y_array = mesh_center[1], Field = backgr_cond, cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',plot_save = True,label = 'cond.png')
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')

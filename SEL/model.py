@@ -195,6 +195,10 @@ class Model(object):
 				cond[material_idx] = self.cond_backgr
 							
 			print('The conductivity for the material ' + self.material_list[i].name + ' is calculated.')
+			
+		#converting all zero vals in the cond tuple to None values
+		cond = tuple(np.where(array == 0, np.nan, array) for array in cond)
+		
 		return cond
 			
 			
