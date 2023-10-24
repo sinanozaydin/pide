@@ -139,3 +139,4 @@ mt_model_object = Model(material_list = material_object_list, material_array = m
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background')
 
 plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
+

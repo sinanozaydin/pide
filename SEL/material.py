@@ -87,6 +87,8 @@ class Material(object):
 		
 		self.o2_buffer = kwargs.pop('o2_buffer', 0)
 		
+		self.linked_material_index = kwargs.pop('linked_material_index', None)
+		
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
 			raise AttributeError('Calculation type is selected as value. You have to set resistivity medium as a floating number in Ohm meters.')
