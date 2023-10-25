@@ -77,7 +77,7 @@ class Material(object):
 		self.phase_mixing_idx = phase_mixing_idx
 				
 		self._mantle_water_part = None
-		self.mantle_water_part = kwargs.pop('mantle_water_part', {'ol':0,'opx':0,'cpx':0,'garnet':0})
+		self.mantle_water_part = kwargs.pop('mantle_water_part', {'opx_ol':0,'cpx_ol':0,'garnet_ol':0, 'ol_melt':0, 'opx_melt':0, 'cpx_melt':0,'garnet_melt':0})
 		
 		self.mantle_water_sol_ref = kwargs.pop('mantle_water_sol_ref', 'ol')
 		

@@ -14,6 +14,7 @@ from model import Model
 from geodyn.read_uw_model import *
 from geodyn.interpolate_fields import interpolate_2d_fields
 from geodyn.plot_models import *
+from geodyn.material_process import *
 
 #setting up source folder of the files
 source_folder = os.path.join('.','example_data','uwconversion')
@@ -41,9 +42,11 @@ material_names = read_uw_material_names_from_py_input(py_start_fnm)
 #reading 2d mesh params mesh itself, mesh_centers mesh, array in x direction, array in y direction, borders of the mesh[max_x, min_x, max_y, min_y]
 mesh, mesh_center, x_mesh, y_mesh, x_mesh_centers, y_mesh_centers, borders_mesh = setup_2d_mesh(mesh_data)
 
+
+
+
 #getting material_array
 material_array, air_material_idx = setup_material(material_data, material_names)
-
 
 #getting strain array
 pstrain_array = setup_uw_data_array_PROJ(pstrain_data)
@@ -68,8 +71,12 @@ pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 material_array = interpolate_2d_fields(mesh,material_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 strain_rate_array = interpolate_2d_fields(mesh_center,strain_rate_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 
+
+
+
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'temperature.png',cbar_label = 'Temperature [C]', plot_save = True)
-# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b',label = 'material.png', cbar_label = 'Material Index',plot_save = True)
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b',label = 'material.png', cbar_label = 'Material Index',plot_save = True)
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = melt_array,cblimit_up = 1, cblimit_down = 0, log_bool=False, cb_name = 'viridis',label = 'material.png', cbar_label = 'Material Index',plot_save = False)
 
 sel_object = SEL.SEL()
 # list_garnet_models = sel_object.list_mineral_econd_models('garnet')
@@ -80,16 +87,21 @@ sel_object = SEL.SEL()
 list_gabbro_models = sel_object.list_rock_econd_models('gabbro')
 list_granite_models = sel_object.list_rock_econd_models('granite')
 #Eclogite object
-#index 17 garnet is Liu2022 Wet
 
 #DEFINING THE OBJECTS with SEL.material
 Eclogite_Object = Material(name = 'Eclogite_Object', material_index = 3, calculation_type = 'mineral', composition = {'garnet':0.6,'cpx':0.4}, interconnectivities = {'garnet':1, 'cpx':1.5}, 
 el_cond_selections = {'garnet':17,'cpx':0}, water = {'garnet':50,'cpx':0}, xfe = {'garnet':0.2, 'cpx':0.5}, phase_mixing_idx = 0)
 
+Eclogite_Object_2 = Material(name = 'Eclogite_Object', material_index = 3, calculation_type = 'mineral', composition = {'garnet':0.57,'cpx':0.38, 'sulphide':0.05}, interconnectivities = {'garnet':1, 'cpx':1.5,'sulphide':1.0}, 
+el_cond_selections = {'garnet':17,'cpx':0,'sulphide':0}, water = {'garnet':50,'cpx':200}, xfe = {'garnet':0.2, 'cpx':0.5}, phase_mixing_idx = 0)
 
 Lithospheric_Mantle_Object = Material(name = 'Lithospheric_Mantle_Object', material_index = 4, calculation_type = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
 el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0)
+
+Lithospheric_Mantle_Object_2 = Material(name = 'Lithospheric_Mantle_Object', material_index = 4, calculation_type = 'mineral', composition = {'ol':0.62,'opx':0.24,'garnet':0.045,'cpx':0.045,'sulphide':0.05},
+interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5,'sulphide':1}, 
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0,'sulphide':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0)
 
 Asthenospheric_Mantle_Object = Material(name = 'Asthenospheric_Mantle_Object', material_index = 5,calculation_type = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
@@ -131,11 +143,16 @@ material_object_list = [Eclogite_Object,Lithospheric_Mantle_Object,Asthenospheri
 Continental_Upper_Crust_UP_Object,Continental_Lower_Crust_UP_Object,Decollement_LP,Continental_Sediments_LP_Object,Continental_Upper_Crust_LP_Object,
 Continental_Lower_Crust_LP_Object,Decollement_UP,Fault]
 
-material_skip_list = [None, 5, 50,None,None,None, None,None,None,None,None,None,None,None,None]
+# material_object_list_2 = [Eclogite_Object_2,Lithospheric_Mantle_Object_2,Asthenospheric_Mantle_Object_2,Mantle_Wedge_Object_2,Oceanic_Sediment_2,Oceanic_Upper_Crust_2, Continental_Sediments_UP_Object_2,
+# Continental_Upper_Crust_UP_Object_2,Continental_Lower_Crust_UP_Object_2,Decollement_LP_2,Continental_Sediments_LP_Object_2,Continental_Upper_Crust_LP_Object_2,
+# Continental_Lower_Crust_LP_Object_2,Decollement_UP_2,Fault_2]
+
+material_skip_list = [None, 5, 50,None,None,None,None,None,None,None,None,None,None,None,None]
 # material_object_list = [Eclogite_Object, Oceanic_Upper_Crust,Mantle_Wedge_Object, Decollement_UP]
 
 #creating model_object
-mt_model_object = Model(material_list = material_object_list, material_array = material_array, T = temp_array, P = pressure_array, melt = melt_array, p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
+mt_model_object = Model(material_list = material_object_list, material_array = material_array, T = temp_array, P = pressure_array, model_type = 'underworld', melt = melt_array,
+p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background')
 
 plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')

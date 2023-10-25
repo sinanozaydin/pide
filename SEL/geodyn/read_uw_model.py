@@ -112,7 +112,7 @@ def setup_2d_mesh(mesh_data):
 
 	print('Maximum X:  ' + str(max_x) + '   km')
 	print('Minimum X:  ' + str(min_x) + '   km')
-	print('Maximum Y:  ' + str(min_y) + '   km')
+	print('Maximum Y:  ' + str(max_y) + '   km')
 	print('Minimum Y:  ' + str(min_y) + '   km')
 
 	increment_in_x = np.abs(mesh_x_array[1] - mesh_x_array[0])

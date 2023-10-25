@@ -11,9 +11,9 @@ def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 	points_x = []
 	points_y = []
 	for i in range(0,len(mesh_field[0])):
-		for j in range(0,len(mesh_field[0][0])):
-			points_x.append(mesh_field[0][i][j])
-			points_y.append(mesh_field[1][i][j])
+			for j in range(0,len(mesh_field[0][0])):	
+				points_x.append(mesh_field[0][i][j])
+				points_y.append(mesh_field[1][i][j])
 			
 	points_interp = np.column_stack((np.array(points_x), np.array(points_y)))
 	
