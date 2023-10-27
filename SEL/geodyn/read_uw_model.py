@@ -4,57 +4,14 @@ import sys, csv, os
 import numpy as np
 import h5py
 
-def read_h5_files(temp_h5, pressure_h5, mesh_h5, material_h5, strain_h5, stress_h5, melt_h5, strain_rate_h5):
+def read_h5_file(h5):
 
 	try:
-		strain_file = h5py.File(strain_h5, 'r')
+		h5_file = h5py.File(h5, 'r')
 	except FileNotFoundError:
-		print('The strain rate file is not found.')
-
-	try:
-		temp_file = h5py.File(temp_h5, 'r')
-
-	except FileNotFoundError:
-		print('The temperature file is not found.')
+		print('The entered file is not found')
 		
-	try:
-		pressure_file = h5py.File(pressure_h5, 'r')
-
-	except FileNotFoundError:
-		print('The pressure file is not found.')
-		
-	try:
-		mesh_file = h5py.File(mesh_h5, 'r')
-
-	except FileNotFoundError:
-		print('The mesh file is not found.')
-
-	try:
-		material_file = h5py.File(material_h5, 'r')
-
-	except FileNotFoundError:
-		print('The material file is not found.')
-		
-	try:
-		stress_file = h5py.File(stress_h5, 'r')
-
-	except FileNotFoundError:
-		print('The stress file is not found.')
-		
-	try:
-		melt_file = h5py.File(melt_h5, 'r')
-
-	except FileNotFoundError:
-		print('The melt file is not found.')
-		
-	try:
-		strain_rate_file = h5py.File(strain_rate_h5, 'r')
-
-	except FileNotFoundError:
-		print('The strain rate file is not found.')
-		
-	
-	return temp_file, pressure_file, mesh_file, material_file, strain_file, stress_file, melt_file, strain_rate_file
+	return h5_file
 	
 def read_uw_material_names_from_py_input(py_file):
 
@@ -89,6 +46,21 @@ def read_uw_material_names_from_py_input(py_file):
 	return material_names
 	
 def setup_2d_mesh(mesh_data):
+
+	"""
+	A function to convert 2D mesh_data to a usable array.
+	
+	Input Parameters:
+	mesh_data read from the file
+	
+	Output parameters:
+	mesh in np.meshgrid
+	mesh_center in np.meshgrid
+	x_mesh: mesh array in x-dir in np.array
+	y_mesh: mesh array in y-dir in np.array
+	x_mesh_centers: mesh centers array in x-dir in np.array
+	y_mesh_centers: mesh centers array in y-dir in np.array
+	"""
 
 	mesh_array = np.array(list(mesh_data['vertices']))
 	mesh_x_array = mesh_array[:,0]

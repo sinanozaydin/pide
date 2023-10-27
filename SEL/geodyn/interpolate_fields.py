@@ -4,6 +4,16 @@ import numpy as np
 
 def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 
+	"""
+	To interpolate 2d fields
+	
+	mesh_field: input mesh in np.meshgrid
+	vals: Value field associated with the mesh_field
+	mesh_out: output mesh to interpolate data to
+	method: method of interpolations see scipy.interpolate.griddata to choose between options
+	
+	"""
+
 	#Function to interpolate a larger data array defined by np.meshgrid(mesh_field) and associated values(vals)
 
 	from scipy.interpolate import griddata

@@ -31,9 +31,14 @@ mesh_fnm = os.path.join(source_folder,'mesh.h5')
 
 py_start_fnm = os.path.join(source_folder,'Col262.py')
 
-#reading h5 files related to 2D UW model
-temp_data, pressure_data, mesh_data, material_data, pstrain_data, stress_data, melt_data, strain_rate_data = read_h5_files(temp_h5 = temp_fnm, pressure_h5 = pressure_fnm, mesh_h5 = mesh_fnm,
-material_h5= material_fnm, strain_h5 = pstrain_fnm, stress_h5 = stress_fnm, melt_h5 = melt_fnm, strain_rate_h5= strain_rate_fnm)
+temp_data = read_h5_file(temp_fnm)
+pressure_data = read_h5_file(pressure_fnm)
+mesh_data = read_h5_file(mesh_fnm)
+material_data = read_h5_file(material_fnm)
+pstrain_data = read_h5_file(pstrain_fnm)
+stress_data = read_h5_file(stress_fnm)
+melt_data = read_h5_file(melt_fnm)
+strain_rate_data = read_h5_file(strain_rate_fnm)
 
 #reading startup py file to get material order and properties.
 

@@ -227,8 +227,6 @@ class Model(object):
 		else:
 			return cond_list[0],cond_list[1]
 			
-			
-	def calculate_deformation_conductivity(self)
 
 
 

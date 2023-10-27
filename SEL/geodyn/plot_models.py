@@ -42,6 +42,28 @@ def plot_2D_underworld_Field_scatter(x_array = None, y_array = None, Field = Non
 
 def plot_2D_underworld_Field(xmesh = None, ymesh = None, Field = None,cblimit_up = None, cblimit_down = None, log_bool = False,cb_name = 'coolwarm',**kwargs):
 
+	"""
+	plots the field of 2D underworld field
+	
+	Parameters
+	----------
+	
+	xmesh: mesh in x direction in np.array
+	ymesh: mesh in y direction in np.array
+	Field: values in UW format 2D tuple of np.arrays
+	cblimit_up: colorbar upper limit in float
+	cblimit_down: colorbar lower limit in float
+	log_bool: True-Logarithmic colorbar, False-normal colorbar in boolean
+	cb_name: colorbar style, default:'coolwarm' in str
+	
+	**kwargs:
+	
+	plot_save: False-showing the plot, True saving image
+	label: label of the saved image. try to put something.png in str
+	cbar_label: colorbar label in str
+	
+	"""
+
 	import matplotlib.pyplot as plt
 	import matplotlib.colors as colors
 	
