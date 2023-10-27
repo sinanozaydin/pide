@@ -19,7 +19,7 @@ strains_log = np.log10(strains)
 
 
 
-temp = np.array([800]) #setting up temperature array
+temp = np.array([500]) #setting up temperature array
 a = SEL.SEL() #creating the initial object
 a.set_composition_solid_mineral(ol = [1.0]) #setting composition
 a.set_temperature(temp) #settin temperature array in K
@@ -35,7 +35,7 @@ conds_log = np.log10(conds)
 
 cond_decay = 0.5
 strain_decay = 0.1
-threshold_strain = 50
+threshold_strain = 10
 
 cond_strain = plastic_strain_2_conductivity(strain = strain, low_cond= cond_low[0], high_cond = cond_high[0], low_strain = strains[0], high_strain = strains[1],function_method = 'exponential',
 strain_decay_factor = strain_decay, conductivity_decay_factor = cond_decay,strain_percolation_threshold = None)
