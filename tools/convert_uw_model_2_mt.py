@@ -249,7 +249,6 @@ material_object_list_2 = [Eclogite_Object_2,Lithospheric_Mantle_Object_2,Astheno
  Continental_Lower_Crust_LP_Object_2,Decollement_UP_2,Fault_2]
 
 material_skip_list = [None, 5, 50,None,None,None,None,None,None,None,None,None,None,None,None]
-# material_object_list = [Eclogite_Object, Oceanic_Upper_Crust,Mantle_Wedge_Object, Decollement_UP]
 
 #creating model_object
 mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array, P = pressure_array, model_type = 'underworld', melt = melt_array,

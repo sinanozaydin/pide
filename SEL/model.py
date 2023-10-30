@@ -221,12 +221,71 @@ class Model(object):
 			cond_list.append(cond)
 		
 		if type == 'background':
+			self.background_cond = cond_list[0]
 			return cond_list[0]
 		elif type == 'maximum':
+			self.maximum_cond = cond_list[0]
 			return cond_list[0]
 		else:
+			self.background_cond = cond_list[0]
+			self.maximum_cond = cond_list[1]
 			return cond_list[0],cond_list[1]
+	
+	def calculate_deformation_related_conductivity(self, method = 'plastic_strain', function_method = 'linear',
+	low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
+	
+		try:
+			self.background_cond
+			self.maximum_cond
 			
+		except NameError:
+			raise NameError('Background and maximum conductivities has to be assigned first to use deformation related conductivity function.')
+	
+		if num_cpu > 1:
+			import multiprocessing
+			import os
+			
+			max_num_cores = os.cpu_count()
+			
+			if num_cpu >= max_num_cores:
+				raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
+	
+		deform_cond = np.zeros_like(self.T)
+		
+		#importing the function
+		from sel_src.deformation.deform_cond import plastic_strain_2_conductivity
+		
+		def run_deform2cond(index_number):
+		
+			if self.p_strain[index_number] <= low_deformation_threshold:
+				
+				deform_cond[index_number] = self.background_cond[index_number]
+				
+			elif self.p_strain[index_number] >= high_deformation_threshold:
+			
+				deform_cond[index_number] = self.maximum_cond[index_number]
+				
+			else:
+				
+				if function_method == 'exponential'
+					pass
+				
+				deform_cond[index_number] = plastic_strain_2_conductivity(strain = self.p_strain[index_number],low_cond = self.background_cond[index_number],
+				high_cond=self.maximum_cond[index_number],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
+				function_method= 'exponential')
+				
+				
+		
+		if method == 'plastic_strain':
+			if self.p_strain == None:
+				raise AttributeError('Plastic strain is not set in the model instance.')
+			
+			for i in range(0,len(self.material_list)):
+				
+			
+			
+			
+		
 
 
 
