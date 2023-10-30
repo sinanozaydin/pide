@@ -5,7 +5,7 @@ import SEL
 class Material(object):
 
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, water_distr = False,
-	water = None, xfe = None, phase_mixing_idx = 0, **kwargs):
+	water = None, xfe = None, phase_mixing_idx = 0, deformation_dict = None, **kwargs):
 	
 		self.mineral_list = ['ol','opx','cpx','garnet','mica','amp','quartz','plag','kfelds','sulphide','graphite','mixture','sp','wds','rwd','perov','other','bulk']
 		self.rock_list = ['granite', 'granulite', 'sandstone', 'gneiss', 'amphibolite', 'basalt', 'mud', 'gabbro', 'other_rock']
@@ -75,6 +75,12 @@ class Material(object):
 		
 		self._phase_mixing_idx = None
 		self.phase_mixing_idx = phase_mixing_idx
+		
+		if deformation_dict == None:
+			deformation_dict = {'function_method':'linear','conductivity_decay_factor':0, 'strain_decay_factor':0, 'strain_percolation_threshold': None}
+		
+		self._deformation_dict = None
+		self.deformation_dict = deformation_dict
 				
 		self._mantle_water_part = None
 		self.mantle_water_part = kwargs.pop('mantle_water_part', {'opx_ol':0,'cpx_ol':0,'garnet_ol':0, 'ol_melt':0, 'opx_melt':0, 'cpx_melt':0,'garnet_melt':0})
@@ -192,6 +198,14 @@ class Material(object):
 	@solid_phase_mixing_idx.setter
 	def solid_phase_mixing_idx(self, value):
 		self._solid_phase_mixing_idx = value
+		
+	@property
+	def deformation_dict(self):
+		return self._deformation_dict
+		
+	@deformation_dict.setter
+	def deformation_dict(self, value):
+		self._deformation_dict = value
 		
 		
 		
