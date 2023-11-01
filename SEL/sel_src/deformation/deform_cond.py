@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.stats import linregress
 from scipy.optimize import curve_fit
+import warnings, re
 
 scipy_methods = ['lm', 'trf', 'dogbox']
 
@@ -14,7 +15,7 @@ def check_misfit(x_array, y_array, x_vals, y_vals):
 	return misfit_list
 
 def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_strain, function_method, **kwargs):
-
+	
 	"""
 	Function to relate accumulated plastic strain to electrical conductivity.
 	
@@ -41,6 +42,8 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 	
 	return_all_params: Function returns all relevant parameters instead of just conductivity.
 	"""
+	
+	
 	if function_method == 'exponential':
 		cond_decay_modifier = -1
 	else:
@@ -116,7 +119,7 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 					raise RuntimeError
 					
 				else:
-					
+
 					cond_calced = func(strain, params[0], params[1], params[2])
 					if strain_percolation_threshold != None:
 						cond_calced[np.where(strain>strain_percolation_threshold)[0]] = conds[-1]
@@ -146,55 +149,3 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 		elif return_all_params == True:
 			return cond_calced, strain_decay_factor, conductivity_decay_factor, misfit
 			
-	elif function_method == 'logarithmic':
-	
-		#setting up run iteration number to check what to do for convergence of the function
-		run_idx = 0
-	
-		#exponential function definition
-		def func(x,a,b):
-		
-			return (a * np.log(x)) + b
-			
-		def fit(method,init_start, run_idx, strains, conds, strain_decay_factor, conductivity_decay_factor):
-			try:
-				if init_start == True:
-					run_idx = 0
-				else:
-					run_idx = run_idx
-				params, params_cov = curve_fit(func, strains, conds, method = method)
-				cond_calced = func(strain_func_build, params[0], params[1])
-				misfit = check_misfit(np.log10(strains),np.log10(cond_calced),np.log10(strains),np.log10(conds)) #log misfit
-				print(misfit)
-				
-				if np.any(misfit > 0.5):
-					raise RuntimeError
-					
-				else:
-				
-					cond_calced = func(strain, params[0], params[1])
-					
-			except RuntimeError:
-				run_idx = run_idx + 1
-				if run_idx < 3:
-					cond_calced, strain_decay_factor, conductivity_decay_factor, misfit = fit(method = scipy_methods[run_idx], strains = strains, conds = conds, init_start=False, run_idx = run_idx, strain_decay_factor=strain_decay_factor, conductivity_decay_factor=conductivity_decay_factor)
-				elif run_idx >= 3:
-					#modifying the decay factor slightly to fit 
-					strain_decay_factor = strain_decay_factor * 0.95
-					conductivity_decay_factor = conductivity_decay_factor * 0.95
-					strains, conds = setup_data(low_strain, high_strain, low_cond, high_cond, strain_decay_factor, conductivity_decay_factor)
-					run_idx = 0
-					
-					cond_calced,strain_decay_factor,conductivity_decay_factor, misfit = fit(method = scipy_methods[run_idx], init_start = False, run_idx = run_idx, strains = strains, conds = conds, strain_decay_factor=strain_decay_factor, conductivity_decay_factor=conductivity_decay_factor)
-					
-				else:
-					raise RuntimeError('The optimal parameters for the fit cannot be found. Try adjusting x-factor and y-factor.')
-	
-			return cond_calced, strain_decay_factor, conductivity_decay_factor, misfit
-			
-		cond_calced,strain_decay_factor,conductivity_decay_factor,misfit = fit(method = scipy_methods[0], init_start = True, run_idx = 0, strains = strains, conds = conds, strain_decay_factor= strain_decay_factor, conductivity_decay_factor=conductivity_decay_factor)
-		
-		if return_all_params == False:
-			return cond_calced
-		elif return_all_params == True:
-			return cond_calced, strain_decay_factor, conductivity_decay_factor, misfit

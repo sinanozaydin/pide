@@ -10,33 +10,26 @@ from sel_src.deformation.deform_cond import plastic_strain_2_conductivity
 
 def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deformation_threshold, high_deformation_threshold, function_method, conductivity_decay_factor,strain_decay_factor):
 	
-	# print(p_strain)
-	# print(index_number)
-	if p_strain[index_number[0],index_number[1],index_number[2]] <= low_deformation_threshold:
-		
-		# deform_cond[index_number] = self.background_cond[index_number]
-		c = background_cond[index_number[0],index_number[1],index_number[2]]
-		
-	elif p_strain[index_number[0],index_number[1],index_number[2]] >= high_deformation_threshold:
+	#Global function to link deformation and conductivity.
+	if (background_cond[index_number[0],index_number[1],index_number[2]] == np.nan) or (max_cond[index_number[0],index_number[1],index_number[2]] == np.nan): 
 	
-		# deform_cond[index_number] = self.maximum_cond[index_number]
-		
-		c = max_cond[index_number[0],index_number[1],index_number[2]]
-		
+		c = np.nan
+	
 	else:
-		
-		# deform_cond[index_number] = plastic_strain_2_conductivity(strain = self.p_strain[index_number],low_cond = self.background_cond[index_number],
-		# high_cond=self.maximum_cond[index_number],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
-		# function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor)
-		print(p_strain[index_number[0],index_number[1],index_number[2]])
-		print(len(p_strain))
-		print(background_cond)
-		print(len(background_cond))
-		print(background_cond[index_number[0],index_number[1],index_number[2]])
-		print(max_cond[index_number[0],index_number[1],index_number[2]])
-		c = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1],index_number[2]],low_cond = background_cond[index_number[0],index_number[1],index_number[2]],
-			high_cond=max_cond[index_number[0],index_number[1],index_number[2]],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
-			function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor)
+	
+		if p_strain[index_number[0],index_number[1],index_number[2]] <= low_deformation_threshold:
+			
+			c = background_cond[index_number[0],index_number[1],index_number[2]]
+			
+		elif p_strain[index_number[0],index_number[1],index_number[2]] >= high_deformation_threshold:
+			
+			c = max_cond[index_number[0],index_number[1],index_number[2]]
+			
+		else:
+			
+			c = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1],index_number[2]],low_cond = background_cond[index_number[0],index_number[1],index_number[2]],
+				high_cond=max_cond[index_number[0],index_number[1],index_number[2]],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
+				function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor)
 	
 	
 	return c
@@ -252,8 +245,9 @@ class Model(object):
 					
 				print('The conductivity for the material ' + material_list_holder[l][i].name + ' is calculated.')
 				
-			#converting all zero vals in the cond tuple to None values
-			cond = tuple(np.where(array == 0, np.nan, array) for array in cond)
+			#converting all zero vals in the cond to None values
+			cond[cond == 0.0] = np.nan
+			
 			cond_list.append(cond)
 		
 		if type == 'background':
@@ -275,7 +269,7 @@ class Model(object):
 			self.maximum_cond
 			
 		except NameError:
-			raise NameError('Background and maximum conductivities has to be assigned first to use deformation related conductivity function.')
+			raise NameError('Background and maximum conductivities has to be assigned first to the model object to use deformation related conductivity function.')
 	
 		if num_cpu > 1:
 			import multiprocessing
@@ -284,16 +278,13 @@ class Model(object):
 			
 			max_num_cores = os.cpu_count()
 			
-			if num_cpu >= max_num_cores:
+			if num_cpu > max_num_cores:
 				raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
 	
 		deform_cond = np.zeros_like(self.T)
-		deform_cond = tuple(np.where(array == 0, np.nan, array) for array in deform_cond)
 		
 		if method == 'plastic_strain':
-			# if self.p_strain == None:
-			# 	raise AttributeError('Plastic strain is not set in the model instance.')
-			
+						
 			for i in range(0,len(self.material_list)):
 			
 				if self.material_node_skip_rate_list != None:
@@ -303,20 +294,13 @@ class Model(object):
 						mat_skip = None
 				else:
 					mat_skip = None
-					
-				material_idx = return_material_bool(material_index = self.material_list[i].material_index, model_array = self.material_array, material_skip = mat_skip)
 				
-				self.c_list = []
-				for k in range(0,len(material_idx[0])):
-					c = run_deform2cond(index_number = [material_idx[0][k],material_idx[1][k],material_idx[2][k]], p_strain = self.p_strain, background_cond = self.background_cond,
-						max_cond = self.maximum_cond, low_deformation_threshold = low_deformation_threshold,
-						high_deformation_threshold = high_deformation_threshold, function_method = function_method,
-						conductivity_decay_factor = self.material_list[i].deformation_dict['conductivity_decay_factor'],
-						strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'])
-					# import ipdb;ipdb.set_trace()
-					self.c_list.append(c)
-					
-				"""
+				#getting material index for each material
+				material_idx = return_material_bool(material_index = self.material_list[i].material_index, model_array = self.material_array, material_skip = mat_skip)
+				#turning material index list to be useable format for the np.ndarray fields
+				material_idx_list = [[material_idx[0][idx],material_idx[1][idx],material_idx[2][idx]] for idx in range(0,len(material_idx[0]))]
+				
+				#multiprocessing loop for each material
 				with multiprocessing.Pool(processes=num_cpu) as pool:
 					
 					process_item_partial = partial(run_deform2cond, p_strain = self.p_strain, background_cond = self.background_cond,
@@ -325,13 +309,14 @@ class Model(object):
 					conductivity_decay_factor = self.material_list[i].deformation_dict['conductivity_decay_factor'],
 					strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'])
 					
-					c = pool.map(process_item_partial, material_idx)
-					c.wait()
-					import ipdb;ipdb.set_trace()
-					c_list = [c.tolist() for c in c.get()]
-					
-				"""	
-				deform_cond[material_idx] = self.c_list
+					c = pool.map(process_item_partial, material_idx_list)
+									
+				deform_cond[material_idx] = c
+				
+				print('The deformation related conductivity for the material ' + self.material_list[i].name + ' is calculated.')
+			
+			#converting all zero vals in the cond to None values
+			deform_cond[deform_cond == 0.0] = np.nan
 			
 		return deform_cond
 		
