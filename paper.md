@@ -13,6 +13,8 @@ authors:
     equal-contrib: true
     corresponding: true 
     affiliation: 1 
+  - name: Lu Li
+    affiliation: 2
   - name: Patrice F. Rey
     affiliation: 1
   - name: Maria Constanza Manassero
@@ -23,10 +25,12 @@ authors:
 affiliations:
  - name: School of Geosciences, University of Sydney, Sydney, Australia.
    index: 1
- - name: School of Natural Sciences, University of Tasmania, Hobart, Australia.
+ - name: School of Earth Sciences, University of Western Australia, Perth, Australia.
    index: 2
- - name: Vox Geophysics, Perth, Australia.
+ - name: School of Natural Sciences, University of Tasmania, Hobart, Australia.
    index: 3
+ - name: Vox Geophysics, Perth, Australia.
+   index: 4
 date: 16 August 2023
 bibliography: paper.bib
 
