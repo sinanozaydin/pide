@@ -2,6 +2,7 @@
 
 import os,sys
 import h5py
+import numpy as np
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
 core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL/sel_src')
@@ -15,6 +16,7 @@ from geodyn.read_uw_model import *
 from geodyn.interpolate_fields import interpolate_2d_fields
 from geodyn.plot_models import *
 from geodyn.material_process import *
+from mt.mt_model_conversion import convert_2DModel_2_MARE2DEM
 
 #setting up source folder of the files
 source_folder = os.path.join('.','example_data','uwconversion')
@@ -59,6 +61,9 @@ strain_rate_array = setup_uw_data_array_PROJ(strain_rate_data)
 temp_array = setup_uw_data_array_PROJ(temp_data) #mesh
 pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gigapascal
 
+# import ipdb
+# ipdb.set_trace()
+
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b')
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = pstrain_array, cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'binary')
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'regular_array',plot_save = True)
@@ -72,11 +77,7 @@ pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 material_array = interpolate_2d_fields(mesh,material_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 strain_rate_array = interpolate_2d_fields(mesh_center,strain_rate_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 
-
-
-
-
-# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'temperature.png',cbar_label = 'Temperature [C]', plot_save = True)
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'temperature.png',cbar_label = 'Temperature [C]', plot_save = False)
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b',label = 'material.png', cbar_label = 'Material Index',plot_save = True)
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = melt_array,cblimit_up = 1, cblimit_down = 0, log_bool=False, cb_name = 'viridis',label = 'material.png', cbar_label = 'Material Index',plot_save = False)
 
@@ -246,19 +247,22 @@ material_object_list_2 = [Eclogite_Object_2,Lithospheric_Mantle_Object_2,Astheno
  Continental_Upper_Crust_UP_Object_2,Continental_Lower_Crust_UP_Object_2,Decollement_LP_2,Continental_Sediments_LP_Object_2,Continental_Upper_Crust_LP_Object_2,
  Continental_Lower_Crust_LP_Object_2,Decollement_UP_2,Fault_2]
 
-material_skip_list = [None, 5, 50,None,None,None,None,None,None,None,None,None,None,None,None]
+material_skip_list = [None,5,50,None,None,None,None,None,None,None,None,None,None,None,None]
 
 #creating model_object
 mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array, P = pressure_array, model_type = 'underworld', melt = melt_array,
 p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background')
-max_cond = mt_model_object.calculate_conductivity(type = 'maximum')
+# max_cond = mt_model_object.calculate_conductivity(type = 'maximum')
 
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = pstrain_array,cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'Greys',cbar_label = 'Plastic Strain',plot_save = True,label = 'p_strain.png')
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond_max.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = pstrain_array,cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'Greys',cbar_label = 'Plastic Strain',plot_save = True,label = 'p_strain.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond_max.png')
 
-deform_cond = mt_model_object.calculate_deformation_related_conductivity(method = 'plastic_strain', function_method = 'exponential', 
-low_deformation_threshold = 1e-2, high_deformation_threshold = 1e2, num_cpu = 5)
+# deform_cond = mt_model_object.calculate_deformation_related_conductivity(method = 'plastic_strain', function_method = 'exponential', 
+# low_deformation_threshold = 1e-2, high_deformation_threshold = 1e2, num_cpu = 5)
 
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = deform_cond, cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond_meshed.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = deform_cond, cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond_meshed.png')
+
+convert_2DModel_2_MARE2DEM(file_out = 'deform_model.csv', conductivity_array = backgr_cond, mesh = mesh_center, boundaries = {'top':0,'bottom':300},
+cond_unit = 'conductivity', mesh_unit = 'kilometres')

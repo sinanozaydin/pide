@@ -122,6 +122,7 @@ class Material(object):
 			list2check = None
 		
 		if list2check != None:
+		
 			for item in list2check:
 				if item not in value:
 					if type == 'comp':
