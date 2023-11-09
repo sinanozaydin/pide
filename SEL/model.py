@@ -14,29 +14,39 @@ def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deform
 	if (background_cond[index_number[0],index_number[1],index_number[2]] == np.nan) or (max_cond[index_number[0],index_number[1],index_number[2]] == np.nan): 
 	
 		c = np.nan
+		str_dcy = np.nan
+		cnd_dcy = np.nan
+		msft = np.nan
 	
 	else:
 	
 		if p_strain[index_number[0],index_number[1],index_number[2]] <= low_deformation_threshold:
 			
 			c = background_cond[index_number[0],index_number[1],index_number[2]]
+			str_dcy = np.nan
+			cnd_dcy = np.nan
+			msft = np.nan
 			
 		elif p_strain[index_number[0],index_number[1],index_number[2]] >= high_deformation_threshold:
 			
 			c = max_cond[index_number[0],index_number[1],index_number[2]]
+			str_dcy = np.nan
+			cnd_dcy = np.nan
+			msft = np.nan
 			
 		else:
 			
-			c = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1],index_number[2]],low_cond = background_cond[index_number[0],index_number[1],index_number[2]],
+			c, str_dcy, cnd_dcy, msft = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1],index_number[2]],low_cond = background_cond[index_number[0],index_number[1],index_number[2]],
 				high_cond=max_cond[index_number[0],index_number[1],index_number[2]],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
-				function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor)
+				function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor, return_all_params = True)
 	
 	
-	return c
+	return c, str_dcy, cnd_dcy, msft
 
 class Model(object):
 
-	def __init__(self, material_list, material_array, T, P, model_type = 'underworld', material_list_2 = None, melt = None, p_strain = None, strain_rate = None, material_node_skip_rate_list = None):
+	def __init__(self, material_list, material_array, T, P, model_type = 'underworld', material_list_2 = None,
+	melt = None, p_strain = None, strain_rate = None, material_node_skip_rate_list = None):
 
 		self.material_list = material_list
 		self.material_list_2 = material_list_2
@@ -49,7 +59,7 @@ class Model(object):
 		self.strain_rate = strain_rate
 		self.material_node_skip_rate_list = material_node_skip_rate_list
 
-	def calculate_conductivity(self,type = 'background'):
+	def calculate_conductivity(self,type = 'background', num_cpu = 1):
 
 		cond = np.zeros_like(self.T)
 		
@@ -65,7 +75,8 @@ class Model(object):
 		cond_list = []
 			
 		for l in range(0,len(material_list_holder)):
-		
+			print('Initiating calculation for the materials appended to the model.')
+			print('##############################################################')
 			for i in range(0,len(self.material_list)):
 	
 				#determining the material indexes from the material array
@@ -81,7 +92,7 @@ class Model(object):
 				#getting the relevant indexes with information given for it
 					
 				material_idx = return_material_bool(material_index = material_list_holder[l][i].material_index, model_array = self.material_array, material_skip = mat_skip)		
-	
+				
 				#getting only the relevant arrays for calculation
 				t_relevant = self.T[material_idx]
 				p_relevant = self.P[material_idx]
@@ -249,6 +260,7 @@ class Model(object):
 			cond[cond == 0.0] = np.nan
 			
 			cond_list.append(cond)
+			print('##############################################################')
 		
 		if type == 'background':
 			self.background_cond = cond_list[0]
@@ -282,6 +294,9 @@ class Model(object):
 				raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
 	
 		deform_cond = np.zeros_like(self.T)
+		strain_decay = np.zeros_like(self.T)
+		cond_decay = np.zeros_like(self.T)
+		misfit = np.zeros_like(self.T)
 		
 		if method == 'plastic_strain':
 						
@@ -311,14 +326,20 @@ class Model(object):
 					
 					c = pool.map(process_item_partial, material_idx_list)
 									
-				deform_cond[material_idx] = c
+				deform_cond[material_idx] = [x[0] for x in c]
+				strain_decay[material_idx] = [x[1] for x in c]
+				cond_decay[material_idx] = [x[2] for x in c]
+				misfit[material_idx] = [x[3] for x in c]
 				
 				print('The deformation related conductivity for the material ' + self.material_list[i].name + ' is calculated.')
 			
 			#converting all zero vals in the cond to None values
 			deform_cond[deform_cond == 0.0] = np.nan
+			strain_decay[strain_decay == 0.0] = np.nan
+			cond_decay[cond_decay == 0.0] = np.nan
+			misfit[misfit == 0.0] = np.nan
 			
-		return deform_cond
+		return deform_cond, strain_decay, cond_decay, misfit
 		
 
 

@@ -253,16 +253,35 @@ material_skip_list = [None,5,50,None,None,None,None,None,None,None,None,None,Non
 mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array, P = pressure_array, model_type = 'underworld', melt = melt_array,
 p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background')
+
+sys.exit()
 max_cond = mt_model_object.calculate_conductivity(type = 'maximum')
 
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = pstrain_array,cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'Greys',cbar_label = 'Plastic Strain',plot_save = False,label = 'p_strain.png')
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond_max.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = pstrain_array,cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'Greys',cbar_label = 'Plastic Strain',plot_save = False,label = 'p_strain.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond_max.png')
 
-deform_cond = mt_model_object.calculate_deformation_related_conductivity(method = 'plastic_strain', function_method = 'exponential', 
+deform_cond, strain_decay, cond_decay, misfit = mt_model_object.calculate_deformation_related_conductivity(method = 'plastic_strain', function_method = 'exponential', 
 low_deformation_threshold = 1e-2, high_deformation_threshold = 1e2, num_cpu = 5)
 
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = deform_cond, cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond_meshed.png')
 
-convert_2DModel_2_MARE2DEM(file_out = 'deform_model.csv', conductivity_array = backgr_cond, mesh = mesh_center, boundaries = {'top':0,'bottom':300},
-cond_unit = 'conductivity', mesh_unit = 'kilometres')
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = deform_cond,
+						 cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True,
+						 cb_name = 'Spectral_r',cbar_label = 'Conductivity',
+						 plot_save = True,label = 'cond_meshed.png')
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = strain_decay,
+						 cblimit_up = 1, cblimit_down = 0, log_bool=False,
+						 cb_name = 'plasma',cbar_label = 'Strain Decay',
+						 plot_save = True,label = 'strain_decay.png')
+
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = cond_decay,
+						 cblimit_up = 1, cblimit_down = 0, log_bool=False,
+						 cb_name = 'plasma',cbar_label = 'Cond Decay',
+						 plot_save = True,label = 'cond_decay.png')
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = misfit,
+						 cblimit_up = 10, cblimit_down = 0, log_bool=False,
+						 cb_name = 'viridis',cbar_label = 'Misfit',
+						 plot_save = True,label = 'misfit.png')
+						 
+# convert_2DModel_2_MARE2DEM(file_out = 'deform_model.csv', conductivity_array = backgr_cond, mesh = mesh_center, boundaries = {'top':0,'bottom':300},
+# cond_unit = 'conductivity', mesh_unit = 'kilometres')

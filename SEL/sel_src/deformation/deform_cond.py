@@ -116,10 +116,11 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 				misfit = check_misfit(np.log10(strains),np.log10(cond_calced),np.log10(strains),np.log10(conds)) #log misfit
 				
 				if np.any(misfit > 0.5):
+				
 					raise RuntimeError
 					
 				else:
-
+				
 					cond_calced = func(strain, params[0], params[1], params[2])
 					if strain_percolation_threshold != None:
 						cond_calced[np.where(strain>strain_percolation_threshold)[0]] = conds[-1]
@@ -141,11 +142,12 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 					raise RuntimeError('The optimal parameters for the fit cannot be found. Try adjusting x-factor and y-factor.')
 	
 			return cond_calced, strain_decay_factor, conductivity_decay_factor, misfit
-			
+		
+		
 		cond_calced,strain_decay_factor,conductivity_decay_factor,misfit = fit(method = scipy_methods[0], init_start = True, run_idx = 0, strains = strains, conds = conds, strain_decay_factor= strain_decay_factor, conductivity_decay_factor=conductivity_decay_factor)
 		
 		if return_all_params == False:
 			return cond_calced
 		elif return_all_params == True:
-			return cond_calced, strain_decay_factor, conductivity_decay_factor, misfit
+			return cond_calced, strain_decay_factor, conductivity_decay_factor, misfit[1]
 			
