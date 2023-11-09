@@ -8,6 +8,155 @@ from geodyn.material_process import return_material_bool
 #importing the function
 from sel_src.deformation.deform_cond import plastic_strain_2_conductivity
 
+def run_conductivity_model(index_list, material, sel_object, t_array, p_array, melt_array):
+
+	
+	sel_object.set_temperature(t_array[index_list])
+	sel_object.set_pressure(p_array[index_list])
+	sel_object.set_melt_fluid_frac(melt_array[index_list])
+	sel_object.set_o2_buffer(material.o2_buffer)
+	sel_object.set_melt_or_fluid_mode('melt')
+	
+	if material.calculation_type == 'mineral':
+	
+		sel_object.set_composition_solid_mineral(ol = material.composition['ol'],
+		opx = material.composition['opx'],
+		cpx = material.composition['cpx'],
+		garnet = material.composition['garnet'],
+		mica = material.composition['mica'],
+		amp = material.composition['amp'],
+		quartz = material.composition['quartz'],
+		plag = material.composition['plag'],
+		kfelds = material.composition['kfelds'],
+		sulphide = material.composition['sulphide'],
+		graphite = material.composition['graphite'],
+		mixture = material.composition['mixture'],
+		sp = material.composition['sp'],
+		wds = material.composition['wds'],
+		rwd = material.composition['rwd'],
+		perov = material.composition['perov'],
+		other = material.composition['other'])
+		
+		if material.phase_mixing_idx == 0:
+		
+			sel_object.set_phase_interconnectivities(ol = material.interconnectivities['ol'],
+			opx = material.interconnectivities['opx'],
+			cpx = material.interconnectivities['cpx'],
+			garnet = material.interconnectivities['garnet'],
+			mica = material.interconnectivities['mica'],
+			amp = material.interconnectivities['amp'],
+			quartz = material.interconnectivities['quartz'],
+			plag = material.interconnectivities['plag'],
+			kfelds = material.interconnectivities['kfelds'],
+			sulphide = material.interconnectivities['sulphide'],
+			graphite = material.interconnectivities['graphite'],
+			mixture = material.interconnectivities['mixture'],
+			sp = material.interconnectivities['sp'],
+			wds = material.interconnectivities['wds'],
+			rwd = material.interconnectivities['rwd'],
+			perov = material.interconnectivities['perov'],
+			other = material.interconnectivities['other'])
+			
+		if material.water_distr == False:
+		
+			sel_object.set_mineral_water(ol = material.water['ol'],
+			opx = material.water['opx'],
+			cpx = material.water['cpx'],
+			garnet = material.water['garnet'],
+			mica = material.water['mica'],
+			amp = material.water['amp'],
+			quartz = material.water['quartz'],
+			plag = material.water['plag'],
+			kfelds = material.water['kfelds'],
+			sulphide = material.water['sulphide'],
+			graphite = material.water['graphite'],
+			mixture = material.water['mixture'],
+			sp = material.water['sp'],
+			wds = material.water['wds'],
+			rwd = material.water['rwd'],
+			perov = material.water['perov'],
+			other = material.water['other'])
+			
+		else:
+		
+			sel_object.set_bulk_water(material.water['bulk'])
+			sel_object.set_mantle_water_partitions(opx_ol = material.mantle_water_part['opx_ol'],
+			cpx_ol = material.mantle_water_part['cpx_ol'],
+			garnet_ol = material.mantle_water_part['garnet_ol'],
+			ol_melt = material.mantle_water_part['ol_melt'],
+			opx_melt = material.mantle_water_part['opx_melt'],
+			cpx_melt = material.mantle_water_part['cpx_melt'],
+			garnet_melt = material.mantle_water_part['garnet_melt'])
+			sel_object.mantle_water_distribute(method = 'array')
+			
+		sel_object.set_mineral_conductivity_choice(ol = material.el_cond_selections['ol'],
+			opx = material.el_cond_selections['opx'],
+			cpx = material.el_cond_selections['cpx'],
+			garnet = material.el_cond_selections['garnet'],
+			mica = material.el_cond_selections['mica'],
+			amp = material.el_cond_selections['amp'],
+			quartz = material.el_cond_selections['quartz'],
+			plag = material.el_cond_selections['plag'],
+			kfelds = material.el_cond_selections['kfelds'],
+			sulphide = material.el_cond_selections['sulphide'],
+			graphite = material.el_cond_selections['graphite'],
+			mixture = material.el_cond_selections['mixture'],
+			sp = material.el_cond_selections['sp'],
+			wds = material.el_cond_selections['wds'],
+			rwd = material.el_cond_selections['rwd'],
+			perov = material.el_cond_selections['perov'],
+			other = material.el_cond_selections['other'])
+									
+	elif material.calculation_type == 'rock':
+	
+		sel_object.set_composition_solid_rock(granite = material.composition['granite'],
+		granulite = material.composition['granulite'],
+		sandstone = material.composition['sandstone'],
+		gneiss = material.composition['gneiss'],
+		amphibolite = material.composition['amphibolite'],
+		basalt = material.composition['basalt'],
+		mud = material.composition['mud'],
+		gabbro = material.composition['gabbro'],
+		other_rock = material.composition['other_rock'])
+		
+		if material.phase_mixing_idx == 0:
+			
+			sel_object.set_phase_interconnectivities(granite = material.interconnectivities['granite'],
+			granulite = material.interconnectivities['granulite'],
+			sandstone = material.interconnectivities['sandstone'],
+			gneiss = material.interconnectivities['gneiss'],
+			amphibolite = material.interconnectivities['amphibolite'],
+			basalt = material.interconnectivities['basalt'],
+			mud = material.interconnectivities['mud'],
+			gabbro = material.interconnectivities['gabbro'],
+			other_rock = material.interconnectivities['other_rock'])
+			
+		if material.water_distr == False:
+		
+			sel_object.set_rock_water(granite = material.water['granite'],
+			granulite = material.water['granulite'],
+			sandstone = material.water['sandstone'],
+			gneiss = material.water['gneiss'],
+			amphibolite = material.water['amphibolite'],
+			basalt = material.water['basalt'],
+			mud = material.water['mud'],
+			gabbro = material.water['gabbro'],
+			other_rock = material.water['other_rock'])
+			
+		sel_object.set_rock_conductivity_choice(granite = material.el_cond_selections['granite'],
+			granulite = material.el_cond_selections['granulite'],
+			sandstone = material.el_cond_selections['sandstone'],
+			gneiss = material.el_cond_selections['gneiss'],
+			amphibolite = material.el_cond_selections['amphibolite'],
+			basalt = material.el_cond_selections['basalt'],
+			mud = material.el_cond_selections['mud'],
+			gabbro = material.el_cond_selections['gabbro'],
+			other_rock = material.el_cond_selections['other_rock'])
+			
+	c = sel_object.calculate_conductivity(method = 'array')
+	
+	return c
+	
 def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deformation_threshold, high_deformation_threshold, function_method, conductivity_decay_factor,strain_decay_factor):
 	
 	#Global function to link deformation and conductivity.
@@ -60,6 +209,11 @@ class Model(object):
 		self.material_node_skip_rate_list = material_node_skip_rate_list
 
 	def calculate_conductivity(self,type = 'background', num_cpu = 1):
+	
+		if num_cpu > 1:
+			import multiprocessing
+			import os
+			from functools import partial
 
 		cond = np.zeros_like(self.T)
 		
@@ -93,167 +247,61 @@ class Model(object):
 					
 				material_idx = return_material_bool(material_index = material_list_holder[l][i].material_index, model_array = self.material_array, material_skip = mat_skip)		
 				
-				#getting only the relevant arrays for calculation
-				t_relevant = self.T[material_idx]
-				p_relevant = self.P[material_idx]
-				melt_relevant = self.melt_frac[material_idx]
-				
+			
+				#setting up the object for the material
 				mat_sel_obj = SEL.SEL()
-				mat_sel_obj.set_temperature(t_relevant)
-				mat_sel_obj.set_pressure(p_relevant)
+				
 				if material_list_holder[l][i].calculation_type != 'value':
 					mat_sel_obj.set_solid_phase_method(material_list_holder[l][i].calculation_type)
-				
-				mat_sel_obj.set_o2_buffer(material_list_holder[l][i].o2_buffer)
-				mat_sel_obj.set_melt_or_fluid_mode('melt')
-				
-				mat_sel_obj.set_melt_fluid_frac(melt_relevant)
-				
-				if material_list_holder[l][i].calculation_type == 'mineral':
-				
-					mat_sel_obj.set_composition_solid_mineral(ol = material_list_holder[l][i].composition['ol'],
-					opx = material_list_holder[l][i].composition['opx'],
-					cpx = material_list_holder[l][i].composition['cpx'],
-					garnet = material_list_holder[l][i].composition['garnet'],
-					mica = material_list_holder[l][i].composition['mica'],
-					amp = material_list_holder[l][i].composition['amp'],
-					quartz = material_list_holder[l][i].composition['quartz'],
-					plag = material_list_holder[l][i].composition['plag'],
-					kfelds = material_list_holder[l][i].composition['kfelds'],
-					sulphide = material_list_holder[l][i].composition['sulphide'],
-					graphite = material_list_holder[l][i].composition['graphite'],
-					mixture = material_list_holder[l][i].composition['mixture'],
-					sp = material_list_holder[l][i].composition['sp'],
-					wds = material_list_holder[l][i].composition['wds'],
-					rwd = material_list_holder[l][i].composition['rwd'],
-					perov = material_list_holder[l][i].composition['perov'],
-					other = material_list_holder[l][i].composition['other'])
-					
-					if material_list_holder[l][i].phase_mixing_idx == 0:
-					
-						mat_sel_obj.set_phase_interconnectivities(ol = material_list_holder[l][i].interconnectivities['ol'],
-						opx = material_list_holder[l][i].interconnectivities['opx'],
-						cpx = material_list_holder[l][i].interconnectivities['cpx'],
-						garnet = material_list_holder[l][i].interconnectivities['garnet'],
-						mica = material_list_holder[l][i].interconnectivities['mica'],
-						amp = material_list_holder[l][i].interconnectivities['amp'],
-						quartz = material_list_holder[l][i].interconnectivities['quartz'],
-						plag = material_list_holder[l][i].interconnectivities['plag'],
-						kfelds = material_list_holder[l][i].interconnectivities['kfelds'],
-						sulphide = material_list_holder[l][i].interconnectivities['sulphide'],
-						graphite = material_list_holder[l][i].interconnectivities['graphite'],
-						mixture = material_list_holder[l][i].interconnectivities['mixture'],
-						sp = material_list_holder[l][i].interconnectivities['sp'],
-						wds = material_list_holder[l][i].interconnectivities['wds'],
-						rwd = material_list_holder[l][i].interconnectivities['rwd'],
-						perov = material_list_holder[l][i].interconnectivities['perov'],
-						other = material_list_holder[l][i].interconnectivities['other'])
-						
-					if material_list_holder[l][i].water_distr == False:
-					
-						mat_sel_obj.set_mineral_water(ol = material_list_holder[l][i].water['ol'],
-						opx = material_list_holder[l][i].water['opx'],
-						cpx = material_list_holder[l][i].water['cpx'],
-						garnet = material_list_holder[l][i].water['garnet'],
-						mica = material_list_holder[l][i].water['mica'],
-						amp = material_list_holder[l][i].water['amp'],
-						quartz = material_list_holder[l][i].water['quartz'],
-						plag = material_list_holder[l][i].water['plag'],
-						kfelds = material_list_holder[l][i].water['kfelds'],
-						sulphide = material_list_holder[l][i].water['sulphide'],
-						graphite = material_list_holder[l][i].water['graphite'],
-						mixture = material_list_holder[l][i].water['mixture'],
-						sp = material_list_holder[l][i].water['sp'],
-						wds = material_list_holder[l][i].water['wds'],
-						rwd = material_list_holder[l][i].water['rwd'],
-						perov = material_list_holder[l][i].water['perov'],
-						other = material_list_holder[l][i].water['other'])
-						
-					else:
-					
-						mat_sel_obj.set_bulk_water(material_list_holder[l][i].water['bulk'])
-						mat_sel_obj.set_mantle_water_partitions(opx_ol = material_list_holder[l][i].mantle_water_part['opx_ol'],
-						cpx_ol = material_list_holder[l][i].mantle_water_part['cpx_ol'],
-						garnet_ol = material_list_holder[l][i].mantle_water_part['garnet_ol'],
-						ol_melt = material_list_holder[l][i].mantle_water_part['ol_melt'],
-						opx_melt = material_list_holder[l][i].mantle_water_part['opx_melt'],
-						cpx_melt = material_list_holder[l][i].mantle_water_part['cpx_melt'],
-						garnet_melt = material_list_holder[l][i].mantle_water_part['garnet_melt'])
-						mat_sel_obj.mantle_water_distribute(method = 'array')
-						
-					mat_sel_obj.set_mineral_conductivity_choice(ol = material_list_holder[l][i].el_cond_selections['ol'],
-						opx = material_list_holder[l][i].el_cond_selections['opx'],
-						cpx = material_list_holder[l][i].el_cond_selections['cpx'],
-						garnet = material_list_holder[l][i].el_cond_selections['garnet'],
-						mica = material_list_holder[l][i].el_cond_selections['mica'],
-						amp = material_list_holder[l][i].el_cond_selections['amp'],
-						quartz = material_list_holder[l][i].el_cond_selections['quartz'],
-						plag = material_list_holder[l][i].el_cond_selections['plag'],
-						kfelds = material_list_holder[l][i].el_cond_selections['kfelds'],
-						sulphide = material_list_holder[l][i].el_cond_selections['sulphide'],
-						graphite = material_list_holder[l][i].el_cond_selections['graphite'],
-						mixture = material_list_holder[l][i].el_cond_selections['mixture'],
-						sp = material_list_holder[l][i].el_cond_selections['sp'],
-						wds = material_list_holder[l][i].el_cond_selections['wds'],
-						rwd = material_list_holder[l][i].el_cond_selections['rwd'],
-						perov = material_list_holder[l][i].el_cond_selections['perov'],
-						other = material_list_holder[l][i].el_cond_selections['other'])
-												
-				elif material_list_holder[l][i].calculation_type == 'rock':
-				
-					mat_sel_obj.set_composition_solid_rock(granite = material_list_holder[l][i].composition['granite'],
-					granulite = material_list_holder[l][i].composition['granulite'],
-					sandstone = material_list_holder[l][i].composition['sandstone'],
-					gneiss = material_list_holder[l][i].composition['gneiss'],
-					amphibolite = material_list_holder[l][i].composition['amphibolite'],
-					basalt = material_list_holder[l][i].composition['basalt'],
-					mud = material_list_holder[l][i].composition['mud'],
-					gabbro = material_list_holder[l][i].composition['gabbro'],
-					other_rock = material_list_holder[l][i].composition['other_rock'])
-					
-					if material_list_holder[l][i].phase_mixing_idx == 0:
-						
-						mat_sel_obj.set_phase_interconnectivities(granite = material_list_holder[l][i].interconnectivities['granite'],
-						granulite = material_list_holder[l][i].interconnectivities['granulite'],
-						sandstone = material_list_holder[l][i].interconnectivities['sandstone'],
-						gneiss = material_list_holder[l][i].interconnectivities['gneiss'],
-						amphibolite = material_list_holder[l][i].interconnectivities['amphibolite'],
-						basalt = material_list_holder[l][i].interconnectivities['basalt'],
-						mud = material_list_holder[l][i].interconnectivities['mud'],
-						gabbro = material_list_holder[l][i].interconnectivities['gabbro'],
-						other_rock = material_list_holder[l][i].interconnectivities['other_rock'])
-						
-					if material_list_holder[l][i].water_distr == False:
-					
-						mat_sel_obj.set_rock_water(granite = material_list_holder[l][i].water['granite'],
-						granulite = material_list_holder[l][i].water['granulite'],
-						sandstone = material_list_holder[l][i].water['sandstone'],
-						gneiss = material_list_holder[l][i].water['gneiss'],
-						amphibolite = material_list_holder[l][i].water['amphibolite'],
-						basalt = material_list_holder[l][i].water['basalt'],
-						mud = material_list_holder[l][i].water['mud'],
-						gabbro = material_list_holder[l][i].water['gabbro'],
-						other_rock = material_list_holder[l][i].water['other_rock'])
-						
-					mat_sel_obj.set_rock_conductivity_choice(granite = material_list_holder[l][i].el_cond_selections['granite'],
-						granulite = material_list_holder[l][i].el_cond_selections['granulite'],
-						sandstone = material_list_holder[l][i].el_cond_selections['sandstone'],
-						gneiss = material_list_holder[l][i].el_cond_selections['gneiss'],
-						amphibolite = material_list_holder[l][i].el_cond_selections['amphibolite'],
-						basalt = material_list_holder[l][i].el_cond_selections['basalt'],
-						mud = material_list_holder[l][i].el_cond_selections['mud'],
-						gabbro = material_list_holder[l][i].el_cond_selections['gabbro'],
-						other_rock = material_list_holder[l][i].el_cond_selections['other_rock'])
-												
-				elif material_list_holder[l][i].calculation_type == 'value':
-				
-					self.cond_backgr = 1.0 / material_list_holder[l][i].resistivity_medium
-								
-				if material_list_holder[l][i].calculation_type == 'value':
-					cond[material_idx] = self.cond_backgr
 				else:
-					cond[material_idx] = mat_sel_obj.calculate_conductivity(method = 'array')
+					num_cpu = 1 #defaulting num_cpu for 1 since it is not needed
 					
+				#Slicing the array for paralle calculation
+				if num_cpu > 1:
+				
+					#condition to check if array is too small to parallelize for the material num_cpu*num_cpu 
+					if len(material_idx[0]) > (num_cpu*num_cpu):
+						size_arrays = len(material_idx[0]) // num_cpu
+						sliced_material_idx = []
+					
+						for idx in range(0, len(material_idx[0]), size_arrays):
+							if idx >= (size_arrays*num_cpu):
+								sliced_material_idx.append(tuple((material_idx[0][idx:len(material_idx[0])], material_idx[1][idx:len(material_idx[1])],material_idx[2][idx:len(material_idx[2])])))
+							else:
+								sliced_material_idx.append(tuple((material_idx[0][idx:idx+size_arrays], material_idx[1][idx:idx+size_arrays],material_idx[2][idx:idx+size_arrays])))
+					else:
+						num_cpu = 1
+						sliced_material_idx = material_idx
+					
+				#if not parallel material_idx stays the same
+				elif num_cpu == 1:
+					
+					sliced_material_idx = material_idx
+					
+					
+				if material_list_holder[l][i].calculation_type == 'value':
+					#calculation not necessary for value method so automatically not parallel and indexed into sliced_material_idx
+					cond[sliced_material_idx] = 1.0 / material_list_holder[l][i].resistivity_medium
+				else:
+					if num_cpu == 1:
+						
+						cond[sliced_material_idx] = run_conductivity_model(index_list= sliced_material_idx, material = material_list_holder[l][i], sel_object= mat_sel_obj,
+						t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
+					else:
+						with multiprocessing.Pool(processes=num_cpu) as pool:
+							
+							process_item_partial = partial(run_conductivity_model, material =  material_list_holder[l][i], sel_object = mat_sel_obj, t_array = self.T,
+							p_array = self.P, melt_array = self.melt_frac)
+							
+							c = pool.map(process_item_partial, sliced_material_idx)
+						
+						for idx in range(0,len(sliced_material_idx)):
+							cond[sliced_material_idx[idx]] = c[idx]
+						"""
+						print('YES')
+						print(num_cpu)
+						cond[sliced_material_idx] = c
+						"""
 				print('The conductivity for the material ' + material_list_holder[l][i].name + ' is calculated.')
 				
 			#converting all zero vals in the cond to None values

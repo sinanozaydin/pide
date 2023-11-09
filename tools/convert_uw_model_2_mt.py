@@ -252,14 +252,17 @@ material_skip_list = [None,5,50,None,None,None,None,None,None,None,None,None,Non
 #creating model_object
 mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array, P = pressure_array, model_type = 'underworld', melt = melt_array,
 p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
-backgr_cond = mt_model_object.calculate_conductivity(type = 'background')
+backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 5)
 
-sys.exit()
-max_cond = mt_model_object.calculate_conductivity(type = 'maximum')
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3,
+cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
+
+max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 5)
 
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = pstrain_array,cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'Greys',cbar_label = 'Plastic Strain',plot_save = False,label = 'p_strain.png')
-# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
-# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond_max.png')
+#plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond_max.png')
+
 
 deform_cond, strain_decay, cond_decay, misfit = mt_model_object.calculate_deformation_related_conductivity(method = 'plastic_strain', function_method = 'exponential', 
 low_deformation_threshold = 1e-2, high_deformation_threshold = 1e2, num_cpu = 5)
