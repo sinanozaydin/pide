@@ -130,12 +130,20 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 				if run_idx < 3:
 					cond_calced, strain_decay_factor, conductivity_decay_factor, misfit = fit(method = scipy_methods[run_idx], strains = strains, conds = conds, init_start=False, run_idx = run_idx, strain_decay_factor=strain_decay_factor, conductivity_decay_factor=conductivity_decay_factor)
 				elif run_idx >= 3:
-					#modifying the decay factor slightly to fit 
-					strain_decay_factor = strain_decay_factor * 0.95
-					conductivity_decay_factor = conductivity_decay_factor * 0.95
+					#modifying the decay factor slightly to fit making more exponential 
+					if strain_decay_factor < 0.75:
+						strain_decay_factor = strain_decay_factor * 1.05
+					else:
+						strain_decay_factor = strain_decay_factor * 0.95
+						
+					if conductivity_decay_factor < 0.75:
+						conductivity_decay_factor = conductivity_decay_factor * 1.05
+					else:
+						conductivity_decay_factor = conductivity_decay_factor * 0.95
+					
 					strains, conds = setup_data(low_strain, high_strain, low_cond, high_cond, strain_decay_factor, conductivity_decay_factor)
 					run_idx = 0
-					
+					print(strain_decay_factor)
 					cond_calced,strain_decay_factor,conductivity_decay_factor, misfit = fit(method = scipy_methods[run_idx], init_start = False, run_idx = run_idx, strains = strains, conds = conds, strain_decay_factor=strain_decay_factor, conductivity_decay_factor=conductivity_decay_factor)
 					
 				else:

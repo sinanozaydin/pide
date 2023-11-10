@@ -10,13 +10,16 @@ from sel_src.deformation.deform_cond import plastic_strain_2_conductivity
 
 def run_conductivity_model(index_list, material, sel_object, t_array, p_array, melt_array):
 
-	
+	#global function to run conductivity model. designed to be global def to run parallel with multiprocessing
+
+	#setting temperatures at the sel_object
 	sel_object.set_temperature(t_array[index_list])
 	sel_object.set_pressure(p_array[index_list])
 	sel_object.set_melt_fluid_frac(melt_array[index_list])
 	sel_object.set_o2_buffer(material.o2_buffer)
 	sel_object.set_melt_or_fluid_mode('melt')
 	
+	#adjusting material parameters for the sel_object
 	if material.calculation_type == 'mineral':
 	
 		sel_object.set_composition_solid_mineral(ol = material.composition['ol'],
@@ -211,9 +214,15 @@ class Model(object):
 	def calculate_conductivity(self,type = 'background', num_cpu = 1):
 	
 		if num_cpu > 1:
+		
 			import multiprocessing
 			import os
 			from functools import partial
+			
+			max_num_cores = os.cpu_count()
+			
+			if num_cpu > max_num_cores:
+				raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
 
 		cond = np.zeros_like(self.T)
 		
@@ -254,22 +263,23 @@ class Model(object):
 				if material_list_holder[l][i].calculation_type != 'value':
 					mat_sel_obj.set_solid_phase_method(material_list_holder[l][i].calculation_type)
 				else:
-					num_cpu = 1 #defaulting num_cpu for 1 since it is not needed
+					num_cpu = 1 #defaulting num_cpu for 1 since it is not needed for value-method
 					
-				#Slicing the array for paralle calculation
+				#Slicing the array for parallel calculation
 				if num_cpu > 1:
 				
 					#condition to check if array is too small to parallelize for the material num_cpu*num_cpu 
 					if len(material_idx[0]) > (num_cpu*num_cpu):
 						size_arrays = len(material_idx[0]) // num_cpu
 						sliced_material_idx = []
-					
+						#adjusting the material_index_array
 						for idx in range(0, len(material_idx[0]), size_arrays):
 							if idx >= (size_arrays*num_cpu):
 								sliced_material_idx.append(tuple((material_idx[0][idx:len(material_idx[0])], material_idx[1][idx:len(material_idx[1])],material_idx[2][idx:len(material_idx[2])])))
 							else:
 								sliced_material_idx.append(tuple((material_idx[0][idx:idx+size_arrays], material_idx[1][idx:idx+size_arrays],material_idx[2][idx:idx+size_arrays])))
 					else:
+						#revert back to the single cpu if the material_idx_list is not long enough
 						num_cpu = 1
 						sliced_material_idx = material_idx
 					
@@ -277,17 +287,19 @@ class Model(object):
 				elif num_cpu == 1:
 					
 					sliced_material_idx = material_idx
-					
-					
+						
 				if material_list_holder[l][i].calculation_type == 'value':
 					#calculation not necessary for value method so automatically not parallel and indexed into sliced_material_idx
 					cond[sliced_material_idx] = 1.0 / material_list_holder[l][i].resistivity_medium
 				else:
+				
 					if num_cpu == 1:
 						
 						cond[sliced_material_idx] = run_conductivity_model(index_list= sliced_material_idx, material = material_list_holder[l][i], sel_object= mat_sel_obj,
 						t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
+						
 					else:
+						#solving for parallel with multiprocessing
 						with multiprocessing.Pool(processes=num_cpu) as pool:
 							
 							process_item_partial = partial(run_conductivity_model, material =  material_list_holder[l][i], sel_object = mat_sel_obj, t_array = self.T,
@@ -295,13 +307,10 @@ class Model(object):
 							
 							c = pool.map(process_item_partial, sliced_material_idx)
 						
+						#assigning to the global cond list
 						for idx in range(0,len(sliced_material_idx)):
 							cond[sliced_material_idx[idx]] = c[idx]
-						"""
-						print('YES')
-						print(num_cpu)
-						cond[sliced_material_idx] = c
-						"""
+						
 				print('The conductivity for the material ' + material_list_holder[l][i].name + ' is calculated.')
 				
 			#converting all zero vals in the cond to None values

@@ -158,7 +158,7 @@ Continental_Sediments_UP_Object = Material(name = 'Continental_Sediments_UP_Obje
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
-Continental_Sediments_UP_Object_2 = Material(name = 'Continental_Sediments_UP_Object',material_index = 9, calculation_type = 'value', resistivity_medium = 0.1,
+Continental_Sediments_UP_Object_2 = Material(name = 'Continental_Sediments_UP_Object',material_index = 9, calculation_type = 'value', resistivity_medium = 0.01,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -185,11 +185,11 @@ el_cond_selections = {'granulite':0,'other_rock':3}, phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
-Decollement_LP = Material(name = 'Decollement_LP',material_index = 12, calculation_type = 'value', resistivity_medium = 100.0,
+Decollement_LP = Material(name = 'Decollement_LP',material_index = 12, calculation_type = 'value', resistivity_medium = 300.0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
-Decollement_LP_2 = Material(name = 'Decollement_LP',material_index = 12, calculation_type = 'value', resistivity_medium = 0.1,
+Decollement_LP_2 = Material(name = 'Decollement_LP',material_index = 12, calculation_type = 'value', resistivity_medium = 0.01,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
