@@ -143,7 +143,7 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 					
 					strains, conds = setup_data(low_strain, high_strain, low_cond, high_cond, strain_decay_factor, conductivity_decay_factor)
 					run_idx = 0
-					print(strain_decay_factor)
+					
 					cond_calced,strain_decay_factor,conductivity_decay_factor, misfit = fit(method = scipy_methods[run_idx], init_start = False, run_idx = run_idx, strains = strains, conds = conds, strain_decay_factor=strain_decay_factor, conductivity_decay_factor=conductivity_decay_factor)
 					
 				else:

@@ -16,6 +16,7 @@ from geodyn.read_uw_model import *
 from geodyn.interpolate_fields import interpolate_2d_fields
 from geodyn.plot_models import *
 from geodyn.material_process import *
+from geodyn.write_uw_model import write_2d_field_h5
 from mt.mt_model_conversion import convert_2DModel_2_MARE2DEM
 
 #setting up source folder of the files
@@ -41,6 +42,7 @@ pstrain_data = read_h5_file(pstrain_fnm)
 stress_data = read_h5_file(stress_fnm)
 melt_data = read_h5_file(melt_fnm)
 strain_rate_data = read_h5_file(strain_rate_fnm)
+
 
 #reading startup py file to get material order and properties.
 
@@ -255,17 +257,21 @@ p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_ra
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 5)
 
 plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3,
-cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
+cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
 
-max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 5)
+write_2d_field_h5(Field = backgr_cond, filename_out = 'BackGroundCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
+
+sys.exit()
+max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 6)
 
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = pstrain_array,cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'Greys',cbar_label = 'Plastic Strain',plot_save = False,label = 'p_strain.png')
 #plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond_max.png')
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True,
+cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond_max.png')
 
 
 deform_cond, strain_decay, cond_decay, misfit = mt_model_object.calculate_deformation_related_conductivity(method = 'plastic_strain', function_method = 'exponential', 
-low_deformation_threshold = 1e-2, high_deformation_threshold = 1e2, num_cpu = 5)
+low_deformation_threshold = 1e-2, high_deformation_threshold = 1e2, num_cpu = 6)
 
 
 plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = deform_cond,
@@ -285,6 +291,9 @@ plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field =
 						 cblimit_up = 10, cblimit_down = 0, log_bool=False,
 						 cb_name = 'viridis',cbar_label = 'Misfit',
 						 plot_save = True,label = 'misfit.png')
+						 
+
+
 						 
 # convert_2DModel_2_MARE2DEM(file_out = 'deform_model.csv', conductivity_array = backgr_cond, mesh = mesh_center, boundaries = {'top':0,'bottom':300},
 # cond_unit = 'conductivity', mesh_unit = 'kilometres')

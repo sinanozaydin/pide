@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, csv, os
+import csv
 import numpy as np
 import h5py
 
@@ -107,13 +107,14 @@ def setup_2d_mesh(mesh_data):
 def setup_material(material_data, material_names):
 
 	material_array = np.array(list(material_data['data']))
-
+	
 	for i in range(0,len(material_array)):
 		material_array[i] = round(material_array[i][0]) #rounding to get rid of that areas with 
 
 	print(' ')
 	print('Materials included in the py startup file, matching up with the projMaterial.h5 material index identifiers.')
 	unique_materials = np.unique(material_array)
+	
 	air_material_idx = []
 	print('id    materialname')
 	for i in range(0,len(unique_materials)):
