@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import csv
 import numpy as np
 import h5py
 
@@ -26,7 +25,7 @@ def write_2d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpola
 			values = Field[~mask]
 					
 			Field = griddata(points, values, (x_i, y_i), method = 'linear')
-	print(Field)
+
 	data_2_write = []
 
 	for i in range(0,len(Field)):
@@ -41,5 +40,7 @@ def write_2d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpola
 	with h5py.File(filename_out, 'w') as file:
 	
 		file.create_dataset('data', data = data_2_write)
+		
+	print('The file has written as:' + str(filename_out))
 		
 		

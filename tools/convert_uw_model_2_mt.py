@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import os,sys
-import h5py
-import numpy as np
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
 core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL/sel_src')
@@ -256,22 +254,26 @@ mt_model_object = Model(material_list = material_object_list, material_array = m
 p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 5)
 
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3,
-cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3,
+# cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
 
-write_2d_field_h5(Field = backgr_cond, filename_out = 'BackGroundCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
+# write_2d_field_h5(Field = backgr_cond, filename_out = 'BackGroundCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
 
-sys.exit()
+
 max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 6)
+
+# write_2d_field_h5(Field = max_cond, filename_out = 'MaxCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
 
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = pstrain_array,cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'Greys',cbar_label = 'Plastic Strain',plot_save = False,label = 'p_strain.png')
 #plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True,
-cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond_max.png')
+# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = max_cond,cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True,
+# cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond_max.png')
 
 
 deform_cond, strain_decay, cond_decay, misfit = mt_model_object.calculate_deformation_related_conductivity(method = 'plastic_strain', function_method = 'exponential', 
 low_deformation_threshold = 1e-2, high_deformation_threshold = 1e2, num_cpu = 6)
+
+write_2d_field_h5(Field = deform_cond, filename_out = 'DeformCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
 
 
 plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = deform_cond,
