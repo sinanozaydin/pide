@@ -449,12 +449,14 @@ class SEL(object):
 		
 		#arrays with mineral specific arrays
 		if SEL.solid_phase_method == 2:
+			self.set_composition_solid_mineral(reval = True)
 			self.set_mineral_water(reval = True)
 			self.set_xfe_mineral(reval = True)
 			self.set_param1_mineral(reval = True)
 			self.set_param2_mineral(reval = True)
 			
 		elif SEL.solid_phase_method == 1:
+			self.set_composition_solid_rock(reval = True)
 			self.set_rock_water(reval = True)
 			self.set_param1_rock(reval = True)
 			self.set_param2_rock(reval = True)
@@ -767,30 +769,49 @@ class SEL(object):
 		
 		setattr(self, param_name, self.array_modifier(input = value, array=self.T,varname = param_name))
 	
-	def set_composition_solid_mineral(self, **kwargs):
+	def set_composition_solid_mineral(self, reval = False, **kwargs):
 	
 		#Enter composition in fraction 0.6 == 60% volumetric percentage
 		
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
-	
-		self.ol_frac = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_frac')
-		self.opx_frac = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_frac')
-		self.cpx_frac = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_frac')
-		self.garnet_frac = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_frac')
-		self.mica_frac = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_frac')
-		self.amp_frac = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_frac')
-		self.quartz_frac = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_frac')
-		self.plag_frac = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_frac')
-		self.kfelds_frac = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_frac')
-		self.sulphide_frac = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_frac')
-		self.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
-		self.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
-		self.sp_frac = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_frac')
-		self.wds_frac = self.array_modifier(input = kwargs.pop('wds', 0), array = self.T, varname = 'wds_frac')
-		self.rwd_frac = self.array_modifier(input = kwargs.pop('rwd', 0), array = self.T, varname = 'rwd_frac')
-		self.perov_frac = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_frac')
-		self.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
+		
+		if reval == False:
+			self.ol_frac = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_frac')
+			self.opx_frac = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_frac')
+			self.cpx_frac = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_frac')
+			self.garnet_frac = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_frac')
+			self.mica_frac = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_frac')
+			self.amp_frac = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_frac')
+			self.quartz_frac = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_frac')
+			self.plag_frac = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_frac')
+			self.kfelds_frac = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_frac')
+			self.sulphide_frac = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_frac')
+			self.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
+			self.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
+			self.sp_frac = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_frac')
+			self.wds_frac = self.array_modifier(input = kwargs.pop('wds', 0), array = self.T, varname = 'wds_frac')
+			self.rwd_frac = self.array_modifier(input = kwargs.pop('rwd', 0), array = self.T, varname = 'rwd_frac')
+			self.perov_frac = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_frac')
+			self.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
+		elif reval == True:
+			self.ol_frac = self.array_modifier(input = self.ol_frac, array = self.T, varname = 'ol_frac')
+			self.opx_frac = self.array_modifier(input = self.opx_frac, array = self.T, varname = 'opx_frac')
+			self.cpx_frac = self.array_modifier(input = self.cpx_frac, array = self.T, varname = 'cpx_frac')
+			self.garnet_frac = self.array_modifier(input = self.garnet_frac, array = self.T, varname = 'garnet_frac')
+			self.mica_frac = self.array_modifier(input = self.mica_frac, array = self.T, varname = 'mica_frac')
+			self.amp_frac = self.array_modifier(input = self.amp_frac, array = self.T, varname = 'amp_frac')
+			self.quartz_frac = self.array_modifier(input = self.quartz_frac, array = self.T, varname = 'quartz_frac')
+			self.plag_frac = self.array_modifier(input = self.plag_frac, array = self.T, varname = 'plag_frac')
+			self.kfelds_frac = self.array_modifier(input = self.kfelds_frac, array = self.T, varname = 'kfelds_frac')
+			self.sulphide_frac = self.array_modifier(input = self.sulphide_frac, array = self.T, varname = 'sulphide_frac')
+			self.graphite_frac = self.array_modifier(input = self.graphite_frac, array = self.T, varname = 'graphite_frac')
+			self.mixture_frac = self.array_modifier(input = self.mixture_frac, array = self.T, varname = 'mixture_frac')
+			self.sp_frac = self.array_modifier(input = self.sp_frac, array = self.T, varname = 'sp_frac')
+			self.wds_frac = self.array_modifier(input = self.wds_frac, array = self.T, varname = 'wds_frac')
+			self.rwd_frac = self.array_modifier(input = self.rwd_frac, array = self.T, varname = 'rwd_frac')
+			self.perov_frac = self.array_modifier(input = self.perov_frac, array = self.T, varname = 'perov_frac')
+			self.other_frac = self.array_modifier(input = self.other_frac, array = self.T, varname = 'other_frac')
 		
 		#Converting fractions to water holding species that has an exchange with coexisting melt. 
 		#Calculation of equilibrium of water with other minerals are not constrained.
@@ -823,22 +844,33 @@ class SEL(object):
 			raise ValueError('The values entered in mineral composition do not add up to 1.')
 			
 	
-	def set_composition_solid_rock(self, **kwargs):
+	def set_composition_solid_rock(self, reval = False, **kwargs):
 	
 		#Enter composition in fraction 0.6 == 60% volumetric percentage
 		
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
-	
-		self.granite_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_frac')
-		self.granulite_frac = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_frac')
-		self.sandstone_frac = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_frac')
-		self.gneiss_frac = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_frac')
-		self.amphibolite_frac = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_frac')
-		self.basalt_frac = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_frac')
-		self.mud_frac = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
-		self.gabbro_frac = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
-		self.other_rock_frac = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_frac')
+		
+		if reval == False:
+			self.granite_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_frac')
+			self.granulite_frac = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_frac')
+			self.sandstone_frac = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_frac')
+			self.gneiss_frac = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_frac')
+			self.amphibolite_frac = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_frac')
+			self.basalt_frac = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_frac')
+			self.mud_frac = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
+			self.gabbro_frac = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
+			self.other_rock_frac = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_frac')
+		elif reval == True:
+			self.granite_frac = self.array_modifier(input = self.granite_frac, array = self.T, varname = 'granite_frac')
+			self.granulite_frac = self.array_modifier(input = self.granulite_frac, array = self.T, varname = 'granulite_frac')
+			self.sandstone_frac = self.array_modifier(input = self.sandstone_frac, array = self.T, varname = 'sandstone_frac')
+			self.gneiss_frac = self.array_modifier(input = self.gneiss_frac, array = self.T, varname = 'gneiss_frac')
+			self.amphibolite_frac = self.array_modifier(input = self.amphibolite_frac, array = self.T, varname = 'amphibolite_frac')
+			self.basalt_frac = self.array_modifier(input = self.basalt_frac, array = self.T, varname = 'basalt_frac')
+			self.mud_frac = self.array_modifier(input = self.mud_frac, array = self.T, varname = 'mud_frac')
+			self.gabbro_frac = self.array_modifier(input = self.gabbro_frac, array = self.T, varname = 'gabbro_frac')
+			self.other_rock_frac = self.array_modifier(input = self.other_rock_frac, array = self.T, varname = 'other_rock_frac')
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
@@ -1331,6 +1363,7 @@ class SEL(object):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
+			
 		if reval == False:
 			SEL.ol_water = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_water')
 			SEL.opx_water = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_water')
