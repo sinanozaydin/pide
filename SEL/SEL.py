@@ -998,7 +998,6 @@ class SEL(object):
 				continue_adjusting = False
 			
 			if any(item >= 1.01 for item in tot) == True:
-
 				continue_adjusting = False
 				
 		elif method == 'mineral':
