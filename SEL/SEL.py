@@ -436,6 +436,31 @@ class SEL(object):
 		#Some check for temperature being the controlling array errors.
 		self.temperature_default = True
 		
+	def revalue_arrays(self):
+		
+		#revaluing the arrays with the length of the T if needed by the user.
+		
+		#arrays with single values
+		self.set_temperature(self.T) #in Kelvin
+		self.set_pressure(self.p) #in GPa
+		self.set_bulk_water(self.bulk_water)
+		self.set_alopx(self.al_opx)
+		self.set_melt_fluid_frac(self.melt_fluid_mass_frac)
+		
+		#arrays with mineral specific arrays
+		if SEL.solid_phase_method == 2:
+			self.set_mineral_water(reval = True)
+			self.set_xfe_mineral(reval = True)
+			self.set_param1_mineral(reval = True)
+			self.set_param2_mineral(reval = True)
+			
+		elif SEL.solid_phase_method == 1:
+			self.set_rock_water(reval = True)
+			self.set_param1_rock(reval = True)
+			self.set_param2_rock(reval = True)
+			
+		self.set_phase_interconnectivities(reval = True)
+		
 	def read_csv(self,filename,delim):
 
 		#Simple function for reading csv files and give out filtered output for given delimiter (delim)
@@ -1302,29 +1327,49 @@ class SEL(object):
 			
 				raise ValueError('Bad entry for rock conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[rock_idx[i]])) + ' for the rock ' + rock_names[i])
 				   
-	def set_mineral_water(self, **kwargs):
+	def set_mineral_water(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
-	
-		SEL.ol_water = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_water')
-		SEL.opx_water = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_water')
-		SEL.cpx_water = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_water')
-		SEL.garnet_water = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_water')
-		SEL.mica_water = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_water')
-		SEL.amp_water = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_water')
-		SEL.quartz_water = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_water')
-		SEL.plag_water = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_water')
-		SEL.kfelds_water = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_water')
-		SEL.sulphide_water = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_water')
-		SEL.graphite_water = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_water')
-		SEL.sp_water = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_water')
-		SEL.wds_water = self.array_modifier(input = kwargs.pop('wds', 0), array = self.T, varname = 'wds_water')
-		SEL.rwd_water = self.array_modifier(input = kwargs.pop('rwd', 0), array = self.T, varname = 'rwd_water')
-		SEL.perov_water = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_water')
-		SEL.mixture_water = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_water')
-		SEL.other_water = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_water')
+		if reval == False:
+			SEL.ol_water = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_water')
+			SEL.opx_water = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_water')
+			SEL.cpx_water = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_water')
+			SEL.garnet_water = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_water')
+			SEL.mica_water = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_water')
+			SEL.amp_water = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_water')
+			SEL.quartz_water = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_water')
+			SEL.plag_water = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_water')
+			SEL.kfelds_water = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_water')
+			SEL.sulphide_water = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_water')
+			SEL.graphite_water = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_water')
+			SEL.sp_water = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_water')
+			SEL.wds_water = self.array_modifier(input = kwargs.pop('wds', 0), array = self.T, varname = 'wds_water')
+			SEL.rwd_water = self.array_modifier(input = kwargs.pop('rwd', 0), array = self.T, varname = 'rwd_water')
+			SEL.perov_water = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_water')
+			SEL.mixture_water = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_water')
+			SEL.other_water = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_water')
+			
+		elif reval == True:
 		
+			SEL.ol_water = self.array_modifier(input = SEL.ol_water, array = self.T, varname = 'ol_water')
+			SEL.opx_water = self.array_modifier(input = SEL.opx_water, array = self.T, varname = 'opx_water')
+			SEL.cpx_water = self.array_modifier(input = SEL.cpx_water, array = self.T, varname = 'cpx_water')
+			SEL.garnet_water = self.array_modifier(input = SEL.garnet_water, array = self.T, varname = 'garnet_water')
+			SEL.mica_water = self.array_modifier(input = SEL.mica_water, array = self.T, varname = 'mica_water')
+			SEL.amp_water = self.array_modifier(input = SEL.amp_water, array = self.T, varname = 'amp_water')
+			SEL.quartz_water = self.array_modifier(input = SEL.quartz_water, array = self.T, varname = 'quartz_water')
+			SEL.plag_water = self.array_modifier(input = SEL.plag_water, array = self.T, varname = 'plag_water')
+			SEL.kfelds_water = self.array_modifier(input = SEL.kfelds_water, array = self.T, varname = 'kfelds_water')
+			SEL.sulphide_water = self.array_modifier(input = SEL.sulphide_water, array = self.T, varname = 'sulphide_water')
+			SEL.graphite_water = self.array_modifier(input = SEL.graphite_water, array = self.T, varname = 'graphite_water')
+			SEL.sp_water = self.array_modifier(input = SEL.sp_water, array = self.T, varname = 'sp_water')
+			SEL.wds_water = self.array_modifier(input = SEL.wds_water, array = self.T, varname = 'wds_water')
+			SEL.rwd_water = self.array_modifier(input = SEL.rwd_water, array = self.T, varname = 'rwd_water')
+			SEL.perov_water = self.array_modifier(input = SEL.perov_water, array = self.T, varname = 'perov_water')
+			SEL.mixture_water = self.array_modifier(input = SEL.mixture_water, array = self.T, varname = 'mixture_water')
+			SEL.other_water = self.array_modifier(input = SEL.other_water, array = self.T, varname = 'other_water')
+			
 		overlookError = kwargs.pop('overlookError', False)
 
 		SEL.mineral_water_list = [SEL.quartz_water, SEL.plag_water, SEL.amp_water, SEL.kfelds_water,
@@ -1339,20 +1384,35 @@ class SEL(object):
 				
 					raise ValueError('There is a value entered in mineral water contents that is below zero.')
 				   
-	def set_rock_water(self, **kwargs):
+	def set_rock_water(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
-	
-		SEL.granite_water = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_water')
-		SEL.granulite_water = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_water')
-		SEL.sandstone_water = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_water')
-		SEL.gneiss_water = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_water')
-		SEL.amphibolite_water = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_water')
-		SEL.basalt_water = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_water')
-		SEL.mud_water = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_water')
-		SEL.gabbro_water = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_water')
-		SEL.other_rock_water = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_water')
+		
+		if reval == False:
+		
+			SEL.granite_water = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_water')
+			SEL.granulite_water = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_water')
+			SEL.sandstone_water = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_water')
+			SEL.gneiss_water = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_water')
+			SEL.amphibolite_water = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_water')
+			SEL.basalt_water = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_water')
+			SEL.mud_water = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_water')
+			SEL.gabbro_water = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_water')
+			SEL.other_rock_water = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_water')
+			
+		elif reval == True:
+		
+			SEL.granite_water = self.array_modifier(input = SEL.granite_water, array = self.T, varname = 'granite_water')
+			SEL.granulite_water = self.array_modifier(input = SEL.granulite_water, array = self.T, varname = 'granulite_water')
+			SEL.sandstone_water = self.array_modifier(input = SEL.sandstone_water, array = self.T, varname = 'sandstone_water')
+			SEL.gneiss_water = self.array_modifier(input = SEL.gneiss_water, array = self.T, varname = 'gneiss_water')
+			SEL.amphibolite_water = self.array_modifier(input = SEL.amphibolite_water, array = self.T, varname = 'amphibolite_water')
+			SEL.basalt_water = self.array_modifier(input = SEL.basalt_water, array = self.T, varname = 'basalt_water')
+			SEL.mud_water = self.array_modifier(input = SEL.mud_water, array = self.T, varname = 'mud_water')
+			SEL.gabbro_water = self.array_modifier(input = SEL.gabbro_water, array = self.T, varname = 'gabbro_water')
+			SEL.other_rock_water = self.array_modifier(input = SEL.other_rock_water, array = self.T, varname = 'other_rock_water')
+			
 		
 		SEL.rock_water_list = [SEL.granite_water, SEL.granulite_water,
 			SEL.sandstone_water, SEL.gneiss_water, SEL.amphibolite_water, SEL.basalt_water,
@@ -1374,120 +1434,208 @@ class SEL(object):
 				
 			raise ValueError('There is a value entered in bulk_water content that is below zero.')
 			
-	def set_xfe_mineral(self, **kwargs):
+	def set_xfe_mineral(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
+		
+		if reval == False:
+		
+			SEL.ol_xfe = self.array_modifier(input = kwargs.pop('ol', 0.1), array = self.T, varname = 'ol_xfe')
+			SEL.opx_xfe = self.array_modifier(input = kwargs.pop('opx', 0.1), array = self.T, varname = 'opx_xfe')
+			SEL.cpx_xfe = self.array_modifier(input = kwargs.pop('cpx', 0.1), array = self.T, varname = 'cpx_xfe')
+			SEL.garnet_xfe = self.array_modifier(input = kwargs.pop('garnet', 0.1), array = self.T, varname = 'garnet_xfe')
+			SEL.mica_xfe = self.array_modifier(input = kwargs.pop('mica', 0.1), array = self.T, varname = 'mica_xfe')
+			SEL.amp_xfe = self.array_modifier(input = kwargs.pop('amp', 0.1), array = self.T, varname = 'amp_xfe')
+			SEL.quartz_xfe = self.array_modifier(input = kwargs.pop('quartz', 0.1), array = self.T, varname = 'quartz_xfe')
+			SEL.plag_xfe = self.array_modifier(input = kwargs.pop('plag', 0.1), array = self.T, varname = 'plag_xfe')
+			SEL.kfelds_xfe = self.array_modifier(input = kwargs.pop('kfelds', 0.1), array = self.T, varname = 'kfelds_xfe')
+			SEL.sulphide_xfe = self.array_modifier(input = kwargs.pop('sulphide', 0.1), array = self.T, varname = 'sulphide_xfe')
+			SEL.graphite_xfe = self.array_modifier(input = kwargs.pop('graphite', 0.1), array = self.T, varname = 'graphite_xfe')
+			SEL.sp_xfe = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_xfe')
+			SEL.wds_xfe = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_xfe')
+			SEL.rwd_xfe = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_xfe')
+			SEL.perov_xfe = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_xfe')
+			SEL.mixture_xfe = self.array_modifier(input = kwargs.pop('mixture', 0.1), array = self.T, varname = 'mixture_xfe')
+			SEL.other_xfe = self.array_modifier(input = kwargs.pop('other', 0.1), array = self.T, varname = 'other_xfe')
 			
-		SEL.ol_xfe = self.array_modifier(input = kwargs.pop('ol', 0.1), array = self.T, varname = 'ol_xfe')
-		SEL.opx_xfe = self.array_modifier(input = kwargs.pop('opx', 0.1), array = self.T, varname = 'opx_xfe')
-		SEL.cpx_xfe = self.array_modifier(input = kwargs.pop('cpx', 0.1), array = self.T, varname = 'cpx_xfe')
-		SEL.garnet_xfe = self.array_modifier(input = kwargs.pop('garnet', 0.1), array = self.T, varname = 'garnet_xfe')
-		SEL.mica_xfe = self.array_modifier(input = kwargs.pop('mica', 0.1), array = self.T, varname = 'mica_xfe')
-		SEL.amp_xfe = self.array_modifier(input = kwargs.pop('amp', 0.1), array = self.T, varname = 'amp_xfe')
-		SEL.quartz_xfe = self.array_modifier(input = kwargs.pop('quartz', 0.1), array = self.T, varname = 'quartz_xfe')
-		SEL.plag_xfe = self.array_modifier(input = kwargs.pop('plag', 0.1), array = self.T, varname = 'plag_xfe')
-		SEL.kfelds_xfe = self.array_modifier(input = kwargs.pop('kfelds', 0.1), array = self.T, varname = 'kfelds_xfe')
-		SEL.sulphide_xfe = self.array_modifier(input = kwargs.pop('sulphide', 0.1), array = self.T, varname = 'sulphide_xfe')
-		SEL.graphite_xfe = self.array_modifier(input = kwargs.pop('graphite', 0.1), array = self.T, varname = 'graphite_xfe')
-		SEL.sp_xfe = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_xfe')
-		SEL.wds_xfe = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_xfe')
-		SEL.rwd_xfe = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_xfe')
-		SEL.perov_xfe = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_xfe')
-		SEL.mixture_xfe = self.array_modifier(input = kwargs.pop('mixture', 0.1), array = self.T, varname = 'mixture_xfe')
-		SEL.other_xfe = self.array_modifier(input = kwargs.pop('other', 0.1), array = self.T, varname = 'other_xfe')
+		elif reval == True:
+		
+			SEL.ol_xfe = self.array_modifier(input = SEL.ol_xfe, array = self.T, varname = 'ol_xfe')
+			SEL.opx_xfe = self.array_modifier(input = SEL.opx_xfe, array = self.T, varname = 'opx_xfe')
+			SEL.cpx_xfe = self.array_modifier(input = SEL.cpx_xfe, array = self.T, varname = 'cpx_xfe')
+			SEL.garnet_xfe = self.array_modifier(input = SEL.garnet_xfe, array = self.T, varname = 'garnet_xfe')
+			SEL.mica_xfe = self.array_modifier(input = SEL.mica_xfe, array = self.T, varname = 'mica_xfe')
+			SEL.amp_xfe = self.array_modifier(input = SEL.amp_xfe, array = self.T, varname = 'amp_xfe')
+			SEL.quartz_xfe = self.array_modifier(input = SEL.quartz_xfe, array = self.T, varname = 'quartz_xfe')
+			SEL.plag_xfe = self.array_modifier(input = SEL.plag_xfe, array = self.T, varname = 'plag_xfe')
+			SEL.kfelds_xfe = self.array_modifier(input = SEL.kfelds_xfe, array = self.T, varname = 'kfelds_xfe')
+			SEL.sulphide_xfe = self.array_modifier(input = SEL.sulphide_xfe, array = self.T, varname = 'sulphide_xfe')
+			SEL.graphite_xfe = self.array_modifier(input = SEL.graphite_xfe, array = self.T, varname = 'graphite_xfe')
+			SEL.sp_xfe = self.array_modifier(input = SEL.sp_xfe, array = self.T, varname = 'sp_xfe')
+			SEL.wds_xfe = self.array_modifier(input = SEL.wds_xfe, array = self.T, varname = 'wds_xfe')
+			SEL.rwd_xfe = self.array_modifier(input = SEL.rwd_xfe, array = self.T, varname = 'rwd_xfe')
+			SEL.perov_xfe = self.array_modifier(input = SEL.perov_xfe, array = self.T, varname = 'perov_xfe')
+			SEL.mixture_xfe = self.array_modifier(input = SEL.mixture_xfe, array = self.T, varname = 'mixture_xfe')
+			SEL.other_xfe = self.array_modifier(input = SEL.other_xfe, array = self.T, varname = 'other_xfe')
 		
 		SEL.xfe_mineral_list = [SEL.quartz_xfe, SEL.plag_xfe, SEL.amp_xfe, SEL.kfelds_xfe,
 			 SEL.opx_xfe, SEL.cpx_xfe, SEL.mica_xfe, SEL.garnet_xfe, SEL.sulphide_xfe,
 				   SEL.graphite_xfe, SEL.ol_xfe, SEL.sp_xfe, SEL.wds_xfe, SEL.rwd_xfe, SEL.perov_xfe, SEL.mixture_xfe, SEL.other_xfe]
 			
-	def set_param1_mineral(self, **kwargs):
+	def set_param1_mineral(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
-	
-		SEL.ol_param1 = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param1')
-		SEL.opx_param1 = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param1')
-		SEL.cpx_param1 = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param1')
-		SEL.garnet_param1 = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param1')
-		SEL.mica_param1 = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param1')
-		SEL.amp_param1 = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param1')
-		SEL.quartz_param1 = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param1')
-		SEL.plag_param1 = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param1')
-		SEL.kfelds_param1 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param1')
-		SEL.sulphide_param1 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param1')
-		SEL.graphite_param1 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param1')
-		SEL.sp_param1 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param1')
-		SEL.wds_param1 = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_param1')
-		SEL.rwd_param1 = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_param1')
-		SEL.perov_param1 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param1')
-		SEL.mixture_param1 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param1')
-		SEL.other_param1 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param1')
 		
+		if reval == False:
+			SEL.ol_param1 = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param1')
+			SEL.opx_param1 = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param1')
+			SEL.cpx_param1 = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param1')
+			SEL.garnet_param1 = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param1')
+			SEL.mica_param1 = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param1')
+			SEL.amp_param1 = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param1')
+			SEL.quartz_param1 = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param1')
+			SEL.plag_param1 = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param1')
+			SEL.kfelds_param1 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param1')
+			SEL.sulphide_param1 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param1')
+			SEL.graphite_param1 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param1')
+			SEL.sp_param1 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param1')
+			SEL.wds_param1 = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_param1')
+			SEL.rwd_param1 = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_param1')
+			SEL.perov_param1 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param1')
+			SEL.mixture_param1 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param1')
+			SEL.other_param1 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param1')
+		
+		elif reval == True:
+			
+			SEL.ol_param1 = self.array_modifier(input = SEL.ol_param1, array = self.T, varname = 'ol_param1')
+			SEL.opx_param1 = self.array_modifier(input = SEL.opx_param1, array = self.T, varname = 'opx_param1')
+			SEL.cpx_param1 = self.array_modifier(input = SEL.cpx_param1, array = self.T, varname = 'cpx_param1')
+			SEL.garnet_param1 = self.array_modifier(input = SEL.garnet_param1, array = self.T, varname = 'garnet_param1')
+			SEL.mica_param1 = self.array_modifier(input = SEL.mica_param1, array = self.T, varname = 'mica_param1')
+			SEL.amp_param1 = self.array_modifier(input = SEL.amp_param1, array = self.T, varname = 'amp_param1')
+			SEL.quartz_param1 = self.array_modifier(input = SEL.quartz_param1, array = self.T, varname = 'quartz_param1')
+			SEL.plag_param1 = self.array_modifier(input = SEL.plag_param1, array = self.T, varname = 'plag_param1')
+			SEL.kfelds_param1 = self.array_modifier(input = SEL.kfelds_param1, array = self.T, varname = 'kfelds_param1')
+			SEL.sulphide_param1 = self.array_modifier(input = SEL.sulphide_param1, array = self.T, varname = 'sulphide_param1')
+			SEL.graphite_param1 = self.array_modifier(input = SEL.graphite_param1, array = self.T, varname = 'graphite_param1')
+			SEL.sp_param1 = self.array_modifier(input = SEL.sp_param1, array = self.T, varname = 'sp_param1')
+			SEL.wds_param1 = self.array_modifier(input = SEL.wds_param1, array = self.T, varname = 'wds_param1')
+			SEL.rwd_param1 = self.array_modifier(input = SEL.rwd_param1, array = self.T, varname = 'rwd_param1')
+			SEL.perov_param1 = self.array_modifier(input = SEL.perov_param1, array = self.T, varname = 'perov_param1')
+			SEL.mixture_param1 = self.array_modifier(input = SEL.mixture_param1, array = self.T, varname = 'mixture_param1')
+			SEL.other_param1 = self.array_modifier(input = SEL.other_param1, array = self.T, varname = 'other_param1')
+			
 		SEL.param1_mineral_list = [SEL.quartz_param1, SEL.plag_param1, SEL.amp_param1, SEL.kfelds_param1,
 			 SEL.opx_param1, SEL.cpx_param1, SEL.mica_param1, SEL.garnet_param1, SEL.sulphide_param1,
 				   SEL.graphite_param1, SEL.ol_param1, SEL.sp_param1, SEL.wds_param1, SEL.rwd_param1, SEL.perov_param1, SEL.mixture_param1, SEL.other_param1]
 				   
-	def set_param1_rock(self, **kwargs):
+	def set_param1_rock(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
-	
-		SEL.granite_param1 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param1')
-		SEL.granulite_param1 = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param1')
-		SEL.sandstone_param1 = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param1')
-		SEL.gneiss_param1 = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param1')
-		SEL.amphibolite_param1 = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param1')
-		SEL.basalt_param1 = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param1')
-		SEL.mud_param1 = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param1')
-		SEL.gabbro_param1 = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param1')
-		SEL.other_rock_param1 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_param1')
+		
+		if reval == False:
+			SEL.granite_param1 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param1')
+			SEL.granulite_param1 = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param1')
+			SEL.sandstone_param1 = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param1')
+			SEL.gneiss_param1 = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param1')
+			SEL.amphibolite_param1 = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param1')
+			SEL.basalt_param1 = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param1')
+			SEL.mud_param1 = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param1')
+			SEL.gabbro_param1 = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param1')
+			SEL.other_rock_param1 = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_param1')
+			
+		elif reval == True:
+		
+			SEL.granite_param1 = self.array_modifier(input = SEL.granite_param1, array = self.T, varname = 'granite_param1')
+			SEL.granulite_param1 = self.array_modifier(input = SEL.granulite_param1, array = self.T, varname = 'granulite_param1')
+			SEL.sandstone_param1 = self.array_modifier(input = SEL.sandstone_param1, array = self.T, varname = 'sandstone_param1')
+			SEL.gneiss_param1 = self.array_modifier(input = SEL.gneiss_param1, array = self.T, varname = 'gneiss_param1')
+			SEL.amphibolite_param1 = self.array_modifier(input = SEL.amphibolite_param1, array = self.T, varname = 'amphibolite_param1')
+			SEL.basalt_param1 = self.array_modifier(input = SEL.basalt_param1, array = self.T, varname = 'basalt_param1')
+			SEL.mud_param1 = self.array_modifier(input = SEL.mud_param1, array = self.T, varname = 'mud_param1')
+			SEL.gabbro_param1 = self.array_modifier(input = SEL.gabbro_param1, array = self.T, varname = 'gabbro_param1')
+			SEL.other_rock_param1 = self.array_modifier(input = SEL.other_rock_param1, array = self.T, varname = 'other_rock_param1')
 		
 		SEL.param1_rock_list = [SEL.granite_param1, SEL.granulite_param1,
 			SEL.sandstone_param1, SEL.gneiss_param1, SEL.amphibolite_param1, SEL.basalt_param1,
 			SEL.mud_param1, SEL.gabbro_param1, SEL.other_rock_param1]
 			
-	def set_param2_mineral(self, **kwargs):
+	def set_param2_mineral(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 	
-		SEL.ol_param2 = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param2')
-		SEL.opx_param2 = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param2')
-		SEL.cpx_param2 = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param2')
-		SEL.garnet_param2 = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param2')
-		SEL.mica_param2 = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param2')
-		SEL.amp_param2 = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param2')
-		SEL.quartz_param2 = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param2')
-		SEL.plag_param2 = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param2')
-		SEL.kfelds_param2 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param2')
-		SEL.sulphide_param2 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param2')
-		SEL.graphite_param2 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param2')
-		SEL.sp_param2 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param2')
-		SEL.wds_param2 = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_param2')
-		SEL.rwd_param2 = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_param2')
-		SEL.perov_param2 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param2')
-		SEL.mixture_param2 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param2')
-		SEL.other_param2 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param2')
+		if reval == False:
+			SEL.ol_param2 = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param2')
+			SEL.opx_param2 = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param2')
+			SEL.cpx_param2 = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param2')
+			SEL.garnet_param2 = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param2')
+			SEL.mica_param2 = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param2')
+			SEL.amp_param2 = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param2')
+			SEL.quartz_param2 = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param2')
+			SEL.plag_param2 = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param2')
+			SEL.kfelds_param2 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param2')
+			SEL.sulphide_param2 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param2')
+			SEL.graphite_param2 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param2')
+			SEL.sp_param2 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param2')
+			SEL.wds_param2 = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_param2')
+			SEL.rwd_param2 = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_param2')
+			SEL.perov_param2 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param2')
+			SEL.mixture_param2 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param2')
+			SEL.other_param2 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param2')
 		
+		elif reval == True:
+			
+			SEL.ol_param2 = self.array_modifier(input = SEL.ol_param2, array = self.T, varname = 'ol_param2')
+			SEL.opx_param2 = self.array_modifier(input = SEL.opx_param2, array = self.T, varname = 'opx_param2')
+			SEL.cpx_param2 = self.array_modifier(input = SEL.cpx_param2, array = self.T, varname = 'cpx_param2')
+			SEL.garnet_param2 = self.array_modifier(input = SEL.garnet_param2, array = self.T, varname = 'garnet_param2')
+			SEL.mica_param2 = self.array_modifier(input = SEL.mica_param2, array = self.T, varname = 'mica_param2')
+			SEL.amp_param2 = self.array_modifier(input = SEL.amp_param2, array = self.T, varname = 'amp_param2')
+			SEL.quartz_param2 = self.array_modifier(input = SEL.quartz_param2, array = self.T, varname = 'quartz_param2')
+			SEL.plag_param2 = self.array_modifier(input = SEL.plag_param2, array = self.T, varname = 'plag_param2')
+			SEL.kfelds_param2 = self.array_modifier(input = SEL.kfelds_param2, array = self.T, varname = 'kfelds_param2')
+			SEL.sulphide_param2 = self.array_modifier(input = SEL.sulphide_param2, array = self.T, varname = 'sulphide_param2')
+			SEL.graphite_param2 = self.array_modifier(input = SEL.graphite_param2, array = self.T, varname = 'graphite_param2')
+			SEL.sp_param2 = self.array_modifier(input = SEL.sp_param2, array = self.T, varname = 'sp_param2')
+			SEL.wds_param2 = self.array_modifier(input = SEL.wds_param2, array = self.T, varname = 'wds_param2')
+			SEL.rwd_param2 = self.array_modifier(input = SEL.rwd_param2, array = self.T, varname = 'rwd_param2')
+			SEL.perov_param2 = self.array_modifier(input = SEL.perov_param2, array = self.T, varname = 'perov_param2')
+			SEL.mixture_param2 = self.array_modifier(input = SEL.mixture_param2, array = self.T, varname = 'mixture_param2')
+			SEL.other_param2 = self.array_modifier(input = SEL.other_param2, array = self.T, varname = 'other_param2')
+			
 		SEL.param2_mineral_list = [SEL.quartz_param2, SEL.plag_param2, SEL.amp_param2, SEL.kfelds_param2,
 			SEL.opx_param2, SEL.cpx_param2, SEL.mica_param2, SEL.garnet_param2, SEL.sulphide_param2,
 				   SEL.graphite_param2, SEL.ol_param2, SEL.sp_param2, SEL.wds_param2, SEL.rwd_param2, SEL.perov_param2, SEL.mixture_param2, SEL.other_param2]
 				   
-	def set_param2_rock(self, **kwargs):
+	def set_param2_rock(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 	
-		SEL.granite_param2 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param2')
-		SEL.granulite_param2 = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param2')
-		SEL.sandstone_param2 = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param2')
-		SEL.gneiss_param2 = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param2')
-		SEL.amphibolite_param2 = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param2')
-		SEL.basalt_param2 = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param2')
-		SEL.mud_param2 = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param2')
-		SEL.gabbro_param2 = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param2')
-		SEL.other_rock_param2 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'other_rock_param2')
+		if reval == False:
+			SEL.granite_param2 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param2')
+			SEL.granulite_param2 = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param2')
+			SEL.sandstone_param2 = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param2')
+			SEL.gneiss_param2 = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param2')
+			SEL.amphibolite_param2 = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param2')
+			SEL.basalt_param2 = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param2')
+			SEL.mud_param2 = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param2')
+			SEL.gabbro_param2 = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param2')
+			SEL.other_rock_param2 = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_param2')
+		elif reval == True:
+			SEL.granite_param2 = self.array_modifier(input = SEL.granite_param2, array = self.T, varname = 'granite_param2')
+			SEL.granulite_param2 = self.array_modifier(input = SEL.granulite_param2, array = self.T, varname = 'granulite_param2')
+			SEL.sandstone_param2 = self.array_modifier(input = SEL.sandstone_param2, array = self.T, varname = 'sandstone_param2')
+			SEL.gneiss_param2 = self.array_modifier(input = SEL.gneiss_param2, array = self.T, varname = 'gneiss_param2')
+			SEL.amphibolite_param2 = self.array_modifier(input = SEL.amphibolite_param2, array = self.T, varname = 'amphibolite_param2')
+			SEL.basalt_param2 = self.array_modifier(input = SEL.basalt_param2, array = self.T, varname = 'basalt_param2')
+			SEL.mud_param2 = self.array_modifier(input = SEL.mud_param2, array = self.T, varname = 'mud_param2')
+			SEL.gabbro_param2 = self.array_modifier(input = SEL.gabbro_param2, array = self.T, varname = 'gabbro_param2')
+			SEL.other_rock_param2 = self.array_modifier(input = SEL.other_rock_param2, array = self.T, varname = 'other_rock_param2')
 		
 		SEL.param2_rock_list = [SEL.granite_param2, SEL.granulite_param2,
 			SEL.sandstone_param2, SEL.gneiss_param2, SEL.amphibolite_param2, SEL.basalt_param2,
@@ -1561,38 +1709,68 @@ class SEL(object):
 			
 		self.al_opx = self.array_modifier(input = value, array = self.T, varname = 'al_opx') 
 		
-	def set_phase_interconnectivities(self,**kwargs):
+	def set_phase_interconnectivities(self,reval = False,**kwargs):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
+		if reval == False:
+			SEL.ol_m = self.array_modifier(input = kwargs.pop('ol', 4), array = self.T, varname = 'ol_m') 
+			SEL.opx_m = self.array_modifier(input = kwargs.pop('opx', 4), array = self.T, varname = 'opx_m') 
+			SEL.cpx_m = self.array_modifier(input = kwargs.pop('cpx', 4), array = self.T, varname = 'cpx_m') 
+			SEL.garnet_m = self.array_modifier(input = kwargs.pop('garnet', 4), array = self.T, varname = 'garnet_m') 
+			SEL.mica_m = self.array_modifier(input = kwargs.pop('mica', 4), array = self.T, varname = 'mica_m') 
+			SEL.amp_m = self.array_modifier(input = kwargs.pop('amp', 4), array = self.T, varname = 'amp_m') 
+			SEL.quartz_m = self.array_modifier(input = kwargs.pop('quartz', 4), array = self.T, varname = 'quartz_m') 
+			SEL.plag_m = self.array_modifier(input = kwargs.pop('plag', 4), array = self.T, varname = 'plag_m') 
+			SEL.kfelds_m = self.array_modifier(input = kwargs.pop('kfelds', 4), array = self.T, varname = 'kfelds_m') 
+			SEL.sulphide_m = self.array_modifier(input = kwargs.pop('sulphide', 4), array = self.T, varname = 'sulphide_m') 
+			SEL.graphite_m = self.array_modifier(input = kwargs.pop('graphite', 4), array = self.T, varname = 'graphite_m') 
+			SEL.mixture_m = self.array_modifier(input = kwargs.pop('mixture', 4), array = self.T, varname = 'mixture_m')
+			SEL.sp_m = self.array_modifier(input = kwargs.pop('sp', 4), array = self.T, varname = 'sp_m')
+			SEL.wds_m = self.array_modifier(input = kwargs.pop('wds', 4), array = self.T, varname = 'wds_m')
+			SEL.rwd_m = self.array_modifier(input = kwargs.pop('rwd', 4), array = self.T, varname = 'rwd_m')
+			SEL.perov_m = self.array_modifier(input = kwargs.pop('perov', 4), array = self.T, varname = 'perov_m')
+			SEL.other_m = self.array_modifier(input = kwargs.pop('other', 4), array = self.T, varname = 'other_m') 
+			
+			SEL.granite_m = self.array_modifier(input = kwargs.pop('granite', 4), array = self.T, varname = 'granite_m') 
+			SEL.granulite_m = self.array_modifier(input = kwargs.pop('granulite', 4), array = self.T, varname = 'granulite_m') 
+			SEL.sandstone_m = self.array_modifier(input = kwargs.pop('sandstone', 4), array = self.T, varname = 'sandstone_m') 
+			SEL.gneiss_m = self.array_modifier(input = kwargs.pop('gneiss', 4), array = self.T, varname = 'gneiss_m') 
+			SEL.amphibolite_m = self.array_modifier(input = kwargs.pop('amphibolite', 4), array = self.T, varname = 'amphibolite_m') 
+			SEL.basalt_m = self.array_modifier(input = kwargs.pop('basalt', 4), array = self.T, varname = 'basalt_m') 
+			SEL.mud_m = self.array_modifier(input = kwargs.pop('mud', 4), array = self.T, varname = 'mud_m') 
+			SEL.gabbro_m = self.array_modifier(input = kwargs.pop('gabbro', 4), array = self.T, varname = 'gabbro_m') 
+			SEL.other_rock_m = self.array_modifier(input = kwargs.pop('other_rock', 4), array = self.T, varname = 'other_rock_m') 
+			
+		elif reval == True:
 		
-		SEL.ol_m = self.array_modifier(input = kwargs.pop('ol', 4), array = self.T, varname = 'ol_m') 
-		SEL.opx_m = self.array_modifier(input = kwargs.pop('opx', 4), array = self.T, varname = 'opx_m') 
-		SEL.cpx_m = self.array_modifier(input = kwargs.pop('cpx', 4), array = self.T, varname = 'cpx_m') 
-		SEL.garnet_m = self.array_modifier(input = kwargs.pop('garnet', 4), array = self.T, varname = 'garnet_m') 
-		SEL.mica_m = self.array_modifier(input = kwargs.pop('mica', 4), array = self.T, varname = 'mica_m') 
-		SEL.amp_m = self.array_modifier(input = kwargs.pop('amp', 4), array = self.T, varname = 'amp_m') 
-		SEL.quartz_m = self.array_modifier(input = kwargs.pop('quartz', 4), array = self.T, varname = 'quartz_m') 
-		SEL.plag_m = self.array_modifier(input = kwargs.pop('plag', 4), array = self.T, varname = 'plag_m') 
-		SEL.kfelds_m = self.array_modifier(input = kwargs.pop('kfelds', 4), array = self.T, varname = 'kfelds_m') 
-		SEL.sulphide_m = self.array_modifier(input = kwargs.pop('sulphide', 4), array = self.T, varname = 'sulphide_m') 
-		SEL.graphite_m = self.array_modifier(input = kwargs.pop('graphite', 4), array = self.T, varname = 'graphite_m') 
-		SEL.mixture_m = self.array_modifier(input = kwargs.pop('mixture', 4), array = self.T, varname = 'mixture_m')
-		SEL.sp_m = self.array_modifier(input = kwargs.pop('sp', 4), array = self.T, varname = 'sp_m')
-		SEL.wds_m = self.array_modifier(input = kwargs.pop('wds', 4), array = self.T, varname = 'wds_m')
-		SEL.rwd_m = self.array_modifier(input = kwargs.pop('rwd', 4), array = self.T, varname = 'rwd_m')
-		SEL.perov_m = self.array_modifier(input = kwargs.pop('perov', 4), array = self.T, varname = 'perov_m')
-		SEL.other_m = self.array_modifier(input = kwargs.pop('other', 4), array = self.T, varname = 'other_m') 
-		
-		SEL.granite_m = self.array_modifier(input = kwargs.pop('granite', 4), array = self.T, varname = 'granite_m') 
-		SEL.granulite_m = self.array_modifier(input = kwargs.pop('granulite', 4), array = self.T, varname = 'granulite_m') 
-		SEL.sandstone_m = self.array_modifier(input = kwargs.pop('sandstone', 4), array = self.T, varname = 'sandstone_m') 
-		SEL.gneiss_m = self.array_modifier(input = kwargs.pop('gneiss', 4), array = self.T, varname = 'gneiss_m') 
-		SEL.amphibolite_m = self.array_modifier(input = kwargs.pop('amphibolite', 4), array = self.T, varname = 'amphibolite_m') 
-		SEL.basalt_m = self.array_modifier(input = kwargs.pop('basalt', 4), array = self.T, varname = 'basalt_m') 
-		SEL.mud_m = self.array_modifier(input = kwargs.pop('mud', 4), array = self.T, varname = 'mud_m') 
-		SEL.gabbro_m = self.array_modifier(input = kwargs.pop('gabbro', 4), array = self.T, varname = 'gabbro_m') 
-		SEL.other_rock_m = self.array_modifier(input = kwargs.pop('other_rock', 4), array = self.T, varname = 'other_rock_m') 
+			SEL.ol_m = self.array_modifier(input = SEL.ol_m, array = self.T, varname = 'ol_m') 
+			SEL.opx_m = self.array_modifier(input = SEL.opx_m, array = self.T, varname = 'opx_m') 
+			SEL.cpx_m = self.array_modifier(input = SEL.cpx_m, array = self.T, varname = 'cpx_m') 
+			SEL.garnet_m = self.array_modifier(input = SEL.garnet_m, array = self.T, varname = 'garnet_m') 
+			SEL.mica_m = self.array_modifier(input = SEL.mica_m, array = self.T, varname = 'mica_m') 
+			SEL.amp_m = self.array_modifier(input = SEL.amp_m, array = self.T, varname = 'amp_m') 
+			SEL.quartz_m = self.array_modifier(input = SEL.quartz_m, array = self.T, varname = 'quartz_m') 
+			SEL.plag_m = self.array_modifier(input = SEL.plag_m, array = self.T, varname = 'plag_m') 
+			SEL.kfelds_m = self.array_modifier(input = SEL.kfelds_m, array = self.T, varname = 'kfelds_m') 
+			SEL.sulphide_m = self.array_modifier(input = SEL.sulphide_m, array = self.T, varname = 'sulphide_m') 
+			SEL.graphite_m = self.array_modifier(input = SEL.graphite_m, array = self.T, varname = 'graphite_m') 
+			SEL.mixture_m = self.array_modifier(input = SEL.mixture_m, array = self.T, varname = 'mixture_m')
+			SEL.sp_m = self.array_modifier(input = SEL.sp_m, array = self.T, varname = 'sp_m')
+			SEL.wds_m = self.array_modifier(input = SEL.wds_m, array = self.T, varname = 'wds_m')
+			SEL.rwd_m = self.array_modifier(input = SEL.rwd_m, array = self.T, varname = 'rwd_m')
+			SEL.perov_m = self.array_modifier(input = SEL.perov_m, array = self.T, varname = 'perov_m')
+			SEL.other_m = self.array_modifier(input = SEL.other_m, array = self.T, varname = 'other_m') 
+			
+			SEL.granite_m = self.array_modifier(input = SEL.granite_m, array = self.T, varname = 'granite_m') 
+			SEL.granulite_m = self.array_modifier(input = SEL.granulite_m, array = self.T, varname = 'granulite_m') 
+			SEL.sandstone_m = self.array_modifier(input = SEL.sandstone_m, array = self.T, varname = 'sandstone_m') 
+			SEL.gneiss_m = self.array_modifier(input = SEL.gneiss_m, array = self.T, varname = 'gneiss_m') 
+			SEL.amphibolite_m = self.array_modifier(input = SEL.amphibolite_m, array = self.T, varname = 'amphibolite_m') 
+			SEL.basalt_m = self.array_modifier(input = SEL.basalt_m, array = self.T, varname = 'basalt_m') 
+			SEL.mud_m = self.array_modifier(input = SEL.ol_m, array = self.T, varname = 'mud_m') 
+			SEL.gabbro_m = self.array_modifier(input = SEL.ol_m, array = self.T, varname = 'gabbro_m') 
+			SEL.other_rock_m = self.array_modifier(input = SEL.ol_m, array = self.T, varname = 'other_rock_m')
 		
 		overlookError = kwargs.pop('overlookError', False)
 		

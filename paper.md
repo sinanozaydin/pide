@@ -1,7 +1,7 @@
 ---
-title: 'pygeoSEL: Synthetic Earth Library for petrophysical calculations of Earth systems.'
+title: 'terrafuse: an Earth material library for petrophysical calculations and synthetic modelling of Earth systems.'
 tags:
-  - Python
+  - Python3
   - magnetotellurics
   - petrophysics
   - electrical conductivity
@@ -24,8 +24,6 @@ authors:
     affiliation: 1
   - name: Maria Constanza Manassero
     affiliation: 3
-  - name: Kate Selway
-    affiliation: "3,4"
 
 affiliations:
  - name: School of Geosciences, University of Sydney, Sydney, Australia.
@@ -34,8 +32,6 @@ affiliations:
    index: 2
  - name: School of Natural Sciences, University of Tasmania, Hobart, Australia.
    index: 3
- - name: Vox Geophysics, Perth, Australia.
-   index: 4
 date: 16 August 2023
 bibliography: paper.bib
 ---
