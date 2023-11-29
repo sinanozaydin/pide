@@ -970,6 +970,11 @@ class SEL(object):
 		self.opx_sol_choice = kwargs.pop('opx', 0)
 		self.cpx_sol_choice = kwargs.pop('cpx', 0)
 		self.garnet_sol_choice = kwargs.pop('garnet', 0)
+		
+		if self.mineral_sol_name[10][self.ol_sol_choice] == 'FromOpx':
+			if self.mineral_sol_name[4][self.opx_sol_choice] == 'FromOl':
+				self.ol_sol_choice = 0
+				raise ValueError('The olivine and opx water solubilities references each other, this will generate an infinite loop during calculation. Reverting to the default value for olivine.')
 			
 	def set_mantle_water_partitions(self,**kwargs):
 	
@@ -3273,13 +3278,20 @@ class SEL(object):
 			
 				if ('Opx' in self.mineral_sol_name[min_idx][self.ol_sol_choice]) == True:
 				
-					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
-				
-					self.max_ol_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug,fe_ol = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')") / self.d_opx_ol
+					#water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
 					
+					try:
+						max_mineral_water = self.max_opx_water / self.d_opx_ol
+					except NameError:
+						#max_mineral_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug,fe_ol = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')") / self.d_opx_ol
+						
+						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
+						max_mineral_water = self.max_opx_water / self.d_opx_ol
+						self.max_ol_water = np.array(max_mineral_water) 
 			else:
 				try:
-					self.max_ol_water = eval(self.mineral_sol_name[min_idx][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node],method = 'array')")
+					max_mineral_water = eval(self.mineral_sol_name[min_idx][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node],method = 'array')")
+					self.max_ol_water = np.array(max_mineral_water)
 				except AttributeError:
 					raise AttributeError('You have to enter ti_ol as a different parameter by the SEL.set_parameter method')
 		elif mineral_name == 'opx':
@@ -3291,14 +3303,22 @@ class SEL(object):
 			
 				if ('Ol' in self.mineral_sol_name[min_idx][self.opx_sol_choice]) == True:
 				
-					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
+					#water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
 					
-					self.max_opx_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_opx_ol
+					try:
+						max_mineral_water = self.max_ol_water * self.d_opx_ol
+					except NameError:
 					
+						self.max_ol_water = self.rerun_sol(mineral = 'ol', method = method)
+						max_mineral_water = self.max_ol_water * self.d_opx_ol
+						self.max_opx_water = np.array(max_mineral_water)
+					
+					# max_mineral_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_opx_ol
+					# self.max_opx_water = np.array(max_mineral_water)
 			else:
 				
-				self.max_opx_water = eval(self.mineral_sol_name[min_idx][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')")
-		
+				max_mineral_water = eval(self.mineral_sol_name[min_idx][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')")
+				self.max_opx_water = np.array(max_mineral_water)
 			
 		elif mineral_name == 'cpx':
 			
@@ -3310,20 +3330,36 @@ class SEL(object):
 			if ('From' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
 			
 				if ('Ol' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
+									
+					#water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
 					
-					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
+					try:
+						max_mineral_water = self.max_ol_water * self.d_cpx_ol
+					except NameError:
+						self.max_ol_water = self.rerun_sol(mineral = 'ol', method = method)
+						max_mineral_water = self.max_ol_water * self.d_cpx_ol
+						self.max_cpx_water = np.array(max_mineral_water)
 				
-					self.max_cpx_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_cpx_ol
+					# max_mineral_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_cpx_ol
+					# self.max_cpx_water = np.array(max_mineral_water)
 					
 				elif ('Opx' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
 				
-					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
-				
-					self.max_cpx_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * (self.d_cpx_ol/self.d_opx_ol)
+					# water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
 					
+					# max_mineral_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * (self.d_cpx_ol/self.d_opx_ol)
+					# self.max_cpx_water = np.array(max_mineral_water)
+					
+					try:
+						max_mineral_water = self.max_ol_water * (self.d_cpx_ol/self.d_opx_ol)
+					except NameError:
+						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
+						max_mineral_water = self.max_opx_water * (self.d_cpx_ol/self.d_opx_ol)
+						self.max_cpx_water = np.array(max_mineral_water)
+						
 			else:
 				
-				self.max_cpx_water = eval(self.mineral_sol_name[min_idx][self.cpx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.cpx_xfe[idx_node], al_opx = self.al_cpx[idx_node], method = 'array')")
+				max_mineral_water = eval(self.mineral_sol_name[min_idx][self.cpx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.cpx_xfe[idx_node], al_opx = self.al_cpx[idx_node], method = 'array')")
 			
 		elif mineral_name == 'garnet':
 			
@@ -3334,29 +3370,59 @@ class SEL(object):
 			
 				if ('Ol' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
 				
-					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
+					# water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 10, sol_choice= self.ol_sol_choice)
 				
-					self.max_garnet_water = eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_garnet_ol
+					# max_mineral_water= eval(self.mineral_sol_name[10][self.ol_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_ol = self.ol_xfe[idx_node], ti_ol = self.ti_ol[idx_node], method = 'array')") * self.d_garnet_ol
+					
+					try:
+						max_mineral_water = self.max_ol_water * self.d_garnet_ol
+					except NameError:
+						self.max_ol_water = self.rerun_sol(mineral = 'garnet', method = method)
+						max_mineral_water = self.max_ol_water * self.d_garnet_ol
+						self.max_garnet_water = np.array(max_mineral_water)
 					
 				elif ('Opx' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
 				
-					water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
+					# water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = 4, sol_choice= self.opx_sol_choice)
 				
-					self.max_garnet_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')") * (self.d_garnet_ol/self.d_opx_ol)
+					# max_mineral_water = eval(self.mineral_sol_name[4][self.opx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.opx_xfe[idx_node], al_opx = self.al_opx[idx_node], method = 'array')") * (self.d_garnet_ol/self.d_opx_ol)
+					
+					try:
+						max_mineral_water = self.max_opx_water * (self.d_garnet_ol/self.d_opx_ol)
+					except NameError:
+						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
+						max_mineral_water = self.max_opx_water * (self.d_garnet_ol/self.d_opx_ol)
+						self.max_opx_water = np.array(max_mineral_water)
 					
 			else:
 				
-				self.max_garnet_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_garnet = self.garnet_xfe[idx_node], method = 'array')")
+				max_mineral_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_garnet = self.garnet_xfe[idx_node], method = 'array')")
 			
+		return max_mineral_water
+		
+	def rerun_sol(self,mineral, method):
+		
+		if mineral == 'ol':
+			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)
+		elif mineral == 'opx':
+			water_calc= self.calculate_mineral_water_solubility(mineral_name = 'opx', method = method)
+		elif mineral == 'cpx':
+			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
+		elif mineral == 'garnet':
+			water_calc= self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
 			
+		return water_calc
+		
 	def calculate_bulk_mantle_water_solubility(self, method, **kwargs):
 	
-		self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)
-		self.calculate_mineral_water_solubility(mineral_name = 'opx', method = method)
-		self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
-		self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
-		self.max_bulk_water = (self.max_ol_water * self.ol_frac) + (self.max_opx_water * self.opx_frac) + (self.max_cpx_water * self.cpx_frac) + (self.max_garnet_water * self.gt_frac)
+		self.max_ol_water = self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)
+		self.max_opx_water = self.calculate_mineral_water_solubility(mineral_name = 'opx', method = method)
+		self.max_cpx_water = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
+		self.max_garnet_water = self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
+		self.max_bulk_water = (self.max_ol_water * self.ol_frac) + (self.max_opx_water * self.opx_frac) + (self.max_cpx_water * self.cpx_frac) + (self.max_garnet_water * self.garnet_frac)
 
+		return self.max_bulk_water
+		
 	def savetextfile(self):
 
 		if self.write_file_save_name != '':

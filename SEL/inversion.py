@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-def _solv_(index_list, object, param, upperlimit, lowerlimit, increment, water_solv = False):
+def _solv_(index_list, object, param, upperlimit, lowerlimit, search_start, water_solv = False):
 
-	pass
 	
-def conductivity_solver_single_param(object, param_name, upper_limit_list, lower_limit_list, increment, num_cpu = 1):
+	
+def conductivity_solver_single_param(cond_list, object, temp_array, p_array, param_name,
+	upper_limit_list, lower_limit_list, search_start, cond_err = None, num_cpu = 1):
 
 	
 	if 'water' in param_name is True:
