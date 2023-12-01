@@ -33,5 +33,7 @@ sel_obj.set_mantle_water_partitions(opx_ol = 3, cpx_ol = 4, garnet_ol = 0)
 
 max_water = sel_obj.calculate_bulk_mantle_water_solubility(method = 'array')
 
-conductivity_solver_single_param(object = sel_obj, temp_array = temp, p_array = pres, param_name = 'bulk_water', upper_limit_list = max_water,
-lower_limit_list= np.zeros(len(max_water)) , search_start =50, num_cpu = 1)
+cond_list = np.ones(len(max_water[0])) * 1e-3 #1000 ohm meter
+
+conductivity_solver_single_param(object = sel_obj, cond_list = cond_list, param_name = 'bulk_water', upper_limit_list = max_water[0],
+lower_limit_list= np.zeros(len(max_water[0])), search_start = 50, num_cpu = 1)

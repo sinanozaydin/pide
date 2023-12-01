@@ -1455,7 +1455,7 @@ class SEL(object):
 			SEL.sandstone_water, SEL.gneiss_water, SEL.amphibolite_water, SEL.basalt_water,
 			SEL.mud_water, SEL.gabbro_water, SEL.other_rock_water]
 			
-	def set_bulk_water(self,value):
+	def set_bulk_water(self,value, index = None):
 	
 		#Running this function overrides the individual mineral water contents until another action is taken.
 	
@@ -1868,12 +1868,16 @@ class SEL(object):
 		return phs_melt_mix_list
 		
 	def array_modifier(self, input, array, varname):
-	
+		
 		if type(input) == int:
 			
 			ret_array = np.ones(len(array)) * input
 			
 		elif type(input) == float:
+			
+			ret_array = np.ones(len(array)) * input
+			
+		elif type(input) == np.float64:
 			
 			ret_array = np.ones(len(array)) * input
 			
@@ -2132,12 +2136,18 @@ class SEL(object):
 				odd_function = SEL.name[min_idx][SEL.minerals_cond_selections[min_sub_idx]]
 
 			if ('fo2' in odd_function) == True:
-
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = self.xfe_mineral_list[min_sub_idx][idx_node], param1 = SEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEL.param2_mineral_list[min_sub_idx][idx_node], fo2 = self.calculate_fugacity(SEL.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
+				
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
+				water = SEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = self.xfe_mineral_list[min_sub_idx][idx_node],\
+				param1 = SEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEL.param2_mineral_list[min_sub_idx][idx_node],\
+				fo2 = self.calculate_fugacity(SEL.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method)')
 
 			else:
-
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = SEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = self.xfe_mineral_list[min_sub_idx][idx_node], param1 = SEL.param1_mineral_list[min_sub_idx][idx_node], param2 = SEL.param2_mineral_list[min_sub_idx][idx_node], fo2 = None, fo2_ref = None, method = method)')
+			
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
+				water = SEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
+				xFe = self.xfe_mineral_list[min_sub_idx][idx_node], param1 = SEL.param1_mineral_list[min_sub_idx][idx_node],\
+				param2 = SEL.param2_mineral_list[min_sub_idx][idx_node], fo2 = None, fo2_ref = None, method = method)')
 
 		return cond
 		
@@ -3164,7 +3174,7 @@ class SEL(object):
 			
 		else:
 			
-			self.d_opx_ol = eval(self.water_ol_part_name[4][self.d_water_cpx_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[4][self.d_water_opx_ol_choice], d_opx_ol = 0, method = method)')
+			self.d_opx_ol = eval(self.water_ol_part_name[4][self.d_water_opx_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[4][self.d_water_opx_ol_choice], d_opx_ol = 0, method = method)')
 		
 		if self.water_ol_part_type[5][self.d_water_cpx_ol_choice] == 0:
 		
@@ -3172,7 +3182,7 @@ class SEL(object):
 			
 		else:
 			
-			self.d_cpx_ol = eval(self.water_ol_part_name[5][self.d_water_garnet_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[5][self.d_water_cpx_ol_choice], d_opx_ol = self.d_opx_ol[idx_node], method = method)')
+			self.d_cpx_ol = eval(self.water_ol_part_name[5][self.d_water_cpx_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[5][self.d_water_cpx_ol_choice], d_opx_ol = self.d_opx_ol[idx_node], method = method)')
 		
 		if self.water_ol_part_type[7][self.d_water_garnet_ol_choice] == 0:
 		
@@ -3217,8 +3227,10 @@ class SEL(object):
 			self.solid_water[idx_node] = self.bulk_water[idx_node]
 		
 		#calculating olivine water content from bulk water using mineral partitioning contents
-
-		SEL.ol_water[idx_node] = self.solid_water[idx_node] / (self.ol_frac_wt[idx_node] + ((self.opx_frac_wt[idx_node] * self.d_opx_ol[idx_node]) + (self.cpx_frac_wt[idx_node] * self.d_cpx_ol[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_ol[idx_node])))
+				
+		SEL.ol_water[idx_node] = self.solid_water[idx_node] / (self.ol_frac_wt[idx_node] + ((self.opx_frac_wt[idx_node] * self.d_opx_ol[idx_node]) +\
+		(self.cpx_frac_wt[idx_node] * self.d_cpx_ol[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_ol[idx_node])))
+		
 		
 		#calculating opx water content
 		SEL.opx_water[idx_node] = SEL.ol_water[idx_node] * self.d_opx_ol[idx_node]
