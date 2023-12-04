@@ -770,9 +770,7 @@ class SEL(object):
 		setattr(self, param_name, self.array_modifier(input = value, array=self.T,varname = param_name))
 	
 	def set_composition_solid_mineral(self, reval = False, **kwargs):
-	
-		#Enter composition in fraction 0.6 == 60% volumetric percentage
-		
+			
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 		
@@ -1882,18 +1880,24 @@ class SEL(object):
 			ret_array = np.ones(len(array)) * input
 			
 		elif type(input) == list:
-		
-			ret_array = np.array(input)
-			if len(ret_array) != len(array):
-				
-				raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
+			
+			if len(input) == 1:
+				ret_array = np.ones(len(array)) * input[0]
+			else:
+				ret_array = np.array(input)
+				if len(ret_array) != len(array):
+					
+					raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
 			
 		elif type(input) == np.ndarray:
 		
-			ret_array = input
-			if len(ret_array) != len(array):
-				raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
-			
+			if len(input) == 1:
+				ret_array = np.ones(len(array)) * input[0]
+			else:
+				ret_array = input
+				if len(ret_array) != len(array):
+					raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
+				
 		return ret_array
 		
 	def suggestion_temp_array(self):
@@ -2003,7 +2007,8 @@ class SEL(object):
 			else:
 
 				melt_odd_function = SEL.name[1][SEL.melt_cond_selection]
-
+			# import ipdb
+			# ipdb.set_trace()
 			cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
 			'Melt_CO2 = self.co2_melt, Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], method = method)')
 		
@@ -2143,7 +2148,7 @@ class SEL(object):
 				fo2 = self.calculate_fugacity(SEL.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method)')
 
 			else:
-			
+				
 				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
 				water = SEL.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
 				xFe = self.xfe_mineral_list[min_sub_idx][idx_node], param1 = SEL.param1_mineral_list[min_sub_idx][idx_node],\
@@ -2822,15 +2827,17 @@ class SEL(object):
 				((3 * self.melt_fluid_frac[idx_node] * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])) /\
 				(3 * self.bulk_cond[idx_node] + (vol_matrix * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])))))
 			
-	def calculate_conductivity(self, method = None):
-
+	def calculate_conductivity(self, method = None,**kwargs):
+		
+		sol_idx = kwargs.pop('sol_idx', 0)
+		
 		if method == 'index':
-			index = 0
+			index = sol_idx
 		elif method == 'array':
 			index = None
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
-		
+			
 		self.calculate_density_solid()
 		
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
@@ -2978,8 +2985,11 @@ class SEL(object):
 			self.phase_mixing_function(method = SEL.phs_mix_method, melt_method = SEL.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 		
 		self.cond_calculated = True
-
-		return self.bulk_cond
+		
+		if method == 'array':
+			return self.bulk_cond
+		elif method == 'index':
+			return self.bulk_cond[index]
 		
 	def calculate_density_solid(self):
 		

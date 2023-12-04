@@ -15,9 +15,10 @@ pres = np.ones(len(temp))
 index_list = range(0,len(temp))
 sel_obj = SEL.SEL() #creating the initial object
 sel_obj.set_temperature(temp)
-sel_obj.set_pressure(1.0)
+sel_obj.set_pressure(3)
 sel_obj.set_composition_solid_mineral(ol = 0.65, opx = 0.2, cpx = 0.1, garnet = 0.05)
 sel_obj.set_phase_interconnectivities(ol = 1, opx = 2, cpx = 4, gt = 4)
+# sel_obj.set_melt_fluid_frac(0.01)
 sel_obj.set_parameter('ti_ol', 0.1)
 
 sel_obj.list_mantle_water_solubilities('ol')
@@ -31,9 +32,13 @@ sel_obj.list_mantle_water_partitions_solid('cpx')
 sel_obj.list_mantle_water_partitions_solid('garnet')
 sel_obj.set_mantle_water_partitions(opx_ol = 3, cpx_ol = 4, garnet_ol = 0)
 
+sel_obj.revalue_arrays()
+
+
+
 max_water = sel_obj.calculate_bulk_mantle_water_solubility(method = 'array')
 
-cond_list = np.ones(len(max_water[0])) * 1e-3 #1000 ohm meter
+cond_list = np.ones(len(max_water[0])) * 1e-5 #1000 ohm meter
 
 conductivity_solver_single_param(object = sel_obj, cond_list = cond_list, param_name = 'bulk_water', upper_limit_list = max_water[0],
-lower_limit_list= np.zeros(len(max_water[0])), search_start = 50, num_cpu = 1)
+lower_limit_list= np.zeros(len(max_water[0])), search_start = 10, acceptence_threshold = 5, num_cpu = 1)
