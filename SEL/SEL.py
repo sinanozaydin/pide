@@ -3330,7 +3330,7 @@ class SEL(object):
 					try:
 						max_mineral_water = self.max_ol_water * self.d_opx_ol
 					except NameError:
-					
+						
 						self.max_ol_water = self.rerun_sol(mineral = 'ol', method = method)
 						max_mineral_water = self.max_ol_water * self.d_opx_ol
 						self.max_opx_water = np.array(max_mineral_water)
@@ -3419,8 +3419,14 @@ class SEL(object):
 			else:
 				
 				max_mineral_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_garnet = self.garnet_xfe[idx_node], method = 'array')")
-			
-		return max_mineral_water
+		
+		if method == 'array':
+			if len(max_mineral_water) == 1:
+				return max_mineral_water[0]
+			else:
+				return max_mineral_water
+		elif method == 'index':
+			return max_mineral_water
 		
 	def rerun_sol(self,mineral, method):
 		
@@ -3431,7 +3437,7 @@ class SEL(object):
 		elif mineral == 'cpx':
 			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
 		elif mineral == 'garnet':
-			water_calc= self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
+			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
 			
 		return water_calc
 		
@@ -3442,7 +3448,7 @@ class SEL(object):
 		self.max_cpx_water = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
 		self.max_garnet_water = self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
 		self.max_bulk_water = (self.max_ol_water * self.ol_frac) + (self.max_opx_water * self.opx_frac) + (self.max_cpx_water * self.cpx_frac) + (self.max_garnet_water * self.garnet_frac)
-
+		
 		return self.max_bulk_water
 		
 	def savetextfile(self):

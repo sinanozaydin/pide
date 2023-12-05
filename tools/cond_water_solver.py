@@ -38,7 +38,24 @@ sel_obj.revalue_arrays()
 
 max_water = sel_obj.calculate_bulk_mantle_water_solubility(method = 'array')
 
-cond_list = np.ones(len(max_water[0])) * 1e-5 #1000 ohm meter
 
-conductivity_solver_single_param(object = sel_obj, cond_list = cond_list, param_name = 'bulk_water', upper_limit_list = max_water[0],
-lower_limit_list= np.zeros(len(max_water[0])), search_start = 10, acceptence_threshold = 5, num_cpu = 1)
+cond_list = np.ones(len(max_water)) * 1e-3 #1000 ohm meter
+
+c_list, residual_list = conductivity_solver_single_param(object = sel_obj, cond_list = cond_list, param_name = 'bulk_water', upper_limit_list = max_water,
+lower_limit_list= np.zeros(len(max_water)), search_start = 10, acceptence_threshold = 0.5, num_cpu = 5)
+
+import matplotlib.pyplot as plt
+	
+sel_obj.set_bulk_water(c_list)
+sel_obj.mantle_water_distribute(method = 'array')
+cond_calced = sel_obj.calculate_conductivity(method = 'array')
+fig = plt.figure()
+ax = plt.subplot(121)
+# ax.plot(cond_list,object.T,label = 'data')
+# ax.plot(cond_calced,object.T, label = 'calced')
+
+ax.plot(c_list,sel_obj.T)
+ax.set_ylim(np.amax(sel_obj.T),np.amin(sel_obj.T))
+ax.plot(max_water,sel_obj.T)
+ax.legend()
+plt.savefig('2.png',dpi = 300)

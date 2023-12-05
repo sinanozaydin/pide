@@ -35,7 +35,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 				cond_calced = object.calculate_conductivity(method = 'index',sol_idx = index)
 				
 				residual = cond_list[index] - cond_calced
-				print(residual)
+				
 				if abs(residual) < (acceptence_threshold * 1e-2 * cond_list[index]):
 					restart = False
 					sol_param = param_search_array[j]
@@ -45,9 +45,9 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 					
 					if residual < 0.0:
 						if len(param_search_array) > 4:
-							print('ENTERED5555')
+							
 							if search_increment <= (init_search_increment * 1e-2 * acceptence_threshold):
-								sol_param = param_search_array[j]
+								sol_param = lowerlimit[index]
 								restart = False
 								break
 							else:
@@ -57,24 +57,20 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 								break
 						else:					
 							if search_increment <= (init_search_increment * 1e-2 * acceptence_threshold):
-								print('ENTERED222')
-								sol_param = param_search_array[j]
+								sol_param = lowerlimit[index]
 								restart = False
 								break
 							else:
-								print('ENTERED3333')
 								search_increment = search_increment / 2.0
 								param_search_array = np.arange(lowerlimit[index], upperlimit[index], search_increment)
 								restart = True
 								break
 					else:
 						if j == len(param_search_array)-1:
-							print('ENTERED777')
-							sol_param = param_search_array[-1]
+							sol_param = param_search_array[-1] #equivalent to upper limit
 							restart = False
 							break
 						else:
-							print('ENTERED888')
 							pass
 						
 	return sol_param, residual
@@ -140,18 +136,4 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]
 			
-	import matplotlib.pyplot as plt
-	
-	object.set_bulk_water(c_list)
-	object.mantle_water_distribute(method = 'array')
-	cond_calced = object.calculate_conductivity(method = 'array')
-	fig = plt.figure()
-	ax = plt.subplot(121)
-	# ax.plot(cond_list,object.T,label = 'data')
-	# ax.plot(cond_calced,object.T, label = 'calced')
-	
-	ax.plot(c_list,object.T)
-	ax.set_ylim(np.amax(object.T),np.amin(object.T))
-	ax.plot(upper_limit_list,object.T)
-	ax.legend()
-	plt.show()
+	return c_list, residual_list
