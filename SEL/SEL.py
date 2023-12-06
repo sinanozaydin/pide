@@ -36,6 +36,7 @@ from sel_src.cond_models.minerals.mica_odd import *
 from sel_src.cond_models.minerals.garnet_odd import *
 from sel_src.cond_models.minerals.ol_odd import *
 from sel_src.cond_models.minerals.mixtures_odd import *
+from sel_src.cond_models.minerals.rwd_wds_odd import *
 from sel_src.cond_models.minerals.other_odd import *
 #importing water-partitioning odd functions
 from sel_src.water_partitioning.water_part_odd import *
@@ -513,8 +514,7 @@ class SEL(object):
 		self.graphite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'graphite.csv'),delim = ',')
 		self.ol_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'ol.csv'),delim = ',')
 		self.spinel_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'spinel.csv'),delim = ',')
-		self.wadsleyite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'wadsleyite.csv'),delim = ',')
-		self.ringwoodite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'ringwoodite.csv'),delim = ',')
+		self.rwd_wds_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'ringwoodite_wadsleyite.csv'),delim = ',')
 		self.perovskite_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'perovskite.csv'),delim = ',')
 		self.mixture_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'mixtures.csv'),delim = ',')
 		self.other_cond_data = self.read_csv(os.path.join(self.core_path, 'cond_models' , 'minerals', 'other.csv'),delim = ',')
@@ -523,8 +523,8 @@ class SEL(object):
 			  self.sandstone_cond_data, self.gneiss_cond_data, self.amphibolite_cond_data, self.basalt_cond_data, self.mud_cond_data,
 			   self.gabbro_cond_data, self.other_rock_cond_data, self.quartz_cond_data, self.plag_cond_data,
 			  self.amp_cond_data, self.kfelds_cond_data, self.opx_cond_data, self.cpx_cond_data, self.mica_cond_data,
-			  self.garnet_cond_data, self.sulphides_cond_data, self.graphite_cond_data, self.ol_cond_data, self.spinel_cond_data, self.wadsleyite_cond_data,
-			  self.ringwoodite_cond_data, self.perovskite_cond_data, self.mixture_cond_data, self.other_cond_data]
+			  self.garnet_cond_data, self.sulphides_cond_data, self.graphite_cond_data, self.ol_cond_data, self.spinel_cond_data, 
+			  self.rwd_wds_cond_data, self.perovskite_cond_data, self.mixture_cond_data, self.other_cond_data]
 			  
 		len_fluid = len(self.fluid_cond_data) - 1 
 		len_melt = len(self.melt_cond_data) - 1
@@ -555,20 +555,19 @@ class SEL(object):
 		len_graphite = len(self.graphite_cond_data) - 1
 		len_ol = len(self.ol_cond_data) - 1
 		len_sp = len(self.spinel_cond_data) - 1
-		len_wds = len(self.wadsleyite_cond_data) - 1
-		len_rwd = len(self.ringwoodite_cond_data) - 1
+		len_rwd_wds = len(self.rwd_wds_cond_data) - 1
 		len_perov = len(self.perovskite_cond_data) - 1
 		len_mixture = len(self.mixture_cond_data) - 1
 		len_other = len(self.other_cond_data) - 1
 		
-		self.mineral_num = 17
+		self.mineral_num = 16
 		
 		def create_nan_array():
 		
 			array = [[None] * len_fluid, [None] * len_melt, [None] * len_granite, [None] * len_granulite, [None] * len_sandstone, [None] * len_gneiss,
 			[None] * len_amphibolite, [None] * len_basalt, [None] * len_mud, [None] * len_gabbro, [None] * len_other_rock, [None] * len_quartz,
 			[None] * len_plag, [None] * len_amp, [None] * len_kfelds, [None] * len_opx, [None] * len_cpx, [None] * len_mica,
-			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_sp, [None] * len_wds, [None] * len_rwd, 
+			[None] * len_garnet, [None] * len_sulphides, [None] * len_graphite, [None] * len_ol, [None] * len_sp, [None] * len_rwd_wds, 
 			[None] * len_perov, [None] * len_mixture, [None] * len_other]
 			
 			return array
@@ -657,6 +656,8 @@ class SEL(object):
 		self.ol_min_part_index = [15,16,18] #mineral indexes for the file read
 		self.melt_partitioning_list = ['opx_melt_part.csv','cpx_melt_part.csv','gt_melt_part.csv', 'ol_melt_part.csv']
 		self.melt_min_part_index = [15,16,18,21] #mineral indexes for the file read
+		self.rwd_wds_min_partitioning_list = ['maj_part.csv', 'perov_part.csv']
+		self.rwd_wds_min_part_index = [18, 24]
 		
 		self.water_ol_part_name = []
 		self.water_ol_part_type = []
@@ -788,8 +789,7 @@ class SEL(object):
 			self.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
 			self.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
 			self.sp_frac = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_frac')
-			self.wds_frac = self.array_modifier(input = kwargs.pop('wds', 0), array = self.T, varname = 'wds_frac')
-			self.rwd_frac = self.array_modifier(input = kwargs.pop('rwd', 0), array = self.T, varname = 'rwd_frac')
+			self.rwd_wds_frac = self.array_modifier(input = kwargs.pop('rwd_wds', 0), array = self.T, varname = 'rwd_wds_frac')
 			self.perov_frac = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_frac')
 			self.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
 		elif reval == True:
@@ -806,29 +806,29 @@ class SEL(object):
 			self.graphite_frac = self.array_modifier(input = self.graphite_frac, array = self.T, varname = 'graphite_frac')
 			self.mixture_frac = self.array_modifier(input = self.mixture_frac, array = self.T, varname = 'mixture_frac')
 			self.sp_frac = self.array_modifier(input = self.sp_frac, array = self.T, varname = 'sp_frac')
-			self.wds_frac = self.array_modifier(input = self.wds_frac, array = self.T, varname = 'wds_frac')
-			self.rwd_frac = self.array_modifier(input = self.rwd_frac, array = self.T, varname = 'rwd_frac')
+			self.rwd_wds_frac = self.array_modifier(input = self.rwd_wds_frac, array = self.T, varname = 'rwd_wds_frac')
 			self.perov_frac = self.array_modifier(input = self.perov_frac, array = self.T, varname = 'perov_frac')
 			self.other_frac = self.array_modifier(input = self.other_frac, array = self.T, varname = 'other_frac')
 		
 		#Converting fractions to water holding species that has an exchange with coexisting melt. 
 		#Calculation of equilibrium of water with other minerals are not constrained.
-		wt_all = (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac + self.kfelds_frac + self.wds_frac + self.rwd_frac)
+		wt_all = (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac +\
+		self.kfelds_frac + self.rwd_wds_frac + self.perov_frac)
 		self.ol_frac_wt = self.ol_frac / wt_all
 		self.opx_frac_wt = self.opx_frac / wt_all
 		self.cpx_frac_wt = self.cpx_frac / wt_all
 		self.garnet_frac_wt = self.garnet_frac / wt_all
 		self.plag_frac_wt = self.plag_frac / wt_all
 		self.kfelds_frac_wt = self.kfelds_frac / wt_all
-		self.wds_frac_wt = self.wds_frac / wt_all
-		self.rwd_frac_wt = self.rwd_frac / wt_all
+		self.rwd_wds_frac_wt = self.rwd_wds_frac / wt_all
+		self.perov_frac_wt = self.perov_frac / wt_all
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
 		if overlookError != False:
 			mineral_frac_list = [self.quartz_frac,self.opx_frac,self.cpx_frac,self.garnet_frac,self.mica_frac,
 			self.amp_frac,self.quartz_frac,self.plag_frac,self.kfelds_frac,self.sulphide_frac,self.graphite_frac,self.mixture_frac, self.ol_frac, self.sp_frac,
-			self.wds_frac, self.rwd_frac, self.perov_frac, self.other_frac]
+			self.rwd_wds_frac, self.perov_frac, self.other_frac]
 			
 			for i in range(0,len(mineral_frac_list)):
 				if len(np.flatnonzero(mineral_frac_list[i] < 0)) != 0:
@@ -986,6 +986,14 @@ class SEL(object):
 		self.d_water_garnet_melt_choice = kwargs.pop('garnet_melt',0)
 		
 		self.load_mantle_water_partitions(method = 'array')
+		
+	def set_mantle_transition_zone_water_partitions(self, **kwargs):
+	
+		self.d_water_garnet_rwd_wds_choice = kwargs.pop('garnet_rwd_wds', 0)
+		self.d_water_perov_rwd_wds_choice = kwargs.pop('perov_rwd_wds', 0)
+		
+		self.load_mantle_transition_zone_water_partitions(method = 'array')
+		
 
 	def check_composition(self, method = None):
 
@@ -1007,7 +1015,7 @@ class SEL(object):
 			
 			tot = self.quartz_frac + self.plag_frac + self.amp_frac + self.kfelds_frac +\
 			self.opx_frac + self.cpx_frac + self.mica_frac + self.garnet_frac + self.sulphide_frac + self.graphite_frac +\
-			self.ol_frac + self.sp_frac + self.wds_frac + self.rwd_frac + self.perov_frac + self.mixture_frac + self.other_frac
+			self.ol_frac + self.sp_frac + self.rwd_wds_frac + self.perov_frac + self.mixture_frac + self.other_frac
 
 			if any(item <= 0.99 for item in tot) == True:
 			
@@ -1045,16 +1053,14 @@ class SEL(object):
 			min_index = 20
 		elif (mineral_name == 'spinel') or (mineral_name == 'sp'):
 			min_index = 22
-		elif (mineral_name == 'wadsleyite') or (mineral_name == 'wds'):
+		elif (mineral_name == 'ringwoodite_wadsleyite') or (mineral_name == 'rwd_wds'):
 			min_index = 23
-		elif (mineral_name == 'ringwoodite') or (mineral_name == 'rwd'):
-			min_index = 24
 		elif (mineral_name == 'perovskite') or (mineral_name == 'perov'):
-			min_index = 25
+			min_index = 24
 		elif (mineral_name == 'mixture') or (mineral_name == 'mixtures'):
-			min_index = 26
+			min_index = 25
 		elif (mineral_name == 'other') or (mineral_name == 'other'):
-			min_index = 27
+			min_index = 26
 			
 		else:
 		
@@ -1115,16 +1121,14 @@ class SEL(object):
 			min_index = 20
 		elif (mineral_name == 'spinel') or (mineral_name == 'sp'):
 			min_index = 22
-		elif (mineral_name == 'wadsleyite') or (mineral_name == 'wds'):
+		elif (mineral_name == 'ringwoodite_wadsleyite') or (mineral_name == 'rwd_wds'):
 			min_index = 23
-		elif (mineral_name == 'ringwoodite') or (mineral_name == 'rwd'):
-			min_index = 24
 		elif (mineral_name == 'perovskite') or (mineral_name == 'perov'):
-			min_index = 25
+			min_index = 24
 		elif (mineral_name == 'mixture') or (mineral_name == 'mixtures'):
-			min_index = 26
+			min_index = 25
 		elif (mineral_name == 'other') or (mineral_name == 'other'):
-			min_index = 27
+			min_index = 26
 			
 		else:
 			raise ValueError('There is no such a mineral specifier called :' + mineral_name)
@@ -1308,15 +1312,14 @@ class SEL(object):
 		SEL.sulphide_cond_selection = kwargs.pop('sulphide', 0)
 		SEL.graphite_cond_selection = kwargs.pop('graphite', 0)
 		SEL.sp_cond_selection = kwargs.pop('sp',0)
-		SEL.wds_cond_selection = kwargs.pop('wds',0)
-		SEL.rwd_cond_selection = kwargs.pop('rwd',0)
+		SEL.rwd_wds_cond_selection = kwargs.pop('rwd_wds',0)
 		SEL.perov_cond_selection = kwargs.pop('perov',0)
 		SEL.mixture_cond_selection = kwargs.pop('mixture', 0)
 		SEL.other_cond_selection = kwargs.pop('other', 0)
 		
 		SEL.minerals_cond_selections = [SEL.quartz_cond_selection, SEL.plag_cond_selection, SEL.amp_cond_selection, SEL.kfelds_cond_selection, SEL.opx_cond_selection,
 				   SEL.cpx_cond_selection, SEL.mica_cond_selection, SEL.garnet_cond_selection, SEL.sulphide_cond_selection,
-				   SEL.graphite_cond_selection, SEL.ol_cond_selection, SEL.sp_cond_selection, SEL.wds_cond_selection, SEL.rwd_cond_selection, SEL.perov_cond_selection,
+				   SEL.graphite_cond_selection, SEL.ol_cond_selection, SEL.sp_cond_selection, SEL.rwd_wds_cond_selection, SEL.perov_cond_selection,
 				   SEL.mixture_cond_selection, SEL.other_cond_selection]
 				   
 		self.mineral_conductivity_choice_check()
@@ -1324,7 +1327,7 @@ class SEL(object):
 	def mineral_conductivity_choice_check(self):
 		
 		mineral_idx = list(range(11,28))
-		mineral_names = ['qtz','plag','amp','kfelds','opx','cpx','mica','garnet','sulphide','graphite','ol','sp','wds','rwd','perov','mixture','other']
+		mineral_names = ['qtz','plag','amp','kfelds','opx','cpx','mica','garnet','sulphide','graphite','ol','sp','rwd_wds','perov','mixture','other']
 		
 		for i in range(0,len(SEL.minerals_cond_selections)):
 		
@@ -1379,8 +1382,7 @@ class SEL(object):
 			SEL.sulphide_water = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_water')
 			SEL.graphite_water = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_water')
 			SEL.sp_water = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_water')
-			SEL.wds_water = self.array_modifier(input = kwargs.pop('wds', 0), array = self.T, varname = 'wds_water')
-			SEL.rwd_water = self.array_modifier(input = kwargs.pop('rwd', 0), array = self.T, varname = 'rwd_water')
+			SEL.rwd_wds_water = self.array_modifier(input = kwargs.pop('rwd_wds', 0), array = self.T, varname = 'rwd_wds_water')
 			SEL.perov_water = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_water')
 			SEL.mixture_water = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_water')
 			SEL.other_water = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_water')
@@ -1399,8 +1401,7 @@ class SEL(object):
 			SEL.sulphide_water = self.array_modifier(input = SEL.sulphide_water, array = self.T, varname = 'sulphide_water')
 			SEL.graphite_water = self.array_modifier(input = SEL.graphite_water, array = self.T, varname = 'graphite_water')
 			SEL.sp_water = self.array_modifier(input = SEL.sp_water, array = self.T, varname = 'sp_water')
-			SEL.wds_water = self.array_modifier(input = SEL.wds_water, array = self.T, varname = 'wds_water')
-			SEL.rwd_water = self.array_modifier(input = SEL.rwd_water, array = self.T, varname = 'rwd_water')
+			SEL.rwd_wds_water = self.array_modifier(input = SEL.rwd_wds_water, array = self.T, varname = 'rwd_wds_water')
 			SEL.perov_water = self.array_modifier(input = SEL.perov_water, array = self.T, varname = 'perov_water')
 			SEL.mixture_water = self.array_modifier(input = SEL.mixture_water, array = self.T, varname = 'mixture_water')
 			SEL.other_water = self.array_modifier(input = SEL.other_water, array = self.T, varname = 'other_water')
@@ -1409,7 +1410,7 @@ class SEL(object):
 
 		SEL.mineral_water_list = [SEL.quartz_water, SEL.plag_water, SEL.amp_water, SEL.kfelds_water,
 			 SEL.opx_water, SEL.cpx_water, SEL.mica_water, SEL.garnet_water, SEL.sulphide_water,
-				   SEL.graphite_water, SEL.ol_water, SEL.sp_water, SEL.wds_water, SEL.rwd_water, SEL.perov_water,
+				   SEL.graphite_water, SEL.ol_water, SEL.sp_water, SEL.rwd_wds_water, SEL.perov_water,
 				   SEL.mixture_water, SEL.other_water]
 	
 		if overlookError == False:
@@ -1488,8 +1489,7 @@ class SEL(object):
 			SEL.sulphide_xfe = self.array_modifier(input = kwargs.pop('sulphide', 0.1), array = self.T, varname = 'sulphide_xfe')
 			SEL.graphite_xfe = self.array_modifier(input = kwargs.pop('graphite', 0.1), array = self.T, varname = 'graphite_xfe')
 			SEL.sp_xfe = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_xfe')
-			SEL.wds_xfe = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_xfe')
-			SEL.rwd_xfe = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_xfe')
+			SEL.rwd_wds_xfe = self.array_modifier(input = kwargs.pop('rwd_wds', 0.1), array = self.T, varname = 'rwd_wds_xfe')
 			SEL.perov_xfe = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_xfe')
 			SEL.mixture_xfe = self.array_modifier(input = kwargs.pop('mixture', 0.1), array = self.T, varname = 'mixture_xfe')
 			SEL.other_xfe = self.array_modifier(input = kwargs.pop('other', 0.1), array = self.T, varname = 'other_xfe')
@@ -1508,15 +1508,14 @@ class SEL(object):
 			SEL.sulphide_xfe = self.array_modifier(input = SEL.sulphide_xfe, array = self.T, varname = 'sulphide_xfe')
 			SEL.graphite_xfe = self.array_modifier(input = SEL.graphite_xfe, array = self.T, varname = 'graphite_xfe')
 			SEL.sp_xfe = self.array_modifier(input = SEL.sp_xfe, array = self.T, varname = 'sp_xfe')
-			SEL.wds_xfe = self.array_modifier(input = SEL.wds_xfe, array = self.T, varname = 'wds_xfe')
-			SEL.rwd_xfe = self.array_modifier(input = SEL.rwd_xfe, array = self.T, varname = 'rwd_xfe')
+			SEL.rwd_wds_xfe = self.array_modifier(input = SEL.rwd_wds_xfe, array = self.T, varname = 'rwd_wds_xfe')
 			SEL.perov_xfe = self.array_modifier(input = SEL.perov_xfe, array = self.T, varname = 'perov_xfe')
 			SEL.mixture_xfe = self.array_modifier(input = SEL.mixture_xfe, array = self.T, varname = 'mixture_xfe')
 			SEL.other_xfe = self.array_modifier(input = SEL.other_xfe, array = self.T, varname = 'other_xfe')
 		
 		SEL.xfe_mineral_list = [SEL.quartz_xfe, SEL.plag_xfe, SEL.amp_xfe, SEL.kfelds_xfe,
 			 SEL.opx_xfe, SEL.cpx_xfe, SEL.mica_xfe, SEL.garnet_xfe, SEL.sulphide_xfe,
-				   SEL.graphite_xfe, SEL.ol_xfe, SEL.sp_xfe, SEL.wds_xfe, SEL.rwd_xfe, SEL.perov_xfe, SEL.mixture_xfe, SEL.other_xfe]
+				   SEL.graphite_xfe, SEL.ol_xfe, SEL.sp_xfe, SEL.rwd_wds_xfe, SEL.perov_xfe, SEL.mixture_xfe, SEL.other_xfe]
 			
 	def set_param1_mineral(self, reval = False, **kwargs):
 	
@@ -1536,8 +1535,7 @@ class SEL(object):
 			SEL.sulphide_param1 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param1')
 			SEL.graphite_param1 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param1')
 			SEL.sp_param1 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param1')
-			SEL.wds_param1 = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_param1')
-			SEL.rwd_param1 = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_param1')
+			SEL.rwd_wds_param1 = self.array_modifier(input = kwargs.pop('rwd_wds', 0.1), array = self.T, varname = 'rwd_wds_param1')
 			SEL.perov_param1 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param1')
 			SEL.mixture_param1 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param1')
 			SEL.other_param1 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param1')
@@ -1556,15 +1554,14 @@ class SEL(object):
 			SEL.sulphide_param1 = self.array_modifier(input = SEL.sulphide_param1, array = self.T, varname = 'sulphide_param1')
 			SEL.graphite_param1 = self.array_modifier(input = SEL.graphite_param1, array = self.T, varname = 'graphite_param1')
 			SEL.sp_param1 = self.array_modifier(input = SEL.sp_param1, array = self.T, varname = 'sp_param1')
-			SEL.wds_param1 = self.array_modifier(input = SEL.wds_param1, array = self.T, varname = 'wds_param1')
-			SEL.rwd_param1 = self.array_modifier(input = SEL.rwd_param1, array = self.T, varname = 'rwd_param1')
+			SEL.rwd_wds_param1 = self.array_modifier(input = SEL.rwd_wds_param1, array = self.T, varname = 'rwd_wds_param1')
 			SEL.perov_param1 = self.array_modifier(input = SEL.perov_param1, array = self.T, varname = 'perov_param1')
 			SEL.mixture_param1 = self.array_modifier(input = SEL.mixture_param1, array = self.T, varname = 'mixture_param1')
 			SEL.other_param1 = self.array_modifier(input = SEL.other_param1, array = self.T, varname = 'other_param1')
 			
 		SEL.param1_mineral_list = [SEL.quartz_param1, SEL.plag_param1, SEL.amp_param1, SEL.kfelds_param1,
 			 SEL.opx_param1, SEL.cpx_param1, SEL.mica_param1, SEL.garnet_param1, SEL.sulphide_param1,
-				   SEL.graphite_param1, SEL.ol_param1, SEL.sp_param1, SEL.wds_param1, SEL.rwd_param1, SEL.perov_param1, SEL.mixture_param1, SEL.other_param1]
+				   SEL.graphite_param1, SEL.ol_param1, SEL.sp_param1, SEL.rwd_wds_param1, SEL.perov_param1, SEL.mixture_param1, SEL.other_param1]
 				   
 	def set_param1_rock(self, reval = False, **kwargs):
 	
@@ -1616,8 +1613,7 @@ class SEL(object):
 			SEL.sulphide_param2 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param2')
 			SEL.graphite_param2 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param2')
 			SEL.sp_param2 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param2')
-			SEL.wds_param2 = self.array_modifier(input = kwargs.pop('wds', 0.1), array = self.T, varname = 'wds_param2')
-			SEL.rwd_param2 = self.array_modifier(input = kwargs.pop('rwd', 0.1), array = self.T, varname = 'rwd_param2')
+			SEL.rwd_wds_param2 = self.array_modifier(input = kwargs.pop('rwd_wds', 0.1), array = self.T, varname = 'rwd_wds_param2')
 			SEL.perov_param2 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param2')
 			SEL.mixture_param2 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param2')
 			SEL.other_param2 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param2')
@@ -1636,15 +1632,14 @@ class SEL(object):
 			SEL.sulphide_param2 = self.array_modifier(input = SEL.sulphide_param2, array = self.T, varname = 'sulphide_param2')
 			SEL.graphite_param2 = self.array_modifier(input = SEL.graphite_param2, array = self.T, varname = 'graphite_param2')
 			SEL.sp_param2 = self.array_modifier(input = SEL.sp_param2, array = self.T, varname = 'sp_param2')
-			SEL.wds_param2 = self.array_modifier(input = SEL.wds_param2, array = self.T, varname = 'wds_param2')
-			SEL.rwd_param2 = self.array_modifier(input = SEL.rwd_param2, array = self.T, varname = 'rwd_param2')
+			SEL.rwd_wds_param2 = self.array_modifier(input = SEL.rwd_wds_param2, array = self.T, varname = 'rwd_wds_param2')
 			SEL.perov_param2 = self.array_modifier(input = SEL.perov_param2, array = self.T, varname = 'perov_param2')
 			SEL.mixture_param2 = self.array_modifier(input = SEL.mixture_param2, array = self.T, varname = 'mixture_param2')
 			SEL.other_param2 = self.array_modifier(input = SEL.other_param2, array = self.T, varname = 'other_param2')
 			
 		SEL.param2_mineral_list = [SEL.quartz_param2, SEL.plag_param2, SEL.amp_param2, SEL.kfelds_param2,
 			SEL.opx_param2, SEL.cpx_param2, SEL.mica_param2, SEL.garnet_param2, SEL.sulphide_param2,
-				   SEL.graphite_param2, SEL.ol_param2, SEL.sp_param2, SEL.wds_param2, SEL.rwd_param2, SEL.perov_param2, SEL.mixture_param2, SEL.other_param2]
+				   SEL.graphite_param2, SEL.ol_param2, SEL.sp_param2, SEL.rwd_wds_param2, SEL.perov_param2, SEL.mixture_param2, SEL.other_param2]
 				   
 	def set_param2_rock(self, reval = False, **kwargs):
 	
@@ -1762,8 +1757,7 @@ class SEL(object):
 			SEL.graphite_m = self.array_modifier(input = kwargs.pop('graphite', 4), array = self.T, varname = 'graphite_m') 
 			SEL.mixture_m = self.array_modifier(input = kwargs.pop('mixture', 4), array = self.T, varname = 'mixture_m')
 			SEL.sp_m = self.array_modifier(input = kwargs.pop('sp', 4), array = self.T, varname = 'sp_m')
-			SEL.wds_m = self.array_modifier(input = kwargs.pop('wds', 4), array = self.T, varname = 'wds_m')
-			SEL.rwd_m = self.array_modifier(input = kwargs.pop('rwd', 4), array = self.T, varname = 'rwd_m')
+			SEL.rwd_wds_m = self.array_modifier(input = kwargs.pop('rwd_wds', 4), array = self.T, varname = 'rwd_wds_m')
 			SEL.perov_m = self.array_modifier(input = kwargs.pop('perov', 4), array = self.T, varname = 'perov_m')
 			SEL.other_m = self.array_modifier(input = kwargs.pop('other', 4), array = self.T, varname = 'other_m') 
 			
@@ -1792,8 +1786,7 @@ class SEL(object):
 			SEL.graphite_m = self.array_modifier(input = SEL.graphite_m, array = self.T, varname = 'graphite_m') 
 			SEL.mixture_m = self.array_modifier(input = SEL.mixture_m, array = self.T, varname = 'mixture_m')
 			SEL.sp_m = self.array_modifier(input = SEL.sp_m, array = self.T, varname = 'sp_m')
-			SEL.wds_m = self.array_modifier(input = SEL.wds_m, array = self.T, varname = 'wds_m')
-			SEL.rwd_m = self.array_modifier(input = SEL.rwd_m, array = self.T, varname = 'rwd_m')
+			SEL.rwd_wds_m = self.array_modifier(input = SEL.rwd_wds_m, array = self.T, varname = 'rwd_wds_m')
 			SEL.perov_m = self.array_modifier(input = SEL.perov_m, array = self.T, varname = 'perov_m')
 			SEL.other_m = self.array_modifier(input = SEL.other_m, array = self.T, varname = 'other_m') 
 			
@@ -1816,7 +1809,7 @@ class SEL(object):
 		
 		if overlookError == False:
 			list_of_values = [SEL.ol_m,SEL.opx_m,SEL.cpx_m,SEL.garnet_m,SEL.mica_m,SEL.amp_m,SEL.quartz_m,SEL.plag_m,SEL.kfelds_m,
-			SEL.sulphide_m,SEL.graphite_m, SEL.sp_m, SEL.wds_m,SEL.rwd_m,SEL.perov_m, SEL.mixture_m,SEL.other_m]
+			SEL.sulphide_m,SEL.graphite_m, SEL.sp_m, SEL.rwd_wds_m,SEL.perov_m, SEL.mixture_m,SEL.other_m]
 			
 			for i in range(0,len(list_of_values)):
 			
@@ -2316,11 +2309,11 @@ class SEL(object):
 				elif SEL.solid_phase_method == 2:
 					phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
 					self.opx_frac[i], self.cpx_frac[i], self.mica_frac[i], self.garnet_frac[i],
-					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.sp_frac[i], self.wds_frac[i], self.rwd_frac[i], self.perov_frac[i],
+					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.sp_frac[i], self.rwd_wds_frac[i], self.perov_frac[i],
 					self.mixture_frac[i], self.other_frac[i]]
 					m_list = [SEL.quartz_m[i], SEL.plag_m[i], SEL.amp_m[i], SEL.kfelds_m[i],
 					SEL.opx_m[i], SEL.cpx_m[i], SEL.mica_m[i], SEL.garnet_m[i],
-					SEL.sulphide_m[i], SEL.graphite_m[i], SEL.ol_m[i], SEL.sp_m[i], SEL.wds_m[i], SEL.rwd_m[i], SEL.perov_m[i],
+					SEL.sulphide_m[i], SEL.graphite_m[i], SEL.ol_m[i], SEL.sp_m[i], SEL.rwd_wds_m[i], SEL.perov_m[i],
 					SEL.mixture_m[i], SEL.other_m[i]]
 					
 				frac_abundant = max(phase_list) #fraction of abundant mineral
@@ -2391,14 +2384,12 @@ class SEL(object):
 					elif idx_max_ph == 11:
 						SEL.sp_m[idx_node] = m_abundant
 					elif idx_max_ph == 12:
-						SEL.wds_m[idx_node] = m_abundant
+						SEL.rwd_wds_m[idx_node] = m_abundant
 					elif idx_max_ph == 13:
-						SEL.rwd_m[idx_node] = m_abundant
-					elif idx_max_ph == 14:
 						SEL.perov_m[idx_node] = m_abundant
-					elif idx_max_ph == 15:
+					elif idx_max_ph == 14:
 						SEL.mixture_m[idx_node] = m_abundant
-					elif idx_max_ph == 16:
+					elif idx_max_ph == 15:
 						SEL.other_m[idx_node] = m_abundant
 						
 					self.bulk_cond[idx_node] = (self.quartz_cond[idx_node]*(self.quartz_frac[idx_node]**SEL.quartz_m[idx_node])) +\
@@ -2413,8 +2404,7 @@ class SEL(object):
 					(self.graphite_cond[idx_node]*(self.graphite_frac[idx_node]**SEL.graphite_m[idx_node])) +\
 					(self.ol_cond[idx_node]*(self.ol_frac[idx_node]**SEL.ol_m[idx_node])) +\
 					(self.sp_cond[idx_node]*(self.sp_frac[idx_node]**SEL.sp_m[idx_node])) +\
-					(self.wds_cond[idx_node]*(self.wds_frac[idx_node]**SEL.wds_m[idx_node])) +\
-					(self.rwd_cond[idx_node]*(self.rwd_frac[idx_node]**SEL.rwd_m[idx_node])) +\
+					(self.rwd_wds_cond[idx_node]*(self.rwd_wds_frac[idx_node]**SEL.rwd_wds_m[idx_node])) +\
 					(self.perov_cond[idx_node]*(self.perov_frac[idx_node]**SEL.perov_m[idx_node])) +\
 					(self.mixture_cond[idx_node]*(self.mixture_frac[idx_node]**SEL.mixture_m[idx_node])) +\
 					(self.other_cond[idx_node]*(self.other_frac[idx_node]**SEL.other_m[idx_node]))
@@ -2439,8 +2429,8 @@ class SEL(object):
 				elif SEL.solid_phase_method == 2:
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
-					self.garnet_cond[i],self.sulphide_cond[i],self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i], self.wds_cond[i],
-					self.rwd_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
+					self.garnet_cond[i],self.sulphide_cond[i],self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i],
+					self.rwd_wds_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
 					
 				while True:
 				
@@ -2483,8 +2473,7 @@ class SEL(object):
 					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*min_local))) +\
 					(self.ol_frac[i] / (self.ol_cond[i] + (2*min_local))) +\
 					(self.sp_frac[i] / (self.sp_cond[i] + (2*min_local))) +\
-					(self.wds_frac[i] / (self.wds_cond[i] + (2*min_local))) +\
-					(self.rwd_frac[i] / (self.rwd_cond[i] + (2*min_local))) +\
+					(self.rwd_wds_frac[i] / (self.rwd_wds_cond[i] + (2*min_local))) +\
 					(self.perov_frac[i] / (self.perov_cond[i] + (2*min_local))) +\
 					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*min_local))) +\
 					(self.other_frac[i] / (self.other_cond[i] + (2*min_local)))
@@ -2512,8 +2501,8 @@ class SEL(object):
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
 					self.garnet_cond[i],self.sulphide_cond[i],
-					self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i], self.wds_cond[i],
-					self.rwd_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
+					self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i], 
+					self.rwd_wds_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
 					
 				while True:
 				
@@ -2556,8 +2545,7 @@ class SEL(object):
 					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*max_local))) +\
 					(self.ol_frac[i] / (self.ol_cond[i] + (2*max_local))) +\
 					(self.sp_frac[i] / (self.sp_cond[i] + (2*max_local))) +\
-					(self.wds_frac[i] / (self.wds_cond[i] + (2*max_local))) +\
-					(self.rwd_frac[i] / (self.rwd_cond[i] + (2*max_local))) +\
+					(self.rwd_wds_frac[i] / (self.rwd_wds_cond[i] + (2*max_local))) +\
 					(self.perov_frac[i] / (self.perov_cond[i] + (2*max_local))) +\
 					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*max_local))) +\
 					(self.other_frac[i] / (self.other_cond[i] + (2*max_local)))					
@@ -2593,8 +2581,7 @@ class SEL(object):
 				(self.graphite_frac[idx_node]*self.graphite_cond[idx_node]) +\
 				(self.ol_frac[idx_node]*self.ol_cond[idx_node]) +\
 				(self.sp_frac[idx_node]*self.sp_cond[idx_node]) +\
-				(self.wds_frac[idx_node]*self.wds_cond[idx_node]) +\
-				(self.rwd_frac[idx_node]*self.rwd_cond[idx_node]) +\
+				(self.rwd_wds_frac[idx_node]*self.rwd_wds_cond[idx_node]) +\
 				(self.perov_frac[idx_node]*self.perov_cond[idx_node]) +\
 				(self.mixture_frac[idx_node]*self.mixture_cond[idx_node]) +\
 				(self.other_frac[idx_node]*self.other_cond[idx_node])
@@ -2669,10 +2656,8 @@ class SEL(object):
 						self.ol_cond[i] = -999
 					if self.sp_frac[i] == 0.0:
 						self.sp_cond[i] = -999
-					if self.wds_frac[i] == 0.0:
-						self.wds_cond[i] = -999
-					if self.rwd_frac[i] == 0.0:
-						self.rwd_cond[i] = -999
+					if self.rwd_wds_frac[i] == 0.0:
+						self.rwd_wds_cond[i] = -999
 					if self.perov_frac[i] == 0.0:
 						self.perov_cond[i] = -999
 					if self.mixture_frac[i] == 0.0:
@@ -2692,8 +2677,7 @@ class SEL(object):
 				(self.graphite_frac[idx_node] / self.graphite_cond[idx_node]) +\
 				(self.ol_frac[idx_node] / self.ol_cond[idx_node]) +\
 				(self.sp_frac[idx_node] / self.sp_cond[idx_node]) +\
-				(self.wds_frac[idx_node] / self.wds_cond[idx_node]) +\
-				(self.rwd_frac[idx_node] / self.rwd_cond[idx_node]) +\
+				(self.rwd_wds_frac[idx_node] / self.rwd_wds_cond[idx_node]) +\
 				(self.perov_frac[idx_node] / self.perov_cond[idx_node]) +\
 				(self.mixture_frac[idx_node] / self.mixture_cond[idx_node]) +\
 				(self.other_frac[idx_node] / self.other_cond[idx_node]))
@@ -2728,8 +2712,7 @@ class SEL(object):
 				(self.graphite_cond[idx_node]**self.graphite_frac[idx_node]) *\
 				(self.ol_cond[idx_node]**self.ol_frac[idx_node]) *\
 				(self.sp_cond[idx_node]**self.sp_frac[idx_node]) *\
-				(self.wds_cond[idx_node]**self.wds_frac[idx_node]) *\
-				(self.rwd_cond[idx_node]**self.rwd_frac[idx_node]) *\
+				(self.rwd_wds_cond[idx_node]**self.rwd_wds_frac[idx_node]) *\
 				(self.perov_cond[idx_node]**self.perov_frac[idx_node]) *\
 				(self.mixture_cond[idx_node]**self.mixture_frac[idx_node]) *\
 				(self.other_cond[idx_node]**self.other_frac[idx_node])
@@ -2956,29 +2939,24 @@ class SEL(object):
 				self.sp_cond = self.calculate_mineral_conductivity(method = method, min_idx= 22, sol_idx = index)
 			else:
 				self.sp_cond = np.zeros(len(self.T))
-				
-			if np.mean(self.wds_frac) != 0:
-				self.wds_cond = self.calculate_mineral_conductivity(method = method, min_idx= 23, sol_idx = index)
+								
+			if np.mean(self.rwd_wds_frac) != 0:
+				self.rwd_wds_cond = self.calculate_mineral_conductivity(method = method, min_idx= 23, sol_idx = index)
 			else:
-				self.wds_cond = np.zeros(len(self.T))
+				self.rwd_wds_cond = np.zeros(len(self.T))
 				
-			if np.mean(self.rwd_frac) != 0:
-				self.rwd_cond = self.calculate_mineral_conductivity(method = method, min_idx= 24, sol_idx = index)
-			else:
-				self.rwd_cond = np.zeros(len(self.T))
-				
-			if np.mean(self.ol_frac) != 0:
-				self.perov_cond = self.calculate_mineral_conductivity(method = method, min_idx= 25, sol_idx = index)
+			if np.mean(self.perov_frac) != 0:
+				self.perov_cond = self.calculate_mineral_conductivity(method = method, min_idx= 24, sol_idx = index)
 			else:
 				self.perov_cond = np.zeros(len(self.T))
 				
 			if np.mean(self.mixture_frac) != 0:
-				self.mixture_cond = self.calculate_mineral_conductivity(method = method, min_idx= 26, sol_idx = index)
+				self.mixture_cond = self.calculate_mineral_conductivity(method = method, min_idx= 25, sol_idx = index)
 			else:
 				self.mixture_cond = np.zeros(len(self.T))
 	
 			if np.mean(self.other_frac) != 0:
-				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 27, sol_idx = index)
+				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 26, sol_idx = index)
 			else:
 				self.other_cond = np.zeros(len(self.T))
 					
@@ -3035,11 +3013,10 @@ class SEL(object):
 			float(self.dens_mat[20][SEL.graphite_cond_selection])/1e3,
 			float(self.dens_mat[21][SEL.ol_cond_selection])/1e3,
 			float(self.dens_mat[22][SEL.sp_cond_selection])/1e3,
-			float(self.dens_mat[23][SEL.wds_cond_selection])/1e3,
-			float(self.dens_mat[24][SEL.rwd_cond_selection])/1e3,
-			float(self.dens_mat[25][SEL.perov_cond_selection])/1e3,
-			float(self.dens_mat[26][SEL.mixture_cond_selection])/1e3,
-			float(self.dens_mat[27][SEL.other_cond_selection])/1e3] 
+			float(self.dens_mat[23][SEL.rwd_wds_cond_selection])/1e3,
+			float(self.dens_mat[24][SEL.perov_cond_selection])/1e3,
+			float(self.dens_mat[25][SEL.mixture_cond_selection])/1e3,
+			float(self.dens_mat[26][SEL.other_cond_selection])/1e3]
 						
 			self.density_solids = np.zeros(len(self.T))
 			
@@ -3049,8 +3026,8 @@ class SEL(object):
 				
 				phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
 					self.opx_frac[i], self.cpx_frac[i], self.mica_frac[i], self.garnet_frac[i],
-					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.sp_frac[i], self.wds_frac[i],
-					self.rwd_frac[i], self.perov_frac[i], self.mixture_frac[i], self.other_frac[i]]
+					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.sp_frac[i],
+					self.rwd_wds_frac[i], self.perov_frac[i], self.mixture_frac[i], self.other_frac[i]]
 				
 				for j in range(0,len(phase_list)):
 					density_indv = density_indv + (phase_list[j] * dens_list[j])
@@ -3204,6 +3181,17 @@ class SEL(object):
 		
 		self.mantle_water_partitions_default = False
 		
+	def load_mantle_transition_zone_water_partitions(self, method, **kwargs):
+	
+		sol_idx = kwargs.pop('sol_idx', 0)
+	
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+			
+		if self.cansu
+		
 	def mantle_water_distribute(self, method, **kwargs):
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -3253,6 +3241,17 @@ class SEL(object):
 		#calculating cpx water content
 		SEL.garnet_water[idx_node] = SEL.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		SEL.garnet_water[self.garnet_frac == 0] = 0.0
+		
+	def transition_zone_water_distribute(self, method, **kwargs):
+	
+		sol_idx = kwargs.pop('sol_idx', 0)
+	
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+			
+		
 		
 					
 	def calculate_melt_water(self, h2o_bulk, melt_mass_frac, d_per_melt):
