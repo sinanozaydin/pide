@@ -180,4 +180,3 @@ def Liu2020_Cpx1_NNO(al_opx, p,  p_change, d_opx_ol, method):
 	part = (p_fit[0] * p) + p_fit[1]
 	
 	return part
-	

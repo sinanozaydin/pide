@@ -1,2 +1,2 @@
 #ModelName,ModelType,Function1,Pchange(GPa),Description
-BolfanCasanova2000_MajoriteGarnet,1,0.518,0,BolfanCasanova2000 indirect single water partitioning rate of gt/rwd at 16 Gpa
+BolfanCasanova2000_MajoriteGarnet,0,0.518,0,BolfanCasanova2000 indirect single water partitioning rate of gt/rwd at 16 Gpa

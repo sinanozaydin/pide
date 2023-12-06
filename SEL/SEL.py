@@ -665,7 +665,7 @@ class SEL(object):
 		self.water_ol_part_pchange = []
 		
 		index_read = 0
-		for i in range(11,24):
+		for i in range(11,26):
 		
 			if (i in self.ol_min_part_index) == True:
 				data = self.read_csv(os.path.join(self.core_path, 'water_partitioning', self.ol_min_partitioning_list[index_read]), delim = ',')
@@ -699,7 +699,7 @@ class SEL(object):
 		self.water_melt_part_pchange = []
 		
 		index_read = 0
-		for i in range(11,24):
+		for i in range(11,26):
 		
 			if (i in self.melt_min_part_index) == True:
 				data = self.read_csv(os.path.join(self.core_path, 'water_partitioning', self.melt_partitioning_list[index_read]), delim = ',')
@@ -726,6 +726,40 @@ class SEL(object):
 				self.water_melt_part_type.append(None)
 				self.water_melt_part_function.append(None)
 				self.water_melt_part_pchange.append(None)
+				
+		self.water_rwd_wds_part_name = []
+		self.water_rwd_wds_part_type = []
+		self.water_rwd_wds_part_function = []
+		self.water_rwd_wds_part_pchange = []
+		
+		index_read = 0
+		for i in range(11,26):
+		
+			if (i in self.rwd_wds_min_part_index) == True:
+				data = self.read_csv(os.path.join(self.core_path, 'water_partitioning', self.rwd_wds_min_partitioning_list[index_read]), delim = ',')
+				index_read = index_read + 1
+				data_name = []
+				data_type = []
+				data_function_1 = []
+				data_pchange = []
+
+				for j in range(1,len(data)):
+					data_name.append(data[j][0])
+					data_type.append(int(data[j][1]))
+					data_function_1.append(float(data[j][2]))
+					data_pchange.append(float(data[j][3]))
+					
+				self.water_rwd_wds_part_name.append(data_name)
+				self.water_rwd_wds_part_type.append(data_type)
+				self.water_rwd_wds_part_function.append(data_function_1)
+				self.water_rwd_wds_part_pchange.append(data_pchange)
+				
+			else:
+			
+				self.water_rwd_wds_part_name.append(None)
+				self.water_rwd_wds_part_type.append(None)
+				self.water_rwd_wds_part_function.append(None)
+				self.water_rwd_wds_part_pchange.append(None)
 			
 	def read_mineral_water_solubility(self):
 	
@@ -994,7 +1028,6 @@ class SEL(object):
 		
 		self.load_mantle_transition_zone_water_partitions(method = 'array')
 		
-
 	def check_composition(self, method = None):
 
 		continue_adjusting = True
@@ -3190,7 +3223,25 @@ class SEL(object):
 		elif method == 'index':
 			idx_node = sol_idx
 			
-		if self.cansu
+		if self.water_rwd_wds_part_type[7][self.d_water_garnet_rwd_wds_choice] == 0:
+			
+			self.d_garnet_rwd_wds = self.water_rwd_wds_part_function[7][self.d_water_garnet_rwd_wds_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_garnet_rwd_wds = self.d_opx_ol = eval(self.water_rwd_wds_part_name[7][self.d_water_garnet_rwd_wds_choice] + '(p = self.p[idx_node],\
+			p_change = self.water_rwd_wds_part_pchange[7][self.d_water_garnet_rwd_wds_choice], method = method)')
+			
+		if self.water_rwd_wds_part_type[7][self.d_water_garnet_rwd_wds_choice] == 0:
+			
+			self.d_garnet_rwd_wds = self.water_rwd_wds_part_function[7][self.d_water_garnet_rwd_wds_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_garnet_rwd_wds = self.d_opx_ol = eval(self.water_rwd_wds_part_name[7][self.d_water_garnet_rwd_wds_choice] + '(p = self.p[idx_node],\
+			p_change = self.water_rwd_wds_part_pchange[7][self.d_water_garnet_rwd_wds_choice], method = method)')
+			
+			
 		
 	def mantle_water_distribute(self, method, **kwargs):
 	
