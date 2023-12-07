@@ -3297,7 +3297,7 @@ class SEL(object):
 		SEL.cpx_water[idx_node] = SEL.ol_water[idx_node] * self.d_cpx_ol[idx_node]
 		SEL.cpx_water[self.cpx_frac == 0] = 0.0
 		
-		#calculating cpx water content
+		#calculating garnet water content
 		SEL.garnet_water[idx_node] = SEL.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		SEL.garnet_water[self.garnet_frac == 0] = 0.0
 		
@@ -3310,9 +3310,24 @@ class SEL(object):
 		elif method == 'index':
 			idx_node = sol_idx
 			
+		#assuming not melting in transition zone
+		self.solid_water[idx_node] = self.bulk_water[idx_node]
+			
+		SEL.rwd_wds_water[idx_node] = self.solid_water[idx_node] / (self.rwd_wds_frac_wt[idx_node] + ((self.cpx_frac_wt[idx_node] * self.d_cpx_rwd_wds[idx_node]) +\
+		(self.perov_frac_wt[idx_node] * self.d_perov_rwd_wds[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_rwd_wds[idx_node])))
 		
+		#calculating cpx water content
+		SEL.cpx_water[idx_node] = SEL.rwd_wds_water[idx_node] * self.d_cpx_rwd_wds[idx_node]
+		SEL.cpx_water[self.cpx_frac == 0] = 0.0
 		
-					
+		#calculating garnet water content
+		SEL.garnet_water[idx_node] = SEL.rwd_wds_water[idx_node] * self.d_garnet_rwd_wds[idx_node]
+		SEL.garnet_water[self.garnet_frac == 0] = 0.0
+		
+		#calculating perovskite water content
+		SEL.perov_water[idx_node] = SEL.rwd_wds_water[idx_node] * self.d_perov_rwd_wds[idx_node]
+		SEL.perov_water[self.perov_frac == 0] = 0.0
+							
 	def calculate_melt_water(self, h2o_bulk, melt_mass_frac, d_per_melt):
 
 		#Calculating the h2o content of melt that is in equilibrium with the entered solid-mixture, from Sifre et al. (2014)
