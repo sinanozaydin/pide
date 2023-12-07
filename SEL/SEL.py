@@ -3144,14 +3144,7 @@ class SEL(object):
 			self.water_fugacity_calculated = True
 		
 	def load_mantle_water_partitions(self, method, **kwargs):
-	
-		sol_idx = kwargs.pop('sol_idx', 0)
-	
-		if method == 'array':
-			idx_node = None
-		elif method == 'index':
-			idx_node = sol_idx
-	
+		
 		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (SEL.fluid_or_melt_method == 1):
 		
 			#calculating melt/nams water partitioning coefficients if theres any melt in the equilibrium 
@@ -3216,14 +3209,7 @@ class SEL(object):
 		self.mantle_water_partitions_default = False
 		
 	def load_mantle_transition_zone_water_partitions(self, method, **kwargs):
-	
-		sol_idx = kwargs.pop('sol_idx', 0)
-	
-		if method == 'array':
-			idx_node = None
-		elif method == 'index':
-			idx_node = sol_idx
-			
+				
 		if self.water_rwd_wds_part_type[7][self.d_water_garnet_rwd_wds_choice] == 0:
 			
 			self.d_garnet_rwd_wds = self.water_rwd_wds_part_function[7][self.d_water_garnet_rwd_wds_choice] * np.ones(len(self.T))
@@ -3287,7 +3273,6 @@ class SEL(object):
 				
 		SEL.ol_water[idx_node] = self.solid_water[idx_node] / (self.ol_frac_wt[idx_node] + ((self.opx_frac_wt[idx_node] * self.d_opx_ol[idx_node]) +\
 		(self.cpx_frac_wt[idx_node] * self.d_cpx_ol[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_ol[idx_node])))
-		
 		
 		#calculating opx water content
 		SEL.opx_water[idx_node] = SEL.ol_water[idx_node] * self.d_opx_ol[idx_node]
@@ -3523,106 +3508,7 @@ class SEL(object):
 		self.max_bulk_water = (self.max_ol_water * self.ol_frac) + (self.max_opx_water * self.opx_frac) + (self.max_cpx_water * self.cpx_frac) + (self.max_garnet_water * self.garnet_frac)
 		
 		return self.max_bulk_water
-		
-	def savetextfile(self):
-
-		if self.write_file_save_name != '':
-
-			lines = ['Parameter,Value,Objects,Type,Description,Unit\n']
-
-			for i in range(1,len(self.init_params)):
-
-				if self.init_params[i][2] == 'SEL':
-					val = getattr(SEL,self.init_params[i][0])
-				elif self.init_params[i][2] == 'self':
-					val = getattr(self,self.init_params[i][0])
-				try:
-					if ('frac' in self.init_params[i][0]) == True:
-						lines.append(','.join((self.init_params[i][0],str(val[0] * 1e2),self.init_params[i][2],self.init_params[i][3],self.init_params[i][4], self.init_params[i][5] + '\n')))
-					else:
-						lines.append(','.join((self.init_params[i][0],str(val[0]),self.init_params[i][2],self.init_params[i][3],self.init_params[i][4], self.init_params[i][5] + '\n')))
-				except TypeError:
-					lines.append(','.join((self.init_params[i][0],str(int(val)),self.init_params[i][2],self.init_params[i][3],self.init_params[i][4], self.init_params[i][5] + '\n')))
-
-			filesave_composition = open(self.write_file_save_name ,'w')
-			filesave_composition.writelines(lines)
-			filesave_composition.close()
-
-			print("Files are saved at the chosen location ")
-
-	def duplicate_composition_for_pt_file(self):
-
-		for i in range(0,len(self.T)):
-
-			if SEL.solid_phase_method == 1:
-
-				self.granite_frac = np.ones(len(self.T)) * self.granite_frac[0]
-				self.granulite_frac = np.ones(len(self.T)) * self.granulite_frac[0]
-				self.sandstone_frac = np.ones(len(self.T)) * self.sandstone_frac[0]
-				self.gneiss_frac = np.ones(len(self.T)) * self.gneiss_frac[0]
-				self.amphibolite_frac = np.ones(len(self.T)) * self.amphibolite_frac[0]
-				self.basalt_frac = np.ones(len(self.T)) * self.basalt_frac[0]
-				self.mud_frac = np.ones(len(self.T)) * self.mud_frac[0]
-				self.gabbro_frac = np.ones(len(self.T)) * self.gabbro_frac[0]
-				self.other_rock_frac = np.ones(len(self.T)) * self.other_rock_frac[0]
-
-				SEL.granite_m = np.ones(len(self.T)) * SEL.granite_m[0]
-				SEL.granulite_m = np.ones(len(self.T)) * SEL.granulite_m[0]
-				SEL.sandstone_m = np.ones(len(self.T)) * SEL.sandstone_m[0]
-				SEL.gneiss_m = np.ones(len(self.T)) * SEL.gneiss_m[0]
-				SEL.amphibolite_m = np.ones(len(self.T)) * SEL.amphibolite_m[0]
-				SEL.basalt_m = np.ones(len(self.T)) * SEL.basalt_m[0]
-				SEL.mud_m = np.ones(len(self.T)) * SEL.mud_m[0]
-				SEL.gabbro_m = np.ones(len(self.T)) * SEL.gabbro_m[0]
-				SEL.other_rock_m = np.ones(len(self.T)) * SEL.other_rock_m[0]
-
-			elif SEL.solid_phase_method == 2:
-
-				self.quartz_frac = np.ones(len(self.T)) * self.quartz_frac[0]
-				self.plag_frac = np.ones(len(self.T)) * self.plag_frac[0]
-				self.amp_frac = np.ones(len(self.T)) * self.amp_frac[0]
-				self.kfelds_frac = np.ones(len(self.T)) * self.kfelds_frac[0]
-				self.garnet_frac = np.ones(len(self.T)) * self.garnet_frac[0]
-				self.pyx_frac = np.ones(len(self.T)) * self.pyx_frac[0]
-				self.mica_frac = np.ones(len(self.T)) * self.mica_frac[0]
-				self.clay_frac = np.ones(len(self.T)) * self.clay_frac[0]
-				self.carbonate_frac = np.ones(len(self.T)) * self.carbonate_frac[0]
-				self.graphite_frac = np.ones(len(self.T)) * self.graphite_frac[0]
-				self.sulphide_frac = np.ones(len(self.T)) * self.sulphide_frac[0]
-				self.other_frac = np.ones(len(self.T)) * self.other_frac[0]
-
-				SEL.quartz_m = np.ones(len(self.T)) * SEL.quartz_m[0]
-				SEL.plag_m = np.ones(len(self.T)) * SEL.plag_m[0]
-				SEL.amp_m = np.ones(len(self.T)) * SEL.amp_m[0]
-				SEL.kfelds_m = np.ones(len(self.T)) * SEL.kfelds_m[0]
-				SEL.garnet_m = np.ones(len(self.T)) * SEL.garnet_m[0]
-				SEL.pyx_m = np.ones(len(self.T)) * SEL.pyx_m[0]
-				SEL.mica_m = np.ones(len(self.T)) * SEL.mica_m[0]
-				SEL.clay_m = np.ones(len(self.T)) * SEL.clay_m[0]
-				SEL.carbonate_m = np.ones(len(self.T)) * SEL.carbonate_m[0]
-				SEL.graphite_m = np.ones(len(self.T)) * SEL.graphite_m[0]
-				SEL.sulphide_m = np.ones(len(self.T)) * SEL.sulphide_m[0]
-				SEL.other_m = np.ones(len(self.T)) * SEL.other_m[0]
-
-			SEL.melt_fluid_m = np.ones(len(self.T)) * SEL.melt_fluid_m[0]
-			self.melt_fluid_mass_frac = np.ones(len(self.T)) * self.melt_fluid_mass_frac[0]
-			self.salinity_fluid = np.ones(len(self.T)) * self.salinity_fluid[0]
-			self.co2_melt = np.ones(len(self.T)) * self.co2_melt[0]
-			self.h2o_melt = np.ones(len(self.T)) * self.h2o_melt[0]
-			self.na2o_melt = np.ones(len(self.T)) * self.na2o_melt[0]
-			self.k2o_melt = np.ones(len(self.T)) * self.k2o_melt[0]
-
-	def write_results(self):
-
-		lines = ['Bulk_Cond[S/m],Melt_Fluid_Cond[S/m],Solid_Cond[S/m],T[K],Depth[km],P[GPa]\n']
-
-		for i in range(0,len(self.T)):
-			lines.append(','.join((str(self.bulk_cond[i]),str(self.melt_fluid_cond[i]),str(self.solid_phase_cond[i]), str(self.T[i]), str(self.depth[i]), str(self.p[i]) + '\n')))
-		filesave_results = open(self.write_file_save_name ,'w')
-		filesave_results.writelines(lines)
-		filesave_results.close()
-		print("Files are saved at the chosen location...")
-		
+				
 
 class color:
    PURPLE = '\033[95m'
