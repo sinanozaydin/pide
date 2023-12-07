@@ -656,8 +656,8 @@ class SEL(object):
 		self.ol_min_part_index = [15,16,18] #mineral indexes for the file read
 		self.melt_partitioning_list = ['opx_melt_part.csv','cpx_melt_part.csv','gt_melt_part.csv', 'ol_melt_part.csv']
 		self.melt_min_part_index = [15,16,18,21] #mineral indexes for the file read
-		self.rwd_wds_min_partitioning_list = ['maj_part.csv', 'perov_part.csv']
-		self.rwd_wds_min_part_index = [18, 24]
+		self.rwd_wds_min_partitioning_list = ['maj_part.csv', 'cpx_tz_part.csv', 'perov_part.csv']
+		self.rwd_wds_min_part_index = [18, 16, 24]
 		
 		self.water_ol_part_name = []
 		self.water_ol_part_type = []
@@ -1025,6 +1025,7 @@ class SEL(object):
 	
 		self.d_water_garnet_rwd_wds_choice = kwargs.pop('garnet_rwd_wds', 0)
 		self.d_water_perov_rwd_wds_choice = kwargs.pop('perov_rwd_wds', 0)
+		self.d_water_cpx_rwd_wds_choice = kwargs.pop('cpx_rwd_wds', 0)
 		
 		self.load_mantle_transition_zone_water_partitions(method = 'array')
 		
@@ -3229,19 +3230,26 @@ class SEL(object):
 			
 		else:
 			
-			self.d_garnet_rwd_wds = self.d_opx_ol = eval(self.water_rwd_wds_part_name[7][self.d_water_garnet_rwd_wds_choice] + '(p = self.p[idx_node],\
+			self.d_garnet_rwd_wds = eval(self.water_rwd_wds_part_name[7][self.d_water_garnet_rwd_wds_choice] + '(p = self.p[idx_node],\
 			p_change = self.water_rwd_wds_part_pchange[7][self.d_water_garnet_rwd_wds_choice], method = method)')
 			
-		if self.water_rwd_wds_part_type[7][self.d_water_garnet_rwd_wds_choice] == 0:
+		if self.water_rwd_wds_part_type[13][self.d_water_perov_rwd_wds_choice] == 0:
 			
-			self.d_garnet_rwd_wds = self.water_rwd_wds_part_function[7][self.d_water_garnet_rwd_wds_choice] * np.ones(len(self.T))
+			self.d_perov_rwd_wds = self.water_rwd_wds_part_function[13][self.d_water_perov_rwd_wds_choice] * np.ones(len(self.T))
 			
 		else:
 			
-			self.d_garnet_rwd_wds = self.d_opx_ol = eval(self.water_rwd_wds_part_name[7][self.d_water_garnet_rwd_wds_choice] + '(p = self.p[idx_node],\
-			p_change = self.water_rwd_wds_part_pchange[7][self.d_water_garnet_rwd_wds_choice], method = method)')
+			self.d_perov_rwd_wds = eval(self.water_rwd_wds_part_name[13][self.d_water_perov_rwd_wds_choice] + '(p = self.p[idx_node],\
+			p_change = self.water_rwd_wds_part_pchange[13][self.d_water_perov_rwd_wds_choice], method = method)')
 			
+		if self.water_rwd_wds_part_type[5][self.d_water_cpx_rwd_wds_choice] == 0:
 			
+			self.d_cpx_rwd_wds = self.water_rwd_wds_part_function[5][self.d_water_cpx_rwd_wds_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_cpx_rwd_wds = eval(self.water_rwd_wds_part_name[5][self.d_water_cpx_rwd_wds_choice] + '(p = self.p[idx_node],\
+			p_change = self.water_rwd_wds_part_pchange[5][self.d_water_cpx_rwd_wds_choice], method = method)')
 		
 	def mantle_water_distribute(self, method, **kwargs):
 	

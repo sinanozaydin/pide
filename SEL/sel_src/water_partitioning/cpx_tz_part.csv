@@ -1,0 +1,3 @@
+#ModelName,ModelType,Function1,Pchange(GPa),Description
+BolfanCasanova2000_FromEnstatite_1,0,0.26315,0,"Enstatite/Wadsleyite partition coefficient, assuming cpx and opx behave similarly in respect to water."
+BolfanCasanova2000_Demouchy2017_FromEnstatite_CpxOpxDerived,0,0.4999,0,"Enstatite/Wadsleyite partition coefficient, assuming cpx and have a partition coefficient of D_cpx/opx derived from Demouchy2017 study (1.9)"
