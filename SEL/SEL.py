@@ -3508,7 +3508,7 @@ class SEL(object):
 		elif method == 'index':
 			return max_mineral_water
 		
-	def rerun_sol(self,mineral, method):
+	def rerun_sol(self, mineral, method):
 		
 		if mineral == 'ol':
 			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)

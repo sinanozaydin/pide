@@ -1,7 +1,27 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import os,sys
+import os,sys,csv
+import netCDF4
+
+def read_csv(filename,delim):
+
+	#Simple function for reading csv files and give out filtered output for given delimiter (delim)
+
+	file_obj = open(filename,'rt',encoding = "utf8") #Creating file object
+	file_csv = csv.reader(file_obj,delimiter = delim) #Reading the file object with csv module, delimiter assigned to ','
+	data = [] #Creating empty array to append data
+
+	#Appending data from csb object
+	for row in file_csv:
+		data.append(row)
+
+	#Filtering data for None elements read.
+	for j in range(0,len(data)):
+		data[j] = list(filter(None,data[j]))
+	data = list(filter(None,data))
+
+	return data
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
 
@@ -10,53 +30,33 @@ import SEL
 from inversion import conductivity_solver_single_param
 
 
-temp = np.arange(600,1300,5) #setting up temperature array
-pres = np.ones(len(temp))
-index_list = range(0,len(temp))
-sel_obj = SEL.SEL() #creating the initial object
-sel_obj.set_temperature(temp)
-sel_obj.set_pressure(3)
-sel_obj.set_composition_solid_mineral(ol = 0.65, opx = 0.2, cpx = 0.1, garnet = 0.05)
-sel_obj.set_phase_interconnectivities(ol = 1, opx = 2, cpx = 4, gt = 4)
-# sel_obj.set_melt_fluid_frac(0.01)
-sel_obj.set_parameter('ti_ol', 0.1)
+filename_global_em = "/home/sinan/Desktop/Research/Transition_Zone_Ben/GlobalEM-2015-02x02.nc"
 
-sel_obj.list_mantle_water_solubilities('ol')
-sel_obj.list_mantle_water_solubilities('cpx')
-sel_obj.list_mantle_water_solubilities('opx')
-sel_obj.list_mantle_water_solubilities('garnet')
-sel_obj.set_mantle_water_solubility(ol = 4,opx = 3, cpx = 0, garnet = 0)
-
-sel_obj.list_mantle_water_partitions_solid('opx')
-sel_obj.list_mantle_water_partitions_solid('cpx')
-sel_obj.list_mantle_water_partitions_solid('garnet')
-sel_obj.set_mantle_water_partitions(opx_ol = 3, cpx_ol = 4, garnet_ol = 0)
-
-sel_obj.revalue_arrays()
+em_nc = netCDF4.Dataset(filename_global_em, 'r')
 
 
+lon_model = np.asarray(em_nc.variables['longitude'][:])
+lat_model = np.asarray(em_nc.variables['latitude'][:])
+depth_model = np.asarray(em_nc.variables['depth'][:])
+sigma = np.array(em_nc.variables['sigma'][:])
 
-max_water = sel_obj.calculate_bulk_mantle_water_solubility(method = 'array')
+index_tz_start = 21
+index_tz_end = 32
+
+filename_phase_file = "/home/sinan/Desktop/Research/Transition_Zone_Ben/Phase_proportion.csv"
+data_phases = read_csv(filename = filename_phase_file, delim = ',')
+
+depth_of_interest = depth_model[index_tz_start:index_tz_end]
+
+depth_p = []
+
+for i in range(1,len(data_phases)):
+
+	if (float(data_phases[i][1]) > 410.0) and (float(data_phases[i][1]) <= 660.0):
+		
+		if any(element < 1.5 for element in abs(float(data_phases[i][1]) - depth_of_interest)):
+			depth_p.append(float(data_phases[i][1]))
 
 
-cond_list = np.ones(len(max_water)) * 1e-3 #1000 ohm meter
 
-c_list, residual_list = conductivity_solver_single_param(object = sel_obj, cond_list = cond_list, param_name = 'bulk_water', upper_limit_list = max_water,
-lower_limit_list= np.zeros(len(max_water)), search_start = 10, acceptence_threshold = 0.5, num_cpu = 5)
 
-import matplotlib.pyplot as plt
-	
-sel_obj.set_bulk_water(c_list)
-sel_obj.mantle_water_distribute(method = 'array')
-cond_calced = sel_obj.calculate_conductivity(method = 'array')
-fig = plt.figure()
-ax = plt.subplot(121)
-# ax.plot(cond_list,object.T,label = 'data')
-# ax.plot(cond_calced,object.T, label = 'calced')
-
-ax.plot(c_list,sel_obj.T)
-ax.set_ylim(np.amax(sel_obj.T),np.amin(sel_obj.T))
-ax.plot(max_water,sel_obj.T)
-ax.legend()
-# plt.savefig('2.png',dpi = 300)
-plt.show()
