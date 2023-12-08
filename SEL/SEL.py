@@ -1002,6 +1002,8 @@ class SEL(object):
 		self.opx_sol_choice = kwargs.pop('opx', 0)
 		self.cpx_sol_choice = kwargs.pop('cpx', 0)
 		self.garnet_sol_choice = kwargs.pop('garnet', 0)
+		self.rwd_wds_sol_choice = kwargs.pop('rwd_wds', 0)
+		self.perov_sol_choice = kwargs.pop('perov', 0)
 		
 		if self.mineral_sol_name[10][self.ol_sol_choice] == 'FromOpx':
 			if self.mineral_sol_name[4][self.opx_sol_choice] == 'FromOl':
@@ -2127,9 +2129,11 @@ class SEL(object):
 			water_corr_factor = self.Water_correction(min_idx = min_idx)
 			
 			if self.wtype[min_idx][SEL.minerals_cond_selections[min_sub_idx]] == 0:
+				
 				water_corr_factor = water_corr_factor * 1e4 #converting to wt % if the model requires
 
 			else:
+			
 				pass
 			
 		else:
@@ -2147,7 +2151,6 @@ class SEL(object):
 			
 		elif SEL.type[min_idx][SEL.minerals_cond_selections[min_sub_idx]] == '1':
 		
-
 			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[min_idx][SEL.minerals_cond_selections[min_sub_idx]],
 								   E = self.h_i[min_idx][SEL.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
@@ -3420,6 +3423,16 @@ class SEL(object):
 						max_mineral_water = self.max_opx_water * (self.d_cpx_ol/self.d_opx_ol)
 						self.max_cpx_water = np.array(max_mineral_water)
 						
+				elif ('Rwd_Wds' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
+				
+					try:
+						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
+					except NameError:
+						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
+						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
+						self.max_cpx_water = np.array(max_mineral_water)	
+					
+						
 			else:
 				
 				max_mineral_water = eval(self.mineral_sol_name[min_idx][self.cpx_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_opx = self.cpx_xfe[idx_node], al_opx = self.al_cpx[idx_node], method = 'array')")
@@ -3447,12 +3460,46 @@ class SEL(object):
 					except NameError:
 						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
 						max_mineral_water = self.max_opx_water * (self.d_garnet_ol/self.d_opx_ol)
-						self.max_opx_water = np.array(max_mineral_water)
+						self.max_garnet_water = np.array(max_mineral_water)
+						
+				elif ('Rwd_Wds' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
+				
+					try:
+						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
+					except NameError:
+						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
+						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
+						self.max_garnet_water = np.array(max_mineral_water)
 					
 			else:
 				
 				max_mineral_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_garnet = self.garnet_xfe[idx_node], method = 'array')")
 		
+		elif mineral_name == 'rwd_wds':
+		
+			min_idx = 12
+			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.rwd_wds_sol_choice)
+			
+			max_mineral_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],\
+			h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_rwd_wds = self.rwd_wds_xfe[idx_node], method = 'array')")
+			self.max_rwd_wds_water = np.array(max_mineral_water)
+			
+		elif mineral_name == 'perov':
+		
+			min_idx = 13 
+			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.perov_sol_choice)
+			
+			if ('From' in self.mineral_sol_name[min_idx][self.perov_sol_choice]) == True:
+			
+				if ('Rwd_Wds' in self.mineral_sol_name[min_idx][self.perov_sol_choice]) == True:
+				
+					try:
+						max_mineral_water = self.max_rwd_wds_water * self.d_perov_rwd_wds
+					except NameError:
+						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
+						max_mineral_water = self.max_rwd_wds_water * self.d_perov_rwd_wds
+						self.max_perov_water = np.array(max_mineral_water)
+			
 		if method == 'array':
 			if len(max_mineral_water) == 1:
 				return max_mineral_water[0]
@@ -3471,6 +3518,10 @@ class SEL(object):
 			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
 		elif mineral == 'garnet':
 			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
+		elif mineral == 'rwd_wds':
+			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'rwd_wds', method = method)
+		elif mineral == 'perov':
+			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'perov', method = method)
 			
 		return water_calc
 		
@@ -3480,10 +3531,21 @@ class SEL(object):
 		self.max_opx_water = self.calculate_mineral_water_solubility(mineral_name = 'opx', method = method)
 		self.max_cpx_water = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
 		self.max_garnet_water = self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
-		self.max_bulk_water = (self.max_ol_water * self.ol_frac) + (self.max_opx_water * self.opx_frac) + (self.max_cpx_water * self.cpx_frac) + (self.max_garnet_water * self.garnet_frac)
+		
+		self.max_bulk_water = (self.max_ol_water * self.ol_frac_wt) + (self.max_opx_water * self.opx_frac_wt) + (self.max_cpx_water * self.cpx_frac_wt) + (self.max_garnet_water * self.garnet_frac_wt)
 		
 		return self.max_bulk_water
-				
+		
+	def calculate_transition_zone_water_solubility(self, method, **kwargs):
+	
+		self.max_rwd_wds_water = self.calculate_mineral_water_solubility(mineral_name = 'rwd_wds', method = method)
+		self.max_cpx_water = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
+		self.max_garnet_water = self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
+		self.max_perov_water = self.calculate_mineral_water_solubility(mineral_name = 'perov', method = method)
+		
+		self.max_bulk_water = (self.max_ol_water * self.ol_frac_wt) +  (self.max_cpx_water * self.cpx_frac_wt) + (self.max_garnet_water * self.garnet_frac_wt) + (self.max_perov_water * self.perov_frac_wt)
+
+		return self.max_bulk_water
 
 class color:
    PURPLE = '\033[95m'
