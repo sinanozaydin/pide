@@ -3147,6 +3147,13 @@ class SEL(object):
 			self.water_fugacity_calculated = True
 		
 	def load_mantle_water_partitions(self, method, **kwargs):
+	
+		sol_idx = kwargs.pop('sol_idx', 0)
+	
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
 		
 		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (SEL.fluid_or_melt_method == 1):
 		
