@@ -3,7 +3,8 @@
 import sys,os
 import numpy as np
 
-def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, init_guess = None, water_solv=False):
+def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, 
+	init_guess = None, transition_zone = False, water_solv=False):
 	
 	
 	param_search_array = np.arange(lowerlimit[index], upperlimit[index], search_increment)
@@ -13,7 +14,10 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 		sol_param = upperlimit[index]
 		exec('object.' + param + '[' + str(index) + ']='  + str(upperlimit[index]))
 		if water_solv == True:
-			object.mantle_water_distribute(method = 'index', sol_idx = index)
+			if transition_zone == False:
+				object.mantle_water_distribute(method = 'index', sol_idx = index)
+			else:
+				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
 		cond_calced = object.calculate_conductivity(method = 'index', sol_idx = index)
 		residual = cond_list[index] - cond_calced
 	else:
@@ -30,7 +34,10 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 				exec('object.' + param + '[' + str(index) + ']='  + str(param_search_array[j]))
 				
 				if water_solv == True:
-					object.mantle_water_distribute(method = 'index', sol_idx = index)
+					if transition_zone == False:
+						object.mantle_water_distribute(method = 'index', sol_idx = index)
+					else:
+						object.transition_zone_water_distribute(method = 'index', sol_idx = index)
 					
 				cond_calced = object.calculate_conductivity(method = 'index',sol_idx = index)
 				
@@ -72,11 +79,11 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 							break
 						else:
 							pass
-						
+	
 	return sol_param, residual
 	
 def conductivity_solver_single_param(object, cond_list, param_name,
-	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, num_cpu = 1):
+	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, num_cpu = 1):
 
 	index_list = np.array(list(range(0,len(object.T)))) #creating the index array tied to the T array.
 	#index_list = 0
@@ -118,10 +125,10 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 		with multiprocessing.Pool(processes=num_cpu) as pool:
 							
 			process_item_partial = partial(_solv_cond_, cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
-			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, init_guess = 0, water_solv=water_solv)
+			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, init_guess = 0, transition_zone = transition_zone, water_solv=water_solv)
 			
 			c = pool.map(process_item_partial, index_list)
-		
+			
 		c_list = [x[0] for x in c]
 		residual_list= [x[1] for x in c]
 		
@@ -131,8 +138,10 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 		residual_list = np.zeros(len(index_list))
 		
 		for idx in range(0,len(index_list)):
+
 			c = _solv_cond_(index = index_list[idx], cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
-			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, init_guess = 0, water_solv=water_solv)
+			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, init_guess = 0, transition_zone = transition_zone, water_solv=water_solv)
+			
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]
 			

@@ -45,6 +45,7 @@ from sel_src.misc_func.fh2o import *
 #importing mineral solubility functions
 from sel_src.water_sol.ol_sol import *
 from sel_src.water_sol.opx_sol import * 
+from sel_src.water_sol.rwd_wds_sol import *
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -395,6 +396,7 @@ class SEL(object):
 
 		SEL.loaded_file = False
 		self.cond_calculated = False
+		self.temperature_default = False
 
 		self.init_params = self.read_csv(filename = os.path.join(self.core_path,'init_param.csv'),delim = ',') #loading the blueprint parameter file.
 		
@@ -402,11 +404,12 @@ class SEL(object):
 		self.read_params()
 		self.read_water_part()
 		self.read_mineral_water_solubility()
-		
 		self.object_formed = False
 		#setting up default values for the SEL object
 		self.set_temperature(np.ones(1) * 900.0) #in Kelvin
 		self.set_pressure(np.ones(1) * 1.0) #in GPa
+		self.set_composition_solid_mineral(overlookError = True)
+		self.set_composition_solid_rock(overlookError = True)
 		self.set_mineral_conductivity_choice()
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
@@ -450,14 +453,14 @@ class SEL(object):
 		
 		#arrays with mineral specific arrays
 		if SEL.solid_phase_method == 2:
-			self.set_composition_solid_mineral(reval = True)
+			self.set_composition_solid_mineral(reval = True,overlookError = True)
 			self.set_mineral_water(reval = True)
 			self.set_xfe_mineral(reval = True)
 			self.set_param1_mineral(reval = True)
 			self.set_param2_mineral(reval = True)
 			
 		elif SEL.solid_phase_method == 1:
-			self.set_composition_solid_rock(reval = True)
+			self.set_composition_solid_rock(reval = True,overlookError = True)
 			self.set_rock_water(reval = True)
 			self.set_param1_rock(reval = True)
 			self.set_param2_rock(reval = True)
@@ -763,8 +766,8 @@ class SEL(object):
 			
 	def read_mineral_water_solubility(self):
 	
-		self.mineral_sol_file_list = ['opx_sol.csv','cpx_sol.csv','garnet_sol.csv','ol_sol.csv']
-		self.mineral_sol_index = [15,16,18,21] #mineral indexes for the file read
+		self.mineral_sol_file_list = ['opx_sol.csv','cpx_sol.csv','garnet_sol.csv','ol_sol.csv','rwd_wds_sol.csv','perov_sol.csv']
+		self.mineral_sol_index = [15,16,18,21,23,24] #mineral indexes for the file read
 		
 		self.mineral_sol_name = []
 		self.mineral_sol_fug = []
@@ -772,7 +775,7 @@ class SEL(object):
 		self.mineral_sol_calib = []
 		
 		index_read = 0
-		for i in range(11,24):
+		for i in range(11,26):
 		
 			if (i in self.mineral_sol_index) == True:
 				data = self.read_csv(os.path.join(self.core_path, 'water_sol', self.mineral_sol_file_list[index_read]), delim = ',')
@@ -859,7 +862,7 @@ class SEL(object):
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
-		if overlookError != False:
+		if overlookError == False:
 			mineral_frac_list = [self.quartz_frac,self.opx_frac,self.cpx_frac,self.garnet_frac,self.mica_frac,
 			self.amp_frac,self.quartz_frac,self.plag_frac,self.kfelds_frac,self.sulphide_frac,self.graphite_frac,self.mixture_frac, self.ol_frac, self.sp_frac,
 			self.rwd_wds_frac, self.perov_frac, self.other_frac]
@@ -869,11 +872,12 @@ class SEL(object):
 				
 					raise ValueError('There is a value entered in mineral fraction contents that is below zero.')
 		
-		bool_composition = self.check_composition(method = 'mineral')
-
-		if bool_composition == False:
-		
-			raise ValueError('The values entered in mineral composition do not add up to 1.')
+		if overlookError == False:
+			bool_composition = self.check_composition(method = 'mineral')
+	
+			if bool_composition == False:
+			
+				raise ValueError('The values entered in mineral composition do not add up to 1.')
 			
 	
 	def set_composition_solid_rock(self, reval = False, **kwargs):
@@ -906,7 +910,7 @@ class SEL(object):
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
-		if overlookError != False:
+		if overlookError == False:
 			rock_frac_list = [self.granite_frac,self.granulite_frac,self.sandstone_frac,self.gneiss_frac,self.amphibolite_frac,
 			self.basalt_frac,self.mud_frac,self.gabbro_frac,self.other_rock_frac]
 			
@@ -915,11 +919,12 @@ class SEL(object):
 				
 					raise ValueError('There is a value entered in rock fraction contents that is below zero.')
 		
-		bool_composition = self.check_composition(method = 'rock')
-
-		if bool_composition == False:
-		
-			raise ValueError('The entered in rock composition do not add up to 1.')
+		if overlookError == False:
+			bool_composition = self.check_composition(method = 'rock')
+	
+			if bool_composition == False:
+			
+				raise ValueError('The entered in rock composition do not add up to 1.')
 			
 			
 	def set_temperature(self,T):
@@ -1261,9 +1266,40 @@ class SEL(object):
 					print(str(i) + '.  ' + self.water_ol_part_name[min_index][i] + ' -  Type ' + str(self.water_ol_part_type[min_index][i]))
 			print('                 ')
 			print('                 ')	
+			
 		print_lists(min_idx = min_index)
 		
 		return self.water_ol_part_name[min_index]
+		
+	def list_transition_zone_water_partitions_solid(self, mineral_name):
+	
+		if (mineral_name == 'cpx') or (mineral_name == 'clinopyroxene'):
+			min_index = 5
+			min_str = 'Cpx/RwdWds'
+		elif (mineral_name == 'garnet') or (mineral_name == 'gt'):
+			min_index = 7
+			min_str = 'Garnet/RwdWds'
+		elif (mineral_name == 'perovskite') or (mineral_name == 'perov'):
+			min_index = 13
+			min_str = 'Perov/RwdWds'
+		else:
+			raise AttributeError('There is no transition zone water partition coefficients for the chosen mineral: ' + mineral_name)
+			
+		def print_lists(min_idx):
+		
+			print(color.RED + 'Transition zone solid-state water partition coefficients for the mineral: ' + mineral_name + color.END)
+			for i in range(0,len(self.water_rwd_wds_part_name[min_idx])):
+				if self.water_rwd_wds_part_type[min_index][i] == 0:
+					print(str(i) + '.  ' + self.water_rwd_wds_part_name[min_index][i] + ' -  Type ' + str(self.water_rwd_wds_part_type[min_index][i]) + '  -  ' + min_str + ': ' + str(self.water_rwd_wds_part_function[min_index][i]))
+				else:
+					print(str(i) + '.  ' + self.water_rwd_wds_part_name[min_index][i] + ' -  Type ' + str(self.water_rwd_wds_part_type[min_index][i]) + '  -  Specific Function.' )
+		
+			print('                 ')
+			print('                 ')	
+			
+		print_lists(min_idx = min_index)
+		
+		return self.water_rwd_wds_part_name[min_index]
 		
 	def list_mantle_water_partitions_melt(self, mineral_name):
 		
@@ -2036,8 +2072,8 @@ class SEL(object):
 			else:
 
 				melt_odd_function = SEL.name[1][SEL.melt_cond_selection]
-			# import ipdb
-			# ipdb.set_trace()
+			
+			
 			cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
 			'Melt_CO2 = self.co2_melt, Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], method = method)')
 		
@@ -2953,7 +2989,7 @@ class SEL(object):
 				self.mica_cond = np.zeros(len(self.T))
 				
 			if np.mean(self.garnet_frac) != 0:
-				self.garnet_cond = self.calculate_mineral_conductivity(method = method, min_idx= 18, sol_idx = index)
+				self.garnet_cond = self.calculate_mineral_conductivity(method = method, min_idx = 18, sol_idx = index)
 			else:
 				self.garnet_cond = np.zeros(len(self.T))
 
@@ -3216,14 +3252,19 @@ class SEL(object):
 			
 			self.d_garnet_ol = eval(self.water_ol_part_name[7][self.d_water_garnet_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[7][self.d_water_garnet_ol_choice], d_opx_ol = self.d_opx_ol[idx_node], method = method)')
 		
-		self.mantle_water_partitions_default = False
 		
 	def load_mantle_transition_zone_water_partitions(self, method, **kwargs):
-				
+	
+		sol_idx = kwargs.pop('sol_idx', 0)
+	
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+	
 		if self.water_rwd_wds_part_type[7][self.d_water_garnet_rwd_wds_choice] == 0:
 			
 			self.d_garnet_rwd_wds = self.water_rwd_wds_part_function[7][self.d_water_garnet_rwd_wds_choice] * np.ones(len(self.T))
-			
 		else:
 			
 			self.d_garnet_rwd_wds = eval(self.water_rwd_wds_part_name[7][self.d_water_garnet_rwd_wds_choice] + '(p = self.p[idx_node],\
@@ -3307,7 +3348,7 @@ class SEL(object):
 			
 		#assuming not melting in transition zone
 		self.solid_water[idx_node] = self.bulk_water[idx_node]
-			
+		
 		SEL.rwd_wds_water[idx_node] = self.solid_water[idx_node] / (self.rwd_wds_frac_wt[idx_node] + ((self.cpx_frac_wt[idx_node] * self.d_cpx_rwd_wds[idx_node]) +\
 		(self.perov_frac_wt[idx_node] * self.d_perov_rwd_wds[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_rwd_wds[idx_node])))
 		
@@ -3333,9 +3374,9 @@ class SEL(object):
 	def conditional_fugacity_calculations(self, min_idx, sol_choice):
 	
 		if self.mineral_sol_fug[min_idx][sol_choice] == 'Y':
-				if self.water_fugacity_calculated == False:
-					self.calculate_water_fugacity()
-				water_fug = self.water_fugacity	
+			if self.water_fugacity_calculated == False:
+				self.calculate_water_fugacity()
+			water_fug = self.water_fugacity	
 				
 		else:
 		
@@ -3371,7 +3412,7 @@ class SEL(object):
 					
 					try:
 						max_mineral_water = self.max_opx_water / self.d_opx_ol
-					except NameError:
+					except AttributeError:
 						
 						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
 						max_mineral_water = self.max_opx_water / self.d_opx_ol
@@ -3392,7 +3433,7 @@ class SEL(object):
 									
 					try:
 						max_mineral_water = self.max_ol_water * self.d_opx_ol
-					except NameError:
+					except AttributeError:
 						
 						self.max_ol_water = self.rerun_sol(mineral = 'ol', method = method)
 						max_mineral_water = self.max_ol_water * self.d_opx_ol
@@ -3416,7 +3457,7 @@ class SEL(object):
 														
 					try:
 						max_mineral_water = self.max_ol_water * self.d_cpx_ol
-					except NameError:
+					except AttributeError:
 						self.max_ol_water = self.rerun_sol(mineral = 'ol', method = method)
 						max_mineral_water = self.max_ol_water * self.d_cpx_ol
 						self.max_cpx_water = np.array(max_mineral_water)
@@ -3425,7 +3466,7 @@ class SEL(object):
 									
 					try:
 						max_mineral_water = self.max_ol_water * (self.d_cpx_ol/self.d_opx_ol)
-					except NameError:
+					except AttributeError:
 						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
 						max_mineral_water = self.max_opx_water * (self.d_cpx_ol/self.d_opx_ol)
 						self.max_cpx_water = np.array(max_mineral_water)
@@ -3434,7 +3475,7 @@ class SEL(object):
 				
 					try:
 						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
-					except NameError:
+					except AttributeError:
 						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
 						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
 						self.max_cpx_water = np.array(max_mineral_water)	
@@ -3455,7 +3496,7 @@ class SEL(object):
 									
 					try:
 						max_mineral_water = self.max_ol_water * self.d_garnet_ol
-					except NameError:
+					except AttributeError:
 						self.max_ol_water = self.rerun_sol(mineral = 'garnet', method = method)
 						max_mineral_water = self.max_ol_water * self.d_garnet_ol
 						self.max_garnet_water = np.array(max_mineral_water)
@@ -3464,7 +3505,7 @@ class SEL(object):
 					
 					try:
 						max_mineral_water = self.max_opx_water * (self.d_garnet_ol/self.d_opx_ol)
-					except NameError:
+					except AttributeError:
 						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
 						max_mineral_water = self.max_opx_water * (self.d_garnet_ol/self.d_opx_ol)
 						self.max_garnet_water = np.array(max_mineral_water)
@@ -3473,7 +3514,7 @@ class SEL(object):
 				
 					try:
 						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
-					except NameError:
+					except AttributeError:
 						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
 						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
 						self.max_garnet_water = np.array(max_mineral_water)
@@ -3485,7 +3526,7 @@ class SEL(object):
 		elif mineral_name == 'rwd_wds':
 		
 			min_idx = 12
-			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.rwd_wds_sol_choice)
+			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice = self.rwd_wds_sol_choice)
 			
 			max_mineral_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],\
 			h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_rwd_wds = self.rwd_wds_xfe[idx_node], method = 'array')")
@@ -3494,7 +3535,7 @@ class SEL(object):
 		elif mineral_name == 'perov':
 		
 			min_idx = 13 
-			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.perov_sol_choice)
+			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice = self.perov_sol_choice)
 			
 			if ('From' in self.mineral_sol_name[min_idx][self.perov_sol_choice]) == True:
 			
@@ -3502,7 +3543,7 @@ class SEL(object):
 				
 					try:
 						max_mineral_water = self.max_rwd_wds_water * self.d_perov_rwd_wds
-					except NameError:
+					except AttributeError:
 						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
 						max_mineral_water = self.max_rwd_wds_water * self.d_perov_rwd_wds
 						self.max_perov_water = np.array(max_mineral_water)
@@ -3550,7 +3591,7 @@ class SEL(object):
 		self.max_garnet_water = self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
 		self.max_perov_water = self.calculate_mineral_water_solubility(mineral_name = 'perov', method = method)
 		
-		self.max_bulk_water = (self.max_ol_water * self.ol_frac_wt) +  (self.max_cpx_water * self.cpx_frac_wt) + (self.max_garnet_water * self.garnet_frac_wt) + (self.max_perov_water * self.perov_frac_wt)
+		self.max_bulk_water = (self.max_rwd_wds_water * self.rwd_wds_frac_wt) +  (self.max_cpx_water * self.cpx_frac_wt) + (self.max_garnet_water * self.garnet_frac_wt) + (self.max_perov_water * self.perov_frac_wt)
 
 		return self.max_bulk_water
 
