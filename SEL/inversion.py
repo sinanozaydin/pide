@@ -138,9 +138,9 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 		residual_list = np.zeros(len(index_list))
 		
 		for idx in range(0,len(index_list)):
-
+			
 			c = _solv_cond_(index = index_list[idx], cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
-			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, init_guess = 0, transition_zone = transition_zone, water_solv=water_solv)
+				lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, init_guess = 0, transition_zone = transition_zone, water_solv=water_solv)
 			
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]

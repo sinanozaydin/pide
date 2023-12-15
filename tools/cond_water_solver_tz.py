@@ -23,17 +23,22 @@ def read_csv(filename,delim):
 
 	return data
 	
-def write_slice(p,t,water,cond, filename):
+def write_slice(p,t,water,cond, lat, lon, depth, filename):
 
-	lines = ['P[GPa],T[K],Water[ppm], cond[Sm]\n']
+	lines = ['Latitude, Longitude,Depth[km],P[GPa],T[K],Water[ppm], cond[Sm]\n']
 	
 	for i in range(0,len(p)):
-	
-		lines.append(','.join((str(p[i]),str(t[i]),str(water[i]),str(cond[i]) + '\n')))
+		
+		if lon[i] > 180.0
+			lines.append(','.join((str(lat[i]), str(lon[i] - 360.0), str(depth), str(p[i]),str(t[i]),str(water[i]),str(cond[i]) + '\n')))
+		else:
+			lines.append(','.join((str(lat[i]), str(lon[i]), str(depth), str(p[i]),str(t[i]),str(water[i]),str(cond[i]) + '\n')))
 		
 	filesave = open(filename,'w')
 	filesave.writelines(lines)
-	filesave.close
+	filesave.close()
+	
+	print('Slice file is written at : ' + filename)
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
 
@@ -123,9 +128,16 @@ for i in range(index_tz_start, index_tz_end):
 			
 	cond_arrays.append(np.array(cond_slice))
 	
+		
+file_write = "cond_trial.csv"
+filesave = open(file_write,'w')
+filesave.writelines(line_trial)
+filesave.close
+	
 cond_arrays = np.array(cond_arrays)
 lat_arrays = np.array(lat_arrays)
 lon_arrays = np.array(lon_arrays)
+
 
 sel_obj = SEL.SEL()
 sel_obj.list_mineral_econd_models('garnet')
@@ -143,10 +155,10 @@ sel_obj.list_transition_zone_water_partitions_solid('garnet')
 sel_obj.list_transition_zone_water_partitions_solid('perov')
 sel_obj.list_transition_zone_water_partitions_solid('cpx')
 
-
 sel_obj.set_mantle_water_solubility(cpx = 2, perov = 0, garnet = 2)
 
-for index in range(0,len(cond_arrays)):
+
+for index in range(0,1):
 
 	if index == 6:
 		
@@ -166,7 +178,7 @@ for index in range(0,len(cond_arrays)):
 	c_list, residual_list = conductivity_solver_single_param(object = sel_obj, cond_list = cond_arrays[index], param_name = 'bulk_water', upper_limit_list = tz_solubility,
 		lower_limit_list= np.zeros(len(tz_solubility)), search_start = 10, acceptence_threshold = 0.5, transition_zone = True, num_cpu = 6)	
 	
-	write_slice(p = object.p, t = object.T, water = c_list, cond = cond_arrays[index], filename = 'TZ_Water_Content_' + str(index) + '.csv')
+	write_slice(p = sel_obj.p, t = sel_obj.T, water = c_list, cond = cond_arrays[index], lat = lat_arrays, lon = lon_arrays, depth = depth_p[index], filename = 'TZ_Water_Content_' + str(index) + '.csv')
 # fig = plt.figure()
 # ax = plt.subplot(111)
 # ax.scatter(lon_arrays,lat_arrays, c = np.log10(cond_arrays[0]), marker = 's', linewidth = 0.2, edgecolor = 'k',cmap = 'Spectral_r')
