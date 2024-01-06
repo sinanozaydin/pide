@@ -6,38 +6,38 @@ import harmonica as hm
 
 def calculate_3DModel_magnetic(sus_array, mesh, height, **kwargs):
 
-	import scipy.io
+    import scipy.io
 
-	#This is a function that converts the constructed 3D geodynamic model into prisms
-	#that can be used by Harmonica to calculate the magnetic response from the 3D susceptibility field
-	"""
-	Input Paramaters
-	-----------------
-	sus_array: calculated susceptibility field in np.ndarray()
-	mesh: mesh of the associated susceptibility field.
-	height: observation height to calculate magnetic field	
-	
-	mesh_unit: 'kilometres' or 'metres'
+    #This is a function that converts the constructed 3D geodynamic model into prisms
+    #that can be used by Harmonica to calculate the magnetic response from the 3D susceptibility field
+    """
+    Input Paramaters
+    -----------------
+    sus_array: calculated susceptibility field in np.ndarray()
+    mesh: mesh of the associated susceptibility field.
+    height: observation height to calculate magnetic field    
+    
+    mesh_unit: 'kilometres' or 'metres'
     
     Out
     -----------------
     Vertical magnetic field in nT
-	"""
+    """
     
-	
-	#optional kwarg calls
-	mesh_unit = kwargs.pop('mesh_unit', 'kilometres')
+    
+    #optional kwarg calls
+    mesh_unit = kwargs.pop('mesh_unit', 'kilometres')
 
-	#converting mesh in kilometers into meters.
-	if mesh_unit == 'kilometres':
-		mesh[0] = mesh[0] * 1e3
-		mesh[1] = mesh[1] * 1e3
+    #converting mesh in kilometers into meters.
+    if mesh_unit == 'kilometres':
+        mesh[0] = mesh[0] * 1e3
+        mesh[1] = mesh[1] * 1e3
         mesh[2] = mesh[2] * 1e3
-	elif mesh_unit == 'metres':
-		pass
-	else:
-		raise ValueError('Please enter a valid response for mesh_unit: "kilometres" or "metres".')
-		
+    elif mesh_unit == 'metres':
+        pass
+    else:
+        raise ValueError('Please enter a valid response for mesh_unit: "kilometres" or "metres".')
+        
     #get z vertical negtive downward
     mesh[2] = -mesh[2]
     
