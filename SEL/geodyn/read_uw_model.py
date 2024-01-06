@@ -103,7 +103,72 @@ def setup_2d_mesh(mesh_data):
 	mesh_center = np.meshgrid(x_mesh_centers, y_mesh_centers)
 	
 	return mesh, mesh_center, x_mesh, y_mesh, x_mesh_centers, y_mesh_centers, borders_mesh
-		
+
+def setup_3d_mesh(mesh_data):
+
+	"""
+	A function to convert 3D mesh_data to a usable array.
+	
+	Input Parameters:
+	mesh_data read from the file
+	
+	Output parameters:
+	mesh in np.meshgrid
+	mesh_center in np.meshgrid
+	x_mesh: mesh array in x-dir in np.array
+	y_mesh: mesh array in y-dir in np.array
+	z_mesh: mesh array in z-dir in np.array
+	x_mesh_centers: mesh centers array in x-dir in np.array
+	y_mesh_centers: mesh centers array in y-dir in np.array
+	z_mesh_centers: mesh centers array in z-dir in np.array
+	"""
+
+	mesh_array = np.array(list(mesh_data['vertices']))
+	mesh_x_array = mesh_array[:,0]
+    mesh_y_array = mesh_array[:,1]
+	mesh_z_array = -1 * mesh_array[:,2] #changing the minus direction in the Earth.
+	#finding max and miny
+
+	max_x = np.amax(mesh_x_array)
+	min_x = np.amin(mesh_x_array)
+
+	max_y = np.amax(mesh_y_array)
+	min_y = np.amin(mesh_y_array)
+	
+	max_z = np.amax(mesh_z_array)
+	min_z = np.amin(mesh_z_array)
+
+	borders_mesh = [max_x, min_x, max_y, min_y, max_z, min_z]
+
+	print('Maximum X:  ' + str(max_x) + '   km')
+	print('Minimum X:  ' + str(min_x) + '   km')
+	print('Maximum Y:  ' + str(max_y) + '   km')
+	print('Minimum Y:  ' + str(min_y) + '   km')
+	print('Maximum Z:  ' + str(max_z) + '   km')
+	print('Minimum Z:  ' + str(min_z) + '   km')
+    
+	increment_in_x = np.abs(mesh_x_array[1] - mesh_x_array[0])
+	x_steps = int((max_x - min_x) / increment_in_x)
+	
+	increment_in_y = np.abs(np.unique(mesh_y_array)[1] - np.unique(mesh_y_array)[0])
+	y_steps = int((max_y - min_y) / increment_in_y)
+
+	increment_in_z = np.abs(np.unique(mesh_z_array)[1] - np.unique(mesh_z_array)[0])
+	z_steps = int((max_z - min_z) / increment_in_z)
+
+	x_mesh = np.arange(min_x, max_x + increment_in_x, increment_in_x)
+	y_mesh = np.arange(min_y, max_y + increment_in_y, increment_in_y)
+    z_mesh = np.arange(max_z, min_z - increment_in_z, -increment_in_z)
+
+	x_mesh_centers = x_mesh[:-1] + (increment_in_x / 2.0)
+	y_mesh_centers = y_mesh[:-1] + (increment_in_y / 2.0)
+	z_mesh_centers = z_mesh[:-1] - (increment_in_z / 2.0)
+
+	mesh = np.meshgrid(x_mesh, y_mesh, z_mesh)
+	mesh_center = np.meshgrid(x_mesh_centers, y_mesh_centers, z_mesh_centers)
+	
+	return mesh, mesh_center, x_mesh, y_mesh, z_mesh, x_mesh_centers, y_mesh_centers, z_mesh_centers, borders_mesh
+    
 def setup_material(material_data, material_names):
 
 	material_array = np.array(list(material_data['data']))
