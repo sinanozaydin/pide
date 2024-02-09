@@ -2,6 +2,7 @@
 
 import sys,os
 import numpy as np
+import random
 
 def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, 
 	init_guess = None, transition_zone = False, water_solv=False):
@@ -146,3 +147,12 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			residual_list[idx] = c[1]
 			
 	return c_list, residual_list
+	
+def conductivity_solver_MCMC(object, cond_list, param_list,
+	upper_limit_list, lower_limit_list, sigma_list, n_simulation, burning_samples,
+	distribution_method = 'gaussian'):
+	
+	pass
+	a = 0
+	
+	return a 
