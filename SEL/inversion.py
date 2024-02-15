@@ -87,7 +87,6 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, num_cpu = 1):
 
 	index_list = np.array(list(range(0,len(object.T)))) #creating the index array tied to the T array.
-	#index_list = 0
 	
 	if ('water' in param_name) == True:
 	
@@ -149,10 +148,12 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 	return c_list, residual_list
 	
 def conductivity_solver_MCMC(object, cond_list, param_list,
-	upper_limit_list, lower_limit_list, sigma_list, n_simulation, burning_samples,
+	upper_limit_list, lower_limit_list, sigma_list, n_simulation= 1e5, burning_samples = 1e4,
 	distribution_method = 'gaussian'):
 	
-	pass
-	a = 0
+	from sklearn.mixture import GaussianMixture #calling to create a gaussian mixture
+	
+	
+	
 	
 	return a 

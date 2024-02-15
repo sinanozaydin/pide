@@ -42,5 +42,13 @@ def write_2d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpola
 		file.create_dataset('data', data = data_2_write)
 		
 	print('The file has written as:' + str(filename_out))
+	
+def write_3d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpolate = False, xmesh = None, ymesh = None, zmmesh = None):
+
+	with h5py.File(filename_out, 'w') as file:
+	
+		file.create_dataset('data', data = Field)
+		
+	print('The file has written as:' + str(filename_out))
 		
 		

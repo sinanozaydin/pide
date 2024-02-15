@@ -41,7 +41,7 @@ def read_uw_material_names_from_py_input(py_file):
 
 	for i in idx_material_py:
 		idx_local = py_file_text[i][0].find('=')
-		material_names.append(py_file_text[i][0][:idx_local].strip())
+		material_names.append(py_file_text[i][0][:idx_local].strip())		
 	
 	return material_names
 	
@@ -125,7 +125,7 @@ def setup_3d_mesh(mesh_data):
 
 	mesh_array = np.array(list(mesh_data['vertices']))
 	mesh_x_array = mesh_array[:,0]
-    mesh_y_array = mesh_array[:,1]
+	mesh_y_array = mesh_array[:,1]
 	mesh_z_array = -1 * mesh_array[:,2] #changing the minus direction in the Earth.
 	#finding max and miny
 
@@ -146,19 +146,16 @@ def setup_3d_mesh(mesh_data):
 	print('Minimum Y:  ' + str(min_y) + '   km')
 	print('Maximum Z:  ' + str(max_z) + '   km')
 	print('Minimum Z:  ' + str(min_z) + '   km')
-    
+	
 	increment_in_x = np.abs(mesh_x_array[1] - mesh_x_array[0])
-	x_steps = int((max_x - min_x) / increment_in_x)
 	
 	increment_in_y = np.abs(np.unique(mesh_y_array)[1] - np.unique(mesh_y_array)[0])
-	y_steps = int((max_y - min_y) / increment_in_y)
 
 	increment_in_z = np.abs(np.unique(mesh_z_array)[1] - np.unique(mesh_z_array)[0])
-	z_steps = int((max_z - min_z) / increment_in_z)
-
+		
 	x_mesh = np.arange(min_x, max_x + increment_in_x, increment_in_x)
 	y_mesh = np.arange(min_y, max_y + increment_in_y, increment_in_y)
-    z_mesh = np.arange(max_z, min_z - increment_in_z, -increment_in_z)
+	z_mesh = np.arange(max_z, min_z, -increment_in_z)
 
 	x_mesh_centers = x_mesh[:-1] + (increment_in_x / 2.0)
 	y_mesh_centers = y_mesh[:-1] + (increment_in_y / 2.0)
@@ -168,7 +165,7 @@ def setup_3d_mesh(mesh_data):
 	mesh_center = np.meshgrid(x_mesh_centers, y_mesh_centers, z_mesh_centers)
 	
 	return mesh, mesh_center, x_mesh, y_mesh, z_mesh, x_mesh_centers, y_mesh_centers, z_mesh_centers, borders_mesh
-    
+	
 def setup_material(material_data, material_names):
 
 	material_array = np.array(list(material_data['data']))

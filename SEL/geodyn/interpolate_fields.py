@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import sys
 
 def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 
@@ -18,15 +19,65 @@ def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 
 	from scipy.interpolate import griddata
 	
+	
 	points_x = []
 	points_y = []
 	for i in range(0,len(mesh_field[0])):
-			for j in range(0,len(mesh_field[0][0])):	
-				points_x.append(mesh_field[0][i][j])
-				points_y.append(mesh_field[1][i][j])
+		for j in range(0,len(mesh_field[0][0])):	
+			points_x.append(mesh_field[0][i][j])
+			points_y.append(mesh_field[1][i][j])
 			
 	points_interp = np.column_stack((np.array(points_x), np.array(points_y)))
 	
 	interp_vals = griddata(points_interp, vals, (mesh_out[0],mesh_out[1]),method = method)
 	
 	return interp_vals
+	
+def interpolate_3d_fields(mesh_tuple, vals, mesh_out, method = 'linear'):
+
+	"""
+	To interpolate 2d fields
+	
+	mesh_field: input mesh in np.meshgrid
+	vals: Value field associated with the mesh_field
+	mesh_out: output mesh to interpolate data to
+	method: method of interpolations see scipy.interpolate.griddata to choose between options
+	
+	"""
+	
+	from scipy.interpolate import RegularGridInterpolator as rgi
+	
+	x_len = len(mesh_tuple[0])
+	y_len = len(mesh_tuple[1])
+	z_len = len(mesh_tuple[2])
+
+	vals = np.array([item[0] for item in vals])
+	
+	matrix = np.zeros((x_len,y_len,z_len))
+	
+	#filling the matrix with 1-d array values based on the xyz dimensions
+	a = 0
+	for i in range(0,x_len):
+		for j in range(0,y_len):
+			for k in range(0,z_len):
+				if a != len(vals):
+					matrix[i][j][k] = vals[a]
+				a = a + 1
+	
+	interp_func = rgi(mesh_tuple, matrix) #interpolation function in 3-D space.
+	
+	xx, yy, zz = np.meshgrid(mesh_out[0],mesh_out[1],mesh_out[2])
+	
+	interp_array = np.vstack((xx.flatten(), yy.flatten(), zz.flatten())).T
+	
+	interpolated_vals = interp_func(interp_array)
+	
+	return interpolated_vals
+	
+	
+	
+	
+	
+	
+	
+	
