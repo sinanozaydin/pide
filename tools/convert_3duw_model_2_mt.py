@@ -63,21 +63,65 @@ strain_rate_array = setup_uw_data_array_PROJ(strain_rate_data)
 temp_array = setup_uw_data_array_PROJ(temp_data) #mesh
 pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gigapascal
 
-print(len(pstrain_array))
-print(len(temp_array))
-print(len(pressure_array))
-
-sys.exit()
-
-print(len(temp_array))
 #Converting larger arrays into mesh_center locations.
 temp_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),temp_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
-# pressure_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),pressure_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 melt_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),melt_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 pstrain_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),pstrain_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 material_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),material_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
-# strain_rate_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),strain_rate_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
-print(len(temp_array))
-# write_3d_field_h5(Field = temp_array, filename_out = 'temperature_check.h5')
+
+#forming the main pide object
+sel_object = SEL.SEL()
+
+#DEFINING THE OBJECTS with SEL.material
+UpperCrustObject = Material(name = 'UpperCrustObject',material_index = 3, calculation_type = 'rock', composition = {'granite':1.0},interconnectivities = {'granite':1},
+el_cond_selections = {'granite':0}, phase_mixing_idx = 0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+UpperCrustObject_b = Material(name = 'UpperCrustObject',material_index = 3, calculation_type = 'rock', composition = {'granite':0.95, 'other_rock':0.05},
+interconnectivities = {'granite':1,'other_rock':1},
+el_cond_selections = {'granite':0,'other_rock':3}, phase_mixing_idx = 0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+UpperCrustObject1 = Material(name = 'UpperCrustObject',material_index = 4, calculation_type = 'rock', composition = {'granite':1.0},interconnectivities = {'granite':1},
+el_cond_selections = {'granite':0}, phase_mixing_idx = 0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+UpperCrustObject1_b = Material(name = 'UpperCrustObject',material_index = 4, calculation_type = 'rock', composition = {'granite':0.95, 'other_rock':0.05},
+interconnectivities = {'granite':1,'other_rock':1},
+el_cond_selections = {'granite':0,'other_rock':3}, phase_mixing_idx = 0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+UpperCrustObject2 = Material(name = 'UpperCrustObject',material_index = 5, calculation_type = 'rock', composition = {'granite':1.0},interconnectivities = {'granite':1},
+el_cond_selections = {'granite':0}, phase_mixing_idx = 0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+UpperCrustObject2_b = Material(name = 'UpperCrustObject',material_index = 5, calculation_type = 'rock', composition = {'granite':0.95, 'other_rock':0.05},
+interconnectivities = {'granite':1,'other_rock':1},
+el_cond_selections = {'granite':0,'other_rock':3}, phase_mixing_idx = 0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+UpperCrustObject3 = Material(name = 'UpperCrustObject',material_index = 6, calculation_type = 'rock', composition = {'granite':1.0},interconnectivities = {'granite':1},
+el_cond_selections = {'granite':0}, phase_mixing_idx = 0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+UpperCrustObject3_b = Material(name = 'UpperCrustObject',material_index = 6, calculation_type = 'rock', composition = {'granite':0.95, 'other_rock':0.05},
+interconnectivities = {'granite':1,'other_rock':1},
+el_cond_selections = {'granite':0,'other_rock':3}, phase_mixing_idx = 0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+
+
+
+
+
+
 
 
