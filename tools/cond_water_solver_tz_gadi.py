@@ -51,7 +51,7 @@ import SEL
 from inversion import conductivity_solver_single_param
 
 
-filename_global_em = "/home/sinan/Desktop/Research/Transition_Zone_Ben/GlobalEM-2015-02x02.nc"
+filename_global_em = "/scratch/q97/so0195/pide/transition_zone/GlobalEM-2015-02x02.nc"
 
 em_nc = netCDF4.Dataset(filename_global_em, 'r')
 
@@ -63,7 +63,7 @@ sigma = np.array(em_nc.variables['sigma'][:])
 index_tz_start = 21
 index_tz_end = 31
 
-filename_phase_file = "/home/sinan/Desktop/Research/Transition_Zone_Ben/Phase_proportion.csv"
+filename_phase_file = "/scratch/q97/so0195/pide/transition_zone/Phase_proportion.csv"
 data_phases = read_csv(filename = filename_phase_file, delim = ',')
 
 depth_of_interest = depth_model[index_tz_start:index_tz_end]
@@ -102,7 +102,7 @@ pv = np.array(pv)
 
 #reading katsura mantle potential temperature gradient
 
-filename_temp_grad_file = "/home/sinan/Desktop/Research/Transition_Zone_Ben/temperature_models/katsura_2020_grads.csv"
+filename_temp_grad_file = "/scratch/q97/so0195/pide/transition_zone/katsura_2020_grads.csv"
 temp_grad_data = read_csv(filename = filename_temp_grad_file, delim = ',')
 
 katsura_depth = []
@@ -115,7 +115,7 @@ for i in range(1,len(temp_grad_data)):
 	
 #reading waszek global mantle potential temperature diferences.
 
-temp_model_pot = "/home/sinan/Desktop/Research/Transition_Zone_Ben/temperature_models/410660/thermalmodel.txt"
+temp_model_pot = "/scratch/q97/so0195/pide/transition_zone/thermalmodel.txt"
 temp_model_pot_data = read_csv(filename = temp_model_pot, delim = ' ', filter_rows=False)
 
 waszek_t = []
@@ -198,6 +198,8 @@ cond_arrays = np.array(cond_arrays)
 lat_arrays = np.array(lat_arrays)
 lon_arrays = np.array(lon_arrays)
 
+
+
 """
 #determining the corresponding coordinate indexes of temperature field generated with the resistivity matrix.
 
@@ -258,9 +260,8 @@ sel_obj.list_transition_zone_water_partitions_solid('cpx')
 
 sel_obj.set_mantle_water_solubility(cpx = 2, perov = 0, garnet = 2)
 
-for index in range(3,len(cond_arrays)):
 
-	print('STARTED CALCULATIONS')
+for index in range(3,len(cond_arrays)):
 
 	if index == 6:
 		
@@ -278,7 +279,7 @@ for index in range(3,len(cond_arrays)):
 	tz_solubility = sel_obj.calculate_transition_zone_water_solubility(method = 'array') #calculating solubility at the given temperature
 	
 	c_list, residual_list = conductivity_solver_single_param(object = sel_obj, cond_list = cond_arrays[index], param_name = 'bulk_water', upper_limit_list = tz_solubility,
-		lower_limit_list= np.zeros(len(tz_solubility)), search_start = 10, acceptence_threshold = 0.5, transition_zone = True, num_cpu = 6)	
+		lower_limit_list= np.zeros(len(tz_solubility)), search_start = 10, acceptence_threshold = 0.5, transition_zone = True, num_cpu = 48)	
 	
 	write_slice(p = sel_obj.p, t = sel_obj.T, water = c_list, cond = cond_arrays[index], lat = lat_arrays, lon = lon_arrays, depth = depth_p[index], filename = 'TZ_Water_Content_' + str(index) + '.csv')
 

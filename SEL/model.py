@@ -11,14 +11,24 @@ from sel_src.deformation.deform_cond import plastic_strain_2_conductivity
 def run_conductivity_model(index_list, material, sel_object, t_array, p_array, melt_array):
 
 	#global function to run conductivity model. designed to be global def to run parallel with multiprocessing
-
+	
 	#setting temperatures at the sel_object
 	sel_object.set_temperature(t_array[index_list])
 	sel_object.set_pressure(p_array[index_list])
-	sel_object.set_melt_fluid_frac(melt_array[index_list])
-	sel_object.set_o2_buffer(material.o2_buffer)
-	sel_object.set_melt_or_fluid_mode('melt')
 	
+	sel_object.set_o2_buffer(material.o2_buffer)
+	if material.melt_fluid_incorporation_method == 'value':
+		sel_object.set_melt_fluid_frac(material.melt_fluid_frac)
+		if material.melt_or_fluid == 'melt':
+			sel_object.set_melt_or_fluid_mode('melt')
+		else:
+			sel_object.set_melt_or_fluid_mode('fluid')
+	elif material.melt_fluid_incorporation_method == 'field':
+		sel_object.set_melt_or_fluid_mode('melt') #only melt field can be taken from the area
+		sel_object.set_melt_fluid_frac(melt_array[index_list])
+	else:
+		pass
+		
 	#adjusting material parameters for the sel_object
 	if material.calculation_type == 'mineral':
 	
@@ -155,6 +165,12 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 			mud = material.el_cond_selections['mud'],
 			gabbro = material.el_cond_selections['gabbro'],
 			other_rock = material.el_cond_selections['other_rock'])
+	
+	if material.melt_fluid_cond_selection != None:
+		if material.melt_or_fluid == 'melt':
+			sel_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection['melt'])
+		elif material.melt_or_fluid == 'fluid':
+			sel_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection['fluid'])
 			
 	c = sel_object.calculate_conductivity(method = 'array')
 	
@@ -295,7 +311,7 @@ class Model(object):
 				
 					if num_cpu == 1:
 						
-						cond[sliced_material_idx] = run_conductivity_model(index_list= sliced_material_idx, material = material_list_holder[l][i], sel_object= mat_sel_obj,
+						cond[sliced_material_idx] = run_conductivity_model(index_list= sliced_material_idx, material = material_list_holder[l][i], sel_object = mat_sel_obj,
 						t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
 						
 					else:

@@ -1,17 +1,30 @@
 #!/usr/bin/env python3
 
-import SEL
-
 class Material(object):
 
-	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, water_distr = False,
-	water = None, xfe = None, phase_mixing_idx = 0, deformation_dict = None, **kwargs):
+	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_content = 0.0,
+	interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', 
+	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, phase_mixing_idx = 0, deformation_dict = None, **kwargs):
+	
+		"""
+		This is the core object to create a material object for pide.
+		
+		---------------------------------- -----------------------------------------
+		Methods                             Description
+		---------------------------------- -------------------------------------------
+		
+		
+		
+		"""
 	
 		self.mineral_list = ['ol','opx','cpx','garnet','mica','amp','quartz','plag','kfelds','sulphide','graphite','mixture','sp','wds','rwd','perov','other','bulk']
 		self.rock_list = ['granite', 'granulite', 'sandstone', 'gneiss', 'amphibolite', 'basalt', 'mud', 'gabbro', 'other_rock']
 		self.name = name
 		self.material_index = material_index
 		self.calculation_type = calculation_type
+		self.melt_or_fluid = melt_or_fluid
+		self.melt_fluid_content = melt_fluid_content
+		self.melt_fluid_incorporation_method = melt_fluid_incorporation_method
 		
 		if composition == None:
 			if self.calculation_type == 'rock':
@@ -36,6 +49,14 @@ class Material(object):
 				el_cond_selections = {'ol':0}
 		self._el_cond_selections = None
 		self.el_cond_selections = el_cond_selections
+		
+		if melt_fluid_cond_selection == None:
+			if self.melt_or_fluid == 'melt':
+				melt_fluid_cond_selection = {'melt':0}
+			else:
+				melt_fluid_cond_selection = {'fluid':0}
+		self._melt_fluid_cond_selection = None
+		self.melt_fluid_cond_selection = melt_fluid_cond_selection
 		
 		self.water_distr = water_distr
 		
@@ -184,13 +205,20 @@ class Material(object):
 		self._el_cond_selections = self.check_vals(value=value,type = 'comp')
 		
 	@property
+	def melt_fluid_cond_selection(self):
+		return self._melt_fluid_cond_selection
+		
+	@melt_fluid_cond_selection.setter
+	def melt_fluid_cond_selection(self, value):
+		self._melt_fluid_cond_selection = value
+		
+	@property
 	def xfe(self):
 		return self._xfe
 		
 	@xfe.setter
 	def xfe(self, value):
 		self._xfe = self.check_vals(value=value,type = 'comp')
-		
 		
 	@property
 	def solid_phase_mixing_idx(self):
@@ -207,6 +235,16 @@ class Material(object):
 	@deformation_dict.setter
 	def deformation_dict(self, value):
 		self._deformation_dict = value
+		
+	@property
+	def melt_fluid_content(self):
+		return self._melt_fluid_content
+		
+	@melt_fluid_content.setter
+	def melt_fluid_content(self, value):
+		self._melt_fluid_content = value
+		
+		
 		
 		
 		

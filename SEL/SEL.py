@@ -50,16 +50,16 @@ from sel_src.water_sol.rwd_wds_sol import *
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
 
-#Version 0.1, June. 2023.
-#SEL - (S)ynthetic (E)arth (L)ibrary
-#Program written by Sinan Ozaydin (Macquarie University, School of Natural Sciences
-#sciences, Australia).
+#version 0.1, June. 2023.
+#pide - (P)etrophysical (I)nterpretation tools for geo(D)ynamic (E)xploration
+#initially developed by Sinan Ozaydin (University of Sydney, School of Geosciences
+#sciences, Sydney, Australia).
 
-#Indentation method: hard tabs ('\t')
+#indentation method: hard tabs ('\t')
 
-#Works with Python3
-#Required libraries: numpy,matplotlib,PyQt5
-#optional libraries: pyperclip
+#works with Python3
+#required libraries: numpy,scipy,sklearn,iapws
+#optional libraries: matplotlib,h5py,harmonica
 
 class SEL(object):
 	
