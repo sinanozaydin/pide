@@ -4,7 +4,7 @@ class Material(object):
 
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_content = 0.0,
 	interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', 
-	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, phase_mixing_idx = 0, deformation_dict = None, **kwargs):
+	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0, deformation_dict = None, **kwargs):
 	
 		"""
 		This is the core object to create a material object for pide.
@@ -94,8 +94,11 @@ class Material(object):
 		self._xfe = None
 		self.xfe = xfe
 		
-		self._phase_mixing_idx = None
-		self.phase_mixing_idx = phase_mixing_idx
+		self._solid_phase_mixing_idx = None
+		self.solid_phase_mixing_idx = solid_phase_mixing_idx
+		
+		self._melt_fluid_phase_mixing_idx = None
+		self.melt_fluid_phase_mixing_idx = melt_fluid_phase_mixing_idx
 		
 		if deformation_dict == None:
 			deformation_dict = {'function_method':'linear','conductivity_decay_factor':0, 'strain_decay_factor':0, 'strain_percolation_threshold': None}
@@ -110,7 +113,7 @@ class Material(object):
 		
 		self.resistivity_medium = kwargs.pop('resistivity_medium', None)
 		
-		self.water_calib = kwargs.pop('water_calib', {'ol':3,'px-gt':2,'feldspar':2})
+		self.water_calib = kwargs.pop('water_calib', {'ol':3,'px_gt':2,'feldspar':2})
 		
 		self.o2_buffer = kwargs.pop('o2_buffer', 0)
 		
@@ -119,7 +122,7 @@ class Material(object):
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
 			raise AttributeError('Calculation type is selected as value. You have to set resistivity medium as a floating number in Ohm meters.')
-			
+						
 	def check_vals(self,value,type):
 		
 		for item in value:
@@ -229,6 +232,14 @@ class Material(object):
 		self._solid_phase_mixing_idx = value
 		
 	@property
+	def melt_fluid_phase_mixing_idx(self):
+		return self._melt_fluid_phase_mixing_idx
+		
+	@melt_fluid_phase_mixing_idx.setter
+	def melt_fluid_phase_mixing_idx(self, value):
+		self._melt_fluid_phase_mixing_idx = value
+		
+	@property
 	def deformation_dict(self):
 		return self._deformation_dict
 		
@@ -244,12 +255,18 @@ class Material(object):
 	def melt_fluid_content(self, value):
 		self._melt_fluid_content = value
 		
+	@property
+	def water_calib(self):
+		return self._water_calib
 		
+	@water_calib.setter
+	def water_calib(self, value):
+		self._water_calib = value
 		
+	@property
+	def o2_buffer(self):
+		return self._o2_buffer
 		
-		
-		
-		
-
-		
-		
+	@o2_buffer.setter
+	def o2_buffer(self, value):
+		self._o2_buffer = value

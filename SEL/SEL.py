@@ -981,7 +981,7 @@ class SEL(object):
 	def set_watercalib(self,**kwargs):
 	
 		SEL.ol_calib = kwargs.pop('ol', 3)
-		SEL.px_gt_calib = kwargs.pop('px-gt', 2)
+		SEL.px_gt_calib = kwargs.pop('px_gt', 2)
 		SEL.feldspar_calib = kwargs.pop('feldspar', 2)
 		
 		if (SEL.ol_calib < 0) or (SEL.ol_calib > 3):
@@ -2377,8 +2377,8 @@ class SEL(object):
 					self.gneiss_frac[i], self.amphibolite_frac[i], self.basalt_frac[i], self.mud_frac[i],
 					 self.gabbro_frac[i], self.other_rock_frac[i]]
 					m_list = [SEL.granite_m[i],SEL.granulite_m[i],SEL.sandstone_m[i],
-					SEL.gneiss_m[i], SEL.amphibolite_m[i], SEL.basalt_m[i], self.mud_m[i],
-					 self.gabbro_m[i], SEL.other_rock_m[i]]
+					SEL.gneiss_m[i], SEL.amphibolite_m[i], SEL.basalt_m[i], SEL.mud_m[i],
+					 SEL.gabbro_m[i], SEL.other_rock_m[i]]
 				elif SEL.solid_phase_method == 2:
 					phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
 					self.opx_frac[i], self.cpx_frac[i], self.mica_frac[i], self.garnet_frac[i],
@@ -2486,7 +2486,7 @@ class SEL(object):
 			
 			if indexing_method == 'array':
 				
-				self.bulk_cond = np.zeros(len(self.ol_cond))
+				self.bulk_cond = np.zeros(len(self.T))
 				start_idx = 0
 				end_idx = len(self.T)
 			elif indexing_method == 'index':
@@ -2498,7 +2498,7 @@ class SEL(object):
 				if SEL.solid_phase_method == 1:
 					list_i = [self.granite_cond[i], self.granulite_cond[i], self.sandstone_cond[i],
 					self.gneiss_cond[i],self.amphibolite_cond[i], self.basalt_cond[i], self.mud_cond[i],
-					  self.gabbro_cond, self.other_rock_cond[i]]
+					  self.gabbro_cond[i], self.other_rock_cond[i]]
 				elif SEL.solid_phase_method == 2:
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
@@ -2508,7 +2508,6 @@ class SEL(object):
 				while True:
 				
 					#while loop for deleting the zero arrays that could be encountered due to non-existence of the mineral.
-					
 					min_local = np.amin(np.asarray(list_i))
 				
 					if (min_local != 0.0):
@@ -2557,7 +2556,7 @@ class SEL(object):
 		
 			if indexing_method == 'array':
 				
-				self.bulk_cond = np.zeros(len(self.ol_cond))
+				self.bulk_cond = np.zeros(len(self.T))
 				start_idx = 0
 				end_idx = len(self.T)
 			elif indexing_method == 'index':
@@ -2569,13 +2568,13 @@ class SEL(object):
 				if SEL.solid_phase_method == 1:
 					list_i = [self.granite_cond[i], self.granulite_cond[i], self.sandstone_cond[i],
 					self.gneiss_cond[i],self.amphibolite_cond[i], self.basalt_cond[i], self.mud_cond[i],
-					  self.gabbro_cond, self.other_rock_cond[i]]
+					  self.gabbro_cond[i], self.other_rock_cond[i]]
 				elif SEL.solid_phase_method == 2:
 					list_i = [self.quartz_cond[i], self.plag_cond[i], self.amp_cond[i],
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
 					self.garnet_cond[i],self.sulphide_cond[i],
 					self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i], 
-					self.rwd_wds_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
+					self.rwd_wds_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]
 					
 				while True:
 				

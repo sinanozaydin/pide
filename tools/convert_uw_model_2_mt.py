@@ -61,8 +61,7 @@ strain_rate_array = setup_uw_data_array_PROJ(strain_rate_data)
 temp_array = setup_uw_data_array_PROJ(temp_data) #mesh
 pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gigapascal
 
-# import ipdb
-# ipdb.set_trace()
+
 
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b')
 # plot_2D_underworld_Field(x_array = mesh[0], y_array = mesh[1], Field = pstrain_array, cblimit_up = 1e2, cblimit_down = 1e-2, log_bool=True, cb_name = 'binary')
@@ -95,44 +94,44 @@ list_granite_models = sel_object.list_rock_econd_models('granite')
 
 #DEFINING THE OBJECTS with SEL.material
 Eclogite_Object = Material(name = 'Eclogite_Object', material_index = 3, calculation_type = 'mineral', composition = {'garnet':0.6,'cpx':0.4}, interconnectivities = {'garnet':1, 'cpx':1.5}, 
-el_cond_selections = {'garnet':17,'cpx':0}, water = {'garnet':50,'cpx':0}, xfe = {'garnet':0.2, 'cpx':0.5}, phase_mixing_idx = 0, deformation_dict = {'function_method':'exponential',
+el_cond_selections = {'garnet':17,'cpx':0}, water = {'garnet':50,'cpx':0}, xfe = {'garnet':0.2, 'cpx':0.5}, solid_phase_mixing_idx = 0, deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Eclogite_Object_2 = Material(name = 'Eclogite_Object', material_index = 3, calculation_type = 'mineral', composition = {'garnet':0.57,'cpx':0.38, 'sulphide':0.05}, interconnectivities = {'garnet':1, 'cpx':1.5,'sulphide':1.0}, 
-el_cond_selections = {'garnet':17,'cpx':0,'sulphide':0}, water = {'garnet':50,'cpx':200}, xfe = {'garnet':0.2, 'cpx':0.5}, phase_mixing_idx = 0,deformation_dict = {'function_method':'exponential',
+el_cond_selections = {'garnet':17,'cpx':0,'sulphide':0}, water = {'garnet':50,'cpx':200}, xfe = {'garnet':0.2, 'cpx':0.5}, solid_phase_mixing_idx = 0,deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Lithospheric_Mantle_Object = Material(name = 'Lithospheric_Mantle_Object', material_index = 4, calculation_type = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
-el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0,deformation_dict = {'function_method':'exponential',
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, solid_phase_mixing_idx = 0,deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Lithospheric_Mantle_Object_2 = Material(name = 'Lithospheric_Mantle_Object', material_index = 4, calculation_type = 'mineral', composition = {'ol':0.62,'opx':0.24,'garnet':0.045,'cpx':0.045,'sulphide':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5,'sulphide':1}, 
-el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0,'sulphide':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0,
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0,'sulphide':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Asthenospheric_Mantle_Object = Material(name = 'Asthenospheric_Mantle_Object', material_index = 5,calculation_type = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
-el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0,deformation_dict = {'function_method':'exponential',
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':100}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, solid_phase_mixing_idx = 0,deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Asthenospheric_Mantle_Object_2 = Material(name = 'Asthenospheric_Mantle_Object', material_index = 5,calculation_type = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
-el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':300}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0,
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, water = {'bulk':300}, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Mantle_Wedge_Object = Material(name = 'Mantle_Wedge_Object', material_index = 6, calculation_type = 'mineral', composition = {'ol':0.65,'opx':0.25,'garnet':0.05,'cpx':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5}, 
-el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water = {'bulk':500}, water_distr = True, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0,
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water = {'bulk':500}, water_distr = True, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Mantle_Wedge_Object_2 = Material(name = 'Mantle_Wedge_Object', material_index = 6, calculation_type = 'mineral', composition = {'ol':0.62,'opx':0.24,'garnet':0.045,'cpx':0.045,'sulphide':0.05},
 interconnectivities = {'ol':1,'opx':2,'garnet':5, 'cpx':5,'sulphide':1}, 
-el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0,'sulphide':0}, water = {'bulk':1000}, water_distr = True, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, phase_mixing_idx = 0,
+el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0,'sulphide':0}, water = {'bulk':1000}, water_distr = True, xfe = {'ol':0.1,'opx':0.1,'garnet':0.1, 'cpx':0.1}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -145,12 +144,12 @@ deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Oceanic_Upper_Crust = Material(name = 'Oceanic_Upper_Crust',material_index = 8, calculation_type = 'mineral', composition = {'cpx':0.6, 'plag':0.4},
-water = {'cpx':0, 'plag':0}, interconnectivities = {'cpx': 1,'plag':1.5}, phase_mixing_idx = 0,
+water = {'cpx':0, 'plag':0}, interconnectivities = {'cpx': 1,'plag':1.5}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Oceanic_Upper_Crust_2 = Material(name = 'Oceanic_Upper_Crust',material_index = 8, calculation_type = 'mineral', composition = {'cpx':0.575, 'plag':0.375, 'sulphide': 0.05},
-water = {'cpx':0, 'plag':0}, interconnectivities = {'cpx': 1,'plag':1.5,'sulphide':1}, phase_mixing_idx = 0,
+water = {'cpx':0, 'plag':0}, interconnectivities = {'cpx': 1,'plag':1.5,'sulphide':1}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -163,25 +162,25 @@ deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Continental_Upper_Crust_UP_Object = Material(name = 'Continental_Upper_Crust_UP_Object',material_index = 10, calculation_type = 'rock', composition = {'granite':1.0},interconnectivities = {'granite':1},
-el_cond_selections = {'granite':0}, phase_mixing_idx = 0,
+el_cond_selections = {'granite':0}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Continental_Upper_Crust_UP_Object_2 = Material(name = 'Continental_Upper_Crust_UP_Object',material_index = 10, calculation_type = 'rock', composition = {'granite':0.95, 'other_rock':0.05},
 interconnectivities = {'granite':1,'other_rock':1},
-el_cond_selections = {'granite':0,'other_rock':3}, phase_mixing_idx = 0,
+el_cond_selections = {'granite':0,'other_rock':3}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 #other rock 3 is graphite
 
 Continental_Lower_Crust_UP_Object = Material(name = 'Continental_Lower_Crust_UP_Object',material_index = 11, calculation_type = 'rock', composition = {'granulite':1.0},interconnectivities = {'granulite':1},
-el_cond_selections = {'granulite':0}, phase_mixing_idx = 0,
+el_cond_selections = {'granulite':0}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Continental_Lower_Crust_UP_Object_2 = Material(name = 'Continental_Lower_Crust_UP_Object',material_index = 11, calculation_type = 'rock', composition = {'granulite':0.95, 'other_rock':0.05},
 interconnectivities = {'granulite':1, 'other_rock':1},
-el_cond_selections = {'granulite':0,'other_rock':3}, phase_mixing_idx = 0,
+el_cond_selections = {'granulite':0,'other_rock':3}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -202,24 +201,24 @@ deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Continental_Upper_Crust_LP_Object = Material(name = 'Continental_Upper_Crust_LP_Object', material_index = 14,calculation_type = 'rock', composition = {'granite':1.0},interconnectivities = {'granite':1},
-el_cond_selections = {'granite':0}, phase_mixing_idx = 0,
+el_cond_selections = {'granite':0}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Continental_Upper_Crust_LP_Object_2 = Material(name = 'Continental_Upper_Crust_LP_Object',material_index = 14, calculation_type = 'rock', composition = {'granite':0.95, 'other_rock':0.05},
 interconnectivities = {'granite':1,'other_rock':1},
-el_cond_selections = {'granite':0,'other_rock':3}, phase_mixing_idx = 0,
+el_cond_selections = {'granite':0,'other_rock':3}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Continental_Lower_Crust_LP_Object = Material(name = 'Continental_Lower_Crust_LP_Object', material_index = 15,calculation_type = 'rock', composition = {'granulite':1.0},interconnectivities = {'granulite':1},
-el_cond_selections = {'granulite':0}, phase_mixing_idx = 0,
+el_cond_selections = {'granulite':0}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 Continental_Lower_Crust_LP_Object_2 = Material(name = 'Continental_Lower_Crust_LP_Object',material_index = 15, calculation_type = 'rock', composition = {'granulite':0.95, 'other_rock':0.05},
 interconnectivities = {'granulite':1, 'other_rock':1},
-el_cond_selections = {'granulite':0,'other_rock':3}, phase_mixing_idx = 0,
+el_cond_selections = {'granulite':0,'other_rock':3}, solid_phase_mixing_idx = 0,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 

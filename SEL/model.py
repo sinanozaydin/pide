@@ -17,6 +17,8 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 	sel_object.set_pressure(p_array[index_list])
 	
 	sel_object.set_o2_buffer(material.o2_buffer)
+	sel_object.set_solid_phs_mix_method(material.solid_phase_mixing_idx)
+	sel_object.set_solid_melt_fluid_mix_method(material.melt_fluid_phase_mixing_idx)
 	if material.melt_fluid_incorporation_method == 'value':
 		sel_object.set_melt_fluid_frac(material.melt_fluid_frac)
 		if material.melt_or_fluid == 'melt':
@@ -28,6 +30,9 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 		sel_object.set_melt_fluid_frac(melt_array[index_list])
 	else:
 		pass
+		
+	sel_object.set_watercalib(ol = material.water_calib['ol'], px_gt = material.water_calib['px_gt'], feldspar = material.water_calib['feldspar'])
+	sel_object.set_o2_buffer(o2_buffer = material.o2_buffer)
 		
 	#adjusting material parameters for the sel_object
 	if material.calculation_type == 'mineral':
@@ -50,7 +55,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 		perov = material.composition['perov'],
 		other = material.composition['other'])
 		
-		if material.phase_mixing_idx == 0:
+		if material.solid_phase_mixing_idx == 0:
 		
 			sel_object.set_phase_interconnectivities(ol = material.interconnectivities['ol'],
 			opx = material.interconnectivities['opx'],
@@ -132,7 +137,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 		gabbro = material.composition['gabbro'],
 		other_rock = material.composition['other_rock'])
 		
-		if material.phase_mixing_idx == 0:
+		if material.solid_phase_mixing_idx == 0:
 			
 			sel_object.set_phase_interconnectivities(granite = material.interconnectivities['granite'],
 			granulite = material.interconnectivities['granulite'],
@@ -226,7 +231,7 @@ class Model(object):
 		self.p_strain = p_strain
 		self.strain_rate = strain_rate
 		self.material_node_skip_rate_list = material_node_skip_rate_list
-
+		
 	def calculate_conductivity(self,type = 'background', num_cpu = 1):
 	
 		if num_cpu > 1:
@@ -269,10 +274,9 @@ class Model(object):
 					mat_skip = None
 				
 				#getting the relevant indexes with information given for it
-					
+				
 				material_idx = return_material_bool(material_index = material_list_holder[l][i].material_index, model_array = self.material_array, material_skip = mat_skip)		
 				
-			
 				#setting up the object for the material
 				mat_sel_obj = SEL.SEL()
 				
@@ -283,26 +287,29 @@ class Model(object):
 					
 				#Slicing the array for parallel calculation
 				if num_cpu > 1:
-				
-					#condition to check if array is too small to parallelize for the material num_cpu*num_cpu 
-					if len(material_idx[0]) > (num_cpu*num_cpu):
-						size_arrays = len(material_idx[0]) // num_cpu
-						sliced_material_idx = []
-						#adjusting the material_index_array
-						for idx in range(0, len(material_idx[0]), size_arrays):
-							if idx >= (size_arrays*num_cpu):
-								sliced_material_idx.append(tuple((material_idx[0][idx:len(material_idx[0])], material_idx[1][idx:len(material_idx[1])],material_idx[2][idx:len(material_idx[2])])))
-							else:
-								sliced_material_idx.append(tuple((material_idx[0][idx:idx+size_arrays], material_idx[1][idx:idx+size_arrays],material_idx[2][idx:idx+size_arrays])))
-					else:
-						#revert back to the single cpu if the material_idx_list is not long enough
-						num_cpu = 1
+					if len(material_idx) == 3: #if clause for 2D underworld model, yes the number is 3 for 2D and 1 for 3D. You do not need to confuse!
+						#condition to check if array is too small to parallelize for the material num_cpu*num_cpu 
+						if len(material_idx[0]) > (num_cpu*num_cpu):
+							size_arrays = len(material_idx[0]) // num_cpu
+							sliced_material_idx = []
+							#adjusting the material_index_array
+							for idx in range(0, len(material_idx[0]), size_arrays):
+								if idx >= (size_arrays*num_cpu):
+									sliced_material_idx.append(tuple((material_idx[0][idx:len(material_idx[0])], material_idx[1][idx:len(material_idx[1])],material_idx[2][idx:len(material_idx[2])])))
+								else:
+									sliced_material_idx.append(tuple((material_idx[0][idx:idx+size_arrays], material_idx[1][idx:idx+size_arrays],material_idx[2][idx:idx+size_arrays])))
+						else:
+							#revert back to the single cpu if the material_idx_list is not long enough
+							num_cpu = 1
+							sliced_material_idx = material_idx
+					else: #if clause for 3D underworld model
 						sliced_material_idx = material_idx
-					
-				#if not parallel material_idx stays the same
+						
+				#if not parallel material_idx stays the same for both 2-D and 3-D cases.
 				elif num_cpu == 1:
 					
 					sliced_material_idx = material_idx
+
 						
 				if material_list_holder[l][i].calculation_type == 'value':
 					#calculation not necessary for value method so automatically not parallel and indexed into sliced_material_idx
