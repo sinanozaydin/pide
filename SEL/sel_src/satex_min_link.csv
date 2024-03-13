@@ -1,0 +1,16 @@
+Mineral_name_in_pide, Satex_equivalent_id, Full_names
+ol,{fo,fa},{Forsterite, Fayalite}
+opx,{en,fs}, {Enstaite, Ferrosilite}
+cpx,{di,hed,jd}, {Diopside, Hedenbergite, Jadeite}
+garnet,{py,alm,gr}, {Pyrope, Almandine, Grossular}
+mica,{phl,ann,mu,cel}, {Phlogopite, Annite, Muscovite, Celadonite}
+amp, {parg, hb, tr, fact, gl, fgl, ts, anth}, {Pargasite, Hornblende, Tremolite, Ferroactinolite, Glaucophane, Ferroglauchophane, Tschermakite, Anthophyllite}
+quartz, {qz, coe}, {Quartz, Coesite}
+plag, {hAb, lAb, an}, {High-T Albite, Low-T Albite, Anorthite}
+kfelds, {or, san}, {Low-T K-Feldspar, High-T K-Feldspar}
+sulphide
+graphite
+sp, {sp, mt, herc}, {Mg-spinel, Magnetite, Hercynite}
+rwd_wds
+perov
+other, 

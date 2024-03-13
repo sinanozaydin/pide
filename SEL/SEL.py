@@ -81,6 +81,18 @@ class SEL(object):
 											
 		set_pressure                        Function to set pressure.
 											Unit: GPa
+
+		set_parameter                       Function to set any parameter. Some cal-
+											culations might ask you for certain para-
+											meters. In this case, you might want to
+											use this function to set these parameters.
+
+											Inputs:
+											param_name - str value for param name
+											value - value of the parameter, in array
+											or scalar. If scalar is entered it will
+											sync up with the length of the T array.
+												                                    
 		
 		set_composition_solid_mineral       Function to set the modal composition
 											of a mineral assemblage. 
@@ -300,6 +312,20 @@ class SEL(object):
 											Input:
 											Index number denoting to the chosen phases mixing function
 											Unit: Integer
+
+		set_mantle_water_solubility         Function to set mantle water solubility of minerals.
+
+											Input:
+											ol, opx, cpx, garnet, rwd_wds, perov
+											in index values corresponding to the given solubility model.
+																						
+											Example:
+											set_mantle_water_solubility(ol=0)
+
+											To get the mantle water solubility models for minerals use method:
+
+											list_mantle_water_solubility
+
 											
 		list_phs_mix_methods                Function to get a list of phase mixing functions for solid
 											phases.
@@ -436,7 +462,6 @@ class SEL(object):
 		self.set_mantle_water_solubility()
 		self.object_formed = True
 
-		
 		#Some check for temperature being the controlling array errors.
 		self.temperature_default = True
 		
@@ -1344,6 +1369,8 @@ class SEL(object):
 			min_index = 5
 		elif (mineral_name == 'garnet') or (mineral_name == 'gt'):
 			min_index = 7
+		elif (mineral_name == 'rwd_wds'):
+			min_index = 12
 		else:
 			raise AttributeError('There is no mantle water solubility adjust for the chosen mineral: ' + mineral_name)
 		
@@ -3040,6 +3067,15 @@ class SEL(object):
 			return self.bulk_cond
 		elif method == 'index':
 			return self.bulk_cond[index]
+		
+	def calculate_p_wave_velocity(self):
+
+		pass
+
+	
+	def calculate_s_wave_velocity(self):
+
+		pass
 		
 	def calculate_density_solid(self):
 		
