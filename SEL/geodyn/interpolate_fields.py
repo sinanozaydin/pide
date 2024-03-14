@@ -95,10 +95,3 @@ def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
 	
 	return interpolated_vals
 	
-	
-	
-	
-	
-	
-	
-	

@@ -2,7 +2,7 @@
 
 class Material(object):
 
-	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_content = 0.0,
+	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_frac = 0.0,
 	interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', 
 	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0, deformation_dict = None, **kwargs):
 	
@@ -23,7 +23,7 @@ class Material(object):
 		self.material_index = material_index
 		self.calculation_type = calculation_type
 		self.melt_or_fluid = melt_or_fluid
-		self.melt_fluid_content = melt_fluid_content
+		self.melt_fluid_frac = melt_fluid_frac
 		self.melt_fluid_incorporation_method = melt_fluid_incorporation_method
 		
 		if composition == None:
@@ -248,12 +248,12 @@ class Material(object):
 		self._deformation_dict = value
 		
 	@property
-	def melt_fluid_content(self):
-		return self._melt_fluid_content
+	def melt_fluid_frac(self):
+		return self._melt_fluid_frac
 		
-	@melt_fluid_content.setter
-	def melt_fluid_content(self, value):
-		self._melt_fluid_content = value
+	@melt_fluid_frac.setter
+	def melt_fluid_frac(self, value):
+		self._melt_fluid_frac = value
 		
 	@property
 	def water_calib(self):
