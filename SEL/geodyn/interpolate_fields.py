@@ -33,6 +33,10 @@ def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 	
 	return interp_vals
 	
+def interpolate_3d_fields_dummy(mesh_tuple, vals, mesh_out):
+
+	pass
+	
 def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
 
 	"""
@@ -49,6 +53,23 @@ def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
 	x_len = len(mesh_tuple[0])
 	y_len = len(mesh_tuple[1])
 	z_len = len(mesh_tuple[2])
+	
+	#checking if z is ascending, to overcome scipy 'strictly ascending' requirement.
+	#the outputs should be the same since we only deal with dimensions in this space.
+	if mesh_tuple[2][1] < mesh_tuple[2][0]:
+		ascending_bool = True
+	else:
+		ascending_bool = False
+		
+	if ascending_bool == True:
+	
+		mesh_tuple_inv = (mesh_tuple[0],mesh_tuple[1], -1 * mesh_tuple[2])
+		mesh_out_inv = (mesh_out[0],mesh_out[1], -1 * mesh_out[2])
+		
+	else:
+	
+		mesh_tuple_inv = mesh_tuple
+		mesh_out_inv = mesh_out
 
 	vals = np.array([item[0] for item in vals])
 	
@@ -70,9 +91,9 @@ def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
 		print('pideErrorHelp: There is a mismatch between the entered value array and mesh parameters. This likely results from the mesh indices are not associated with the value array used.')
 		sys.exit()
 	
-	interp_func = rgi(mesh_tuple, matrix) #interpolation function in 3-D space.
+	interp_func = rgi(mesh_tuple_inv, matrix) #interpolation function in 3-D space.
 	
-	xx, yy, zz = np.meshgrid(mesh_out[0],mesh_out[1],mesh_out[2]) #creating meshgrid to create xyz data
+	xx, yy, zz = np.meshgrid(mesh_out_inv[0],mesh_out_inv[1],mesh_out_inv[2]) #creating meshgrid to create xyz data
 	
 	interp_array = np.vstack((xx.flatten(), yy.flatten(), zz.flatten())).T #convering meshgrid into flattened lists
 	
