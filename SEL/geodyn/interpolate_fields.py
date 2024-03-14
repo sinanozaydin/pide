@@ -32,11 +32,7 @@ def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 	interp_vals = griddata(points_interp, vals, (mesh_out[0],mesh_out[1]),method = method)
 	
 	return interp_vals
-	
-def interpolate_3d_fields_dummy(mesh_tuple, vals, mesh_out):
-
-	pass
-	
+		
 def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
 
 	"""
@@ -70,8 +66,6 @@ def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
 	
 		mesh_tuple_inv = mesh_tuple
 		mesh_out_inv = mesh_out
-
-	vals = np.array([item[0] for item in vals])
 	
 	matrix = np.zeros((x_len,y_len,z_len))
 	try:

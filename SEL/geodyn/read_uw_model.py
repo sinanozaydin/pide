@@ -188,9 +188,21 @@ def setup_material(material_data, material_names):
 			
 	return material_array, air_material_idx
 	
-def setup_uw_data_array_PROJ(data):
-
-	array = np.array(list(data['data']))
+def setup_uw_data_array_PROJ_3D(data):
 	
+	data_list = list(data['data'])
+	
+	array = np.zeros(len(data_list))
+	
+	for i in range(0,len(data_list)):
+	
+		array[i] = data_list[i][0]
+		
+	return array
+	
+def setup_uw_data_array_PROJ_2D(data):
+	
+	array = np.array(list(data['data']))
+		
 	return array
 	

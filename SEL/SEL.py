@@ -92,7 +92,7 @@ class SEL(object):
 											value - value of the parameter, in array
 											or scalar. If scalar is entered it will
 											sync up with the length of the T array.
-												                                    
+																					
 		
 		set_composition_solid_mineral       Function to set the modal composition
 											of a mineral assemblage. 
@@ -955,7 +955,6 @@ class SEL(object):
 	def set_temperature(self,T):
 	
 		try: 
-			len(T)
 			self.T = T
 		except TypeError:
 			self.T = np.array(T)
@@ -970,7 +969,6 @@ class SEL(object):
 	def set_pressure(self,P):
 		
 		try: 
-			len(P)
 			self.p = P
 			t_check = self.check_p_n_T()
 			if t_check == False:
