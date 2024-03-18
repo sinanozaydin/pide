@@ -19,19 +19,21 @@ from geodyn.material_process import *
 from geodyn.write_uw_model import write_3d_field_h5
 from mt.mt_model_conversion import convert_2DModel_2_MARE2DEM
 
-source_folder = "/media/sinan/Geodyn_HDD/Geodyn/ProtPA300r"
+# source_folder = "/scratch/q97/so0195/pide2/3D_model_convert/3dmodel"
+source_folder = "/scratch/q97/pxr562/2020/PullApt300r/ProtPA300r"
 
 #setting up filename folders for the h5 files.
-temp_fnm = os.path.join(source_folder,'temperature-0.h5')
-pstrain_fnm = os.path.join(source_folder,'projPlasticStrain-0.h5')
-material_fnm = os.path.join(source_folder,'projMaterialField-0.h5')
-stress_fnm = os.path.join(source_folder,'projStressField-0.h5')
-melt_fnm = os.path.join(source_folder,'projMeltField-0.h5')
-strain_rate_fnm = os.path.join(source_folder,'strainRateField-0.h5')
-pressure_fnm = os.path.join(source_folder,'pressureField-0.h5')
+
+temp_fnm = os.path.join(source_folder,'temperature-158.h5')
+pstrain_fnm = os.path.join(source_folder,'projPlasticStrain-158.h5')
+material_fnm = os.path.join(source_folder,'projMaterialField-158.h5')
+stress_fnm = os.path.join(source_folder,'projStressField-158.h5')
+melt_fnm = os.path.join(source_folder,'projMeltField-158.h5')
+strain_rate_fnm = os.path.join(source_folder,'strainRateField-158.h5')
+pressure_fnm = os.path.join(source_folder,'pressureField-158.h5')
 mesh_fnm = os.path.join(source_folder,'mesh.h5')
 
-py_start_fnm = os.path.join(source_folder,'PullApt300r.py')
+py_start_fnm = os.path.join(source_folder,'..','PullApt300r.py')
 
 temp_data = read_h5_file(temp_fnm)
 pressure_data = read_h5_file(pressure_fnm)
@@ -54,18 +56,21 @@ material_array, air_material_idx = setup_material(material_data, material_names)
 mesh, mesh_center, x_mesh, y_mesh, z_mesh, x_mesh_centers, y_mesh_centers, z_mesh_centers, borders_mesh = setup_3d_mesh(mesh_data)
 
 #getting strain array
-pstrain_array = setup_uw_data_array_PROJ(pstrain_data)
-stress_array = setup_uw_data_array_PROJ(stress_data)
-melt_array = setup_uw_data_array_PROJ(melt_data)
-strain_rate_array = setup_uw_data_array_PROJ(strain_rate_data)
-temp_array = setup_uw_data_array_PROJ(temp_data) #mesh
-pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gigapascal
+temp_array = setup_uw_data_array_PROJ_3D(temp_data) #mesh
+melt_array = setup_uw_data_array_PROJ_3D(melt_data)
+pstrain_array = setup_uw_data_array_PROJ_3D(pstrain_data)
+stress_array = setup_uw_data_array_PROJ_3D(stress_data)
+strain_rate_array = setup_uw_data_array_PROJ_3D(strain_rate_data)
+pressure_array = setup_uw_data_array_PROJ_3D(pressure_data) / 1e9 #converting to gigapascal
 
 #Converting larger arrays into mesh_center locations.
 temp_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),temp_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 melt_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),melt_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 pstrain_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),pstrain_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 material_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),material_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
+# pressure_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),pressure_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
+# strain_rate_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),strain_rate_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
+
 
 #forming the main pide object
 sel_object = SEL.SEL()
@@ -92,7 +97,7 @@ deformation_dict = {'function_method':'exponential',
 UpperCrustObject_b = Material(name = 'UpperCrustObject',material_index = 3, calculation_type = 'rock', composition = {'granite':1.0},
 interconnectivities = {'granite':1},
 el_cond_selections = {'granite':0}, solid_phase_mixing_idx = 2,
-melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_content = 0.05,
+melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_frac = 0.05,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -104,7 +109,7 @@ deformation_dict = {'function_method':'exponential',
 UpperCrustObject1_b = Material(name = 'UpperCrustObject_1',material_index = 4, calculation_type = 'rock', composition = {'granite':1.0},
 interconnectivities = {'granite':1},
 el_cond_selections = {'granite':0}, solid_phase_mixing_idx = 2,
-melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_content = 0.05,
+melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_frac = 0.05,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -116,7 +121,7 @@ deformation_dict = {'function_method':'exponential',
 UpperCrustObject2_b = Material(name = 'UpperCrustObject',material_index = 5, calculation_type = 'rock', composition = {'granite':1.0},
 interconnectivities = {'granite':1},
 el_cond_selections = {'granite':0}, solid_phase_mixing_idx = 2,
-melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_content = 0.05,
+melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_frac = 0.05,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -128,7 +133,7 @@ deformation_dict = {'function_method':'exponential',
 UpperCrustObject3_b = Material(name = 'UpperCrustObject',material_index = 6, calculation_type = 'rock', composition = {'granite':1.0},
 interconnectivities = {'granite':1},
 el_cond_selections = {'granite':0,'other_rock':3}, solid_phase_mixing_idx = 2,
-melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_content = 0.05,
+melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_frac = 0.05,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -142,7 +147,7 @@ deformation_dict = {'function_method':'exponential',
 LowerCrustObject1_b = Material(name = 'Continental_Lower_Crust_Felsic_Granulite',material_index = 7, calculation_type = 'mineral', composition = {'plag':0.45, 'garnet': 0.25,
 'opx':0.05, 'amp':0.1, 'quartz': 0.15},
 el_cond_selections = {'plag':1, 'garnet': 0, 'opx':0, 'amp':0, 'quartz': 7}, solid_phase_mixing_idx = 2,
-melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_content = 0.05,
+melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_frac = 0.05,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -155,7 +160,7 @@ deformation_dict = {'function_method':'exponential',
 LowerCrustObject2_b = Material(name = 'Continental_Lower_Crust_Mafic_Granulite',material_index = 8, calculation_type = 'mineral', composition = {'plag':0.31, 'garnet':0.19,
 'cpx':0.25, 'opx':0.05,'amp':0.12, 'quartz':0.04,'kfelds':0.03,'other':0.01},
 el_cond_selections = {'plag':1, 'garnet': 0, 'opx':0, 'amp':0, 'quartz': 7, 'cpx':9, 'kfelds':2, 'other':0}, solid_phase_mixing_idx = 2,
-melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_content = 0.05,
+melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_frac = 0.05,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
@@ -177,24 +182,40 @@ el_cond_selections = {'ol':4, 'opx':0, 'garnet':0,'cpx':0}, water_distr = True, 
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
+Sediment = Material(name = 'Sediment', material_index = 11, calculation_type = 'value', resistivity_medium = 200.0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
+Sediment_b = Material(name = 'Sediment', material_index = 11, calculation_type = 'value', resistivity_medium = 50.0,
+deformation_dict = {'function_method':'exponential',
+'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
+
 #creating material_object_list:
-"""
+
 material_object_list = [UpperCrustObject,UpperCrustObject1,UpperCrustObject2,UpperCrustObject3,
-LowerCrustObject1,LowerCrustObject2,MantleLithosphereObject,MantleObject]
+LowerCrustObject1,LowerCrustObject2,MantleLithosphereObject,MantleObject, Sediment]
 material_object_list_2 = [UpperCrustObject_b,UpperCrustObject1_b,UpperCrustObject2_b,UpperCrustObject3_b,
-LowerCrustObject1_b,LowerCrustObject2_b,MantleLithosphereObject_b,MantleObject_b]
+LowerCrustObject1_b,LowerCrustObject2_b,MantleLithosphereObject_b,MantleObject_b, Sediment_b]
 
 material_skip_list = [None,None,None,None,None,None,None,None]
+
 """
 material_object_list = [UpperCrustObject,UpperCrustObject1]
 material_object_list_2 = [UpperCrustObject_b,UpperCrustObject1_b]
 material_skip_list = [None,None]
-
+"""
 #creating model_object
 mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array,
-P = pressure_array, model_type = 'underworld', melt = melt_array, p_strain = pstrain_array, strain_rate = strain_rate_array,
+P = pressure_array, model_type = 'underworld_3d', melt = melt_array, p_strain = pstrain_array, strain_rate = strain_rate_array,
 material_node_skip_rate_list = material_skip_list)
-backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 2)
+backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 48)
+
+
+sys.exit()
+write_3d_field_h5(Field = backgr_cond,filename_out = 'BackgroundCond-26.h5')
+sys.exit()
+max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 48)
+write_3d_field_h5(Field = backgr_cond,filename_out = 'MaxCond-0.h5')
 
 
 

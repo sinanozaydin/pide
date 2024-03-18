@@ -218,7 +218,7 @@ def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deform
 
 class Model(object):
 
-	def __init__(self, material_list, material_array, T, P, model_type = 'underworld', material_list_2 = None,
+	def __init__(self, material_list, material_array, T, P, model_type = 'underworld_2d', material_list_2 = None,
 	melt = None, p_strain = None, strain_rate = None, material_node_skip_rate_list = None):
 
 		self.material_list = material_list
@@ -261,7 +261,7 @@ class Model(object):
 		for l in range(0,len(material_list_holder)):
 			print('Initiating calculation for the materials appended to the model.')
 			print('##############################################################')
-			for i in range(0,len(self.material_list)):
+			for i in range(0,len(material_list_holder[l])):
 	
 				#determining the material indexes from the material array
 				
@@ -275,7 +275,8 @@ class Model(object):
 				
 				#getting the relevant indexes with information given for it
 				
-				material_idx = return_material_bool(material_index = material_list_holder[l][i].material_index, model_array = self.material_array, material_skip = mat_skip)		
+				material_idx = return_material_bool(material_index = material_list_holder[l][i].material_index,
+				model_array = self.material_array, material_skip = mat_skip, model_type = self.model_type)		
 				
 				#setting up the object for the material
 				mat_sel_obj = SEL.SEL()
@@ -303,14 +304,25 @@ class Model(object):
 							num_cpu = 1
 							sliced_material_idx = material_idx
 					else: #if clause for 3D underworld model
-						sliced_material_idx = material_idx
+					
+						if len(material_idx) > (num_cpu*num_cpu):
+							size_arrays = len(material_idx) // num_cpu
+							sliced_material_idx = []
+							for idx in range(0, len(material_idx), size_arrays):
+								if idx >= (size_arrays*num_cpu):
+									sliced_material_idx.append(material_idx[idx:len(material_idx)])
+								else:
+									sliced_material_idx.append(material_idx[idx:idx+size_arrays])
+						else:	
+							#revert back to the single_cpu if the material_idx is not long enough
+							num_cpu = 1
+							sliced_material_idx = material_idx
 						
 				#if not parallel material_idx stays the same for both 2-D and 3-D cases.
 				elif num_cpu == 1:
 					
 					sliced_material_idx = material_idx
 
-						
 				if material_list_holder[l][i].calculation_type == 'value':
 					#calculation not necessary for value method so automatically not parallel and indexed into sliced_material_idx
 					cond[sliced_material_idx] = 1.0 / material_list_holder[l][i].resistivity_medium
@@ -337,7 +349,12 @@ class Model(object):
 				print('The conductivity for the material ' + material_list_holder[l][i].name + ' is calculated.')
 				
 			#converting all zero vals in the cond to None values
+			
 			cond[cond == 0.0] = np.nan
+			contains_nan = np.isnan(cond).any()
+			if contains_nan == True:
+				print('Material index contains 0 or nan is: ' + str(i))
+			
 			
 			cond_list.append(cond)
 			print('##############################################################')
