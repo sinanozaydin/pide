@@ -173,9 +173,10 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 	
 	if material.melt_fluid_cond_selection != None:
 		if material.melt_or_fluid == 'melt':
-			sel_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection['melt'])
+			sel_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection)
 		elif material.melt_or_fluid == 'fluid':
-			sel_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection['fluid'])
+			sel_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection)
+			sel_object.set_fluid_properties(salinity = material.fluid_salinity)
 			
 	c = sel_object.calculate_conductivity(method = 'array')
 	

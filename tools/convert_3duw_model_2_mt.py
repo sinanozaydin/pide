@@ -212,11 +212,11 @@ material_skip_list = [None,None]
 mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array,
 P = pressure_array, model_type = 'underworld_3d', melt = melt_array, p_strain = pstrain_array, strain_rate = strain_rate_array,
 material_node_skip_rate_list = material_skip_list)
-backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 2)
+# backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 2)
 
-write_3d_field_h5(Field = backgr_cond,filename_out = 'BackgroundCond-158.h5')
+# write_3d_field_h5(Field = backgr_cond,filename_out = 'BackgroundCond-158.h5')
 
-max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 2)
+max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 1)
 write_3d_field_h5(Field = max_cond,filename_out = 'MaxCond-0.h5')
 
 

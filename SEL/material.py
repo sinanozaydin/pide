@@ -119,6 +119,8 @@ class Material(object):
 		
 		self.linked_material_index = kwargs.pop('linked_material_index', None)
 		
+		self.fluid_salinity = kwargs.pop('fluid_salinity', None)
+		
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
 			raise AttributeError('Calculation type is selected as value. You have to set resistivity medium as a floating number in Ohm meters.')

@@ -1,33 +1,24 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import iapws
+from ..eos.fluid_eos import Sanchez_Valle_2013_WaterDensity
 
 R_const = 8.3144621
 
 def Sinmyo2016(T, P, salinity, method):
 
 	#first calculating pure water density at T and P using iapws08
-
-	P = P * 1e3 #converting GPa to MPa	
-
+	
 	if method == 'index':
-		d = iapws.iapws08.SeaWater(T = T, P = P, S = 0)
-		rho = d.rho / 1e3 #in g/cm3
-		rho_water = rho
+		rho_water = Sanchez_Valle_2013_WaterDensity(T = T, P = P) / 1e3 #converting to g/cm^3
 	else:
 		
 		P = P[0]
 		T = T[0]
 		salinity = salinity[0]
-		rho_water = np.zeros(len(P))
-
-		for i in range(0,len(P)):
-	
-			d = iapws.iapws08.SeaWater(T = T[i], P = P[i], S = 0)
-			rho = d.rho / 1e3 #in g/cm3
-			rho_water[i] = rho
-
+		P[P<=0.0] = 1e-4 #Anything below 0 is converted to 1 atm = 1e-4 GPa
+		rho_water = Sanchez_Valle_2013_WaterDensity(T = T, P = P) / 1e3
+		
 	#setting up calculation parameters
 
 	lambda_1 = 1573.0
@@ -35,7 +26,7 @@ def Sinmyo2016(T, P, salinity, method):
 	lambda_3 = 537062.0
 	lambda_4 = -208122721.0
 
-	lambda_0 = lambda_1 + (lambda_2 * rho) + (lambda_3 / T) + (lambda_4 / T**2)
+	lambda_0 = lambda_1 + (lambda_2 * rho_water) + (lambda_3 / T) + (lambda_4 / T**2)
 
 	A = -1.7060
 	B = -93.78
@@ -63,8 +54,6 @@ def Guo2019(T, P, salinity, method):
 
 	#first calculating pure water density at T and P using iapws08
 
-	P = P * 1e3 #converting GPa to MPa
-
 	if method == 'array':
 
 		P = P[0]
@@ -73,12 +62,9 @@ def Guo2019(T, P, salinity, method):
 
 	rho_water = np.zeros(len(P))
 
-	for i in range(0,len(P)):
-
-		d = iapws.iapws08.SeaWater(T = T[i], P = P[i], S = 0)
-		rho = d.rho / 1e3 #in g/cm3
-		rho_water[i] = rho
-
+	P[P<=0.0] = 1e-4 #Anything below 0 is converted to 1 atm = 1e-4 GPa
+	rho_water = Sanchez_Valle_2013_WaterDensity(T = T, P = P) / 1e3
+	
 	#setting up calculation parameters
 
 	lambda_1 = 1573.0
@@ -86,7 +72,7 @@ def Guo2019(T, P, salinity, method):
 	lambda_3 = 537062.0
 	lambda_4 = -208122721.0
 
-	lambda_0 = lambda_1 + (lambda_2 * rho) + (lambda_3 / T) + (lambda_4 / T**2)
+	lambda_0 = lambda_1 + (lambda_2 * rho_water) + (lambda_3 / T) + (lambda_4 / T**2)
 
 	A = -0.919
 	B = -872.5

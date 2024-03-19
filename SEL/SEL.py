@@ -6,7 +6,6 @@ core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'sel_s
 
 import sys, csv, platform, warnings
 import numpy as np
-import iapws
 
 #Importing external functions
 
@@ -46,6 +45,8 @@ from sel_src.misc_func.fh2o import *
 from sel_src.water_sol.ol_sol import *
 from sel_src.water_sol.opx_sol import * 
 from sel_src.water_sol.rwd_wds_sol import *
+#importing eos functions
+from sel_src.eos.fluid_eos import *
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -58,7 +59,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many Runtim
 #indentation method: hard tabs ('\t')
 
 #works with Python3
-#required libraries: numpy,scipy,sklearn,iapws
+#required libraries: numpy,scipy,sklearn
 #optional libraries: matplotlib,h5py,harmonica
 
 class SEL(object):
@@ -1822,7 +1823,7 @@ class SEL(object):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
-	
+		
 		self.salinity_fluid = self.array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
 		
 		if len(np.flatnonzero(self.salinity_fluid < 0)) != 0:
@@ -2828,8 +2829,8 @@ class SEL(object):
 			
 			if SEL.fluid_or_melt_method == 0:
 				
-				dens = iapws.iapws08.SeaWater(T = self.T[idx_node], P = self.p[idx_node], S = 0)
-				self.dens_melt_fluid[idx_node] = dens.rho / 1e3
+				dens = Sanchez_Valle_2013_WaterDensity(T = self.T[idx_node], P = self.p[idx_node])
+				self.dens_melt_fluid[idx_node] = dens / 1e3
 				
 			elif SEL.fluid_or_melt_method == 1:
 				
