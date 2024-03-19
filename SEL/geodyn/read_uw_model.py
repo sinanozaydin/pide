@@ -168,10 +168,12 @@ def setup_3d_mesh(mesh_data):
 	
 def setup_material(material_data, material_names):
 
-	material_array = np.array(list(material_data['data']))
+	material_data_array = list(material_data['data'])
 	
-	for i in range(0,len(material_array)):
-		material_array[i] = round(material_array[i][0]) #rounding to get rid of that areas with 
+	material_array = []
+	
+	for i in range(0,len(material_data_array)):
+		material_array.append(round(material_data_array[i][0]))
 
 	print(' ')
 	print('Materials included in the py startup file, matching up with the projMaterial.h5 material index identifiers.')
@@ -185,7 +187,7 @@ def setup_material(material_data, material_names):
 
 		if (('air' in material_names[i]) or ('Air' in material_names[i])) == True:
 			air_material_idx.append(i)
-			
+						
 	return material_array, air_material_idx
 	
 def setup_uw_data_array_PROJ_3D(data):

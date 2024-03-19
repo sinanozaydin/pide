@@ -33,7 +33,7 @@ def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 	
 	return interp_vals
 		
-def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
+def interpolate_3d_fields(mesh_tuple, vals, mesh_out, method = 'linear'):
 
 	"""
 	To interpolate 3d fields using scipy.RegularGridInterpolator
@@ -71,12 +71,14 @@ def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
 	try:
 		#filling the matrix with 1-d array values based on the xyz dimensions
 		a = 0
-		for i in range(0,x_len):
+
+		for k in range(0,z_len):
 			for j in range(0,y_len):
-				for k in range(0,z_len):
+				for i in range(0,x_len):
 					if a != len(vals):
 						matrix[i][j][k] = vals[a]
 					a = a + 1
+					
 	except IndexError as e:
 		
 		import traceback
@@ -85,12 +87,17 @@ def interpolate_3d_fields(mesh_tuple, vals, mesh_out):
 		print('pideErrorHelp: There is a mismatch between the entered value array and mesh parameters. This likely results from the mesh indices are not associated with the value array used.')
 		sys.exit()
 	
-	interp_func = rgi(mesh_tuple_inv, matrix) #interpolation function in 3-D space.
-	
-	xx, yy, zz = np.meshgrid(mesh_out_inv[0],mesh_out_inv[1],mesh_out_inv[2]) #creating meshgrid to create xyz data
-	
-	interp_array = np.vstack((xx.flatten(), yy.flatten(), zz.flatten())).T #convering meshgrid into flattened lists
-	
+	interp_func = rgi(mesh_tuple_inv, matrix, method = method) #interpolation function in 3-D space.
+		
+	interp_array = []
+	for k in range(0,len(mesh_out_inv[2])):
+		for j in range(0,len(mesh_out_inv[1])):
+			for i in range(0,len(mesh_out_inv[0])):
+		
+				interp_array.append(np.array([mesh_out_inv[1][j],mesh_out_inv[0][i],mesh_out_inv[2][k]]))
+			
+	interp_array = np.array(interp_array)
+		
 	interpolated_vals = interp_func(interp_array) #getting out the interpolated values
 	
 	return interpolated_vals

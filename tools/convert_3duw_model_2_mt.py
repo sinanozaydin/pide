@@ -20,7 +20,8 @@ from geodyn.write_uw_model import write_3d_field_h5
 from mt.mt_model_conversion import convert_2DModel_2_MARE2DEM
 
 # source_folder = "/scratch/q97/so0195/pide2/3D_model_convert/3dmodel"
-source_folder = "/scratch/q97/pxr562/2020/PullApt300r/ProtPA300r"
+# source_folder = "/scratch/q97/pxr562/2020/PullApt300r/ProtPA300r"
+source_folder = "/home/sinan/Desktop/Research/SEL/3d_work_dir/ProtPA300r"
 
 #setting up filename folders for the h5 files.
 
@@ -33,7 +34,8 @@ strain_rate_fnm = os.path.join(source_folder,'strainRateField-158.h5')
 pressure_fnm = os.path.join(source_folder,'pressureField-158.h5')
 mesh_fnm = os.path.join(source_folder,'mesh.h5')
 
-py_start_fnm = os.path.join(source_folder,'..','PullApt300r.py')
+# py_start_fnm = os.path.join(source_folder,'..','PullApt300r.py')
+py_start_fnm = os.path.join(source_folder,'PullApt300r.py')
 
 temp_data = read_h5_file(temp_fnm)
 pressure_data = read_h5_file(pressure_fnm)
@@ -67,7 +69,7 @@ pressure_array = setup_uw_data_array_PROJ_3D(pressure_data) / 1e9 #converting to
 temp_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),temp_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 melt_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),melt_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 pstrain_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),pstrain_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
-material_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),material_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
+material_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),material_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers),method = 'nearest')
 # pressure_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),pressure_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 # strain_rate_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),strain_rate_array,(x_mesh_centers, y_mesh_centers, z_mesh_centers))
 
@@ -76,6 +78,7 @@ material_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),material_array,(x_
 sel_object = SEL.SEL()
 
 #listing conductivity models
+"""
 list_fluid_models = sel_object.list_fluid_econd_models()
 list_melt_models = sel_object.list_melt_econd_models()
 list_granite_models = sel_object.list_rock_econd_models('granite')
@@ -87,6 +90,7 @@ list_opx_models = sel_object.list_mineral_econd_models('opx')
 list_cpx_models = sel_object.list_mineral_econd_models('cpx')
 list_kfelds_models = sel_object.list_mineral_econd_models('kfelds')
 list_amp_models = sel_object.list_mineral_econd_models('amp')
+"""
 
 #DEFINING THE OBJECTS with SEL.material
 UpperCrustObject = Material(name = 'UpperCrustObject',material_index = 3, calculation_type = 'rock', composition = {'granite':1.0},interconnectivities = {'granite':1},
@@ -193,11 +197,11 @@ deformation_dict = {'function_method':'exponential',
 #creating material_object_list:
 
 material_object_list = [UpperCrustObject,UpperCrustObject1,UpperCrustObject2,UpperCrustObject3,
-LowerCrustObject1,LowerCrustObject2,MantleLithosphereObject,MantleObject, Sediment]
+LowerCrustObject1,LowerCrustObject2,MantleLithosphereObject,MantleObject,Sediment]
 material_object_list_2 = [UpperCrustObject_b,UpperCrustObject1_b,UpperCrustObject2_b,UpperCrustObject3_b,
 LowerCrustObject1_b,LowerCrustObject2_b,MantleLithosphereObject_b,MantleObject_b, Sediment_b]
 
-material_skip_list = [None,None,None,None,None,None,None,None]
+material_skip_list = [None,None,None,None,None,None,None,None,None]
 
 """
 material_object_list = [UpperCrustObject,UpperCrustObject1]
@@ -208,14 +212,12 @@ material_skip_list = [None,None]
 mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array,
 P = pressure_array, model_type = 'underworld_3d', melt = melt_array, p_strain = pstrain_array, strain_rate = strain_rate_array,
 material_node_skip_rate_list = material_skip_list)
-backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 48)
+backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 2)
 
+write_3d_field_h5(Field = backgr_cond,filename_out = 'BackgroundCond-158.h5')
 
-sys.exit()
-write_3d_field_h5(Field = backgr_cond,filename_out = 'BackgroundCond-26.h5')
-sys.exit()
-max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 48)
-write_3d_field_h5(Field = backgr_cond,filename_out = 'MaxCond-0.h5')
+max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 2)
+write_3d_field_h5(Field = max_cond,filename_out = 'MaxCond-0.h5')
 
 
 

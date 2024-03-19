@@ -326,6 +326,7 @@ class Model(object):
 				if material_list_holder[l][i].calculation_type == 'value':
 					#calculation not necessary for value method so automatically not parallel and indexed into sliced_material_idx
 					cond[sliced_material_idx] = 1.0 / material_list_holder[l][i].resistivity_medium
+					
 				else:
 				
 					if num_cpu == 1:
@@ -345,20 +346,16 @@ class Model(object):
 						#assigning to the global cond list
 						for idx in range(0,len(sliced_material_idx)):
 							cond[sliced_material_idx[idx]] = c[idx]
-						
+				
 				print('The conductivity for the material ' + material_list_holder[l][i].name + ' is calculated.')
 				
 			#converting all zero vals in the cond to None values
 			
 			cond[cond == 0.0] = np.nan
-			contains_nan = np.isnan(cond).any()
-			if contains_nan == True:
-				print('Material index contains 0 or nan is: ' + str(i))
-			
-			
+						
 			cond_list.append(cond)
 			print('##############################################################')
-		
+				
 		if type == 'background':
 			self.background_cond = cond_list[0]
 			return cond_list[0]
