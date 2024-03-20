@@ -206,8 +206,7 @@ def Guo2019(T, P, salinity, method):
 		else:
 			cond = 10**(A + (B/T) + (D * (np.log10(rho_water))) + np.log10(lambda_0))
 		
-	import ipdb
-	ipdb.set_trace()
+	
 	return cond
 
 def Manthilake2021_Aqueous(T, P, salinity, method):

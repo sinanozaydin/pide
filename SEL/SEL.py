@@ -39,8 +39,6 @@ from sel_src.cond_models.minerals.rwd_wds_odd import *
 from sel_src.cond_models.minerals.other_odd import *
 #importing water-partitioning odd functions
 from sel_src.water_partitioning.water_part_odd import *
-#importing misc functions
-from sel_src.misc_func.fh2o import *
 #importing mineral solubility functions
 from sel_src.water_sol.ol_sol import *
 from sel_src.water_sol.opx_sol import * 
@@ -1823,7 +1821,7 @@ class SEL(object):
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
-		
+
 		self.salinity_fluid = self.array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
 		
 		if len(np.flatnonzero(self.salinity_fluid < 0)) != 0:
@@ -2862,7 +2860,7 @@ class SEL(object):
 				for i in range(start_idx,end_idx):
 
 					if self.melt_fluid_mass_frac[i] != 0.0:
-
+					
 						p = np.log10(1.0 - self.melt_fluid_frac[i]**SEL.melt_fluid_m[i]) / np.log10(1.0 - self.melt_fluid_frac[i])
 
 						self.bulk_cond[i] = (self.bulk_cond[i] * (1.0 - self.melt_fluid_frac[i])**p) + (self.melt_fluid_cond[i] * (self.melt_fluid_frac[i]**SEL.melt_fluid_m[i]))
