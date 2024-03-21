@@ -3,7 +3,7 @@
 class Material(object):
 
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_frac = 0.0,
-	interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', 
+	interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
 	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0, deformation_dict = None, **kwargs):
 	
 		"""
@@ -99,6 +99,9 @@ class Material(object):
 		
 		self._melt_fluid_phase_mixing_idx = None
 		self.melt_fluid_phase_mixing_idx = melt_fluid_phase_mixing_idx
+		
+		self._melt_fluid_m = None,
+		self.melt_fluid_m = melt_fluid_m
 		
 		if deformation_dict == None:
 			deformation_dict = {'function_method':'linear','conductivity_decay_factor':0, 'strain_decay_factor':0, 'strain_percolation_threshold': None}
@@ -240,6 +243,14 @@ class Material(object):
 	@melt_fluid_phase_mixing_idx.setter
 	def melt_fluid_phase_mixing_idx(self, value):
 		self._melt_fluid_phase_mixing_idx = value
+		
+	@property
+	def melt_fluid_m(self):
+		return self._melt_fluid_m
+		
+	@melt_fluid_m.setter
+	def melt_fluid_m(self, value):
+		self._melt_fluid_m = value
 		
 	@property
 	def deformation_dict(self):

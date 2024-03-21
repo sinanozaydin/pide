@@ -19,6 +19,9 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 	sel_object.set_o2_buffer(material.o2_buffer)
 	sel_object.set_solid_phs_mix_method(material.solid_phase_mixing_idx)
 	sel_object.set_solid_melt_fluid_mix_method(material.melt_fluid_phase_mixing_idx)
+	
+	if melt_array[index_list].any() > 0.0:
+		
 	if material.melt_fluid_incorporation_method == 'value':
 		sel_object.set_melt_fluid_frac(material.melt_fluid_frac)
 		if material.melt_or_fluid == 'melt':
@@ -73,7 +76,8 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 			wds = material.interconnectivities['wds'],
 			rwd = material.interconnectivities['rwd'],
 			perov = material.interconnectivities['perov'],
-			other = material.interconnectivities['other'])
+			other = material.interconnectivities['other'],
+			)
 			
 		if material.water_distr == False:
 		
@@ -174,10 +178,14 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 	if material.melt_fluid_cond_selection != None:
 		if material.melt_or_fluid == 'melt':
 			sel_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection)
+			if material.melt_fluid_phase_mixing_idx == 0:
+				sel_object.set_melt_fluid_interconnectivity(melt = material.melt_fluid_m)
 		elif material.melt_or_fluid == 'fluid':
 			sel_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection)
 			sel_object.set_fluid_properties(salinity = material.fluid_salinity)
-			
+			if material.melt_fluid_phase_mixing_idx == 0:
+				sel_object.set_melt_fluid_interconnectivity(fluid = material.melt_fluid_m)
+		
 	c = sel_object.calculate_conductivity(method = 'array')
 	
 	return c

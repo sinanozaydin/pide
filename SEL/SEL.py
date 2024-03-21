@@ -457,6 +457,7 @@ class SEL(object):
 		self.set_melt_properties()
 		self.set_fluid_properties()
 		self.set_phase_interconnectivities()
+		self.set_melt_fluid_interconnectivity()
 		self.set_mantle_water_partitions()
 		self.set_mantle_water_solubility()
 		self.object_formed = True
@@ -490,6 +491,8 @@ class SEL(object):
 			self.set_param2_rock(reval = True)
 			
 		self.set_phase_interconnectivities(reval = True)
+		if self.phs_melt_mix_method == 0:
+			self.set_melt_fluid_interconnectivity(reval = True)
 		
 	def read_csv(self,filename,delim):
 
@@ -1386,6 +1389,9 @@ class SEL(object):
 		SEL.melt_cond_selection = kwargs.pop('melt', 0)
 		SEL.fluid_cond_selection = kwargs.pop('fluid', 0)
 		
+		import ipdb
+		ipdb.set_trace()
+		
 		if (SEL.melt_cond_selection < 0) or (SEL.melt_cond_selection > len(self.name[1])):
 		
 			raise ValueError('Bad entry for melt conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[1])))
@@ -1898,21 +1904,45 @@ class SEL(object):
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
-		if SEL.fluid_or_melt_method == 0:
-			SEL.melt_fluid_m = self.array_modifier(input = kwargs.pop('fluid', 4), array = self.T, varname = 'melt_fluid_m') 
-		elif SEL.fluid_or_melt_method == 1:
-			SEL.melt_fluid_m = self.array_modifier(input = kwargs.pop('melt', 4), array = self.T, varname = 'melt_fluid_m') 
-		
 		if overlookError == False:
-			list_of_values = [SEL.ol_m,SEL.opx_m,SEL.cpx_m,SEL.garnet_m,SEL.mica_m,SEL.amp_m,SEL.quartz_m,SEL.plag_m,SEL.kfelds_m,
+		
+			list_of_values_minerals = [SEL.ol_m,SEL.opx_m,SEL.cpx_m,SEL.garnet_m,SEL.mica_m,SEL.amp_m,SEL.quartz_m,SEL.plag_m,SEL.kfelds_m,
 			SEL.sulphide_m,SEL.graphite_m, SEL.sp_m, SEL.rwd_wds_m,SEL.perov_m, SEL.mixture_m,SEL.other_m]
 			
-			for i in range(0,len(list_of_values)):
+			for i in range(0,len(list_of_values_minerals)):
 			
-				if len(np.flatnonzero(list_of_values[i] < 1)) != 0:
+				if len(np.flatnonzero(list_of_values_minerals[i] < 1)) != 0:
 				
-					raise ValueError('There is a value entered in phase interconnectivities that apperas to be below 1.')
+					raise ValueError('There is a value entered in mineral phase interconnectivities that apperas to be below 1.')
+					
+			list_of_values_rocks = [SEL.granite_m, SEL.granulite_m, SEL.sandstone_m, SEL.gneiss_m, SEL.amphibolite_m, SEL.basalt_m,
+			SEL.mud_m, SEL.gabbro_m, SEL.other_rock_m]
 			
+			for i in range(0,len(list_of_values_rocks)):
+			
+				if len(np.flatnonzero(list_of_values_rocks[i] < 1)) != 0:
+				
+					raise ValueError('There is a value entered in rock phase interconnectivities that apperas to be below 1.')
+					
+	def set_melt_fluid_interconnectivity(self, reval = False, **kwargs):
+	
+		if reval == False:
+		
+			if SEL.fluid_or_melt_method == 0:
+				SEL.melt_fluid_m = self.array_modifier(input = kwargs.pop('fluid', 8.0), array = self.T, varname = 'melt_fluid_m') 
+			elif SEL.fluid_or_melt_method == 1:
+				SEL.melt_fluid_m = self.array_modifier(input = kwargs.pop('melt', 8.0), array = self.T, varname = 'melt_fluid_m') 
+		
+		elif reval == True:
+			
+			if SEL.fluid_or_melt_method == 0:
+				SEL.melt_fluid_m = self.array_modifier(input = SEL.melt_fluid_m, array = self.T, varname = 'melt_fluid_m') 
+			elif SEL.fluid_or_melt_method == 1:
+				SEL.melt_fluid_m = self.array_modifier(input = SEL.melt_fluid_m, array = self.T, varname = 'melt_fluid_m') 
+				
+		if SEL.melt_fluid_m.any() < 1.0:
+		
+			raise ValueError('The fluid_melt interconnectivity value is below 0, which is not accepted.')
 	
 	def set_solid_phs_mix_method(self, method):
 	
@@ -2329,7 +2359,6 @@ class SEL(object):
 				else:
 
 					CORR_Factor = 1.0
-			
 			else:
 			
 				CORR_Factor = 1.0
@@ -2363,12 +2392,10 @@ class SEL(object):
 			
 				CORR_Factor = 1.0
 
-					
 		else:
 		
 			CORR_Factor = 1.0
 			
-		
 		return CORR_Factor
 	
 	def phase_mixing_function(self, method = None, melt_method = None, indexing_method = None, sol_idx = None):
@@ -2860,7 +2887,7 @@ class SEL(object):
 				for i in range(start_idx,end_idx):
 
 					if self.melt_fluid_mass_frac[i] != 0.0:
-					
+						
 						p = np.log10(1.0 - self.melt_fluid_frac[i]**SEL.melt_fluid_m[i]) / np.log10(1.0 - self.melt_fluid_frac[i])
 
 						self.bulk_cond[i] = (self.bulk_cond[i] * (1.0 - self.melt_fluid_frac[i])**p) + (self.melt_fluid_cond[i] * (self.melt_fluid_frac[i]**SEL.melt_fluid_m[i]))
