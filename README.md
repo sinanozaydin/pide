@@ -1,1 +1,1 @@
-# SEL - Synthetic Earth Library
+# pide - (P)etrophysical (I)nterpretation library for geo(D)ynamic (E)xploration
