@@ -2,23 +2,23 @@
 
 import numpy as np
 
-import SEL
+import pide
 from geodyn.material_process import return_material_bool
 
 #importing the function
 from geodyn.deform_cond import plastic_strain_2_conductivity
 
-def run_conductivity_model(index_list, material, sel_object, t_array, p_array, melt_array):
+def run_conductivity_model(index_list, material, pide_object, t_array, p_array, melt_array):
 
 	#global function to run conductivity model. designed to be global def to run parallel with multiprocessing
 	
-	#setting temperatures at the sel_object
-	sel_object.set_temperature(t_array[index_list])
-	sel_object.set_pressure(p_array[index_list])
+	#setting temperatures at the pide_object
+	pide_object.set_temperature(t_array[index_list])
+	pide_object.set_pressure(p_array[index_list])
 	
-	sel_object.set_o2_buffer(material.o2_buffer)
-	sel_object.set_solid_phs_mix_method(material.solid_phase_mixing_idx)
-	sel_object.set_solid_melt_fluid_mix_method(material.melt_fluid_phase_mixing_idx)
+	pide_object.set_o2_buffer(material.o2_buffer)
+	pide_object.set_solid_phs_mix_method(material.solid_phase_mixing_idx)
+	pide_object.set_solid_melt_fluid_mix_method(material.melt_fluid_phase_mixing_idx)
 	
 	if melt_array[index_list].any() > 0.0:
 		material.melt_fluid_incorporation_method == 'field' #if melt exists it overwrites the field value.
@@ -27,27 +27,27 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 	if material.melt_fluid_incorporation_method == 'value':
 
 		if material.melt_or_fluid == 'melt':
-			sel_object.set_melt_or_fluid_mode('melt')
+			pide_object.set_melt_or_fluid_mode('melt')
 		else:
-			sel_object.set_melt_or_fluid_mode('fluid')
+			pide_object.set_melt_or_fluid_mode('fluid')
 
-		sel_object.set_melt_fluid_frac(material.melt_fluid_frac)
+		pide_object.set_melt_fluid_frac(material.melt_fluid_frac)
 
 	elif material.melt_fluid_incorporation_method == 'field':
 
-		sel_object.set_melt_or_fluid_mode('melt') #only melt field can be taken from the area
-		sel_object.set_melt_fluid_frac(melt_array[index_list])
+		pide_object.set_melt_or_fluid_mode('melt') #only melt field can be taken from the area
+		pide_object.set_melt_fluid_frac(melt_array[index_list])
 
 	else:
 		pass
 		
-	sel_object.set_watercalib(ol = material.water_calib['ol'], px_gt = material.water_calib['px_gt'], feldspar = material.water_calib['feldspar'])
-	sel_object.set_o2_buffer(o2_buffer = material.o2_buffer)
+	pide_object.set_watercalib(ol = material.water_calib['ol'], px_gt = material.water_calib['px_gt'], feldspar = material.water_calib['feldspar'])
+	pide_object.set_o2_buffer(o2_buffer = material.o2_buffer)
 		
-	#adjusting material parameters for the sel_object
+	#adjusting material parameters for the pide_object
 	if material.calculation_type == 'mineral':
 	
-		sel_object.set_composition_solid_mineral(ol = material.composition['ol'],
+		pide_object.set_composition_solid_mineral(ol = material.composition['ol'],
 		opx = material.composition['opx'],
 		cpx = material.composition['cpx'],
 		garnet = material.composition['garnet'],
@@ -67,7 +67,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 		
 		if material.solid_phase_mixing_idx == 0:
 		
-			sel_object.set_phase_interconnectivities(ol = material.interconnectivities['ol'],
+			pide_object.set_phase_interconnectivities(ol = material.interconnectivities['ol'],
 			opx = material.interconnectivities['opx'],
 			cpx = material.interconnectivities['cpx'],
 			garnet = material.interconnectivities['garnet'],
@@ -88,7 +88,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 			
 		if material.water_distr == False:
 		
-			sel_object.set_mineral_water(ol = material.water['ol'],
+			pide_object.set_mineral_water(ol = material.water['ol'],
 			opx = material.water['opx'],
 			cpx = material.water['cpx'],
 			garnet = material.water['garnet'],
@@ -108,17 +108,17 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 			
 		else:
 		
-			sel_object.set_bulk_water(material.water['bulk'])
-			sel_object.set_mantle_water_partitions(opx_ol = material.mantle_water_part['opx_ol'],
+			pide_object.set_bulk_water(material.water['bulk'])
+			pide_object.set_mantle_water_partitions(opx_ol = material.mantle_water_part['opx_ol'],
 			cpx_ol = material.mantle_water_part['cpx_ol'],
 			garnet_ol = material.mantle_water_part['garnet_ol'],
 			ol_melt = material.mantle_water_part['ol_melt'],
 			opx_melt = material.mantle_water_part['opx_melt'],
 			cpx_melt = material.mantle_water_part['cpx_melt'],
 			garnet_melt = material.mantle_water_part['garnet_melt'])
-			sel_object.mantle_water_distribute(method = 'array')
+			pide_object.mantle_water_distribute(method = 'array')
 			
-		sel_object.set_mineral_conductivity_choice(ol = material.el_cond_selections['ol'],
+		pide_object.set_mineral_conductivity_choice(ol = material.el_cond_selections['ol'],
 			opx = material.el_cond_selections['opx'],
 			cpx = material.el_cond_selections['cpx'],
 			garnet = material.el_cond_selections['garnet'],
@@ -138,7 +138,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 									
 	elif material.calculation_type == 'rock':
 	
-		sel_object.set_composition_solid_rock(granite = material.composition['granite'],
+		pide_object.set_composition_solid_rock(granite = material.composition['granite'],
 		granulite = material.composition['granulite'],
 		sandstone = material.composition['sandstone'],
 		gneiss = material.composition['gneiss'],
@@ -150,7 +150,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 		
 		if material.solid_phase_mixing_idx == 0:
 			
-			sel_object.set_phase_interconnectivities(granite = material.interconnectivities['granite'],
+			pide_object.set_phase_interconnectivities(granite = material.interconnectivities['granite'],
 			granulite = material.interconnectivities['granulite'],
 			sandstone = material.interconnectivities['sandstone'],
 			gneiss = material.interconnectivities['gneiss'],
@@ -162,7 +162,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 			
 		if material.water_distr == False:
 		
-			sel_object.set_rock_water(granite = material.water['granite'],
+			pide_object.set_rock_water(granite = material.water['granite'],
 			granulite = material.water['granulite'],
 			sandstone = material.water['sandstone'],
 			gneiss = material.water['gneiss'],
@@ -172,7 +172,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 			gabbro = material.water['gabbro'],
 			other_rock = material.water['other_rock'])
 			
-		sel_object.set_rock_conductivity_choice(granite = material.el_cond_selections['granite'],
+		pide_object.set_rock_conductivity_choice(granite = material.el_cond_selections['granite'],
 			granulite = material.el_cond_selections['granulite'],
 			sandstone = material.el_cond_selections['sandstone'],
 			gneiss = material.el_cond_selections['gneiss'],
@@ -185,16 +185,16 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 	if material.melt_fluid_cond_selection != None:
 		if material.melt_or_fluid == 'melt':
 			
-			sel_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection)
+			pide_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection)
 			if material.melt_fluid_phase_mixing_idx == 0:
-				sel_object.set_melt_fluid_interconnectivity(melt = material.melt_fluid_m)
+				pide_object.set_melt_fluid_interconnectivity(melt = material.melt_fluid_m)
 		elif material.melt_or_fluid == 'fluid':
-			sel_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection)
-			sel_object.set_fluid_properties(salinity = material.fluid_salinity)
+			pide_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection)
+			pide_object.set_fluid_properties(salinity = material.fluid_salinity)
 			if material.melt_fluid_phase_mixing_idx == 0:
-				sel_object.set_melt_fluid_interconnectivity(fluid = material.melt_fluid_m)
+				pide_object.set_melt_fluid_interconnectivity(fluid = material.melt_fluid_m)
 		
-	c = sel_object.calculate_conductivity(method = 'array')
+	c = pide_object.calculate_conductivity(method = 'array')
 	
 	return c
 	
@@ -296,10 +296,10 @@ class Model(object):
 				model_array = self.material_array, material_skip = mat_skip, model_type = self.model_type)		
 				
 				#setting up the object for the material
-				mat_sel_obj = SEL.SEL()
+				mat_pide_obj = pide.pide()
 				
 				if material_list_holder[l][i].calculation_type != 'value':
-					mat_sel_obj.set_solid_phase_method(material_list_holder[l][i].calculation_type)
+					mat_pide_obj.set_solid_phase_method(material_list_holder[l][i].calculation_type)
 				else:
 					num_cpu = 1 #defaulting num_cpu for 1 since it is not needed for value-method
 					
@@ -348,14 +348,14 @@ class Model(object):
 				
 					if num_cpu == 1:
 						
-						cond[sliced_material_idx] = run_conductivity_model(index_list= sliced_material_idx, material = material_list_holder[l][i], sel_object = mat_sel_obj,
+						cond[sliced_material_idx] = run_conductivity_model(index_list= sliced_material_idx, material = material_list_holder[l][i], pide_object = mat_pide_obj,
 						t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
 						
 					else:
 						#solving for parallel with multiprocessing
 						with multiprocessing.Pool(processes=num_cpu) as pool:
 							
-							process_item_partial = partial(run_conductivity_model, material =  material_list_holder[l][i], sel_object = mat_sel_obj, t_array = self.T,
+							process_item_partial = partial(run_conductivity_model, material =  material_list_holder[l][i], pide_object = mat_pide_obj, t_array = self.T,
 							p_array = self.P, melt_array = self.melt_frac)
 							
 							c = pool.map(process_item_partial, sliced_material_idx)

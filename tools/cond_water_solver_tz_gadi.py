@@ -44,10 +44,10 @@ def write_slice(p,t,water,cond, lat, lon, depth, filename):
 	
 	print('Slice file is written at : ' + filename)
 	
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
 
 sys.path.append(core_path_ext)
-import SEL
+import pide
 from inversion import conductivity_solver_single_param
 
 
@@ -242,46 +242,46 @@ mat_contents = loadmat('T_global_waszek.mat')
 T_global = mat_contents['matrix']
 
 #creating pide object
-sel_obj = SEL.SEL()
-sel_obj.list_mineral_econd_models('garnet')
-sel_obj.list_mineral_econd_models('cpx')
-sel_obj.list_mineral_econd_models('perov')
-sel_obj.list_mineral_econd_models('rwd_wds')
+pide_obj = pide.pide()
+pide_obj.list_mineral_econd_models('garnet')
+pide_obj.list_mineral_econd_models('cpx')
+pide_obj.list_mineral_econd_models('perov')
+pide_obj.list_mineral_econd_models('rwd_wds')
 
 #initial conductivity choices for wadsleyite layer
-sel_obj.set_mineral_conductivity_choice(rwd_wds = 5) #Dai and Karato 2009, Wadsleyite model
-sel_obj.set_mineral_conductivity_choice(cpx = 8) #Xu
-sel_obj.set_mineral_conductivity_choice(perov = 0)
-sel_obj.set_mineral_conductivity_choice(garnet = 0)
+pide_obj.set_mineral_conductivity_choice(rwd_wds = 5) #Dai and Karato 2009, Wadsleyite model
+pide_obj.set_mineral_conductivity_choice(cpx = 8) #Xu
+pide_obj.set_mineral_conductivity_choice(perov = 0)
+pide_obj.set_mineral_conductivity_choice(garnet = 0)
 
-sel_obj.list_transition_zone_water_partitions_solid('garnet')
-sel_obj.list_transition_zone_water_partitions_solid('perov')
-sel_obj.list_transition_zone_water_partitions_solid('cpx')
+pide_obj.list_transition_zone_water_partitions_solid('garnet')
+pide_obj.list_transition_zone_water_partitions_solid('perov')
+pide_obj.list_transition_zone_water_partitions_solid('cpx')
 
-sel_obj.set_mantle_water_solubility(cpx = 2, perov = 0, garnet = 2)
+pide_obj.set_mantle_water_solubility(cpx = 2, perov = 0, garnet = 2)
 
 
 for index in range(3,len(cond_arrays)):
 
 	if index == 6:
 		
-		sel_obj.set_mineral_conductivity_choice(rwd_wds = 1) #Dai and Karato 2009, Wadsleyite model
+		pide_obj.set_mineral_conductivity_choice(rwd_wds = 1) #Dai and Karato 2009, Wadsleyite model
 		
-	sel_obj.set_temperature(T_global[:,idx_depth_list[index]] * np.ones(len(cond_arrays[index])))
-	sel_obj.set_mantle_transition_zone_water_partitions(garnet = 0, perov = 0, cpx = 0)
-	sel_obj.set_pressure(p[index])
-	sel_obj.revalue_arrays()
+	pide_obj.set_temperature(T_global[:,idx_depth_list[index]] * np.ones(len(cond_arrays[index])))
+	pide_obj.set_mantle_transition_zone_water_partitions(garnet = 0, perov = 0, cpx = 0)
+	pide_obj.set_pressure(p[index])
+	pide_obj.revalue_arrays()
 	if index < 6:
-		sel_obj.set_composition_solid_mineral(cpx = cpx[index], garnet = garnet[index], perov = pv[index], rwd_wds = wad[index])
+		pide_obj.set_composition_solid_mineral(cpx = cpx[index], garnet = garnet[index], perov = pv[index], rwd_wds = wad[index])
 	else:
-		sel_obj.set_composition_solid_mineral(cpx = cpx[index], garnet = garnet[index], perov = pv[index], rwd_wds = ring[index])
-	sel_obj.set_solid_phs_mix_method(method = 1) #hashin-shtrikman lower-bound
-	tz_solubility = sel_obj.calculate_transition_zone_water_solubility(method = 'array') #calculating solubility at the given temperature
+		pide_obj.set_composition_solid_mineral(cpx = cpx[index], garnet = garnet[index], perov = pv[index], rwd_wds = ring[index])
+	pide_obj.set_solid_phs_mix_method(method = 1) #hashin-shtrikman lower-bound
+	tz_solubility = pide_obj.calculate_transition_zone_water_solubility(method = 'array') #calculating solubility at the given temperature
 	
-	c_list, residual_list = conductivity_solver_single_param(object = sel_obj, cond_list = cond_arrays[index], param_name = 'bulk_water', upper_limit_list = tz_solubility,
+	c_list, residual_list = conductivity_solver_single_param(object = pide_obj, cond_list = cond_arrays[index], param_name = 'bulk_water', upper_limit_list = tz_solubility,
 		lower_limit_list= np.zeros(len(tz_solubility)), search_start = 10, acceptence_threshold = 0.5, transition_zone = True, num_cpu = 48)	
 	
-	write_slice(p = sel_obj.p, t = sel_obj.T, water = c_list, cond = cond_arrays[index], lat = lat_arrays, lon = lon_arrays, depth = depth_p[index], filename = 'TZ_Water_Content_' + str(index) + '.csv')
+	write_slice(p = pide_obj.p, t = pide_obj.T, water = c_list, cond = cond_arrays[index], lat = lat_arrays, lon = lon_arrays, depth = depth_p[index], filename = 'TZ_Water_Content_' + str(index) + '.csv')
 
 	
 

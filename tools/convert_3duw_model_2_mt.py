@@ -4,12 +4,12 @@ import os,sys
 import h5py
 import numpy as np
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
-core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL/sel_src')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
+core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide/pide_src')
 sys.path.append(core_path_ext)
 sys.path.append(core_path_ext_2)
 
-import SEL
+import pide
 from material import Material
 from model import Model
 from geodyn.read_uw_model import *
@@ -76,24 +76,24 @@ material_array = interpolate_3d_fields((x_mesh,y_mesh,z_mesh),material_array,(x_
 
 
 #forming the main pide object
-sel_object = SEL.SEL()
+pide_object = pide.pide()
 
 #listing conductivity models
 """
-list_fluid_models = sel_object.list_fluid_econd_models()
-list_melt_models = sel_object.list_melt_econd_models()
-list_granite_models = sel_object.list_rock_econd_models('granite')
-list_granulite_models = sel_object.list_rock_econd_models('granulite')
-list_plag_models = sel_object.list_mineral_econd_models('plag')
-list_quartz_models = sel_object.list_mineral_econd_models('quartz')
-list_garnet_models = sel_object.list_mineral_econd_models('garnet')
-list_opx_models = sel_object.list_mineral_econd_models('opx')
-list_cpx_models = sel_object.list_mineral_econd_models('cpx')
-list_kfelds_models = sel_object.list_mineral_econd_models('kfelds')
-list_amp_models = sel_object.list_mineral_econd_models('amp')
+list_fluid_models = pide_object.list_fluid_econd_models()
+list_melt_models = pide_object.list_melt_econd_models()
+list_granite_models = pide_object.list_rock_econd_models('granite')
+list_granulite_models = pide_object.list_rock_econd_models('granulite')
+list_plag_models = pide_object.list_mineral_econd_models('plag')
+list_quartz_models = pide_object.list_mineral_econd_models('quartz')
+list_garnet_models = pide_object.list_mineral_econd_models('garnet')
+list_opx_models = pide_object.list_mineral_econd_models('opx')
+list_cpx_models = pide_object.list_mineral_econd_models('cpx')
+list_kfelds_models = pide_object.list_mineral_econd_models('kfelds')
+list_amp_models = pide_object.list_mineral_econd_models('amp')
 """
 
-#DEFINING THE OBJECTS with SEL.material
+#DEFINING THE OBJECTS with pide.material
 UpperCrustObject = Material(name = 'UpperCrustObject',material_index = 3, calculation_type = 'rock', composition = {'granite':1.0},interconnectivities = {'granite':1},
 el_cond_selections = {'granite':0}, solid_phase_mixing_idx = 1,
 deformation_dict = {'function_method':'exponential',
