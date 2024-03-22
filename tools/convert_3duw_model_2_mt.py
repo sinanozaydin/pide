@@ -21,7 +21,8 @@ from mt.mt_model_conversion import convert_2DModel_2_MARE2DEM
 
 # source_folder = "/scratch/q97/so0195/pide2/3D_model_convert/3dmodel"
 # source_folder = "/scratch/q97/pxr562/2020/PullApt300r/ProtPA300r"
-source_folder = "/home/sinan/Desktop/Research/SEL/3d_work_dir/ProtPA300r"
+# source_folder = "/home/sinan/Desktop/Research/SEL/3d_work_dir/ProtPA300r"
+source_folder = "/home/sinan/Desktop/Research/pide/3d_conversion"
 
 #setting up filename folders for the h5 files.
 
@@ -158,13 +159,14 @@ deformation_dict = {'function_method':'exponential',
 LowerCrustObject2 = Material(name = 'Continental_Lower_Crust_Mafic_Granulite',material_index = 8, calculation_type = 'mineral', composition = {'plag':0.31, 'garnet':0.19,
 'cpx':0.25, 'opx':0.05,'amp':0.12, 'quartz':0.04,'kfelds':0.03,'other':0.01},
 el_cond_selections = {'plag':1, 'garnet': 0, 'opx':0, 'amp':0, 'quartz': 7, 'cpx':9, 'kfelds':2, 'other':0}, solid_phase_mixing_idx = 1,
+melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0, melt_fluid_frac = 0.05,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 
 LowerCrustObject2_b = Material(name = 'Continental_Lower_Crust_Mafic_Granulite',material_index = 8, calculation_type = 'mineral', composition = {'plag':0.31, 'garnet':0.19,
 'cpx':0.25, 'opx':0.05,'amp':0.12, 'quartz':0.04,'kfelds':0.03,'other':0.01},
 el_cond_selections = {'plag':1, 'garnet': 0, 'opx':0, 'amp':0, 'quartz': 7, 'cpx':9, 'kfelds':2, 'other':0}, solid_phase_mixing_idx = 2,
-melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0,melt_fluid_frac = 0.05,
+melt_fluid_incorporation_method = 'value', melt_or_fluid = 'fluid', melt_fluid_cond_selection = 0, melt_fluid_frac = 0.05,
 deformation_dict = {'function_method':'exponential',
 'conductivity_decay_factor':0.2, 'strain_decay_factor':0.2,'strain_percolation_threshold':None})
 

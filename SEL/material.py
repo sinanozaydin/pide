@@ -52,9 +52,9 @@ class Material(object):
 		
 		if melt_fluid_cond_selection == None:
 			if self.melt_or_fluid == 'melt':
-				melt_fluid_cond_selection = {'melt':0}
+				melt_fluid_cond_selection = 0
 			else:
-				melt_fluid_cond_selection = {'fluid':0}
+				melt_fluid_cond_selection = 0
 		self._melt_fluid_cond_selection = None
 		self.melt_fluid_cond_selection = melt_fluid_cond_selection
 		
@@ -122,7 +122,7 @@ class Material(object):
 		
 		self.linked_material_index = kwargs.pop('linked_material_index', None)
 		
-		self.fluid_salinity = kwargs.pop('fluid_salinity', None)
+		self.fluid_salinity = kwargs.pop('fluid_salinity', 0.0)
 		
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		

@@ -21,16 +21,23 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 	sel_object.set_solid_melt_fluid_mix_method(material.melt_fluid_phase_mixing_idx)
 	
 	if melt_array[index_list].any() > 0.0:
+		material.melt_fluid_incorporation_method == 'field' #if melt exists it overwrites the field value.
 		
+
 	if material.melt_fluid_incorporation_method == 'value':
-		sel_object.set_melt_fluid_frac(material.melt_fluid_frac)
+
 		if material.melt_or_fluid == 'melt':
 			sel_object.set_melt_or_fluid_mode('melt')
 		else:
 			sel_object.set_melt_or_fluid_mode('fluid')
+
+		sel_object.set_melt_fluid_frac(material.melt_fluid_frac)
+
 	elif material.melt_fluid_incorporation_method == 'field':
+
 		sel_object.set_melt_or_fluid_mode('melt') #only melt field can be taken from the area
 		sel_object.set_melt_fluid_frac(melt_array[index_list])
+
 	else:
 		pass
 		
@@ -177,6 +184,7 @@ def run_conductivity_model(index_list, material, sel_object, t_array, p_array, m
 	
 	if material.melt_fluid_cond_selection != None:
 		if material.melt_or_fluid == 'melt':
+			
 			sel_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection)
 			if material.melt_fluid_phase_mixing_idx == 0:
 				sel_object.set_melt_fluid_interconnectivity(melt = material.melt_fluid_m)

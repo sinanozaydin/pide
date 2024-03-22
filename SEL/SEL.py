@@ -1389,9 +1389,6 @@ class SEL(object):
 		SEL.melt_cond_selection = kwargs.pop('melt', 0)
 		SEL.fluid_cond_selection = kwargs.pop('fluid', 0)
 		
-		import ipdb
-		ipdb.set_trace()
-		
 		if (SEL.melt_cond_selection < 0) or (SEL.melt_cond_selection > len(self.name[1])):
 		
 			raise ValueError('Bad entry for melt conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[1])))
