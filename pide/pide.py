@@ -3479,6 +3479,7 @@ class pide(object):
 					self.max_ol_water = np.array(max_mineral_water)
 				except AttributeError:
 					raise AttributeError('You have to enter ti_ol as a different parameter by the pide.set_parameter method')
+				
 		elif mineral_name == 'opx':
 			
 			min_idx = 4

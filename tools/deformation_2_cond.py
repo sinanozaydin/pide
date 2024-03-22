@@ -2,13 +2,13 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
-core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL/sel_src')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
+core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide/pide_src')
 sys.path.append(core_path_ext)
 sys.path.append(core_path_ext_2)
 
-import SEL
-from sel_src.deformation.deform_cond import plastic_strain_2_conductivity
+import pide
+from geodyn.deform_cond import plastic_strain_2_conductivity
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -22,7 +22,7 @@ mid_cond_err = 10
 high_cond_err = 10
 
 temp = np.array([1000]) #setting up temperature array
-a = SEL.SEL() #creating the initial object
+a = pide.pide() #creating the initial object
 a.set_composition_solid_mineral(ol = [1.0]) #setting composition
 a.set_temperature(temp) #settin temperature array in K
 a.set_pressure(1.0)
@@ -59,7 +59,6 @@ strains = 10**np.array([strains_log[0],mid_strains_log,strains_log[1]])
 conds = 10**np.array([conds_log[0],mid_conds_log,conds_log[1]])
 cond_err = np.array([conds[0][0]* (low_cond_err / 1e2), conds[1][0] * (mid_cond_err / 1e2), conds[2][0] * (high_cond_err / 1e2)])
 
-print(conds.T, strains, cond_err)
 fig = plt.figure(figsize = (10,5))
 ax = plt.subplot(121)
 ax.plot(strain,cond_strain)

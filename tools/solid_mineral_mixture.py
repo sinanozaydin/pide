@@ -2,7 +2,7 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
 
 sys.path.append(core_path_ext)
 
@@ -33,13 +33,13 @@ sys.path.append(core_path_ext)
 # other_rock: other rocks
 
 
-import SEL
+import pide
 import numpy as np
 import matplotlib.pyplot as plt
 
 temp = np.arange(600,1300,5) #setting up temperature array
 temp_melt = np.arange(1300,1800,5)
-a = SEL.SEL() #creating the initial object
+a = pide.pide() #creating the initial object
 
 a.set_temperature(temp) #settin temperature array in K
 a.set_pressure(1.0)
@@ -90,7 +90,8 @@ a.set_solid_phs_mix_method(method = 0)
 a.set_melt_or_fluid_mode(mode = 'melt')
 a.set_melt_properties(co2 = 10e4, water = 1e4)
 melt_frac = 0.1
-a.set_melt_fluid_frac(frac = melt_frac)
+a.set_melt_fluid_frac(melt_frac)
+a.set_melt_fluid_interconnectivity(2)
 
 
 cond_melt_lists = []

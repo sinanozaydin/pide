@@ -2,16 +2,16 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
+core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
 
 sys.path.append(core_path_ext)
 
-import SEL
+import pide
 import numpy as np
 import matplotlib.pyplot as plt
 
 temp = np.arange(600,1300,5) 
-a = SEL.SEL() #creating the initial object
+a = pide.pide() #creating the initial object
 a.set_temperature(temp)
 a.set_composition_solid_mineral(ol = 0.6, opx = 0.25, cpx = 0.1, garnet = 0.05) #setting composition
 a.set_phase_interconnectivities(ol = 1, opx = 2, cpx = 4, gt = 4, melt = 1)
@@ -33,7 +33,7 @@ a.set_bulk_water(np.linspace(100,1000,len(temp)))
 a.mantle_water_distribute(method = 'array') #can extract a.ol_water, a.opx_water from this object now
 
 fig = plt.figure(figsize = (15,10))
-ax = plt.subplot2grid(211)
+ax = plt.subplot(211)
 ax.plot(a.ol_water,temp-273.15, label = 'ol')
 ax.plot(a.opx_water,temp-273.15, label = 'opx')
 ax.plot(a.cpx_water,temp-273.15, label = 'cpx')
