@@ -6,7 +6,7 @@ import SEL
 from geodyn.material_process import return_material_bool
 
 #importing the function
-from sel_src.deformation.deform_cond import plastic_strain_2_conductivity
+from geodyn.deform_cond import plastic_strain_2_conductivity
 
 def run_conductivity_model(index_list, material, sel_object, t_array, p_array, melt_array):
 
