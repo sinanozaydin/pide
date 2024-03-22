@@ -58,7 +58,7 @@ The `model` class, on the other hand, is where a collection of `materials`  can 
 
 `pide` also comes with several tools that can exploit this structure. 'model_modifier' functions, for instance, can be used to calculate certain specific hypothesis tests. `inversion` modules, on the other hand, can be utilised to invert for specific input parameters that fit real geophysical data.
 
-![Workflow Chart for pide \label{fig:pide_wflow}](SEL/docs/figures/pide_workflow.png)
+![Workflow Chart for pide \label{fig:pide_wflow}](figures/pide_workflow.png)
 
 # Acknowledgements
 This study is supported by the Australian Research Council (ARC)Linkage Grant #Grantnumber and ARC DP Grant #Grantnumber. 
