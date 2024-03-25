@@ -918,8 +918,9 @@ class pide(object):
 			if bool_composition == False:
 			
 				raise ValueError('The values entered in mineral composition do not add up to 1.')
+				
+		self.density_loaded = False
 			
-	
 	def set_composition_solid_rock(self, reval = False, **kwargs):
 	
 		#Enter composition in fraction 0.6 == 60% volumetric percentage
@@ -965,7 +966,8 @@ class pide(object):
 			if bool_composition == False:
 			
 				raise ValueError('The entered in rock composition do not add up to 1.')
-			
+				
+		self.density_loaded = False			
 			
 	def set_temperature(self,T):
 	
@@ -980,6 +982,8 @@ class pide(object):
 			
 		self.temperature_default = False
 		self.water_fugacity_calculated = False
+		
+		self.density_loaded = False
 		
 	def set_pressure(self,P):
 		
@@ -997,6 +1001,8 @@ class pide(object):
 		
 		self.set_depth(depth = 'auto')
 		self.water_fugacity_calculated = False
+		
+		self.density_loaded = False
 	
 	def set_depth(self,depth):
 	
@@ -1006,6 +1012,8 @@ class pide(object):
 		else:
 		
 			self.depth = self.array_modifier(input = depth, array = self.T, varname = 'depth')
+			
+		self.density_loaded = False
 	
 	def check_p_n_T(self):
 	
@@ -1436,6 +1444,8 @@ class pide(object):
 				   
 		self.mineral_conductivity_choice_check()
 		
+		self.density_loaded = False
+		
 	def mineral_conductivity_choice_check(self):
 		
 		mineral_idx = list(range(11,28))
@@ -1463,7 +1473,9 @@ class pide(object):
 				   pide.amphibolite_cond_selection, pide.basalt_cond_selection, pide.mud_cond_selection, pide.gabbro_cond_selection, pide.other_rock_cond_selection]
 				   
 				   
-		self.rock_conductivity_choice_check()		   
+		self.rock_conductivity_choice_check()
+		
+		self.density_loaded = False
 		
 	def rock_conductivity_choice_check(self):
 		
@@ -1628,6 +1640,8 @@ class pide(object):
 		pide.xfe_mineral_list = [pide.quartz_xfe, pide.plag_xfe, pide.amp_xfe, pide.kfelds_xfe,
 			 pide.opx_xfe, pide.cpx_xfe, pide.mica_xfe, pide.garnet_xfe, pide.sulphide_xfe,
 				   pide.graphite_xfe, pide.ol_xfe, pide.sp_xfe, pide.rwd_wds_xfe, pide.perov_xfe, pide.mixture_xfe, pide.other_xfe]
+				   
+		self.density_loaded = False
 			
 	def set_param1_mineral(self, reval = False, **kwargs):
 	
@@ -1811,6 +1825,8 @@ class pide(object):
 			pide.solid_phase_method = 1
 		else:
 			raise ValueError("You have to enter 'mineral' or 'rock' as strings.")
+			
+		self.density_loaded = False
 			
 	def set_melt_properties(self, **kwargs):
 	
@@ -3182,6 +3198,7 @@ class pide(object):
 				
 				for mineral in range(11,27):
 					if np.mean(phase_list[mineral-11]) != 0.0:
+					
 						if type(self.dens_mat[mineral][min_sel_list[mineral-11]]) == float:
 							#if no reference given to a materials.json instance take the float as the density
 							dens_list.append(float(self.dens_mat[mineral][min_sel_list[mineral-11]])/1e3 * np.ones(len(self.T)))
@@ -3223,6 +3240,7 @@ class pide(object):
 									dens_list.append(density / 1e3)
 									
 					else:
+					
 						dens_list.append(0.0)
 							
 				self.density_loaded = True
