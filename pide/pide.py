@@ -4,8 +4,12 @@ import os
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_src')
 
-import sys, csv, platform, warnings
+import sys, csv, warnings, json
 import numpy as np
+from scipy.interpolate import interp1d
+
+#imports from satex
+from satex import Isotropy
 
 #Importing external functions
 
@@ -57,7 +61,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many Runtim
 #indentation method: hard tabs ('\t')
 
 #works with Python3
-#required libraries: numpy,scipy,sklearn
+#required libraries: numpy, scipy
 #optional libraries: matplotlib,h5py,harmonica
 
 class pide(object):
@@ -422,6 +426,7 @@ class pide(object):
 		pide.loaded_file = False
 		self.cond_calculated = False
 		self.temperature_default = False
+		self.density_loaded = False
 
 		self.init_params = self.read_csv(filename = os.path.join(self.core_path,'init_param.csv'),delim = ',') #loading the blueprint parameter file.
 		
@@ -661,8 +666,10 @@ class pide(object):
 				self.alpha_p[i][count-1] = float(self.cond_data_array[i][count][22])
 				self.alpha_p_err[i][count-1] = float(self.cond_data_array[i][count][23])
 				self.wtype[i][count-1] = int(self.cond_data_array[i][count][24])
-				self.dens_mat[i][count-1] = float(self.cond_data_array[i][count][25])
-			
+				try:
+					self.dens_mat[i][count-1] = float(self.cond_data_array[i][count][25])
+				except ValueError:
+					self.dens_mat[i][count-1] = self.cond_data_array[i][count][25]
 				count += 1
 
 	def read_params(self):
@@ -680,6 +687,12 @@ class pide(object):
 		pide.spreadsheet = str(params_dat[5][1])
 		self.mu = 4.0 * np.pi * 10**(-7)
 		
+		#materials.json from satex
+		json_file = 'materials.json'
+		json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pide_src', json_file)
+		with open(json_path, 'r') as f:
+			self.materials_data = json.load(f)
+					
 	def read_water_part(self):
 	
 		self.ol_min_partitioning_list = ['opx_part.csv','cpx_part.csv','gt_part.csv']
@@ -1921,14 +1934,17 @@ class pide(object):
 				
 					raise ValueError('There is a value entered in rock phase interconnectivities that apperas to be below 1.')
 					
-	def set_melt_fluid_interconnectivity(self, reval = False, **kwargs):
+	def set_melt_fluid_interconnectivity(self, value = None, reval = False):
+	
+		if value == None:
+			value = 8.0
 	
 		if reval == False:
 		
 			if pide.fluid_or_melt_method == 0:
-				pide.melt_fluid_m = self.array_modifier(input = kwargs.pop('fluid', 8.0), array = self.T, varname = 'melt_fluid_m') 
+				pide.melt_fluid_m = self.array_modifier(input = value, array = self.T, varname = 'melt_fluid_m') 
 			elif pide.fluid_or_melt_method == 1:
-				pide.melt_fluid_m = self.array_modifier(input = kwargs.pop('melt', 8.0), array = self.T, varname = 'melt_fluid_m') 
+				pide.melt_fluid_m = self.array_modifier(input = value, array = self.T, varname = 'melt_fluid_m') 
 		
 		elif reval == True:
 			
@@ -2260,7 +2276,7 @@ class pide(object):
 			if ('fo2' in odd_function) == True:
 				
 				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
-				water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = self.xfe_mineral_list[min_sub_idx][idx_node],\
+				water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = pide.xfe_mineral_list[min_sub_idx][idx_node],\
 				param1 = pide.param1_mineral_list[min_sub_idx][idx_node], param2 = pide.param2_mineral_list[min_sub_idx][idx_node],\
 				fo2 = self.calculate_fugacity(pide.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method)')
 
@@ -2268,7 +2284,7 @@ class pide(object):
 				
 				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
 				water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
-				xFe = self.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
+				xFe = pide.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
 				param2 = pide.param2_mineral_list[min_sub_idx][idx_node], fo2 = None, fo2_ref = None, method = method)')
 
 		return cond
@@ -2941,9 +2957,10 @@ class pide(object):
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
 			
-		self.calculate_density_solid()
-		
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
+		
+			self.calculate_density_solid() #calculate solid density only when it is needed.
+			
 			if pide.fluid_or_melt_method == 0:
 				self.melt_fluid_cond = self.calculate_fluids_conductivity(method= method, sol_idx = index)
 			elif pide.fluid_or_melt_method == 1:
@@ -3100,69 +3117,123 @@ class pide(object):
 		
 	def calculate_density_solid(self):
 		
-		if pide.solid_phase_method == 1:
+		def linear_density(xfe_input, density_list):
 		
-			dens_list = [float(self.dens_mat[2][pide.granite_cond_selection])/1e3,
-			float(self.dens_mat[3][pide.granulite_cond_selection])/1e3,
-			float(self.dens_mat[4][pide.sandstone_cond_selection])/1e3,
-			float(self.dens_mat[5][pide.gneiss_cond_selection])/1e3,
-			float(self.dens_mat[6][pide.amphibolite_cond_selection])/1e3,
-			float(self.dens_mat[7][pide.basalt_cond_selection])/1e3,
-			float(self.dens_mat[8][pide.mud_cond_selection])/1e3,
-			float(self.dens_mat[9][pide.gabbro_cond_selection])/1e3,
-			float(self.dens_mat[10][pide.other_rock_cond_selection])/1e3]
+			f_dens = interp1d([0,1], density_list)
 			
-			self.density_solids = np.zeros(len(self.T))
+			ref_dens = f_dens(xfe_input)
 			
-			for i in range(0,len(self.T)):
-			
-				density_indv = 0.0
-				
-				phase_list = [self.granite_frac[i],self.granulite_frac[i],self.sandstone_frac[i],
-						self.gneiss_frac[i], self.amphibolite_frac[i], self.basalt_frac[i], self.mud_frac[i],
-						 self.gabbro_frac[i], self.other_rock_frac[i]]
-				
-				for j in range(0,len(phase_list)):
-					density_indv = density_indv + (phase_list[j] * dens_list[j])
-					
-				self.density_solids[i] = density_indv
-				
-			
-		elif pide.solid_phase_method == 2:
-		
-			dens_list = [float(self.dens_mat[11][pide.quartz_cond_selection])/1e3,
-			float(self.dens_mat[12][pide.plag_cond_selection])/1e3,
-			float(self.dens_mat[13][pide.amp_cond_selection])/1e3,
-			float(self.dens_mat[14][pide.kfelds_cond_selection])/1e3,
-			float(self.dens_mat[15][pide.opx_cond_selection])/1e3,
-			float(self.dens_mat[16][pide.cpx_cond_selection])/1e3,
-			float(self.dens_mat[17][pide.mica_cond_selection])/1e3,
-			float(self.dens_mat[18][pide.garnet_cond_selection])/1e3,
-			float(self.dens_mat[19][pide.sulphide_cond_selection])/1e3,
-			float(self.dens_mat[20][pide.graphite_cond_selection])/1e3,
-			float(self.dens_mat[21][pide.ol_cond_selection])/1e3,
-			float(self.dens_mat[22][pide.sp_cond_selection])/1e3,
-			float(self.dens_mat[23][pide.rwd_wds_cond_selection])/1e3,
-			float(self.dens_mat[24][pide.perov_cond_selection])/1e3,
-			float(self.dens_mat[25][pide.mixture_cond_selection])/1e3,
-			float(self.dens_mat[26][pide.other_cond_selection])/1e3]
+			return ref_dens
 						
-			self.density_solids = np.zeros(len(self.T))
-			
-			for i in range(0,len(self.T)):
-			
-				density_indv = 0.0
+		min_sel_list = [pide.quartz_cond_selection,pide.plag_cond_selection,
+				pide.amp_cond_selection, pide.kfelds_cond_selection, pide.opx_cond_selection,
+				pide.cpx_cond_selection, pide.mica_cond_selection, pide.garnet_cond_selection,
+				pide.sulphide_cond_selection, pide.graphite_cond_selection, pide.ol_cond_selection,
+				pide.sp_cond_selection, pide.rwd_wds_cond_selection, pide.perov_cond_selection,
+				pide.mixture_cond_selection, pide.other_cond_selection]
 				
-				phase_list = [self.quartz_frac[i], self.plag_frac[i], self.amp_frac[i], self.kfelds_frac[i],
-					self.opx_frac[i], self.cpx_frac[i], self.mica_frac[i], self.garnet_frac[i],
-					self.sulphide_frac[i], self.graphite_frac[i], self.ol_frac[i], self.sp_frac[i],
-					self.rwd_wds_frac[i], self.perov_frac[i], self.mixture_frac[i], self.other_frac[i]]
+		id_mineral_ref_list = [None, None, None, None, ["13","14"],["16","17"], None,
+		["10","8"],None, None, ["11", "12"], None, ["11", "12"], None, None, None]
 				
-				for j in range(0,len(phase_list)):
-					density_indv = density_indv + (phase_list[j] * dens_list[j])
+		dens_xfe_calc_list = ["fo", "fa", "en", "fs", "py", "alm", "di", "hed"]
+			
+		if self.density_loaded == False:
 					
-				self.density_solids[i] = density_indv
-		
+			if pide.solid_phase_method == 1:
+			
+				dens_list = [float(self.dens_mat[2][pide.granite_cond_selection])/1e3,
+				float(self.dens_mat[3][pide.granulite_cond_selection])/1e3,
+				float(self.dens_mat[4][pide.sandstone_cond_selection])/1e3,
+				float(self.dens_mat[5][pide.gneiss_cond_selection])/1e3,
+				float(self.dens_mat[6][pide.amphibolite_cond_selection])/1e3,
+				float(self.dens_mat[7][pide.basalt_cond_selection])/1e3,
+				float(self.dens_mat[8][pide.mud_cond_selection])/1e3,
+				float(self.dens_mat[9][pide.gabbro_cond_selection])/1e3,
+				float(self.dens_mat[10][pide.other_rock_cond_selection])/1e3]
+				
+				self.density_solids = np.zeros(len(self.T))
+				
+				for i in range(0,len(self.T)):
+				
+					density_indv = 0.0
+					
+					phase_list = [self.granite_frac[i],self.granulite_frac[i],self.sandstone_frac[i],
+							self.gneiss_frac[i], self.amphibolite_frac[i], self.basalt_frac[i], self.mud_frac[i],
+							 self.gabbro_frac[i], self.other_rock_frac[i]]
+					
+					for j in range(0,len(phase_list)):
+						density_indv = density_indv + (phase_list[j] * dens_list[j])
+						
+					self.density_solids[i] = density_indv
+					
+				self.density_loaded = True					
+				
+			elif pide.solid_phase_method == 2:
+							
+				dens_list = []
+				
+				phase_list = [self.quartz_frac, self.plag_frac, self.amp_frac, self.kfelds_frac,
+				self.opx_frac, self.cpx_frac, self.mica_frac, self.garnet_frac,
+				self.sulphide_frac, self.graphite_frac, self.ol_frac, self.sp_frac,
+				self.rwd_wds_frac, self.perov_frac, self.mixture_frac, self.other_frac]
+								
+				#calling satex object to calculate density under P-T conditions
+				satex_isot_object = Isotropy()
+				
+				for mineral in range(11,27):
+					if np.mean(phase_list[mineral-11]) != 0.0:
+						if type(self.dens_mat[mineral][min_sel_list[mineral-11]]) == float:
+							#if no reference given to a materials.json instance take the float as the density
+							dens_list.append(float(self.dens_mat[mineral][min_sel_list[mineral-11]])/1e3 * np.ones(len(self.T)))
+							
+						else:
+						
+							if self.dens_mat[mineral][min_sel_list[mineral-11]] not in dens_xfe_calc_list:
+								#if material reference density is not dependent on xfe
+								
+								density, aks, amu = satex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
+								temperature = self.T, pressure = self.p, return_vp_vs_vbulk=False, return_aktout=False)
+								
+								dens_list.append(density / 1e3)
+								
+							else:
+								
+								#if material reference density is dependent on xfe: ol,opx,cpx,gt,rwd_wds
+								ref_0 = self.materials_data[id_mineral_ref_list[mineral-11][0]]['density_298K(kg/m3)']
+								ref_1 = self.materials_data[id_mineral_ref_list[mineral-11][1]]['density_298K(kg/m3)']
+								
+								if 'xFe' in self.name[mineral][min_sel_list[mineral-11]]:
+								
+									ref_dens = linear_density(xfe_input=pide.xfe_mineral_list[mineral-11], density_list = [ref_0, ref_1])
+								
+									density, aks, amu = satex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
+									temperature = self.T, pressure = self.p, ref_density = ref_dens, return_vp_vs_vbulk=False, return_aktout=False)
+								
+									dens_list.append(density / 1e3)
+									
+								else:
+								
+									xfe_experiment = (100 - self.mg_cond[mineral][min_sel_list[mineral-11]]) * 1e-2 #converting mg number to xFe
+									
+									ref_dens = linear_density(xfe_input=xfe_experiment, density_list = [ref_0, ref_1])
+									
+									density, aks, amu = satex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
+									temperature = self.T, pressure = self.p, ref_density = ref_dens, return_vp_vs_vbulk=False, return_aktout=False)
+								
+									dens_list.append(density / 1e3)
+									
+					else:
+						dens_list.append(0.0)
+							
+				self.density_loaded = True
+
+			density_indv = 0.0
+						
+			for j in range(0,len(phase_list)):
+				density_indv = density_indv + (phase_list[j] * dens_list[j])
+			
+			self.density_solids = density_indv
+			
 	def calculate_fugacity(self,mode):
 
 		#Function that calculates oxygen fugacity buffers from selection.

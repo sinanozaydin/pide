@@ -101,7 +101,7 @@ def Constable2006_dryOlivine_fo2(T, P, water, xFe, param1, param2, fo2 = None, f
 
 	return cond
 
-def Dai2014_DryOlivine_param1_xfe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2014_DryOlivine_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	sigma_dai2014c = 10**(2.77 + (-1.19 * xFe))
 	e_dai2014c = 162000.0 + (-63000 * xFe)
@@ -110,7 +110,7 @@ def Dai2014_DryOlivine_param1_xfe(T, P, water, xFe, param1, param2, fo2 = None, 
 
 	return cond
 
-def Fullea2011_DryOlivine_param1_xfe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Fullea2011_DryOlivine_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	sigma_i_fullea = 10**4.73
 	sigma_pol_fullea = 10**2.7 #average value of used models Fullea et al. (2011)
@@ -131,9 +131,6 @@ def Pommier2018_ShearedDryOlivine(T, P, water, xFe, param1, param2, fo2 = None, 
 
 	E = [126400.0,122700.0,114500.0]
 
-	
-
-	
 	sigma0 = A[0] * np.exp(-E[0] / (R_const*T))
 	sigma1 = A[1] * np.exp(-E[1] / (R_const*T))
 	sigma2 = A[2] * np.exp(-E[2] / (R_const*T))
@@ -142,7 +139,7 @@ def Pommier2018_ShearedDryOlivine(T, P, water, xFe, param1, param2, fo2 = None, 
 
 	return cond
 	
-def Yoshino2012_DryOlivine_param1_xfe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Yoshino2012_DryOlivine_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
 
 	#Conductivity model from Yoshino et al. (2012, JGR:SE)
 	#Function does not contain the effects of pressure since it has almost no effect.
