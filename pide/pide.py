@@ -410,8 +410,7 @@ class pide(object):
 		self.cond_calculated = False
 		self.temperature_default = False
 		self.density_loaded = False
-
-		self.init_params = self.read_csv(filename = os.path.join(self.core_path,'init_param.csv'),delim = ',') #loading the blueprint parameter file.
+		self.seis_property_overwrite = [False] * 16
 		
 		self.read_cond_models()
 		self.read_params()
@@ -1894,10 +1893,62 @@ class pide(object):
 		if (pide.phs_melt_mix_method < 0) or (pide.phs_melt_mix_method > 6):
 		
 			raise ValueError('The solid-fluid phase mixing method is not entered correctly, the value is not between 0 and 6')
-		
-	def set_seismic_velocity_model(self, **kwargs):
+				
+	def set_seismic_velocity_properties(self, **kwargs):
 
+		if 'ol' in kwargs:
+			pide.ol_seis_selection = kwargs.pop('ol', "fo")
+			self.seis_property_overwrite[10] = True
+		if 'opx' in kwargs:
+			pide.opx_seis_selection = kwargs.pop('opx', "en")
+			self.seis_property_overwrite[4] = True
+		if 'cpx' in kwargs:
+			pide.cpx_seis_selection = kwargs.pop('cpx', "di")
+			self.seis_property_overwrite[5] = True
+		if 'garnet' in kwargs:
+			pide.garnet_seis_selection = kwargs.pop('garnet', "py")
+			self.seis_property_overwrite[7] = True
+		if 'mica' in kwargs:
+			pide.mica_seis_selection = kwargs.pop('mica', "phlg")
+			self.seis_property_overwrite[6] = True
+		if 'amp' in kwargs:
+			pide.amp_seis_selection = kwargs.pop('amp', "parg")
+			self.seis_property_overwrite[2] = True
+		if 'quartz' in kwargs:	
+			pide.quartz_seis_selection = kwargs.pop('quartz', "bqz")
+			self.seis_property_overwrite[0] = True
+		if 'plag' in kwargs:
+			pide.plag_seis_selection = kwargs.pop('plag', "hAb")
+			self.seis_property_overwrite[1] = True
+		if 'kfelds' in kwargs:
+			pide.kfelds_seis_selection = kwargs.pop('kfelds', "or")
+			self.seis_property_overwrite[3] = True
+		if 'sulphide' in kwargs:
+			pide.sulphide_seis_selection = kwargs.pop('sulphide', 0)
+			self.seis_property_overwrite[8] = True
+		if 'graphite' in kwargs:	
+			pide.graphite_seis_selection = kwargs.pop('graphite', 0)
+			self.seis_property_overwrite[9] = True
+		if 'sp' in kwargs:	
+			pide.sp_seis_selection = kwargs.pop('sp',"mt")
+			self.seis_property_overwrite[11] = True
+		if 'rwd_wds' in kwargs:	
+			pide.rwd_wds_seis_selection = kwargs.pop('rwd_wds',"fo")
+			self.seis_property_overwrite[12] = True
+		if 'perov' in kwargs:	
+			pide.perov_seis_selection = kwargs.pop('perov',"fo")
+			self.seis_property_overwrite[13] = True
+		if 'mixture' in kwargs:	
+			pide.mixture_seis_selection = kwargs.pop('mixture', "fo")
+			self.seis_property_overwrite[14] = True
+		if 'other' in kwargs:	
+			pide.other_seis_selection = kwargs.pop('other', "fo")
+			self.seis_property_overwrite[15] = True
 
+		pide.minerals_seis_selections = [pide.quartz_seis_selection, pide.plag_seis_selection, pide.amp_seis_selection, pide.kfelds_seis_selection, pide.opx_seis_selection,
+				   pide.cpx_seis_selection, pide.mica_seis_selection, pide.garnet_seis_selection, pide.sulphide_seis_selection,
+				   pide.graphite_seis_selection, pide.ol_seis_selection, pide.sp_seis_selection, pide.rwd_wds_seis_selection, pide.perov_seis_selection,
+				   pide.mixture_seis_selection, pide.other_seis_selection]
 		
 		
 	def list_phs_mix_methods(self):
@@ -3048,51 +3099,157 @@ class pide(object):
 		if pide.solid_phase_method == 2:
 		
 			if np.mean(self.quartz_frac) != 0.0:
-				#handling quartz transitions for calculating velocities with entered T and P
-				quartz_id_list = np.array(["bqz"] * len(self.T))
-				#calculating transitions
-				idx_coesite = Boyd1960_quartz_coesite_trans(T = self.T, P = self.p)
-				idx_alpha = alpha_beta_quartz(T = self.T)
-				try:
-					quartz_id_list[idx_coesite] = "coe"
-					quartz_id_list[idx_alpha] = "aqz"
-				except IndexError:
-					pass
+				if self.seis_property_overwrite[0] == False:
+					#handling quartz transitions for calculating velocities with entered T and P
+					quartz_id_list = np.array(["bqz"] * len(self.T))
+					#calculating transitions
+					idx_coesite = Boyd1960_quartz_coesite_trans(T = self.T, P = self.p)
+					idx_alpha = alpha_beta_quartz(T = self.T)
+					try:
+						quartz_id_list[idx_coesite] = "coe"
+						quartz_id_list[idx_alpha] = "aqz"
+					except IndexError:
+						pass
+				else:
+					quartz_id_list = np.array([self.quartz_seis_selection] * len(self.T))
 				
 				id_list_global.append(quartz_id_list)
 				
 			if np.mean(self.plag_frac) != 0.0:
-			
-				plag_id_list = np.array([self.mat_ref[12][pide.minerals_cond_selections[1]]] * len(self.T))
+				
+				if self.seis_property_overwrite[1] == False:
+					plag_id_list = np.array([self.mat_ref[12][pide.minerals_cond_selections[1]]] * len(self.T))
+				else:
+					plag_id_list = np.array([self.plag_seis_selection] * len(self.T))
+				
 				id_list_global.append(plag_id_list)
+
+			if np.mean(self.amp_frac) != 0.0:
 				
-			if np.mean(self.plag_frac) != 0.0:
-			
-				plag_id_list = np.array([self.mat_ref[12][pide.minerals_cond_selections[1]]] * len(self.T))
-				id_list_global.append(plag_id_list)
-			
-			
-			
-			
-			
-			
-			"""
-			self.mineral_frac_list = [self.quartz_frac, self.plag_frac, self.amp_frac, self.kfelds_frac, self.opx_frac, self.cpx_frac,
-			self.mica_frac, self.garnet_frac, self.sulphide_frac, self.graphite_frac, self.ol_frac, self.sp_frac, self.rwd_wds_frac,
-			self.perov_frac, self.mixture_frac, self.other_frac]
-			
-			[11]
-			"""
+				if self.seis_property_overwrite[2] == False:
+					amp_id_list = np.array([self.mat_ref[13][pide.minerals_cond_selections[2]]] * len(self.T))
+				else:
+					amp_id_list = np.array([self.amp_seis_selection] * len(self.T))
 				
+				id_list_global.append(amp_id_list)
+
+			if np.mean(self.kfelds_frac) != 0.0:
 				
-					
-		
+				if self.seis_property_overwrite[3] == False:
+					kfelds_id_list = np.array([self.mat_ref[14][pide.minerals_cond_selections[3]]] * len(self.T))
+				else:
+					kfelds_id_list = np.array([self.kfelds_seis_selection] * len(self.T))
 				
+				id_list_global.append(kfelds_id_list)
+
+			if np.mean(self.opx_frac) != 0.0:
 				
+				if self.seis_property_overwrite[4] == False:
+					opx_id_list = np.array([self.mat_ref[15][pide.minerals_cond_selections[4]]] * len(self.T))
+				else:
+					opx_id_list = np.array([self.opx_seis_selection] * len(self.T))
 				
-			
-		
-		
+				id_list_global.append(opx_id_list)
+
+			if np.mean(self.cpx_frac) != 0.0:
+				
+				if self.seis_property_overwrite[5] == False:
+					cpx_id_list = np.array([self.mat_ref[16][pide.minerals_cond_selections[5]]] * len(self.T))
+				else:
+					cpx_id_list = np.array([self.cpx_seis_selection] * len(self.T))
+				
+				id_list_global.append(cpx_id_list)
+
+			if np.mean(self.mica_frac) != 0.0:
+				
+				if self.seis_property_overwrite[6] == False:
+					mica_id_list = np.array([self.mat_ref[17][pide.minerals_cond_selections[6]]] * len(self.T))
+				else:
+					mica_id_list = np.array([self.mica_seis_selection] * len(self.T))
+				
+				id_list_global.append(mica_id_list)
+
+			if np.mean(self.garnet_frac) != 0.0:
+				
+				if self.seis_property_overwrite[7] == False:
+					garnet_id_list = np.array([self.mat_ref[18][pide.minerals_cond_selections[7]]] * len(self.T))
+				else:
+					garnet_id_list = np.array([self.garnet_seis_selection] * len(self.T))
+				
+				id_list_global.append(garnet_id_list)
+
+			if np.mean(self.sulphide_frac) != 0.0:
+				
+				if self.seis_property_overwrite[8] == False:
+					sulphide_id_list = np.array([self.mat_ref[19][pide.minerals_cond_selections[8]]] * len(self.T))
+				else:
+					sulphide_id_list = np.array([self.sulphide_seis_selection] * len(self.T))
+				
+				id_list_global.append(sulphide_id_list)
+
+			if np.mean(self.graphite_frac) != 0.0:
+				
+				if self.seis_property_overwrite[9] == False:
+					graphite_id_list = np.array([self.mat_ref[20][pide.minerals_cond_selections[9]]] * len(self.T))
+				else:
+					graphite_id_list = np.array([self.graphite_seis_selection] * len(self.T))
+				
+				id_list_global.append(graphite_id_list)
+
+			if np.mean(self.ol_frac) != 0.0:
+				
+				if self.seis_property_overwrite[10] == False:
+					ol_id_list = np.array([self.mat_ref[21][pide.minerals_cond_selections[10]]] * len(self.T))
+				else:
+					ol_id_list = np.array([self.ol_seis_selection] * len(self.T))
+				
+				id_list_global.append(ol_id_list)
+
+			if np.mean(self.sp_frac) != 0.0:
+				
+				if self.seis_property_overwrite[11] == False:
+					sp_id_list = np.array([self.mat_ref[22][pide.minerals_cond_selections[11]]] * len(self.T))
+				else:
+					sp_id_list = np.array([self.sp_seis_selection] * len(self.T))
+				
+				id_list_global.append(sp_id_list)
+
+			if np.mean(self.rwd_wds_frac) != 0.0:
+				
+				if self.seis_property_overwrite[12] == False:
+					rwd_wds_id_list = np.array([self.mat_ref[23][pide.minerals_cond_selections[12]]] * len(self.T))
+				else:
+					rwd_wds_id_list = np.array([self.rwd_wds_seis_selection] * len(self.T))
+				
+				id_list_global.append(rwd_wds_id_list)
+
+			if np.mean(self.perov_frac) != 0.0:
+				
+				if self.seis_property_overwrite[13] == False:
+					perov_id_list = np.array([self.mat_ref[24][pide.minerals_cond_selections[13]]] * len(self.T))
+				else:
+					perov_id_list = np.array([self.perov_seis_selection] * len(self.T))
+				
+				id_list_global.append(perov_id_list)
+
+			if np.mean(self.mixture_frac) != 0.0:
+				
+				if self.seis_property_overwrite[14] == False:
+					mixture_id_list = np.array([self.mat_ref[25][pide.minerals_cond_selections[14]]] * len(self.T))
+				else:
+					mixture_id_list = np.array([self.mixture_seis_selection] * len(self.T))
+				
+				id_list_global.append(mixture_id_list)
+
+			if np.mean(self.other_frac) != 0.0:
+				
+				if self.seis_property_overwrite[15] == False:
+					other_id_list = np.array([self.mat_ref[26][pide.minerals_cond_selections[15]]] * len(self.T))
+				else:
+					other_id_list = np.array([self.other_seis_selection] * len(self.T))
+				
+				id_list_global.append(other_id_list)
+
 	def calculate_density_solid(self):
 		
 		def linear_density(xfe_input, density_list):
