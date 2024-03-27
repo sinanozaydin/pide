@@ -49,6 +49,10 @@ from pide_src.water_sol.opx_sol import *
 from pide_src.water_sol.rwd_wds_sol import *
 #importing eos functions
 from pide_src.eos.fluid_eos import *
+#importing mineral stability functions
+from pide_src.min_stab.min_stab import *
+#importing utils
+from utils.utils import *
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -634,6 +638,7 @@ class pide(object):
 		self.alpha_p_err = create_nan_array()
 		self.wtype = create_nan_array()
 		self.dens_mat = create_nan_array()
+		self.mat_ref = create_nan_array()
 		
 		#Filling up the arrays.
 		for i in range(0,len(pide.type)):
@@ -670,6 +675,7 @@ class pide(object):
 					self.dens_mat[i][count-1] = float(self.cond_data_array[i][count][25])
 				except ValueError:
 					self.dens_mat[i][count-1] = self.cond_data_array[i][count][25]
+				self.mat_ref[i][count-1] = self.cond_data_array[i][count][26]
 				count += 1
 
 	def read_params(self):
@@ -902,13 +908,14 @@ class pide(object):
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
-		if overlookError == False:
-			mineral_frac_list = [self.quartz_frac,self.opx_frac,self.cpx_frac,self.garnet_frac,self.mica_frac,
-			self.amp_frac,self.quartz_frac,self.plag_frac,self.kfelds_frac,self.sulphide_frac,self.graphite_frac,self.mixture_frac, self.ol_frac, self.sp_frac,
-			self.rwd_wds_frac, self.perov_frac, self.other_frac]
+		self.mineral_frac_list = [self.quartz_frac, self.plag_frac, self.amp_frac, self.kfelds_frac, self.opx_frac, self.cpx_frac,
+		self.mica_frac, self.garnet_frac, self.sulphide_frac, self.graphite_frac, self.ol_frac, self.sp_frac, self.rwd_wds_frac,
+		self.perov_frac, self.mixture_frac, self.other_frac]
 			
-			for i in range(0,len(mineral_frac_list)):
-				if len(np.flatnonzero(mineral_frac_list[i] < 0)) != 0:
+		if overlookError == False:
+			
+			for i in range(0,len(self.mineral_frac_list)):
+				if len(np.flatnonzero(self.mineral_frac_list[i] < 0)) != 0:
 				
 					raise ValueError('There is a value entered in mineral fraction contents that is below zero.')
 		
@@ -988,7 +995,7 @@ class pide(object):
 	def set_pressure(self,P):
 		
 		try: 
-			self.p = P
+			self.p = np.array(P)
 			t_check = self.check_p_n_T()
 			if t_check == False:
 				raise ValueError('The arrays of pressure and temperature are not the same...')
@@ -2237,7 +2244,7 @@ class pide(object):
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
 
 		if (min_idx < 11) or (min_idx > 27):
-			raise ValueError("The index chosen for mineral conductivity does not appear to be correct. It has to be a value between 11 and 23.")
+			raise ValueError("The index chosen for mineral conductivity does not appear to be correct. It has to be a value between 11 and 27.")
 
 		cond = np.zeros(len(self.T))
 
@@ -3122,14 +3129,58 @@ class pide(object):
 		elif method == 'index':
 			return self.bulk_cond[index]
 		
-	def calculate_p_wave_velocity(self):
-
-		pass
-
+	def calculate_seismic_velocities(self, mixing_method = 'HS'):
 	
-	def calculate_s_wave_velocity(self):
-
-		pass
+		"""
+		Calculates seismic velocities of the composition array with the given mixing function.
+		
+		cansu
+		"""
+		id_list_global = []
+		if pide.solid_phase_method == 2:
+		
+			if np.mean(self.quartz_frac) != 0.0:
+				#handling quartz transitions for calculating velocities with entered T and P
+				quartz_id_list = np.array(["bqz"] * len(self.T))
+				#calculating transitions
+				idx_coesite = Boyd1960_quartz_coesite_trans(T = self.T, P = self.p)
+				idx_alpha = alpha_beta_quartz(T = self.T)
+				try:
+					quartz_id_list[idx_coesite] = "coe"
+					quartz_id_list[idx_alpha] = "aqz"
+				except IndexError:
+					pass
+				
+				id_list_global.append(quartz_id_list)
+				
+			if np.mean(self.plag_frac) != 0.0:
+			
+				plag_id_list = np.array([self.mat_ref[12][pide.minerals_cond_selections[1]]] * len(self.T))
+				id_list_global.append(plag_id_list)
+				
+			
+			
+			
+			
+			
+			
+			
+			"""
+			self.mineral_frac_list = [self.quartz_frac, self.plag_frac, self.amp_frac, self.kfelds_frac, self.opx_frac, self.cpx_frac,
+			self.mica_frac, self.garnet_frac, self.sulphide_frac, self.graphite_frac, self.ol_frac, self.sp_frac, self.rwd_wds_frac,
+			self.perov_frac, self.mixture_frac, self.other_frac]
+			
+			[11]
+			"""
+				
+				
+					
+		
+				
+				
+				
+			
+		
 		
 	def calculate_density_solid(self):
 		
