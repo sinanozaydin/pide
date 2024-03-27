@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 	
-def Dai2009_wetPyropeGarnet(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2009_wetPyropeGarnet(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
 
 	#water has to be converted to wt%
 
@@ -21,7 +21,7 @@ def Dai2009_wetPyropeGarnet(T, P, water, xFe, param1, param2, fo2 = None, fo2_re
 
 	return cond
 	
-def Fullea2011_DryGarnet_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Fullea2011_DryGarnet_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
 
 	#param1 is xFE = feo / (feo+mgo)
 
@@ -41,7 +41,7 @@ def Fullea2011_DryGarnet_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_r
 
 	return cond
 	
-def Liu2021_WetAlmandineGarnet_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Liu2021_WetAlmandineGarnet_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
 
 	#param1 is xFE = feo / (feo+mgo)
 	#water has to be converted to wt%

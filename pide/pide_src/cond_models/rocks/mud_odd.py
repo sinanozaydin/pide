@@ -6,7 +6,7 @@ R_const = 8.3144621
 
 
 
-def Sun2017_Mudstone_DS6_0_5GPa(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Sun2017_Mudstone_DS6_0_5GPa(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 75000.0
 	E2 = 59000.0
@@ -37,7 +37,7 @@ def Sun2017_Mudstone_DS6_0_5GPa(T, P, water, param1, param2, fo2 = None, fo2_ref
 
 	return cond
 
-def Sun2017_Mudstone_DS7_1_5GPa(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Sun2017_Mudstone_DS7_1_5GPa(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 70000.0
 	E2 = 49000.0
@@ -69,7 +69,7 @@ def Sun2017_Mudstone_DS7_1_5GPa(T, P, water, param1, param2, fo2 = None, fo2_ref
 	return cond
 
 
-def Sun2017_Mudstone_DS8_2_5GPa(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Sun2017_Mudstone_DS8_2_5GPa(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 64000.0
 	E2 = 36000.0

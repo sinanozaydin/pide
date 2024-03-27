@@ -230,16 +230,6 @@ class pide(object):
 											graphite,sulphide,mixture,other
 											Unit: Varies
 											
-		set_param2_mineral                  Function to set the param2 for minerals. These 
-											denote to specific parameters that is required
-											by the chosen electrical conductivity model.
-											These parameters are indicated in the csv files
-											with _param2_X
-											
-											Input:
-											ol,opx,cpx,garnet,quartz,plag,amp,kfelds,mica,
-											graphite,sulphide,mixture,other
-											Unit: Varies
 											
 		set_param1_rock                     Function to set the param1 for rocks. These 
 											denote to specific parameters that is required
@@ -251,18 +241,7 @@ class pide(object):
 											granite,granulite,sandstone,gneiss,amphibolite,
 											basalt,mud(mudstone/shale),gabbro,other_rock
 											Unit: Varies
-											
-		set_param2_rock                     Function to set the param2 for rocks. These 
-											denote to specific parameters that is required
-											by the chosen electrical conductivity model.
-											These parameters are indicated in the csv files
-											with _param2_X
-											
-											Input:
-											granite,granulite,sandstone,gneiss,amphibolite,
-											basalt,mud(mudstone/shale),gabbro,other_rock
-											Unit: Varies
-											
+																						
 		set_melt_fluid_frac                 Function to set melt/fluid mass fraction
 		
 											Input:
@@ -454,9 +433,7 @@ class pide(object):
 		self.set_o2_buffer()
 		self.set_xfe_mineral()
 		self.set_param1_mineral()
-		self.set_param2_mineral()
 		self.set_param1_rock()
-		self.set_param2_rock()
 		self.set_melt_or_fluid_mode(mode = 'melt') #default choice is melt - 1
 		self.set_solid_phase_method(mode = 'mineral') #default choice is mineral - 2
 		self.set_solid_phs_mix_method(method = 0)
@@ -491,13 +468,11 @@ class pide(object):
 			self.set_mineral_water(reval = True)
 			self.set_xfe_mineral(reval = True)
 			self.set_param1_mineral(reval = True)
-			self.set_param2_mineral(reval = True)
 			
 		elif pide.solid_phase_method == 1:
 			self.set_composition_solid_rock(reval = True,overlookError = True)
 			self.set_rock_water(reval = True)
 			self.set_param1_rock(reval = True)
-			self.set_param2_rock(reval = True)
 			
 		self.set_phase_interconnectivities(reval = True)
 		if self.phs_melt_mix_method == 0:
@@ -1727,83 +1702,7 @@ class pide(object):
 		pide.param1_rock_list = [pide.granite_param1, pide.granulite_param1,
 			pide.sandstone_param1, pide.gneiss_param1, pide.amphibolite_param1, pide.basalt_param1,
 			pide.mud_param1, pide.gabbro_param1, pide.other_rock_param1]
-			
-	def set_param2_mineral(self, reval = False, **kwargs):
-	
-		if self.temperature_default == True:
-			self.suggestion_temp_array()
-	
-		if reval == False:
-			pide.ol_param2 = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param2')
-			pide.opx_param2 = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param2')
-			pide.cpx_param2 = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param2')
-			pide.garnet_param2 = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param2')
-			pide.mica_param2 = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param2')
-			pide.amp_param2 = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param2')
-			pide.quartz_param2 = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param2')
-			pide.plag_param2 = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param2')
-			pide.kfelds_param2 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param2')
-			pide.sulphide_param2 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param2')
-			pide.graphite_param2 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param2')
-			pide.sp_param2 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param2')
-			pide.rwd_wds_param2 = self.array_modifier(input = kwargs.pop('rwd_wds', 0.1), array = self.T, varname = 'rwd_wds_param2')
-			pide.perov_param2 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param2')
-			pide.mixture_param2 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param2')
-			pide.other_param2 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param2')
-		
-		elif reval == True:
-			
-			pide.ol_param2 = self.array_modifier(input = pide.ol_param2, array = self.T, varname = 'ol_param2')
-			pide.opx_param2 = self.array_modifier(input = pide.opx_param2, array = self.T, varname = 'opx_param2')
-			pide.cpx_param2 = self.array_modifier(input = pide.cpx_param2, array = self.T, varname = 'cpx_param2')
-			pide.garnet_param2 = self.array_modifier(input = pide.garnet_param2, array = self.T, varname = 'garnet_param2')
-			pide.mica_param2 = self.array_modifier(input = pide.mica_param2, array = self.T, varname = 'mica_param2')
-			pide.amp_param2 = self.array_modifier(input = pide.amp_param2, array = self.T, varname = 'amp_param2')
-			pide.quartz_param2 = self.array_modifier(input = pide.quartz_param2, array = self.T, varname = 'quartz_param2')
-			pide.plag_param2 = self.array_modifier(input = pide.plag_param2, array = self.T, varname = 'plag_param2')
-			pide.kfelds_param2 = self.array_modifier(input = pide.kfelds_param2, array = self.T, varname = 'kfelds_param2')
-			pide.sulphide_param2 = self.array_modifier(input = pide.sulphide_param2, array = self.T, varname = 'sulphide_param2')
-			pide.graphite_param2 = self.array_modifier(input = pide.graphite_param2, array = self.T, varname = 'graphite_param2')
-			pide.sp_param2 = self.array_modifier(input = pide.sp_param2, array = self.T, varname = 'sp_param2')
-			pide.rwd_wds_param2 = self.array_modifier(input = pide.rwd_wds_param2, array = self.T, varname = 'rwd_wds_param2')
-			pide.perov_param2 = self.array_modifier(input = pide.perov_param2, array = self.T, varname = 'perov_param2')
-			pide.mixture_param2 = self.array_modifier(input = pide.mixture_param2, array = self.T, varname = 'mixture_param2')
-			pide.other_param2 = self.array_modifier(input = pide.other_param2, array = self.T, varname = 'other_param2')
-			
-		pide.param2_mineral_list = [pide.quartz_param2, pide.plag_param2, pide.amp_param2, pide.kfelds_param2,
-			pide.opx_param2, pide.cpx_param2, pide.mica_param2, pide.garnet_param2, pide.sulphide_param2,
-				   pide.graphite_param2, pide.ol_param2, pide.sp_param2, pide.rwd_wds_param2, pide.perov_param2, pide.mixture_param2, pide.other_param2]
-				   
-	def set_param2_rock(self, reval = False, **kwargs):
-	
-		if self.temperature_default == True:
-			self.suggestion_temp_array()
-	
-		if reval == False:
-			pide.granite_param2 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param2')
-			pide.granulite_param2 = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param2')
-			pide.sandstone_param2 = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param2')
-			pide.gneiss_param2 = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param2')
-			pide.amphibolite_param2 = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param2')
-			pide.basalt_param2 = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param2')
-			pide.mud_param2 = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param2')
-			pide.gabbro_param2 = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param2')
-			pide.other_rock_param2 = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_param2')
-		elif reval == True:
-			pide.granite_param2 = self.array_modifier(input = pide.granite_param2, array = self.T, varname = 'granite_param2')
-			pide.granulite_param2 = self.array_modifier(input = pide.granulite_param2, array = self.T, varname = 'granulite_param2')
-			pide.sandstone_param2 = self.array_modifier(input = pide.sandstone_param2, array = self.T, varname = 'sandstone_param2')
-			pide.gneiss_param2 = self.array_modifier(input = pide.gneiss_param2, array = self.T, varname = 'gneiss_param2')
-			pide.amphibolite_param2 = self.array_modifier(input = pide.amphibolite_param2, array = self.T, varname = 'amphibolite_param2')
-			pide.basalt_param2 = self.array_modifier(input = pide.basalt_param2, array = self.T, varname = 'basalt_param2')
-			pide.mud_param2 = self.array_modifier(input = pide.mud_param2, array = self.T, varname = 'mud_param2')
-			pide.gabbro_param2 = self.array_modifier(input = pide.gabbro_param2, array = self.T, varname = 'gabbro_param2')
-			pide.other_rock_param2 = self.array_modifier(input = pide.other_rock_param2, array = self.T, varname = 'other_rock_param2')
-		
-		pide.param2_rock_list = [pide.granite_param2, pide.granulite_param2,
-			pide.sandstone_param2, pide.gneiss_param2, pide.amphibolite_param2, pide.basalt_param2,
-			pide.mud_param2, pide.gabbro_param2, pide.other_rock_param2]
-			
+						
 	def set_melt_fluid_frac(self, value):
 	
 		if self.temperature_default == True:
@@ -1995,6 +1894,11 @@ class pide(object):
 		if (pide.phs_melt_mix_method < 0) or (pide.phs_melt_mix_method > 6):
 		
 			raise ValueError('The solid-fluid phase mixing method is not entered correctly, the value is not between 0 and 6')
+		
+	def set_seismic_velocity_model(self, **kwargs):
+
+
+		
 		
 	def list_phs_mix_methods(self):
 	
@@ -2226,9 +2130,13 @@ class pide(object):
 				odd_function = pide.name[rock_idx][pide.rock_cond_selections[rock_sub_idx]]
 
 			if ('fo2' in odd_function) == True:
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = pide.rock_water_list[rock_sub_idx][idx_node] / water_corr_factor, param1 = pide.param1_rock_list[rock_sub_idx][idx_node], param2 = pide.param2_rock_list[rock_sub_idx][idx_node], fo2 = self.calculate_fugacity(pide.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = pide.rock_water_list[rock_sub_idx][idx_node] \
+						  / water_corr_factor, param1 = pide.param1_rock_list[rock_sub_idx][idx_node],\
+						   fo2 = self.calculate_fugacity(pide.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
 			else:
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = pide.rock_water_list[rock_sub_idx][idx_node] / water_corr_factor, param1 = pide.param1_rock_list[rock_sub_idx][idx_node], param2 = pide.param2_rock_list[rock_sub_idx][idx_node], method = method)')
+				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = pide.rock_water_list[rock_sub_idx][idx_node] \
+						  / water_corr_factor, param1 = pide.param1_rock_list[rock_sub_idx][idx_node],\
+						   method = method)')
 		
 		return cond
 	
@@ -2300,7 +2208,7 @@ class pide(object):
 				
 				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
 				water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = pide.xfe_mineral_list[min_sub_idx][idx_node],\
-				param1 = pide.param1_mineral_list[min_sub_idx][idx_node], param2 = pide.param2_mineral_list[min_sub_idx][idx_node],\
+				param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
 				fo2 = self.calculate_fugacity(pide.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method)')
 
 			else:
@@ -2308,7 +2216,7 @@ class pide(object):
 				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
 				water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
 				xFe = pide.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
-				param2 = pide.param2_mineral_list[min_sub_idx][idx_node], fo2 = None, fo2_ref = None, method = method)')
+				fo2 = None, fo2_ref = None, method = method)')
 
 		return cond
 		
@@ -3158,7 +3066,10 @@ class pide(object):
 				plag_id_list = np.array([self.mat_ref[12][pide.minerals_cond_selections[1]]] * len(self.T))
 				id_list_global.append(plag_id_list)
 				
+			if np.mean(self.plag_frac) != 0.0:
 			
+				plag_id_list = np.array([self.mat_ref[12][pide.minerals_cond_selections[1]]] * len(self.T))
+				id_list_global.append(plag_id_list)
 			
 			
 			

@@ -6,7 +6,7 @@ R_const = 8.3144621
 
 
 
-def Dai2015(T,P,water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2015(T,P,water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	A1 = 1.49
 	A2 = 1.81
@@ -19,7 +19,7 @@ def Dai2015(T,P,water, param1, param2, fo2 = None, fo2_ref = None, method = None
 
 	return cond
 
-def Hui2015_AndesiteGrainBoundary(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Hui2015_AndesiteGrainBoundary(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	sigma = 10.0**2.36
 	E = 90e3
@@ -30,7 +30,7 @@ def Hui2015_AndesiteGrainBoundary(T, P, water, param1, param2, fo2 = None, fo2_r
 	return cond
 
 
-def Hui2015_AndesiteGrainInterior(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Hui2015_AndesiteGrainInterior(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	sigma = 10.0**1.63
 	E = 76e3
@@ -40,7 +40,7 @@ def Hui2015_AndesiteGrainInterior(T, P, water, param1, param2, fo2 = None, fo2_r
 
 	return cond
 
-def Hui2017_PyroxeneAndesite(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Hui2017_PyroxeneAndesite(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	sigma = 10.0
 	E = 48000.0

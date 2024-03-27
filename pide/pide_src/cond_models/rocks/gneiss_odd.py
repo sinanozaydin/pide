@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Dai2018_DS12(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2018_DS12(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 63e3
 	E2 = 78e3
@@ -36,7 +36,7 @@ def Dai2018_DS12(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method
 
 	return cond
 
-def Dai2018_DS13(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2018_DS13(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 35e3
 	E2 = 84e3
@@ -67,7 +67,7 @@ def Dai2018_DS13(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method
 	return cond
 
 
-def Dai2018_DS14(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2018_DS14(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 38e3
 	E2 = 87e3
@@ -97,7 +97,7 @@ def Dai2018_DS14(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method
 
 	return cond
 
-def YingJie2020_J85(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def YingJie2020_J85(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 	
 	E1 = 56e3
 	E2 = 421e3
@@ -127,7 +127,7 @@ def YingJie2020_J85(T, P, water, param1, param2, fo2 = None, fo2_ref = None, met
 
 	return cond
 
-def YingJie2020_J88(T, P, water, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def YingJie2020_J88(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 	
 	E1 = 31e3
 	E2 = 224e3

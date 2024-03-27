@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Yoshino2012_DryRingwoodite_Xfe(T, P, water, xFe ,param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Yoshino2012_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
 
 	A = 1885.0
 	E = 193000.0 #J/mol
@@ -17,7 +17,7 @@ def Yoshino2012_DryRingwoodite_Xfe(T, P, water, xFe ,param1, param2, fo2 = None,
 	
 	return cond
 	
-def Yoshino2009_DryRingwoodite_Xfe(T, P, water, xFe ,param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Yoshino2009_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
 
 	A = 10042.0
 	E = 208000.0
@@ -27,7 +27,7 @@ def Yoshino2009_DryRingwoodite_Xfe(T, P, water, xFe ,param1, param2, fo2 = None,
 	
 	return cond
 	
-def Yoshino2012b_DryWad(T, P, water, xFe ,param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Yoshino2012b_DryWad(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
 
 	A = 5.51 #S/m
 	E = 94000.0 #j/mol

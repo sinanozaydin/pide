@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Dai2005_DryEnstatite(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2005_DryEnstatite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
 
 	sigma1 = 10**3.78
 	E = 171500.0
@@ -14,7 +14,7 @@ def Dai2005_DryEnstatite(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref =
 
 	return cond
 	
-def Zhang2016_DryOpx_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Zhang2016_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
 
 	#Conductivity model from Zhang et al. (2016, Contr. Min. & Petr.)
 
@@ -37,7 +37,7 @@ def Zhang2016_DryOpx_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref =
 
 	return cond
 	
-def Fullea2011_DryOpx_xFe(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Fullea2011_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
 
 	R_const = 8.3144621
 

@@ -5,7 +5,7 @@ import numpy as np
 R_const = 8.3144621
 
 	
-def Hu2014_DryOrthoclase(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Hu2014_DryOrthoclase(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
 
 	sigma_list = np.array([4.13,4.06,4.00])
 	P_list = np.array([1,2,3])
@@ -35,7 +35,7 @@ def Hu2014_DryOrthoclase(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref =
 		
 	return cond
 	
-def Dai2018_DryOrthoclase_001(T, P, water, xFe, param1, param2, fo2 = None, fo2_ref = None, method = None):
+def Dai2018_DryOrthoclase_001(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
 
 	
 	sigma_list = np.array([4.678,4.69,4.72])

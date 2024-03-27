@@ -3,7 +3,7 @@
 class Material(object):
 
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_frac = 0.0,
-	interconnectivities = None, param1 = None, param2 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
+	interconnectivities = None, param1 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
 	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0, deformation_dict = None, **kwargs):
 	
 		"""
@@ -76,16 +76,7 @@ class Material(object):
 				
 		self._param1 = None
 		self.param1 = param1
-				
-		if param2 == None:
-			if self.calculation_type == 'rock':
-				param2 = {'granite':0}
-			else:
-				param2 = {'ol':0}
-		
-		self._param2 = None
-		self.param2 = param2
-		
+						
 		if xfe == None:
 			if self.calculation_type == 'rock':
 				xfe = {'granite':0.1}
@@ -187,15 +178,7 @@ class Material(object):
 	@param1.setter
 	def param1(self, value):
 		self._param1 = self.check_vals(value=value,type = 'comp')
-		
-	@property
-	def param2(self):
-		return self._param2
-		
-	@param2.setter
-	def param2(self, value):
-		self._param2 = self.check_vals(value=value,type = 'comp')
-		
+				
 	@property
 	def water(self):
 		return self._water
