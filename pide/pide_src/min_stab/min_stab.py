@@ -20,7 +20,7 @@ def Boyd1960_quartz_coesite_trans(T, P):
 		idx_coesite = []
 		for i in range(0,len(T)):
 			if T[i] > 973.15:
-				p_coe = 0.1 * 19.5 * (0.112*(T[i] - 273.15)) #in GPa
+				p_coe = 0.1 * (19.5 + (0.112*(T[i] - 273.15))) #in GPa
 				if P[i] > p_coe:
 					idx_coesite.append(i)
 					
@@ -38,6 +38,6 @@ def alpha_beta_quartz(T):
 			idx_alpha = None
 			
 	else:
-		idx_alpha = T[T<846.5]
+		idx_alpha = np.where(T<846.5)
 		
-	return idx_alpha
+	return idx_alpha[0]
