@@ -16,5 +16,7 @@ a.set_temperature(temp)
 a.set_pressure([1,2,3])
 
 a.set_composition_solid_mineral(ol = [0.6,0.6,0.6], opx = [0.4,0.4,0.3], quartz = [0.0,0.0,0.1])
-a.calculate_seismic_velocities()
+velocities = a.calculate_seismic_velocities()
+
+
 

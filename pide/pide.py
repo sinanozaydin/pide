@@ -901,6 +901,7 @@ class pide(object):
 				raise ValueError('The values entered in mineral composition do not add up to 1.')
 				
 		self.density_loaded = False
+		self.seismic_setup = False
 			
 	def set_composition_solid_rock(self, reval = False, **kwargs):
 	
@@ -965,6 +966,7 @@ class pide(object):
 		self.water_fugacity_calculated = False
 		
 		self.density_loaded = False
+		self.seismic_setup = False
 		
 	def set_pressure(self,P):
 		
@@ -984,6 +986,7 @@ class pide(object):
 		self.water_fugacity_calculated = False
 		
 		self.density_loaded = False
+		self.seismic_setup = False
 	
 	def set_depth(self,depth):
 	
@@ -995,6 +998,7 @@ class pide(object):
 			self.depth = self.array_modifier(input = depth, array = self.T, varname = 'depth')
 			
 		self.density_loaded = False
+		self.seismic_setup = False
 	
 	def check_p_n_T(self):
 	
@@ -1426,6 +1430,7 @@ class pide(object):
 		self.mineral_conductivity_choice_check()
 		
 		self.density_loaded = False
+		self.seismic_setup = False
 		
 	def mineral_conductivity_choice_check(self):
 		
@@ -1457,6 +1462,7 @@ class pide(object):
 		self.rock_conductivity_choice_check()
 		
 		self.density_loaded = False
+		self.seismic_setup = False
 		
 	def rock_conductivity_choice_check(self):
 		
@@ -1623,6 +1629,7 @@ class pide(object):
 				   pide.graphite_xfe, pide.ol_xfe, pide.sp_xfe, pide.rwd_wds_xfe, pide.perov_xfe, pide.mixture_xfe, pide.other_xfe]
 				   
 		self.density_loaded = False
+		self.seismic_setup = False
 			
 	def set_param1_mineral(self, reval = False, **kwargs):
 	
@@ -1732,6 +1739,7 @@ class pide(object):
 			raise ValueError("You have to enter 'mineral' or 'rock' as strings.")
 			
 		self.density_loaded = False
+		self.seismic_setup = False
 			
 	def set_melt_properties(self, **kwargs):
 	
@@ -3087,17 +3095,15 @@ class pide(object):
 			return self.bulk_cond
 		elif method == 'index':
 			return self.bulk_cond[index]
-		
-	def calculate_seismic_velocities(self, mixing_method = 'HS'):
+			
+	def _setup_seismic_calculation_(self):
 	
-		"""
-		Calculates seismic velocities of the composition array with the given mixing function.
-		
-		cansu
-		"""
 		id_list_global = []
+		
 		if pide.solid_phase_method == 2:
 		
+			fraction_list = []
+			
 			if np.mean(self.quartz_frac) != 0.0:
 				if self.seis_property_overwrite[0] == False:
 					#handling quartz transitions for calculating velocities with entered T and P
@@ -3114,6 +3120,7 @@ class pide(object):
 					quartz_id_list = np.array([self.quartz_seis_selection] * len(self.T))
 				
 				id_list_global.append(quartz_id_list)
+				fraction_list.append(self.quartz_frac)
 				
 			if np.mean(self.plag_frac) != 0.0:
 				
@@ -3123,6 +3130,7 @@ class pide(object):
 					plag_id_list = np.array([self.plag_seis_selection] * len(self.T))
 				
 				id_list_global.append(plag_id_list)
+				fraction_list.append(self.plag_frac)
 
 			if np.mean(self.amp_frac) != 0.0:
 				
@@ -3132,6 +3140,7 @@ class pide(object):
 					amp_id_list = np.array([self.amp_seis_selection] * len(self.T))
 				
 				id_list_global.append(amp_id_list)
+				fraction_list.append(self.amp_frac)
 
 			if np.mean(self.kfelds_frac) != 0.0:
 				
@@ -3141,6 +3150,7 @@ class pide(object):
 					kfelds_id_list = np.array([self.kfelds_seis_selection] * len(self.T))
 				
 				id_list_global.append(kfelds_id_list)
+				fraction_list.append(self.kfelds_frac)
 
 			if np.mean(self.opx_frac) != 0.0:
 				
@@ -3150,6 +3160,7 @@ class pide(object):
 					opx_id_list = np.array([self.opx_seis_selection] * len(self.T))
 				
 				id_list_global.append(opx_id_list)
+				fraction_list.append(self.opx_frac)
 
 			if np.mean(self.cpx_frac) != 0.0:
 				
@@ -3159,6 +3170,7 @@ class pide(object):
 					cpx_id_list = np.array([self.cpx_seis_selection] * len(self.T))
 				
 				id_list_global.append(cpx_id_list)
+				fraction_list.append(self.cpx_frac)
 
 			if np.mean(self.mica_frac) != 0.0:
 				
@@ -3168,6 +3180,7 @@ class pide(object):
 					mica_id_list = np.array([self.mica_seis_selection] * len(self.T))
 				
 				id_list_global.append(mica_id_list)
+				fraction_list.append(self.mica_frac)
 
 			if np.mean(self.garnet_frac) != 0.0:
 				
@@ -3177,6 +3190,7 @@ class pide(object):
 					garnet_id_list = np.array([self.garnet_seis_selection] * len(self.T))
 				
 				id_list_global.append(garnet_id_list)
+				fraction_list.append(self.garnet_frac)
 
 			if np.mean(self.sulphide_frac) != 0.0:
 				
@@ -3186,6 +3200,7 @@ class pide(object):
 					sulphide_id_list = np.array([self.sulphide_seis_selection] * len(self.T))
 				
 				id_list_global.append(sulphide_id_list)
+				fraction_list.append(self.sulphide_frac)
 
 			if np.mean(self.graphite_frac) != 0.0:
 				
@@ -3195,6 +3210,7 @@ class pide(object):
 					graphite_id_list = np.array([self.graphite_seis_selection] * len(self.T))
 				
 				id_list_global.append(graphite_id_list)
+				fraction_list.append(self.graphite_frac)
 
 			if np.mean(self.ol_frac) != 0.0:
 				
@@ -3204,6 +3220,7 @@ class pide(object):
 					ol_id_list = np.array([self.ol_seis_selection] * len(self.T))
 				
 				id_list_global.append(ol_id_list)
+				fraction_list.append(self.ol_frac)
 
 			if np.mean(self.sp_frac) != 0.0:
 				
@@ -3213,6 +3230,7 @@ class pide(object):
 					sp_id_list = np.array([self.sp_seis_selection] * len(self.T))
 				
 				id_list_global.append(sp_id_list)
+				fraction_list.append(self.sp_frac)
 
 			if np.mean(self.rwd_wds_frac) != 0.0:
 				
@@ -3222,6 +3240,7 @@ class pide(object):
 					rwd_wds_id_list = np.array([self.rwd_wds_seis_selection] * len(self.T))
 				
 				id_list_global.append(rwd_wds_id_list)
+				fraction_list.append(self.rwd_wds_frac)
 
 			if np.mean(self.perov_frac) != 0.0:
 				
@@ -3231,6 +3250,7 @@ class pide(object):
 					perov_id_list = np.array([self.perov_seis_selection] * len(self.T))
 				
 				id_list_global.append(perov_id_list)
+				fraction_list.append(self.perov_frac)
 
 			if np.mean(self.mixture_frac) != 0.0:
 				
@@ -3240,6 +3260,7 @@ class pide(object):
 					mixture_id_list = np.array([self.mixture_seis_selection] * len(self.T))
 				
 				id_list_global.append(mixture_id_list)
+				fraction_list.append(self.mixture_frac)
 
 			if np.mean(self.other_frac) != 0.0:
 				
@@ -3249,6 +3270,117 @@ class pide(object):
 					other_id_list = np.array([self.other_seis_selection] * len(self.T))
 				
 				id_list_global.append(other_id_list)
+				fraction_list.append(self.other_frac)
+				
+			#transposing the id reference lists
+			id_list_global = np.array(id_list_global).T
+			
+			#getting the unique compositions
+			unique_compositions = np.unique(id_list_global, axis = 0)
+			
+			idx_unique = []
+			
+			for ii in range(0,len(unique_compositions)):
+			
+				cmp = np.all(id_list_global == unique_compositions[ii], axis = 1)
+				idx_values = np.where(cmp)[0]
+				idx_unique.append(idx_values)
+				
+			#converting fraction_lists to match composition length
+			fraction_list = np.array(fraction_list).T
+			
+			self.v_bulk = np.zeros(len(self.T))
+			self.v_s = np.zeros(len(self.T))
+			self.v_p = np.zeros(len(self.T))
+			
+			self.v_bulk_upper = np.zeros(len(self.T))
+			self.v_s_upper = np.zeros(len(self.T))
+			self.v_p_upper = np.zeros(len(self.T))
+			
+			self.v_bulk_lower = np.zeros(len(self.T))
+			self.v_s_lower = np.zeros(len(self.T))
+			self.v_p_lower = np.zeros(len(self.T))
+			
+			self.seismic_setup = True
+			
+		return unique_compositions, fraction_list, idx_unique, id_list_global
+		
+	def calculate_seismic_velocities(self, mixing_method = 'HS', method = 'array', return_lower_upper=False, **kwargs):
+	
+		"""
+		Calculates seismic velocities of the composition array with the given mixing function.
+		
+		"""
+		
+		sol_idx = kwargs.pop('sol_idx', 0)
+		
+		if method == 'index':
+			index = sol_idx
+		elif method == 'array':
+			index = None
+		else:
+			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
+		
+		if self.seismic_setup == False:
+		
+			unique_compositions, fraction_list, idx_unique, id_list_global = self._setup_seismic_calculation_()
+					
+		if pide.solid_phase_method == 2:
+		
+			isotropy_object = Isotropy()
+			
+			if method == 'array':
+						
+				for comp_idx in range(0,len(unique_compositions)):
+				
+					phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=unique_compositions[comp_idx], fraction_list=fraction_list[idx_unique[comp_idx]])
+					
+					medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
+					pressure = self.p[idx_unique[comp_idx]], temperature=self.T[idx_unique[comp_idx]])
+					
+					self.v_bulk[idx_unique[comp_idx]] = medium[0]
+					self.v_p[idx_unique[comp_idx]] = medium[1]
+					self.v_s[idx_unique[comp_idx]] = medium[2]
+					
+					self.v_bulk_upper[idx_unique[comp_idx]] = upper[0]
+					self.v_p_upper[idx_unique[comp_idx]] = upper[1]
+					self.v_s_upper[idx_unique[comp_idx]] = upper[2]
+					
+					self.v_bulk_lower[idx_unique[comp_idx]] = lower[0]
+					self.v_p_lower[idx_unique[comp_idx]] = lower[1]
+					self.v_s_lower[idx_unique[comp_idx]] = lower[2]
+				
+				if return_lower_upper == False:
+					return self.v_bulk, self.v_p, self.v_s
+				else:
+					return [self.v_bulk, self.v_p, self.v_s], [self.v_bulk_upper, self.v_p_upper, self.v_s_upper], [self.v_bulk_lower, self.v_p_lower, self.v_s_lower]
+					
+			elif method == 'index':
+			
+				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=id_list_global[index], fraction_list=fraction_list[index])
+				
+				medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list[index], fraction_list=fraction_[index],
+					pressure = self.p[index], temperature=self.T[index])
+					
+				self.v_bulk[index] = medium[0]
+				self.v_p[index] = medium[1]
+				self.v_s[index] = medium[2]
+				
+				self.v_bulk_upper[index] = upper[0]
+				self.v_p_upper[index] = upper[1]
+				self.v_s_upper[index] = upper[2]
+				
+				self.v_bulk_lower[index] = lower[0]
+				self.v_p_lower[index] = lower[1]
+				self.v_s_lower[index] = lower[2]
+			
+				if return_lower_upper == False:
+					return self.v_bulk[index], self.v_p[index], self.v_s[index]
+				else:
+					return [self.v_bulk[index], self.v_p[index], self.v_s[index]],
+					[self.v_bulk_upper[index], self.v_p_upper[index], self.v_s_upper[index]], [self.v_bulk_lower[index], self.v_p_lower[index], self.v_s_lower[index]]
+				
+			
 
 	def calculate_density_solid(self):
 		
