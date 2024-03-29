@@ -4,9 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-
-
-def Dai2015(T,P,water, param1, fo2 = None, fo2_ref = None, method = None):
+def Dai2015_HydrousBasalt(T,P,water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	A1 = 1.49
 	A2 = 1.81

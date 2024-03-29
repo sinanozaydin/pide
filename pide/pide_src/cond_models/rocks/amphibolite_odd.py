@@ -4,17 +4,21 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Shen2021(T,P,water, param1, fo2, fo2_ref, method):
+def Shen2020_Amphibolite(T,P,water, param1, fo2, fo2_ref, method):
+
+	#ref: cond.bib -- Shen2020_Amphibolite
 
 	E = 52210.0
-	dv = 0.33e3
+	dv = 0.33e3 #to multiply with GPa
 	sigma = 10.0**1.93
 	
 	cond = sigma * np.exp(-(E + (P * dv)) / (R_const * T))
 
 	return cond
 
-def Wang2012_PH_Perpendicular(T,P,water, param1, fo2, fo2_ref, method):
+def Wang2012_Amphibolite_H_Perpendicular(T,P,water, param1, fo2, fo2_ref, method):
+
+	#ref: cond.bib -- Wang2012_Amphibolite
 
 	E1 = 66e3
 	E2 = 333e3
@@ -44,7 +48,9 @@ def Wang2012_PH_Perpendicular(T,P,water, param1, fo2, fo2_ref, method):
 
 	return cond
 
-def Wang2012_PH_Parallel(T,P,water, param1, fo2, fo2_ref, method):
+def Wang2012_Amphibolite_PH_Parallel(T,P,water, param1, fo2, fo2_ref, method):
+
+	#ref: rock_cond.bib -- Wang2012_Amphibolite
 
 	E1 = 64e3
 	E2 = 319e3
@@ -74,7 +80,9 @@ def Wang2012_PH_Parallel(T,P,water, param1, fo2, fo2_ref, method):
 
 	return cond
 
-def Wang2012_HA(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
+def Wang2012_Amphibolite_HA(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
+
+	#ref: rock_cond.bib -- Wang2012_Amphibolite
 
 	E1 = 67e3
 	E2 = 378e3

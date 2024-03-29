@@ -14,13 +14,13 @@ def Dai2015_DryGabbro(T,P,water, param1, fo2 = None, fo2_ref = None, method = No
 
 	sigma = 10.0**sigma_interp
 	E = 72e3
-	dv = -6.8e3
+	dv = -6.8e3 #to be multiplied by GPa
 
 	cond = sigma * np.exp(-(E + (P * dv)) / (R_const * T))
 
 	return cond
 
-def Wang2022(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
+def Wang2022_DryGabbro_xCpx(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	sigma = 92.40 * (1 - (0.23 * P))
 	E = 102e3
