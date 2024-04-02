@@ -4,8 +4,6 @@ import numpy as np
 
 R_const = 8.3144621
 
-
-
 def Sun2017_Mudstone_DS6_0_5GPa(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	E1 = 75000.0
