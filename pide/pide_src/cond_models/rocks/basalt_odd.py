@@ -17,7 +17,7 @@ def Dai2015_HydrousBasalt(T,P,water, param1, fo2 = None, fo2_ref = None, method 
 
 	return cond
 
-def Hui2015_AndesiteGrainBoundary(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
+def Hui2015_QuartzAndesiteGrainBoundary(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	sigma = 10.0**2.36
 	E = 90e3
@@ -28,7 +28,7 @@ def Hui2015_AndesiteGrainBoundary(T, P, water, param1, fo2 = None, fo2_ref = Non
 	return cond
 
 
-def Hui2015_AndesiteGrainInterior(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
+def Hui2015_QuartzAndesiteGrainInterior(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	sigma = 10.0**1.63
 	E = 76e3

@@ -20,14 +20,22 @@ def Dai2015_DryGabbro(T,P,water, param1, fo2 = None, fo2_ref = None, method = No
 
 	return cond
 
-def Wang2022_DryGabbro_xCpx(T, P, water, param1, fo2 = None, fo2_ref = None, method = None):
+def Wang2022_DryGabbro_param1_xCpx(T, P, water, param1 = None, fo2 = None, fo2_ref = None, method = None):
 
-	sigma = 92.40 * (1 - (0.23 * P))
-	E = 102e3
-	dv = 6.0e3
-
-	cond = sigma * np.exp(-(E + (P * dv)) / (R_const * T))
-
+	if param1 == None:
+	
+		raise ValueError('xCpx has to be defined between 0.1 to 0.9 to calculate use Wang2022_DryGabbro_param1_xCPx. Define param1 as xCpx.')
+		
+	C = 10**2.47
+	D = 125e3
+	beta = -8.31*1e3
+	gamma = 1.6
+	alpha = 0.12
+	
+	xCpx = param1
+	
+	cond = C * (xCpx**alpha) * np.exp(-(D + (beta * (xCpx**gamma)))/ (R_const*T))
+	
 	return cond
 
 	
