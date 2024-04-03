@@ -4,7 +4,7 @@ import os
 
 core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_src')
 
-import sys, csv, warnings, json
+import sys, csv, re, warnings, json
 import numpy as np
 from scipy.interpolate import interp1d
 
@@ -613,6 +613,8 @@ class pide(object):
 		self.wtype = create_nan_array()
 		self.dens_mat = create_nan_array()
 		self.mat_ref = create_nan_array()
+		self.comp_ref = create_nan_array()
+		self.bib_ref = create_nan_array()
 		
 		#Filling up the arrays.
 		for i in range(0,len(pide.type)):
@@ -650,6 +652,14 @@ class pide(object):
 				except ValueError:
 					self.dens_mat[i][count-1] = self.cond_data_array[i][count][25]
 				self.mat_ref[i][count-1] = self.cond_data_array[i][count][26]
+				try:
+					self.comp_ref[i][count-1] = self.cond_data_array[i][count][27]
+				except IndexError:
+					pass
+				try:
+					self.bib_ref[i][count-1] = self.cond_data_array[i][count][28]
+				except IndexError:
+					pass
 				count += 1
 
 	def read_params(self):
@@ -931,14 +941,15 @@ class pide(object):
 			self.gabbro_frac = self.array_modifier(input = self.gabbro_frac, array = self.T, varname = 'gabbro_frac')
 			self.other_rock_frac = self.array_modifier(input = self.other_rock_frac, array = self.T, varname = 'other_rock_frac')
 		
+		self.rock_frac_list = [self.granite_frac,self.granulite_frac,self.sandstone_frac,self.gneiss_frac,self.amphibolite_frac,
+			self.basalt_frac,self.mud_frac,self.gabbro_frac,self.other_rock_frac]
+		
 		overlookError = kwargs.pop('overlookError', False)
 		
 		if overlookError == False:
-			rock_frac_list = [self.granite_frac,self.granulite_frac,self.sandstone_frac,self.gneiss_frac,self.amphibolite_frac,
-			self.basalt_frac,self.mud_frac,self.gabbro_frac,self.other_rock_frac]
 			
-			for i in range(0,len(rock_frac_list)):
-				if len(np.flatnonzero(rock_frac_list[i] < 0)) != 0:
+			for i in range(0,len(self.rock_frac_list)):
+				if len(np.flatnonzero(self.rock_frac_list[i] < 0)) != 0:
 				
 					raise ValueError('There is a value entered in rock fraction contents that is below zero.')
 		
@@ -1072,7 +1083,7 @@ class pide(object):
 		continue_adjusting = True
 
 		if method == 'rock':
-
+			
 			tot = self.granite_frac + self.granulite_frac + self.sandstone_frac +\
 			self.gneiss_frac + self.amphibolite_frac + self.basalt_frac + self.mud_frac +\
 				 self.gabbro_frac + self.other_rock_frac
@@ -3148,11 +3159,34 @@ class pide(object):
 	def _setup_seismic_calculation_(self):
 	
 		id_list_global = []
+		fraction_list = []
 		
-		if pide.solid_phase_method == 2:
-		
-			fraction_list = []
+		def _defragmentise_(id):
 			
+			id_str = id.replace('/',',')
+			output_dict = dict(re.findall(r'(\w+):([\d.]+)', id_str))
+			
+			return output_dict
+		
+		if pide.solid_phase_method == 1:
+		
+			#rock velocities calculated with the maximum fraction entered. If you want to mix accesorry phases it is best to do it with mineral method.
+		
+			rock_mod_frac_list = []
+			#finding the maximum frac at each
+			rock_id_list = np.argmax(self.rock_frac_list, axis = 0) #the index for which rock is supposed to be chosen
+			
+			for rid in rock_id_list:
+		
+				local_dic = _defragmentise_(self.comp_ref[rid+2][pide.rock_cond_selections[0]])
+				import ipdb
+				ipdb.set_trace()
+				id_list_global.append()
+					
+				
+		
+		elif pide.solid_phase_method == 2:
+				
 			if np.mean(self.quartz_frac) != 0.0:
 				if self.seis_property_overwrite[0] == False:
 					#handling quartz transitions for calculating velocities with entered T and P
@@ -3321,6 +3355,8 @@ class pide(object):
 				id_list_global.append(other_id_list)
 				fraction_list.append(self.other_frac)
 				
+			import ipdb
+			ipdb.set_trace()
 			#transposing the id reference lists
 			id_list_global = np.array(id_list_global).T
 			
@@ -3376,11 +3412,11 @@ class pide(object):
 					
 		if pide.solid_phase_method == 1:
 		
-			pass
+			isotropy_object = Isotropy()
 					
 		elif pide.solid_phase_method == 2:
 		
-			isotropy_object = Isotropy()
+			
 			
 			if method == 'array':
 						
