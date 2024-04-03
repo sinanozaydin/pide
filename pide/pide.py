@@ -1426,7 +1426,36 @@ class pide(object):
 				   pide.cpx_cond_selection, pide.mica_cond_selection, pide.garnet_cond_selection, pide.sulphide_cond_selection,
 				   pide.graphite_cond_selection, pide.ol_cond_selection, pide.sp_cond_selection, pide.rwd_wds_cond_selection, pide.perov_cond_selection,
 				   pide.mixture_cond_selection, pide.other_cond_selection]
-				   
+		
+		pide.sec_minerals_cond_selections = []
+		
+		#if conditionals if two conduction models are chosen in a list, it only accepts two 
+		if any(isinstance(item, list) for item in pide.minerals_cond_selections): #if conditional if there are any lists entered for multiple conduction mechanisms
+		
+			for i in range(0,len(pide.minerals_cond_selections)):
+				
+				if isinstance(pide.minerals_cond_selections[i], list):
+					
+					if len(pide.minerals_cond_selections[i]) == 2:
+					
+						try:
+						
+							pide.sec_minerals_cond_selections.append(pide.minerals_cond_selections[i][1])
+							pide.minerals_cond_selections[i] = pide.minerals_cond_selections[i][0]
+							
+						except IndexError:
+							raise IndexError('There is something wrong with the model conductivity selections.')
+					else:
+						raise ValueError('Only two model indexes can be entered for a mineral.')
+					
+				else:
+				
+					pide.sec_minerals_cond_selections.append(None)
+					
+		else:
+		
+			pide.sec_minerals_cond_selections = [None] * len(pide.minerals_cond_selections)
+					
 		self.mineral_conductivity_choice_check()
 		
 		self.density_loaded = False
@@ -2213,73 +2242,93 @@ class pide(object):
 		if (min_idx < 11) or (min_idx > 27):
 			raise ValueError("The index chosen for mineral conductivity does not appear to be correct. It has to be a value between 11 and 27.")
 
-		cond = np.zeros(len(self.T))
-
 		min_sub_idx = min_idx - self.fluid_num - self.rock_num
 		
-		if ("Wet" in self.name[min_idx][pide.minerals_cond_selections[min_sub_idx]]) == True:
+		min_list = [pide.minerals_cond_selections[min_sub_idx]]
 		
-			water_corr_factor = self.Water_correction(min_idx = min_idx)
+		if pide.sec_minerals_cond_selections[min_sub_idx] != None:
+		
+			min_list.append(pide.sec_minerals_cond_selections[min_sub_idx])
+		
+			cond_list = []
+		
+		for min_sum_idx in min_list:
 			
-			if self.wtype[min_idx][pide.minerals_cond_selections[min_sub_idx]] == 0:
+			cond = np.zeros(len(self.T))
+		
+			if ("Wet" in self.name[min_idx][min_sum_idx]) == True:
+			
+				water_corr_factor = self.Water_correction(min_idx = min_idx, cond_sel_idx = min_sum_idx)
 				
-				water_corr_factor = water_corr_factor * 1e4 #converting to wt % if the model requires
-
+				if self.wtype[min_idx][min_sum_idx] == 0:
+					
+					water_corr_factor = water_corr_factor * 1e4 #converting to wt % if the model requires
+	
+				else:
+				
+					pass
+				
 			else:
+				
+				water_corr_factor = 1.0
+	
 			
-				pass
+			if pide.type[min_idx][min_sum_idx] == '0':
+	
+				cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+									   sigma = self.sigma_i[min_idx][min_sum_idx],
+									   E = self.h_i[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
+									   sigma = self.sigma_pol[min_idx][min_sum_idx],
+									   E = self.h_pol[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0)
+				
+			elif pide.type[min_idx][min_sum_idx] == '1':
+			
+				cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
+									   sigma = self.sigma_i[min_idx][min_sum_idx],
+									   E = self.h_i[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
+									   sigma = self.sigma_pol[min_idx][min_sum_idx],
+									   E = self.h_pol[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
+									   sigma = self.sigma_p[min_idx][min_sum_idx],
+									   E = self.h_p[min_idx][min_sum_idx], r = self.r[min_idx][min_sum_idx],
+									   alpha = self.alpha_p[min_idx][min_sum_idx], water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor)
+				
+			elif pide.type[min_idx][min_sum_idx] == '3':
+	
+				if ('*' in pide.name[min_idx][min_sum_idx]) == True:
+	
+					odd_function = pide.name[min_idx][min_sum_idx].replace('*','')
+	
+				else:
+	
+					odd_function = pide.name[min_idx][min_sum_idx]
+	
+				if ('fo2' in odd_function) == True:
+					
+					cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
+					water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = pide.xfe_mineral_list[min_sub_idx][idx_node],\
+					param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
+					fo2 = self.calculate_fugacity(pide.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method)')
+	
+				else:
+					
+					cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
+					water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
+					xFe = pide.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
+					fo2 = None, fo2_ref = None, method = method)')
+				
+			if (pide.sec_minerals_cond_selections[min_sub_idx] != None) == True:
+				
+				cond_list.append(cond)
+		
+		if (pide.sec_minerals_cond_selections[min_sub_idx] != None) == True:
+			
+			return sum(cond_list)
 			
 		else:
-			
-			water_corr_factor = 1.0
-
 		
-		if pide.type[min_idx][pide.minerals_cond_selections[min_sub_idx]] == '0':
-
-			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_i[min_idx][pide.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_i[min_idx][pide.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_pol[min_idx][pide.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_pol[min_idx][pide.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0)
-			
-		elif pide.type[min_idx][pide.minerals_cond_selections[min_sub_idx]] == '1':
+			return cond		
 		
-			cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_i[min_idx][pide.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_i[min_idx][pide.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_pol[min_idx][pide.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_pol[min_idx][pide.minerals_cond_selections[min_sub_idx]],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
-								   sigma = self.sigma_p[min_idx][pide.minerals_cond_selections[min_sub_idx]],
-								   E = self.h_p[min_idx][pide.minerals_cond_selections[min_sub_idx]], r = self.r[min_idx][pide.minerals_cond_selections[min_sub_idx]],
-								   alpha = self.alpha_p[min_idx][pide.minerals_cond_selections[min_sub_idx]], water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor)
-			
-		elif pide.type[min_idx][pide.minerals_cond_selections[min_sub_idx]] == '3':
-
-			if ('*' in pide.name[min_idx][pide.minerals_cond_selections[min_sub_idx]]) == True:
-
-				odd_function = pide.name[min_idx][pide.minerals_cond_selections[min_sub_idx]].replace('*','')
-
-			else:
-
-				odd_function = pide.name[min_idx][pide.minerals_cond_selections[min_sub_idx]]
-
-			if ('fo2' in odd_function) == True:
-				
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
-				water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = pide.xfe_mineral_list[min_sub_idx][idx_node],\
-				param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
-				fo2 = self.calculate_fugacity(pide.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method)')
-
-			else:
-				
-				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
-				water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
-				xFe = pide.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
-				fo2 = None, fo2_ref = None, method = method)')
-
-		return cond
-		
-	def Water_correction(self, min_idx = None):
+	def Water_correction(self, min_idx = None, cond_sel_idx = None):
 
 		#A function that corrects the water content to desired calibration. Numbers are taken from Demouchy and Bolfan-Casanova (2016, Lithos) for olivine, pyroxene and garnet.
 		#For feldspars, the correction number is taken from Mosenfelder et al. (2015, Am. Min.)
@@ -2287,7 +2336,7 @@ class pide(object):
 		if min_idx == 21:
 		#olivine
 
-			calib_object = self.w_calib[min_idx][pide.ol_cond_selection]
+			calib_object = self.w_calib[min_idx][cond_sel_idx]
 			calib_object_2 = pide.ol_calib
 
 			if calib_object_2 == 0:
@@ -2340,7 +2389,7 @@ class pide(object):
 
 		elif (min_idx == 15) or (min_idx == 16) or (min_idx == 18): #opx, cpx and garnet
 
-			calib_object = self.w_calib[min_idx][pide.minerals_cond_selections[min_idx - self.rock_num - self.fluid_num]]
+			calib_object = self.w_calib[min_idx][cond_sel_idx]
 			calib_object_2 = pide.px_gt_calib
 
 			if calib_object_2 == 0:
@@ -2368,7 +2417,7 @@ class pide(object):
 
 		elif (min_idx == 12) or (min_idx == 14): #Plagioclase and k-feldspar
 			
-			calib_object = self.w_calib[min_idx][pide.minerals_cond_selections[min_idx - self.rock_num - self.fluid_num]]
+			calib_object = self.w_calib[min_idx][cond_sel_idx]
 			calib_object_2 = pide.feldspar_calib
 				
 			if calib_object_2 == 0:
@@ -3325,7 +3374,11 @@ class pide(object):
 		
 			unique_compositions, fraction_list, idx_unique, id_list_global = self._setup_seismic_calculation_()
 					
-		if pide.solid_phase_method == 2:
+		if pide.solid_phase_method == 1:
+		
+			pass
+					
+		elif pide.solid_phase_method == 2:
 		
 			isotropy_object = Isotropy()
 			

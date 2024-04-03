@@ -1,5 +1,5 @@
 StudyName,Type,Tmin(K),Tmax(K),Pmin(GPa),Pmax(GPa),WCalib,Mg#,sigma_i(log[S/m]),sigma_i_err,h_i(j/mol),h_i_err,sigma_pol(log[S/m]),sigma_pol_err,h_pol(j/mol),h_pol_err,sigma_p(log[S/m]),sigma_p_err,h_p(j/mol),h_p_err,r,r_err,alpha_p(j/mol),alpha_p_err,wtype,dens_mat,mat_ref
-Dai2014_DryandWetOlivine,3,573,1373,1,8,0,91,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,fo,fo
+Dai2014_DryandWetOlivine_fo2,3,573,1373,1,8,0,91,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,fo,fo
 Dai2020_WetOlivine_200ppmTi_fo2,3,573,1373,4,4,0,91,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,fo,fo
 Dai2020_WetOlivine_683ppmTi_fo2,3,573,1373,4,4,0,91,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,fo,fo
 Fei2020_WetOlivineIonic_Isotropic,3,1450,2180,2,10,2,91,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,fo,fo

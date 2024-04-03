@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Dai2014_DryandWetOlivine(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
+def Dai2014_DryandWetOlivine_fo2(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
 
 	dv_dai2014 = -0.86 * 1e3 # cm^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
 	p_ref = 4.0
