@@ -3394,7 +3394,7 @@ class pide(object):
 	def calculate_seismic_velocities(self, mixing_method = 'HS', method = 'array', return_lower_upper=False, **kwargs):
 	
 		"""
-		Calculates seismic velocities of the composition array with the given mixing function.
+		Calculates seismic velocities of the composition array with the given mixing function (currently only HashinShtrikman).
 		
 		"""
 		
