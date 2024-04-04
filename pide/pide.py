@@ -3179,12 +3179,15 @@ class pide(object):
 			for rid in rock_id_list:
 		
 				local_dic = _defragmentise_(self.comp_ref[rid+2][pide.rock_cond_selections[0]])
-				import ipdb
-				ipdb.set_trace()
-				id_list_global.append()
-					
+				dic_str = np.array(list(local_dic.keys()))
+				dic_vals = np.array([float(value) for value in local_dic.values()])
 				
-		
+				id_list_global.append(dic_str)
+				fraction_list.append(dic_vals)
+				
+			id_list_global = np.array(id_list_global)
+			fraction_list = np.array(fraction_list)
+			
 		elif pide.solid_phase_method == 2:
 				
 			if np.mean(self.quartz_frac) != 0.0:
@@ -3355,38 +3358,36 @@ class pide(object):
 				id_list_global.append(other_id_list)
 				fraction_list.append(self.other_frac)
 				
-			import ipdb
-			ipdb.set_trace()
+			
 			#transposing the id reference lists
 			id_list_global = np.array(id_list_global).T
-			
-			#getting the unique compositions
-			unique_compositions = np.unique(id_list_global, axis = 0)
-			
-			idx_unique = []
-			
-			for ii in range(0,len(unique_compositions)):
-			
-				cmp = np.all(id_list_global == unique_compositions[ii], axis = 1)
-				idx_values = np.where(cmp)[0]
-				idx_unique.append(idx_values)
-				
 			#converting fraction_lists to match composition length
 			fraction_list = np.array(fraction_list).T
 			
-			self.v_bulk = np.zeros(len(self.T))
-			self.v_s = np.zeros(len(self.T))
-			self.v_p = np.zeros(len(self.T))
+		#getting the unique compositions
+		unique_compositions = np.unique(id_list_global, axis = 0)
+		
+		idx_unique = []
+		
+		for ii in range(0,len(unique_compositions)):
+		
+			cmp = np.all(id_list_global == unique_compositions[ii], axis = 1)
+			idx_values = np.where(cmp)[0]
+			idx_unique.append(idx_values)
 			
-			self.v_bulk_upper = np.zeros(len(self.T))
-			self.v_s_upper = np.zeros(len(self.T))
-			self.v_p_upper = np.zeros(len(self.T))
-			
-			self.v_bulk_lower = np.zeros(len(self.T))
-			self.v_s_lower = np.zeros(len(self.T))
-			self.v_p_lower = np.zeros(len(self.T))
-			
-			self.seismic_setup = True
+		self.v_bulk = np.zeros(len(self.T))
+		self.v_s = np.zeros(len(self.T))
+		self.v_p = np.zeros(len(self.T))
+		
+		self.v_bulk_upper = np.zeros(len(self.T))
+		self.v_s_upper = np.zeros(len(self.T))
+		self.v_p_upper = np.zeros(len(self.T))
+		
+		self.v_bulk_lower = np.zeros(len(self.T))
+		self.v_s_lower = np.zeros(len(self.T))
+		self.v_p_lower = np.zeros(len(self.T))
+		
+		self.seismic_setup = True
 			
 		return unique_compositions, fraction_list, idx_unique, id_list_global
 		
@@ -3410,67 +3411,59 @@ class pide(object):
 		
 			unique_compositions, fraction_list, idx_unique, id_list_global = self._setup_seismic_calculation_()
 					
-		if pide.solid_phase_method == 1:
+		isotropy_object = Isotropy()
 		
-			isotropy_object = Isotropy()
+		if method == 'array':
 					
-		elif pide.solid_phase_method == 2:
+			for comp_idx in range(0,len(unique_compositions)):
+			
+				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=unique_compositions[comp_idx], fraction_list=fraction_list[idx_unique[comp_idx]])
+				
+				medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
+				pressure = self.p[idx_unique[comp_idx]], temperature=self.T[idx_unique[comp_idx]])
+				
+				self.v_bulk[idx_unique[comp_idx]] = medium[0]
+				self.v_p[idx_unique[comp_idx]] = medium[1]
+				self.v_s[idx_unique[comp_idx]] = medium[2]
+				
+				self.v_bulk_upper[idx_unique[comp_idx]] = upper[0]
+				self.v_p_upper[idx_unique[comp_idx]] = upper[1]
+				self.v_s_upper[idx_unique[comp_idx]] = upper[2]
+				
+				self.v_bulk_lower[idx_unique[comp_idx]] = lower[0]
+				self.v_p_lower[idx_unique[comp_idx]] = lower[1]
+				self.v_s_lower[idx_unique[comp_idx]] = lower[2]
+			
+			if return_lower_upper == False:
+				return self.v_bulk, self.v_p, self.v_s
+			else:
+				return [self.v_bulk, self.v_p, self.v_s], [self.v_bulk_upper, self.v_p_upper, self.v_s_upper], [self.v_bulk_lower, self.v_p_lower, self.v_s_lower]
+				
+		elif method == 'index':
 		
+			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=id_list_global[index], fraction_list=fraction_list[index])
 			
+			medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list[index], fraction_list=fraction_[index],
+				pressure = self.p[index], temperature=self.T[index])
+				
+			self.v_bulk[index] = medium[0]
+			self.v_p[index] = medium[1]
+			self.v_s[index] = medium[2]
 			
-			if method == 'array':
-						
-				for comp_idx in range(0,len(unique_compositions)):
-				
-					phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=unique_compositions[comp_idx], fraction_list=fraction_list[idx_unique[comp_idx]])
-					
-					medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
-					pressure = self.p[idx_unique[comp_idx]], temperature=self.T[idx_unique[comp_idx]])
-					
-					self.v_bulk[idx_unique[comp_idx]] = medium[0]
-					self.v_p[idx_unique[comp_idx]] = medium[1]
-					self.v_s[idx_unique[comp_idx]] = medium[2]
-					
-					self.v_bulk_upper[idx_unique[comp_idx]] = upper[0]
-					self.v_p_upper[idx_unique[comp_idx]] = upper[1]
-					self.v_s_upper[idx_unique[comp_idx]] = upper[2]
-					
-					self.v_bulk_lower[idx_unique[comp_idx]] = lower[0]
-					self.v_p_lower[idx_unique[comp_idx]] = lower[1]
-					self.v_s_lower[idx_unique[comp_idx]] = lower[2]
-				
-				if return_lower_upper == False:
-					return self.v_bulk, self.v_p, self.v_s
-				else:
-					return [self.v_bulk, self.v_p, self.v_s], [self.v_bulk_upper, self.v_p_upper, self.v_s_upper], [self.v_bulk_lower, self.v_p_lower, self.v_s_lower]
-					
-			elif method == 'index':
+			self.v_bulk_upper[index] = upper[0]
+			self.v_p_upper[index] = upper[1]
+			self.v_s_upper[index] = upper[2]
 			
-				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=id_list_global[index], fraction_list=fraction_list[index])
+			self.v_bulk_lower[index] = lower[0]
+			self.v_p_lower[index] = lower[1]
+			self.v_s_lower[index] = lower[2]
+		
+			if return_lower_upper == False:
+				return self.v_bulk[index], self.v_p[index], self.v_s[index]
+			else:
+				return [self.v_bulk[index], self.v_p[index], self.v_s[index]],
+				[self.v_bulk_upper[index], self.v_p_upper[index], self.v_s_upper[index]], [self.v_bulk_lower[index], self.v_p_lower[index], self.v_s_lower[index]]
 				
-				medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list[index], fraction_list=fraction_[index],
-					pressure = self.p[index], temperature=self.T[index])
-					
-				self.v_bulk[index] = medium[0]
-				self.v_p[index] = medium[1]
-				self.v_s[index] = medium[2]
-				
-				self.v_bulk_upper[index] = upper[0]
-				self.v_p_upper[index] = upper[1]
-				self.v_s_upper[index] = upper[2]
-				
-				self.v_bulk_lower[index] = lower[0]
-				self.v_p_lower[index] = lower[1]
-				self.v_s_lower[index] = lower[2]
-			
-				if return_lower_upper == False:
-					return self.v_bulk[index], self.v_p[index], self.v_s[index]
-				else:
-					return [self.v_bulk[index], self.v_p[index], self.v_s[index]],
-					[self.v_bulk_upper[index], self.v_p_upper[index], self.v_s_upper[index]], [self.v_bulk_lower[index], self.v_p_lower[index], self.v_s_lower[index]]
-				
-			
-
 	def calculate_density_solid(self):
 		
 		def linear_density(xfe_input, density_list):

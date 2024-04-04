@@ -17,6 +17,7 @@ a.set_pressure([1,2,3])
 a.set_solid_phase_method('rock')
 a.set_composition_solid_rock(granite = [1.0,0.2,1.0],granulite = [0,0.8,0])
 velocities = a.calculate_seismic_velocities()
+print(velocities)
 
 
 
