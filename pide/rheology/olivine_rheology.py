@@ -82,7 +82,7 @@ class olivine_rheology(object):
 		
 		return f_h2o #out in MPa
 		
-	def Hirth_Kohlstedt_2003_diff_fugacity(self, gr_sz, stress, melt, xFe = 0.1, fugacity_model = 'Zhao2004', calibration_model = 'Paterson1982'):
+	def Hirth_Kohlstedt_2003_diff_fugacity(self, gr_sz, stress, melt, fugacity_model = 'Zhao2004', calibration_model = 'Paterson1982'):
 	
 		#P in GPa
 		#T in Kelvin
@@ -120,7 +120,6 @@ class olivine_rheology(object):
 				else:
 					raise ValueError('There is no such reference model for water calibration: ' + str(calibration_model))
 				
-				
 			else:
 			
 				A = 1.5e9
@@ -133,6 +132,48 @@ class olivine_rheology(object):
 			
 			strain_array[i] = strain * water_corr
 			
+		return strain_array
+	
+	def Hirth_Kohlstedt_2003_dislocation_fugacity(self, stress, melt, fugacity_model = 'Zhao2004', calibration_model = 'Paterson1982'):
+	
+		n = 3.5
+		p = 0
+		alpha = 37.5
+		
+		strain_array = np.zeros(len(self.T))
+
+		if self.fugacity_calculated == False:
+			self.fh2o = self.convert_water_to_fh2o(water = self.water, fugacity_model = fugacity_model)
+		
+		for i in range(0,len(self.T)):
+		
+			if self.water[i] >= self.Water_cutoff_rate:
+
+				A = 1600.0
+				r = 1.2
+				dV = 22e-6
+				E = 520000.0
+				if calibration_model == 'Paterson1982':
+					water_corr = 1.0
+				elif calibration_model == 'Bell2003':
+					water_corr = 3.0**r
+				elif calibration_model == 'Withers2012':
+					water_corr = 1.9**r
+				else:
+					raise ValueError('There is no such reference model for water calibration: ' + str(calibration_model))
+				
+			else:
+			
+				A = 1.1e5
+				r = 0.0
+				dV = 15e-6 #the middle of the range
+				E = 530000.0
+				water_corr = 1.0
+
+			strain = A * (stress**n) * ((self.fh2o[i]**r)) * np.exp(melt * alpha) * np.exp(-(E + (self.P*1e9*dV)) / (self.R_const * self.T[i]))
+
+			strain_array[i] = strain * water_corr
+
 		return strain_array
 		
 	def Ohuchi_et_al_2014_GBS(self, gr_sz, stress, fugacity_model = 'Zhao2004',calibration_model = 'Paterson1982'):
