@@ -168,4 +168,106 @@ def Fei2020_WetOlivineIonic_Isotropic(T, P, water, xFe, param1, fo2 = None, fo2_
 		((sigma2) * np.exp(-(E2 + (P*dv2)) / (R_const*T)))
 		
 	return cond
+
+def Novella2017_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+
+	A_H = [-0.7,-5,-3.5]
+
+	EH = [229000.0,172000.0,188000.0]
+
+	if method == 'array':
+		T = T[0]
+		DH_0 = np.zeros((3,len(T)))
+
+	elif method == 'index':
+		T = T
+		DH_0 = np.zeros((3,1))
+
+	DH_0 = np.zeros((3,len(T)))
+
+	for i in range(0,3):
+
+		DH_0[i] = 10**(A_H[i]) * np.exp(-EH[i] / (R_const * T))
+
+
+	DH = (DH_0[0] * DH_0[1] * DH_0[2])**(1.0/3.0)
+
+	return DH
+
+def Sun2019_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+
+	A_H = -7.4
+	EH = 130000.0
+
+	r_sun = 0.41
+
+	DH = (10.0**A_H) * (water**r_sun) * np.exp(-EH / (R_const * T))
+
+	return DH
+
+def DuFrane2012_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+
+	A_H = [-4.9,-5.4,-8.4]
+	EH = [140000.0,170000.0,100000.0]
+
+	if method == 'array':
+		T = T[0]
+		DH_0 = np.zeros((3,len(T)))
+
+	elif method == 'index':
+		T = T
+		DH_0 = np.zeros((3,1))
+
+	DH_0 = np.zeros((3,len(T)))
+
+	for i in range(0,3):
+
+		DH_0[i] = 10**(A_H[i]) * np.exp(-EH[i] / (R_const * T))
+
+	DH = (DH_0[0] * DH_0[1] * DH_0[2])**(1.0/3.0)
+
+	return DH
+
+def Kohlstedt1998_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+
+	A_H = [-3.85,-3.82,-6.83]
+
+	EH = [145000.0,180000.0,110000.0]
+
+	if method == 'array':
+		T = T[0]
+		DH_0 = np.zeros((3,len(T)))
+	elif method == 'index':
+		T = T
+		DH_0 = np.zeros((3,1))
+
+	DH_0 = np.zeros((3,len(T)))
+
+	for i in range(0,3):
+		DH_0[i] = 10**(A_H[i]) * np.exp(-EH[i] / (R_const * T))
+
+	DH = (DH_0[0] * DH_0[1] * DH_0[2])**(1.0/3.0)
+
+	return DH
+
+def Demouchy2006_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+
+	A_H = [-4.5,-4.5,-1.4]
+
+	EH = [204000.0,204000.0,258000.0]
+
+	if method == 'array':
+		T = T[0]
+		DH_0 = np.zeros((3,len(T)))
+
+	elif method == 'index':
+		T = T
+		DH_0 = np.zeros((3,1))
+
+	for i in range(0,3):
+		DH_0[i] = 10**(A_H[i]) * np.exp(-EH[i] / (R_const * T))
+
+	DH = (DH_0[0] * DH_0[1] * DH_0[2])**(1.0/3.0)
+
+	return DH
 		

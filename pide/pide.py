@@ -442,9 +442,12 @@ class pide(object):
 		self.set_melt_properties()
 		self.set_fluid_properties()
 		self.set_phase_interconnectivities()
+		self.set_grain_size()
 		self.set_melt_fluid_interconnectivity()
 		self.set_mantle_water_partitions()
 		self.set_mantle_water_solubility()
+		self.set_grain_boundary_water_partitioning()
+		self.set_grain_boundary_H_Diffusion()
 		self.object_formed = True
 
 		#Some check for temperature being the controlling array errors.
@@ -476,6 +479,7 @@ class pide(object):
 		self.set_phase_interconnectivities(reval = True)
 		if self.phs_melt_mix_method == 0:
 			self.set_melt_fluid_interconnectivity(reval = True)
+		self.set_grain_boundary_water_partitioning(reval = True)
 		
 	def read_csv(self,filename,delim):
 
@@ -676,6 +680,7 @@ class pide(object):
 		self.el_q = float(params_dat[4][1])
 		pide.spreadsheet = str(params_dat[5][1])
 		self.mu = 4.0 * np.pi * 10**(-7)
+		self.delta_gb = 1e-9 #in m
 		
 		#materials.json from satex
 		json_file = 'materials.json'
@@ -1818,7 +1823,21 @@ class pide(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 			
-		self.al_opx = self.array_modifier(input = value, array = self.T, varname = 'al_opx') 
+		self.al_opx = self.array_modifier(input = value, array = self.T, varname = 'al_opx')
+
+	def set_grain_boundary_water_partitioning(self, value = 0.1):
+
+		self.D_GB = self.array_modifier(input = value, array = self.T, varname = 'D_GB')
+
+		if (self.D_GB > 1.0) or (self.D_GB < 0.0):
+			raise ValueError('Grain boundary water partitioning coefficient has to be in between 0 and 1.') 
+
+	def set_grain_boundary_H_Diffusion(self, value = False):
+
+		if type(value) != bool:
+			raise ValueError('The value entered for grain boundary H diffusion has to be True or False')
+		else:
+			self.gb_diff = value
 		
 	def set_phase_interconnectivities(self,reval = False,**kwargs):
 	
@@ -1998,6 +2017,62 @@ class pide(object):
 				   pide.graphite_seis_selection, pide.ol_seis_selection, pide.sp_seis_selection, pide.rwd_wds_seis_selection, pide.perov_seis_selection,
 				   pide.mixture_seis_selection, pide.other_seis_selection]
 		
+	def set_grain_size(self,reval = False,**kwargs):
+
+		if self.temperature_default == True:
+			self.suggestion_temp_array()
+
+		if reval == False:
+			pide.ol_grsz = self.array_modifier(input = kwargs.pop('ol', 1), array = self.T, varname = 'ol_grsz') 
+			pide.opx_grsz = self.array_modifier(input = kwargs.pop('opx', 1), array = self.T, varname = 'opx_grsz') 
+			pide.cpx_grsz = self.array_modifier(input = kwargs.pop('cpx', 1), array = self.T, varname = 'cpx_grsz') 
+			pide.garnet_grsz = self.array_modifier(input = kwargs.pop('garnet', 1), array = self.T, varname = 'garnet_grsz') 
+			pide.mica_grsz = self.array_modifier(input = kwargs.pop('mica', 1), array = self.T, varname = 'mica_grsz') 
+			pide.amp_grsz = self.array_modifier(input = kwargs.pop('amp', 1), array = self.T, varname = 'amp_grsz') 
+			pide.quartz_grsz = self.array_modifier(input = kwargs.pop('quartz', 1), array = self.T, varname = 'quartz_grsz') 
+			pide.plag_grsz = self.array_modifier(input = kwargs.pop('plag', 1), array = self.T, varname = 'plag_grsz') 
+			pide.kfelds_grsz = self.array_modifier(input = kwargs.pop('kfelds', 1), array = self.T, varname = 'kfelds_grsz') 
+			pide.sulphide_grsz = self.array_modifier(input = kwargs.pop('sulphide', 1), array = self.T, varname = 'sulphide_grsz') 
+			pide.graphite_grsz = self.array_modifier(input = kwargs.pop('graphite', 1), array = self.T, varname = 'graphite_grsz') 
+			pide.mixture_grsz = self.array_modifier(input = kwargs.pop('mixture', 1), array = self.T, varname = 'mixture_grsz')
+			pide.sp_grsz = self.array_modifier(input = kwargs.pop('sp', 1), array = self.T, varname = 'sp_grsz')
+			pide.rwd_wds_grsz = self.array_modifier(input = kwargs.pop('rwd_wds', 1), array = self.T, varname = 'rwd_wds_grsz')
+			pide.perov_grsz = self.array_modifier(input = kwargs.pop('perov', 1), array = self.T, varname = 'perov_grsz')
+			pide.other_grsz = self.array_modifier(input = kwargs.pop('other', 1), array = self.T, varname = 'other_grsz') 
+			
+			
+		elif reval == True:
+		
+			pide.ol_grsz = self.array_modifier(input = pide.ol_grsz, array = self.T, varname = 'ol_grsz') 
+			pide.opx_grsz = self.array_modifier(input = pide.opx_grsz, array = self.T, varname = 'opx_grsz') 
+			pide.cpx_grsz = self.array_modifier(input = pide.cpx_grsz, array = self.T, varname = 'cpx_grsz') 
+			pide.garnet_grsz = self.array_modifier(input = pide.garnet_grsz, array = self.T, varname = 'garnet_grsz') 
+			pide.mica_grsz = self.array_modifier(input = pide.mica_grsz, array = self.T, varname = 'mica_grsz') 
+			pide.amp_grsz = self.array_modifier(input = pide.amp_grsz, array = self.T, varname = 'amp_grsz') 
+			pide.quartz_grsz = self.array_modifier(input = pide.quartz_grsz, array = self.T, varname = 'quartz_grsz') 
+			pide.plag_grsz = self.array_modifier(input = pide.plag_grsz, array = self.T, varname = 'plag_grsz') 
+			pide.kfelds_grsz = self.array_modifier(input = pide.kfelds_grsz, array = self.T, varname = 'kfelds_grsz') 
+			pide.sulphide_grsz = self.array_modifier(input = pide.sulphide_grsz, array = self.T, varname = 'sulphide_grsz') 
+			pide.graphite_grsz = self.array_modifier(input = pide.graphite_grsz, array = self.T, varname = 'graphite_grsz') 
+			pide.mixture_grsz = self.array_modifier(input = pide.mixture_grsz, array = self.T, varname = 'mixture_grsz')
+			pide.sp_grsz = self.array_modifier(input = pide.sp_grsz, array = self.T, varname = 'sp_grsz')
+			pide.rwd_wds_grsz = self.array_modifier(input = pide.rwd_wds_grsz, array = self.T, varname = 'rwd_wds_grsz')
+			pide.perov_grsz = self.array_modifier(input = pide.perov_grsz, array = self.T, varname = 'perov_grsz')
+			pide.other_grsz = self.array_modifier(input = pide.other_grsz, array = self.T, varname = 'other_grsz') 
+
+
+		overlookError = kwargs.pop('overlookError', False)
+		
+		if overlookError == False:
+		
+			list_of_values_minerals = [pide.ol_grsz,pide.opx_grsz,pide.cpx_grsz,pide.garnet_grsz,pide.mica_grsz,pide.amp_grsz,pide.quartz_grsz,pide.plag_grsz,pide.kfelds_grsz,
+			pide.sulphide_grsz,pide.graphite_grsz, pide.sp_grsz, pide.rwd_wds_grsz,pide.perov_grsz, pide.mixture_grsz,pide.other_grsz]
+			
+			for i in range(0,len(list_of_values_minerals)):
+			
+				if len(np.flatnonzero(list_of_values_minerals[i] < 0.0)) != 0:
+				
+					raise ValueError('There is a value entered in mineral mineral grain sizes that apperas to be below 0.')
 		
 	def list_phs_mix_methods(self):
 	
@@ -2326,6 +2401,62 @@ class pide(object):
 					water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
 					xFe = pide.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
 					fo2 = None, fo2_ref = None, method = method)')
+
+			elif pide.type[min_idx][min_sum_idx] == '4':
+
+				DH = np.zeros_like(cond)
+				h2o_h_mineral = np.zeros_like(cond)
+
+				if ('*' in pide.name[min_idx][min_sum_idx]) == True:
+	
+					odd_function = pide.name[min_idx][min_sum_idx].replace('*','')
+	
+				else:
+	
+					odd_function = pide.name[min_idx][min_sum_idx]
+
+
+				pass #cansu
+				
+				rho_mineral = self.calculate_density_solid(min_idx = min_idx)
+				h2o_h_mineral[idx_node] = (self.avog * (rho_mineral[idx_node]*1e3) * (pide.mineral_water_list[min_sub_idx][idx_node]/(1e4))) / 153.3 #Conversion from Jones (2016)
+				
+				if self.gb_diff == True:
+
+					D_GB_ol = np.zeros_like(cond)
+
+					if min_idx == 21:
+						#Olivine grain boundary H diffusion after Demouchy 2010 - 
+						D_GB_ol[idx_node] = (10.0**-3.4) * np.exp(-54e3 / (self.R*self.T[idx_node]))
+						calc_gb = True
+
+					else:
+						calc_gb = False
+					
+				else:
+
+					calc_gb = False
+
+				if calc_gb == False:
+					
+					DH[idx_node] =  eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
+					water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
+					xFe = pide.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
+					fo2 = None, fo2_ref = None, method = method)')
+
+					cond[idx_node] = ((DH[idx_node] * (h2o_h_mineral[idx_node]/water_corr_factor) * (self.el_q**2.0)) / (self.boltz*self.T[idx_node])) #Nernst-Einstein Equation
+					
+				else:
+					DH[idx_node] =  eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
+					water = pide.mineral_water_list[min_sub_idx][idx_node] * (1.0-self.D_GB)/ water_corr_factor,\
+					xFe = pide.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
+					fo2 = None, fo2_ref = None, method = method)')
+					
+					cond[idx_node] = (((DH[idx_node]) + (self.D_GB *\
+									 (3*self.delta_gb/(pide.ol_grsz[idx_node]*1e-3)) * D_GB_ol[idx_node])) * h2o_h_mineral[idx_node] * (self.el_q**2.0)) / (self.boltz*self.T[idx_node])
+					import ipdb
+					ipdb.set_trace()
+
 				
 			if (pide.sec_minerals_cond_selections[min_sub_idx] != None) == True:
 				
@@ -3464,7 +3595,7 @@ class pide(object):
 				return [self.v_bulk[index], self.v_p[index], self.v_s[index]],
 				[self.v_bulk_upper[index], self.v_p_upper[index], self.v_s_upper[index]], [self.v_bulk_lower[index], self.v_p_lower[index], self.v_s_lower[index]]
 				
-	def calculate_density_solid(self):
+	def calculate_density_solid(self, min_idx = None):
 		
 		def linear_density(xfe_input, density_list):
 		
@@ -3480,12 +3611,23 @@ class pide(object):
 				pide.sulphide_cond_selection, pide.graphite_cond_selection, pide.ol_cond_selection,
 				pide.sp_cond_selection, pide.rwd_wds_cond_selection, pide.perov_cond_selection,
 				pide.mixture_cond_selection, pide.other_cond_selection]
-				
+		
+		#bypassing the multiple selections, trusting people won't choose very two different conductivity models, so that reference would be same
+		if any(isinstance(item, list) for item in min_sel_list):
+			bools_list = [isinstance(item, list) for item in min_sel_list]
+
+			for ii in range(0,len(bools_list)):
+
+				if bools_list[ii] == True:
+					min_sel_list[ii] = min_sel_list[ii][0]
+		
+		#minerals reference list if xFe will be used in calculations
 		id_mineral_ref_list = [None, None, None, None, ["13","14"],["16","17"], None,
 		["10","8"],None, None, ["11", "12"], None, ["11", "12"], None, None, None]
 				
 		dens_xfe_calc_list = ["fo", "fa", "en", "fs", "py", "alm", "di", "hed"]
 			
+		#calculating minerals here now
 		if self.density_loaded == False:
 					
 			if pide.solid_phase_method == 1:
@@ -3528,10 +3670,18 @@ class pide(object):
 								
 				#calling satex object to calculate density under P-T conditions
 				satex_isot_object = Isotropy()
-				
-				for mineral in range(11,27):
+
+				#if clauses for calculations involving a single mineral
+				if min_idx != None:
+					min_start = 11
+					min_end = 27
+				else:
+					min_start = min_idx
+					min_end = min_idx + 1
+
+				for mineral in range(min_start, min_end):
 					if np.mean(phase_list[mineral-11]) != 0.0:
-					
+						
 						if type(self.dens_mat[mineral][min_sel_list[mineral-11]]) == float:
 							#if no reference given to a materials.json instance take the float as the density
 							dens_list.append(float(self.dens_mat[mineral][min_sel_list[mineral-11]])/1e3 * np.ones(len(self.T)))
@@ -3575,15 +3725,21 @@ class pide(object):
 					else:
 					
 						dens_list.append(0.0)
-							
-				self.density_loaded = True
+				if min_idx == None:		
+					self.density_loaded = True
 
-			density_indv = 0.0
-						
-			for j in range(0,len(phase_list)):
-				density_indv = density_indv + (phase_list[j] * dens_list[j])
-			
-			self.density_solids = density_indv
+			if min_idx == None:
+				
+				density_indv = 0.0
+							
+				for j in range(0,len(phase_list)):
+					density_indv = density_indv + (phase_list[j] * dens_list[j])
+				
+				self.density_solids = density_indv
+
+			else:
+
+				return density
 			
 	def calculate_fugacity(self,mode):
 
