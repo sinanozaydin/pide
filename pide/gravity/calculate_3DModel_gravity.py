@@ -83,24 +83,15 @@ def calculate_3DModel_gravity(density_array, mesh, height, num_cpu, gravity_type
 		#Get the process ID of the current process
 		pid = os.getpid()
 		
-		#Set CPU affinity for the process
 		p = psutil.Process(pid)
-		cpu_count = psutil.cpu_count()
-		
-		#Get total available CPU count
+	
 		total_cpu_count = psutil.cpu_count()
 		
-		#Generate a list of CPU indices to use
 		cpu_affinity = list(range(num_cpu))
 		
-		#Ensure we don't exceed the total CPU count
 		cpu_affinity = cpu_affinity[:total_cpu_count]
-		
-		# Set CPU affinity for the process
 		p.cpu_affinity(cpu_affinity)
 		
 		g_z = hm.prism_gravity(pred_coords, prisms_rock.T, density_3d, field='g_z')
-	import ipdb
-	ipdb.set_trace()
-	
+		
 	return g_z

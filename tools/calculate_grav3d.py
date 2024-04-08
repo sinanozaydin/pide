@@ -28,8 +28,6 @@ density_array = setup_uw_data_array_PROJ_3D(density_data)
 
 g = calculate_3DModel_gravity(density_array = density_array, mesh = mesh, height = 30, num_cpu = 4)
 
-import ipdb
-ipdb.set_trace()
 
 
 
