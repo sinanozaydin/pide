@@ -17,23 +17,20 @@ authors:
     equal-contrib: true
     corresponding: true 
     affiliation: 1 
-  - name: Utpal Singh
-    affiliation: 1
   - name: Lu Li
     affiliation: 2
+  - name: Utpal Singh
+    affiliation: 1
   - name: Patrice F. Rey
     affiliation: 1
-  - name: Maria Constanza Manassero
-    affiliation: 3
 
 affiliations:
  - name: School of Geosciences, University of Sydney, Sydney, Australia.
    index: 1
  - name: School of Earth Sciences, University of Western Australia, Perth, Australia.
    index: 2
- - name: School of Natural Sciences, University of Tasmania, Hobart, Australia.
-   index: 3
-date: 16 August 2023
+
+date: 20 April 2023
 bibliography: paper.bib
 ---
 
