@@ -36,6 +36,7 @@ class Material(object):
 		self._composition = None
 		self.composition = composition
 		
+		#magnetotellurics
 		if interconnectivities == None:
 			if self.calculation_type == 'rock':
 				interconnectivities = {'granite':1}
@@ -120,7 +121,10 @@ class Material(object):
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
 			raise AttributeError('Calculation type is selected as value. You have to set resistivity medium as a floating number in Ohm meters.')
-						
+		
+		#magnetics
+		self.magnetic_susceptibility = kwargs.pop('magnetic_susceptivility', 1e-6)
+			
 	def check_vals(self,value,type):
 		
 		for item in value:
@@ -272,3 +276,11 @@ class Material(object):
 	@o2_buffer.setter
 	def o2_buffer(self, value):
 		self._o2_buffer = value
+		
+	@property
+	def magnetic_susceptibility(self):
+		return self._magnetic_susceptibility
+		
+	@magnetic_susceptibility.setter
+	def magnetic_susceptibility(self, value):
+		self._magnetic_susceptibility = value
