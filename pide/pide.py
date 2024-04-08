@@ -52,7 +52,7 @@ from pide_src.eos.fluid_eos import *
 #importing mineral stability functions
 from pide_src.min_stab.min_stab import *
 #importing utils
-from utils.utils import *
+from utils.utils import check_type, array_modifier
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -840,7 +840,7 @@ class pide(object):
 				
 	def set_parameter(self, param_name, value):
 		
-		setattr(self, param_name, self.array_modifier(input = value, array=self.T,varname = param_name))
+		setattr(self, param_name, array_modifier(input = value, array=self.T,varname = param_name))
 	
 	def set_composition_solid_mineral(self, reval = False, **kwargs):
 			
@@ -848,39 +848,39 @@ class pide(object):
 			self.suggestion_temp_array()
 		
 		if reval == False:
-			self.ol_frac = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_frac')
-			self.opx_frac = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_frac')
-			self.cpx_frac = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_frac')
-			self.garnet_frac = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_frac')
-			self.mica_frac = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_frac')
-			self.amp_frac = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_frac')
-			self.quartz_frac = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_frac')
-			self.plag_frac = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_frac')
-			self.kfelds_frac = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_frac')
-			self.sulphide_frac = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_frac')
-			self.graphite_frac = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
-			self.mixture_frac = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
-			self.sp_frac = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_frac')
-			self.rwd_wds_frac = self.array_modifier(input = kwargs.pop('rwd_wds', 0), array = self.T, varname = 'rwd_wds_frac')
-			self.perov_frac = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_frac')
-			self.other_frac = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
+			self.ol_frac = array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_frac')
+			self.opx_frac = array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_frac')
+			self.cpx_frac = array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_frac')
+			self.garnet_frac = array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_frac')
+			self.mica_frac = array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_frac')
+			self.amp_frac = array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_frac')
+			self.quartz_frac = array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_frac')
+			self.plag_frac = array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_frac')
+			self.kfelds_frac = array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_frac')
+			self.sulphide_frac = array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_frac')
+			self.graphite_frac = array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_frac')
+			self.mixture_frac = array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_frac')
+			self.sp_frac = array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_frac')
+			self.rwd_wds_frac = array_modifier(input = kwargs.pop('rwd_wds', 0), array = self.T, varname = 'rwd_wds_frac')
+			self.perov_frac = array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_frac')
+			self.other_frac = array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_frac')
 		elif reval == True:
-			self.ol_frac = self.array_modifier(input = self.ol_frac, array = self.T, varname = 'ol_frac')
-			self.opx_frac = self.array_modifier(input = self.opx_frac, array = self.T, varname = 'opx_frac')
-			self.cpx_frac = self.array_modifier(input = self.cpx_frac, array = self.T, varname = 'cpx_frac')
-			self.garnet_frac = self.array_modifier(input = self.garnet_frac, array = self.T, varname = 'garnet_frac')
-			self.mica_frac = self.array_modifier(input = self.mica_frac, array = self.T, varname = 'mica_frac')
-			self.amp_frac = self.array_modifier(input = self.amp_frac, array = self.T, varname = 'amp_frac')
-			self.quartz_frac = self.array_modifier(input = self.quartz_frac, array = self.T, varname = 'quartz_frac')
-			self.plag_frac = self.array_modifier(input = self.plag_frac, array = self.T, varname = 'plag_frac')
-			self.kfelds_frac = self.array_modifier(input = self.kfelds_frac, array = self.T, varname = 'kfelds_frac')
-			self.sulphide_frac = self.array_modifier(input = self.sulphide_frac, array = self.T, varname = 'sulphide_frac')
-			self.graphite_frac = self.array_modifier(input = self.graphite_frac, array = self.T, varname = 'graphite_frac')
-			self.mixture_frac = self.array_modifier(input = self.mixture_frac, array = self.T, varname = 'mixture_frac')
-			self.sp_frac = self.array_modifier(input = self.sp_frac, array = self.T, varname = 'sp_frac')
-			self.rwd_wds_frac = self.array_modifier(input = self.rwd_wds_frac, array = self.T, varname = 'rwd_wds_frac')
-			self.perov_frac = self.array_modifier(input = self.perov_frac, array = self.T, varname = 'perov_frac')
-			self.other_frac = self.array_modifier(input = self.other_frac, array = self.T, varname = 'other_frac')
+			self.ol_frac = array_modifier(input = self.ol_frac, array = self.T, varname = 'ol_frac')
+			self.opx_frac = array_modifier(input = self.opx_frac, array = self.T, varname = 'opx_frac')
+			self.cpx_frac = array_modifier(input = self.cpx_frac, array = self.T, varname = 'cpx_frac')
+			self.garnet_frac = array_modifier(input = self.garnet_frac, array = self.T, varname = 'garnet_frac')
+			self.mica_frac = array_modifier(input = self.mica_frac, array = self.T, varname = 'mica_frac')
+			self.amp_frac = array_modifier(input = self.amp_frac, array = self.T, varname = 'amp_frac')
+			self.quartz_frac = array_modifier(input = self.quartz_frac, array = self.T, varname = 'quartz_frac')
+			self.plag_frac = array_modifier(input = self.plag_frac, array = self.T, varname = 'plag_frac')
+			self.kfelds_frac = array_modifier(input = self.kfelds_frac, array = self.T, varname = 'kfelds_frac')
+			self.sulphide_frac = array_modifier(input = self.sulphide_frac, array = self.T, varname = 'sulphide_frac')
+			self.graphite_frac = array_modifier(input = self.graphite_frac, array = self.T, varname = 'graphite_frac')
+			self.mixture_frac = array_modifier(input = self.mixture_frac, array = self.T, varname = 'mixture_frac')
+			self.sp_frac = array_modifier(input = self.sp_frac, array = self.T, varname = 'sp_frac')
+			self.rwd_wds_frac = array_modifier(input = self.rwd_wds_frac, array = self.T, varname = 'rwd_wds_frac')
+			self.perov_frac = array_modifier(input = self.perov_frac, array = self.T, varname = 'perov_frac')
+			self.other_frac = array_modifier(input = self.other_frac, array = self.T, varname = 'other_frac')
 		
 		#Converting fractions to water holding species that has an exchange with coexisting melt. 
 		#Calculation of equilibrium of water with other minerals are not constrained.
@@ -926,25 +926,25 @@ class pide(object):
 			self.suggestion_temp_array()
 		
 		if reval == False:
-			self.granite_frac = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_frac')
-			self.granulite_frac = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_frac')
-			self.sandstone_frac = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_frac')
-			self.gneiss_frac = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_frac')
-			self.amphibolite_frac = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_frac')
-			self.basalt_frac = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_frac')
-			self.mud_frac = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
-			self.gabbro_frac = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
-			self.other_rock_frac = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_frac')
+			self.granite_frac = array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_frac')
+			self.granulite_frac = array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_frac')
+			self.sandstone_frac = array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_frac')
+			self.gneiss_frac = array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_frac')
+			self.amphibolite_frac = array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_frac')
+			self.basalt_frac = array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_frac')
+			self.mud_frac = array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_frac')
+			self.gabbro_frac = array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_frac')
+			self.other_rock_frac = array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_frac')
 		elif reval == True:
-			self.granite_frac = self.array_modifier(input = self.granite_frac, array = self.T, varname = 'granite_frac')
-			self.granulite_frac = self.array_modifier(input = self.granulite_frac, array = self.T, varname = 'granulite_frac')
-			self.sandstone_frac = self.array_modifier(input = self.sandstone_frac, array = self.T, varname = 'sandstone_frac')
-			self.gneiss_frac = self.array_modifier(input = self.gneiss_frac, array = self.T, varname = 'gneiss_frac')
-			self.amphibolite_frac = self.array_modifier(input = self.amphibolite_frac, array = self.T, varname = 'amphibolite_frac')
-			self.basalt_frac = self.array_modifier(input = self.basalt_frac, array = self.T, varname = 'basalt_frac')
-			self.mud_frac = self.array_modifier(input = self.mud_frac, array = self.T, varname = 'mud_frac')
-			self.gabbro_frac = self.array_modifier(input = self.gabbro_frac, array = self.T, varname = 'gabbro_frac')
-			self.other_rock_frac = self.array_modifier(input = self.other_rock_frac, array = self.T, varname = 'other_rock_frac')
+			self.granite_frac = array_modifier(input = self.granite_frac, array = self.T, varname = 'granite_frac')
+			self.granulite_frac = array_modifier(input = self.granulite_frac, array = self.T, varname = 'granulite_frac')
+			self.sandstone_frac = array_modifier(input = self.sandstone_frac, array = self.T, varname = 'sandstone_frac')
+			self.gneiss_frac = array_modifier(input = self.gneiss_frac, array = self.T, varname = 'gneiss_frac')
+			self.amphibolite_frac = array_modifier(input = self.amphibolite_frac, array = self.T, varname = 'amphibolite_frac')
+			self.basalt_frac = array_modifier(input = self.basalt_frac, array = self.T, varname = 'basalt_frac')
+			self.mud_frac = array_modifier(input = self.mud_frac, array = self.T, varname = 'mud_frac')
+			self.gabbro_frac = array_modifier(input = self.gabbro_frac, array = self.T, varname = 'gabbro_frac')
+			self.other_rock_frac = array_modifier(input = self.other_rock_frac, array = self.T, varname = 'other_rock_frac')
 		
 		self.rock_frac_list = [self.granite_frac,self.granulite_frac,self.sandstone_frac,self.gneiss_frac,self.amphibolite_frac,
 			self.basalt_frac,self.mud_frac,self.gabbro_frac,self.other_rock_frac]
@@ -1011,7 +1011,7 @@ class pide(object):
 			
 		else:
 		
-			self.depth = self.array_modifier(input = depth, array = self.T, varname = 'depth')
+			self.depth = array_modifier(input = depth, array = self.T, varname = 'depth')
 			
 		self.density_loaded = False
 		self.seismic_setup = False
@@ -1526,41 +1526,41 @@ class pide(object):
 			self.suggestion_temp_array()
 			
 		if reval == False:
-			pide.ol_water = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_water')
-			pide.opx_water = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_water')
-			pide.cpx_water = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_water')
-			pide.garnet_water = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_water')
-			pide.mica_water = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_water')
-			pide.amp_water = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_water')
-			pide.quartz_water = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_water')
-			pide.plag_water = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_water')
-			pide.kfelds_water = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_water')
-			pide.sulphide_water = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_water')
-			pide.graphite_water = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_water')
-			pide.sp_water = self.array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_water')
-			pide.rwd_wds_water = self.array_modifier(input = kwargs.pop('rwd_wds', 0), array = self.T, varname = 'rwd_wds_water')
-			pide.perov_water = self.array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_water')
-			pide.mixture_water = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_water')
-			pide.other_water = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_water')
+			pide.ol_water = array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_water')
+			pide.opx_water = array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_water')
+			pide.cpx_water = array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_water')
+			pide.garnet_water = array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_water')
+			pide.mica_water = array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_water')
+			pide.amp_water = array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_water')
+			pide.quartz_water = array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_water')
+			pide.plag_water = array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_water')
+			pide.kfelds_water = array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_water')
+			pide.sulphide_water = array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_water')
+			pide.graphite_water = array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_water')
+			pide.sp_water = array_modifier(input = kwargs.pop('sp', 0), array = self.T, varname = 'sp_water')
+			pide.rwd_wds_water = array_modifier(input = kwargs.pop('rwd_wds', 0), array = self.T, varname = 'rwd_wds_water')
+			pide.perov_water = array_modifier(input = kwargs.pop('perov', 0), array = self.T, varname = 'perov_water')
+			pide.mixture_water = array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_water')
+			pide.other_water = array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_water')
 			
 		elif reval == True:
 		
-			pide.ol_water = self.array_modifier(input = pide.ol_water, array = self.T, varname = 'ol_water')
-			pide.opx_water = self.array_modifier(input = pide.opx_water, array = self.T, varname = 'opx_water')
-			pide.cpx_water = self.array_modifier(input = pide.cpx_water, array = self.T, varname = 'cpx_water')
-			pide.garnet_water = self.array_modifier(input = pide.garnet_water, array = self.T, varname = 'garnet_water')
-			pide.mica_water = self.array_modifier(input = pide.mica_water, array = self.T, varname = 'mica_water')
-			pide.amp_water = self.array_modifier(input = pide.amp_water, array = self.T, varname = 'amp_water')
-			pide.quartz_water = self.array_modifier(input = pide.quartz_water, array = self.T, varname = 'quartz_water')
-			pide.plag_water = self.array_modifier(input = pide.plag_water, array = self.T, varname = 'plag_water')
-			pide.kfelds_water = self.array_modifier(input = pide.kfelds_water, array = self.T, varname = 'kfelds_water')
-			pide.sulphide_water = self.array_modifier(input = pide.sulphide_water, array = self.T, varname = 'sulphide_water')
-			pide.graphite_water = self.array_modifier(input = pide.graphite_water, array = self.T, varname = 'graphite_water')
-			pide.sp_water = self.array_modifier(input = pide.sp_water, array = self.T, varname = 'sp_water')
-			pide.rwd_wds_water = self.array_modifier(input = pide.rwd_wds_water, array = self.T, varname = 'rwd_wds_water')
-			pide.perov_water = self.array_modifier(input = pide.perov_water, array = self.T, varname = 'perov_water')
-			pide.mixture_water = self.array_modifier(input = pide.mixture_water, array = self.T, varname = 'mixture_water')
-			pide.other_water = self.array_modifier(input = pide.other_water, array = self.T, varname = 'other_water')
+			pide.ol_water = array_modifier(input = pide.ol_water, array = self.T, varname = 'ol_water')
+			pide.opx_water = array_modifier(input = pide.opx_water, array = self.T, varname = 'opx_water')
+			pide.cpx_water = array_modifier(input = pide.cpx_water, array = self.T, varname = 'cpx_water')
+			pide.garnet_water = array_modifier(input = pide.garnet_water, array = self.T, varname = 'garnet_water')
+			pide.mica_water = array_modifier(input = pide.mica_water, array = self.T, varname = 'mica_water')
+			pide.amp_water = array_modifier(input = pide.amp_water, array = self.T, varname = 'amp_water')
+			pide.quartz_water = array_modifier(input = pide.quartz_water, array = self.T, varname = 'quartz_water')
+			pide.plag_water = array_modifier(input = pide.plag_water, array = self.T, varname = 'plag_water')
+			pide.kfelds_water = array_modifier(input = pide.kfelds_water, array = self.T, varname = 'kfelds_water')
+			pide.sulphide_water = array_modifier(input = pide.sulphide_water, array = self.T, varname = 'sulphide_water')
+			pide.graphite_water = array_modifier(input = pide.graphite_water, array = self.T, varname = 'graphite_water')
+			pide.sp_water = array_modifier(input = pide.sp_water, array = self.T, varname = 'sp_water')
+			pide.rwd_wds_water = array_modifier(input = pide.rwd_wds_water, array = self.T, varname = 'rwd_wds_water')
+			pide.perov_water = array_modifier(input = pide.perov_water, array = self.T, varname = 'perov_water')
+			pide.mixture_water = array_modifier(input = pide.mixture_water, array = self.T, varname = 'mixture_water')
+			pide.other_water = array_modifier(input = pide.other_water, array = self.T, varname = 'other_water')
 			
 		overlookError = kwargs.pop('overlookError', False)
 
@@ -1583,27 +1583,27 @@ class pide(object):
 		
 		if reval == False:
 		
-			pide.granite_water = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_water')
-			pide.granulite_water = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_water')
-			pide.sandstone_water = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_water')
-			pide.gneiss_water = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_water')
-			pide.amphibolite_water = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_water')
-			pide.basalt_water = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_water')
-			pide.mud_water = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_water')
-			pide.gabbro_water = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_water')
-			pide.other_rock_water = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_water')
+			pide.granite_water = array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_water')
+			pide.granulite_water = array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_water')
+			pide.sandstone_water = array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_water')
+			pide.gneiss_water = array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_water')
+			pide.amphibolite_water = array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_water')
+			pide.basalt_water = array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_water')
+			pide.mud_water = array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_water')
+			pide.gabbro_water = array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_water')
+			pide.other_rock_water = array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_water')
 			
 		elif reval == True:
 		
-			pide.granite_water = self.array_modifier(input = pide.granite_water, array = self.T, varname = 'granite_water')
-			pide.granulite_water = self.array_modifier(input = pide.granulite_water, array = self.T, varname = 'granulite_water')
-			pide.sandstone_water = self.array_modifier(input = pide.sandstone_water, array = self.T, varname = 'sandstone_water')
-			pide.gneiss_water = self.array_modifier(input = pide.gneiss_water, array = self.T, varname = 'gneiss_water')
-			pide.amphibolite_water = self.array_modifier(input = pide.amphibolite_water, array = self.T, varname = 'amphibolite_water')
-			pide.basalt_water = self.array_modifier(input = pide.basalt_water, array = self.T, varname = 'basalt_water')
-			pide.mud_water = self.array_modifier(input = pide.mud_water, array = self.T, varname = 'mud_water')
-			pide.gabbro_water = self.array_modifier(input = pide.gabbro_water, array = self.T, varname = 'gabbro_water')
-			pide.other_rock_water = self.array_modifier(input = pide.other_rock_water, array = self.T, varname = 'other_rock_water')
+			pide.granite_water = array_modifier(input = pide.granite_water, array = self.T, varname = 'granite_water')
+			pide.granulite_water = array_modifier(input = pide.granulite_water, array = self.T, varname = 'granulite_water')
+			pide.sandstone_water = array_modifier(input = pide.sandstone_water, array = self.T, varname = 'sandstone_water')
+			pide.gneiss_water = array_modifier(input = pide.gneiss_water, array = self.T, varname = 'gneiss_water')
+			pide.amphibolite_water = array_modifier(input = pide.amphibolite_water, array = self.T, varname = 'amphibolite_water')
+			pide.basalt_water = array_modifier(input = pide.basalt_water, array = self.T, varname = 'basalt_water')
+			pide.mud_water = array_modifier(input = pide.mud_water, array = self.T, varname = 'mud_water')
+			pide.gabbro_water = array_modifier(input = pide.gabbro_water, array = self.T, varname = 'gabbro_water')
+			pide.other_rock_water = array_modifier(input = pide.other_rock_water, array = self.T, varname = 'other_rock_water')
 			
 		
 		pide.rock_water_list = [pide.granite_water, pide.granulite_water,
@@ -1617,8 +1617,8 @@ class pide(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 			
-		self.bulk_water = self.array_modifier(input = value, array = self.T, varname = 'bulk_water')
-		self.solid_water = self.array_modifier(input = value, array = self.T, varname = 'solid_water')
+		self.bulk_water = array_modifier(input = value, array = self.T, varname = 'bulk_water')
+		self.solid_water = array_modifier(input = value, array = self.T, varname = 'solid_water')
 		
 		self.set_mineral_water() #Running an empty run of this to equate the length of mineral water arrays with the defined T
 		
@@ -1633,41 +1633,41 @@ class pide(object):
 		
 		if reval == False:
 		
-			pide.ol_xfe = self.array_modifier(input = kwargs.pop('ol', 0.1), array = self.T, varname = 'ol_xfe')
-			pide.opx_xfe = self.array_modifier(input = kwargs.pop('opx', 0.1), array = self.T, varname = 'opx_xfe')
-			pide.cpx_xfe = self.array_modifier(input = kwargs.pop('cpx', 0.1), array = self.T, varname = 'cpx_xfe')
-			pide.garnet_xfe = self.array_modifier(input = kwargs.pop('garnet', 0.1), array = self.T, varname = 'garnet_xfe')
-			pide.mica_xfe = self.array_modifier(input = kwargs.pop('mica', 0.1), array = self.T, varname = 'mica_xfe')
-			pide.amp_xfe = self.array_modifier(input = kwargs.pop('amp', 0.1), array = self.T, varname = 'amp_xfe')
-			pide.quartz_xfe = self.array_modifier(input = kwargs.pop('quartz', 0.1), array = self.T, varname = 'quartz_xfe')
-			pide.plag_xfe = self.array_modifier(input = kwargs.pop('plag', 0.1), array = self.T, varname = 'plag_xfe')
-			pide.kfelds_xfe = self.array_modifier(input = kwargs.pop('kfelds', 0.1), array = self.T, varname = 'kfelds_xfe')
-			pide.sulphide_xfe = self.array_modifier(input = kwargs.pop('sulphide', 0.1), array = self.T, varname = 'sulphide_xfe')
-			pide.graphite_xfe = self.array_modifier(input = kwargs.pop('graphite', 0.1), array = self.T, varname = 'graphite_xfe')
-			pide.sp_xfe = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_xfe')
-			pide.rwd_wds_xfe = self.array_modifier(input = kwargs.pop('rwd_wds', 0.1), array = self.T, varname = 'rwd_wds_xfe')
-			pide.perov_xfe = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_xfe')
-			pide.mixture_xfe = self.array_modifier(input = kwargs.pop('mixture', 0.1), array = self.T, varname = 'mixture_xfe')
-			pide.other_xfe = self.array_modifier(input = kwargs.pop('other', 0.1), array = self.T, varname = 'other_xfe')
+			pide.ol_xfe = array_modifier(input = kwargs.pop('ol', 0.1), array = self.T, varname = 'ol_xfe')
+			pide.opx_xfe = array_modifier(input = kwargs.pop('opx', 0.1), array = self.T, varname = 'opx_xfe')
+			pide.cpx_xfe = array_modifier(input = kwargs.pop('cpx', 0.1), array = self.T, varname = 'cpx_xfe')
+			pide.garnet_xfe = array_modifier(input = kwargs.pop('garnet', 0.1), array = self.T, varname = 'garnet_xfe')
+			pide.mica_xfe = array_modifier(input = kwargs.pop('mica', 0.1), array = self.T, varname = 'mica_xfe')
+			pide.amp_xfe = array_modifier(input = kwargs.pop('amp', 0.1), array = self.T, varname = 'amp_xfe')
+			pide.quartz_xfe = array_modifier(input = kwargs.pop('quartz', 0.1), array = self.T, varname = 'quartz_xfe')
+			pide.plag_xfe = array_modifier(input = kwargs.pop('plag', 0.1), array = self.T, varname = 'plag_xfe')
+			pide.kfelds_xfe = array_modifier(input = kwargs.pop('kfelds', 0.1), array = self.T, varname = 'kfelds_xfe')
+			pide.sulphide_xfe = array_modifier(input = kwargs.pop('sulphide', 0.1), array = self.T, varname = 'sulphide_xfe')
+			pide.graphite_xfe = array_modifier(input = kwargs.pop('graphite', 0.1), array = self.T, varname = 'graphite_xfe')
+			pide.sp_xfe = array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_xfe')
+			pide.rwd_wds_xfe = array_modifier(input = kwargs.pop('rwd_wds', 0.1), array = self.T, varname = 'rwd_wds_xfe')
+			pide.perov_xfe = array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_xfe')
+			pide.mixture_xfe = array_modifier(input = kwargs.pop('mixture', 0.1), array = self.T, varname = 'mixture_xfe')
+			pide.other_xfe = array_modifier(input = kwargs.pop('other', 0.1), array = self.T, varname = 'other_xfe')
 			
 		elif reval == True:
 		
-			pide.ol_xfe = self.array_modifier(input = pide.ol_xfe, array = self.T, varname = 'ol_xfe')
-			pide.opx_xfe = self.array_modifier(input = pide.opx_xfe, array = self.T, varname = 'opx_xfe')
-			pide.cpx_xfe = self.array_modifier(input = pide.cpx_xfe, array = self.T, varname = 'cpx_xfe')
-			pide.garnet_xfe = self.array_modifier(input = pide.garnet_xfe, array = self.T, varname = 'garnet_xfe')
-			pide.mica_xfe = self.array_modifier(input = pide.mica_xfe, array = self.T, varname = 'mica_xfe')
-			pide.amp_xfe = self.array_modifier(input = pide.amp_xfe, array = self.T, varname = 'amp_xfe')
-			pide.quartz_xfe = self.array_modifier(input = pide.quartz_xfe, array = self.T, varname = 'quartz_xfe')
-			pide.plag_xfe = self.array_modifier(input = pide.plag_xfe, array = self.T, varname = 'plag_xfe')
-			pide.kfelds_xfe = self.array_modifier(input = pide.kfelds_xfe, array = self.T, varname = 'kfelds_xfe')
-			pide.sulphide_xfe = self.array_modifier(input = pide.sulphide_xfe, array = self.T, varname = 'sulphide_xfe')
-			pide.graphite_xfe = self.array_modifier(input = pide.graphite_xfe, array = self.T, varname = 'graphite_xfe')
-			pide.sp_xfe = self.array_modifier(input = pide.sp_xfe, array = self.T, varname = 'sp_xfe')
-			pide.rwd_wds_xfe = self.array_modifier(input = pide.rwd_wds_xfe, array = self.T, varname = 'rwd_wds_xfe')
-			pide.perov_xfe = self.array_modifier(input = pide.perov_xfe, array = self.T, varname = 'perov_xfe')
-			pide.mixture_xfe = self.array_modifier(input = pide.mixture_xfe, array = self.T, varname = 'mixture_xfe')
-			pide.other_xfe = self.array_modifier(input = pide.other_xfe, array = self.T, varname = 'other_xfe')
+			pide.ol_xfe = array_modifier(input = pide.ol_xfe, array = self.T, varname = 'ol_xfe')
+			pide.opx_xfe = array_modifier(input = pide.opx_xfe, array = self.T, varname = 'opx_xfe')
+			pide.cpx_xfe = array_modifier(input = pide.cpx_xfe, array = self.T, varname = 'cpx_xfe')
+			pide.garnet_xfe = array_modifier(input = pide.garnet_xfe, array = self.T, varname = 'garnet_xfe')
+			pide.mica_xfe = array_modifier(input = pide.mica_xfe, array = self.T, varname = 'mica_xfe')
+			pide.amp_xfe = array_modifier(input = pide.amp_xfe, array = self.T, varname = 'amp_xfe')
+			pide.quartz_xfe = array_modifier(input = pide.quartz_xfe, array = self.T, varname = 'quartz_xfe')
+			pide.plag_xfe = array_modifier(input = pide.plag_xfe, array = self.T, varname = 'plag_xfe')
+			pide.kfelds_xfe = array_modifier(input = pide.kfelds_xfe, array = self.T, varname = 'kfelds_xfe')
+			pide.sulphide_xfe = array_modifier(input = pide.sulphide_xfe, array = self.T, varname = 'sulphide_xfe')
+			pide.graphite_xfe = array_modifier(input = pide.graphite_xfe, array = self.T, varname = 'graphite_xfe')
+			pide.sp_xfe = array_modifier(input = pide.sp_xfe, array = self.T, varname = 'sp_xfe')
+			pide.rwd_wds_xfe = array_modifier(input = pide.rwd_wds_xfe, array = self.T, varname = 'rwd_wds_xfe')
+			pide.perov_xfe = array_modifier(input = pide.perov_xfe, array = self.T, varname = 'perov_xfe')
+			pide.mixture_xfe = array_modifier(input = pide.mixture_xfe, array = self.T, varname = 'mixture_xfe')
+			pide.other_xfe = array_modifier(input = pide.other_xfe, array = self.T, varname = 'other_xfe')
 		
 		pide.xfe_mineral_list = [pide.quartz_xfe, pide.plag_xfe, pide.amp_xfe, pide.kfelds_xfe,
 			 pide.opx_xfe, pide.cpx_xfe, pide.mica_xfe, pide.garnet_xfe, pide.sulphide_xfe,
@@ -1682,41 +1682,41 @@ class pide(object):
 			self.suggestion_temp_array()
 		
 		if reval == False:
-			pide.ol_param1 = self.array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param1')
-			pide.opx_param1 = self.array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param1')
-			pide.cpx_param1 = self.array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param1')
-			pide.garnet_param1 = self.array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param1')
-			pide.mica_param1 = self.array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param1')
-			pide.amp_param1 = self.array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param1')
-			pide.quartz_param1 = self.array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param1')
-			pide.plag_param1 = self.array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param1')
-			pide.kfelds_param1 = self.array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param1')
-			pide.sulphide_param1 = self.array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param1')
-			pide.graphite_param1 = self.array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param1')
-			pide.sp_param1 = self.array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param1')
-			pide.rwd_wds_param1 = self.array_modifier(input = kwargs.pop('rwd_wds', 0.1), array = self.T, varname = 'rwd_wds_param1')
-			pide.perov_param1 = self.array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param1')
-			pide.mixture_param1 = self.array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param1')
-			pide.other_param1 = self.array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param1')
+			pide.ol_param1 = array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param1')
+			pide.opx_param1 = array_modifier(input = kwargs.pop('opx', 0), array = self.T, varname = 'opx_param1')
+			pide.cpx_param1 = array_modifier(input = kwargs.pop('cpx', 0), array = self.T, varname = 'cpx_param1')
+			pide.garnet_param1 = array_modifier(input = kwargs.pop('garnet', 0), array = self.T, varname = 'garnet_param1')
+			pide.mica_param1 = array_modifier(input = kwargs.pop('mica', 0), array = self.T, varname = 'mica_param1')
+			pide.amp_param1 = array_modifier(input = kwargs.pop('amp', 0), array = self.T, varname = 'amp_param1')
+			pide.quartz_param1 = array_modifier(input = kwargs.pop('quartz', 0), array = self.T, varname = 'quartz_param1')
+			pide.plag_param1 = array_modifier(input = kwargs.pop('plag', 0), array = self.T, varname = 'plag_param1')
+			pide.kfelds_param1 = array_modifier(input = kwargs.pop('kfelds', 0), array = self.T, varname = 'kfelds_param1')
+			pide.sulphide_param1 = array_modifier(input = kwargs.pop('sulphide', 0), array = self.T, varname = 'sulphide_param1')
+			pide.graphite_param1 = array_modifier(input = kwargs.pop('graphite', 0), array = self.T, varname = 'graphite_param1')
+			pide.sp_param1 = array_modifier(input = kwargs.pop('sp', 0.1), array = self.T, varname = 'sp_param1')
+			pide.rwd_wds_param1 = array_modifier(input = kwargs.pop('rwd_wds', 0.1), array = self.T, varname = 'rwd_wds_param1')
+			pide.perov_param1 = array_modifier(input = kwargs.pop('perov', 0.1), array = self.T, varname = 'perov_param1')
+			pide.mixture_param1 = array_modifier(input = kwargs.pop('mixture', 0), array = self.T, varname = 'mixture_param1')
+			pide.other_param1 = array_modifier(input = kwargs.pop('other', 0), array = self.T, varname = 'other_param1')
 		
 		elif reval == True:
 			
-			pide.ol_param1 = self.array_modifier(input = pide.ol_param1, array = self.T, varname = 'ol_param1')
-			pide.opx_param1 = self.array_modifier(input = pide.opx_param1, array = self.T, varname = 'opx_param1')
-			pide.cpx_param1 = self.array_modifier(input = pide.cpx_param1, array = self.T, varname = 'cpx_param1')
-			pide.garnet_param1 = self.array_modifier(input = pide.garnet_param1, array = self.T, varname = 'garnet_param1')
-			pide.mica_param1 = self.array_modifier(input = pide.mica_param1, array = self.T, varname = 'mica_param1')
-			pide.amp_param1 = self.array_modifier(input = pide.amp_param1, array = self.T, varname = 'amp_param1')
-			pide.quartz_param1 = self.array_modifier(input = pide.quartz_param1, array = self.T, varname = 'quartz_param1')
-			pide.plag_param1 = self.array_modifier(input = pide.plag_param1, array = self.T, varname = 'plag_param1')
-			pide.kfelds_param1 = self.array_modifier(input = pide.kfelds_param1, array = self.T, varname = 'kfelds_param1')
-			pide.sulphide_param1 = self.array_modifier(input = pide.sulphide_param1, array = self.T, varname = 'sulphide_param1')
-			pide.graphite_param1 = self.array_modifier(input = pide.graphite_param1, array = self.T, varname = 'graphite_param1')
-			pide.sp_param1 = self.array_modifier(input = pide.sp_param1, array = self.T, varname = 'sp_param1')
-			pide.rwd_wds_param1 = self.array_modifier(input = pide.rwd_wds_param1, array = self.T, varname = 'rwd_wds_param1')
-			pide.perov_param1 = self.array_modifier(input = pide.perov_param1, array = self.T, varname = 'perov_param1')
-			pide.mixture_param1 = self.array_modifier(input = pide.mixture_param1, array = self.T, varname = 'mixture_param1')
-			pide.other_param1 = self.array_modifier(input = pide.other_param1, array = self.T, varname = 'other_param1')
+			pide.ol_param1 = array_modifier(input = pide.ol_param1, array = self.T, varname = 'ol_param1')
+			pide.opx_param1 = array_modifier(input = pide.opx_param1, array = self.T, varname = 'opx_param1')
+			pide.cpx_param1 = array_modifier(input = pide.cpx_param1, array = self.T, varname = 'cpx_param1')
+			pide.garnet_param1 = array_modifier(input = pide.garnet_param1, array = self.T, varname = 'garnet_param1')
+			pide.mica_param1 = array_modifier(input = pide.mica_param1, array = self.T, varname = 'mica_param1')
+			pide.amp_param1 = array_modifier(input = pide.amp_param1, array = self.T, varname = 'amp_param1')
+			pide.quartz_param1 = array_modifier(input = pide.quartz_param1, array = self.T, varname = 'quartz_param1')
+			pide.plag_param1 = array_modifier(input = pide.plag_param1, array = self.T, varname = 'plag_param1')
+			pide.kfelds_param1 = array_modifier(input = pide.kfelds_param1, array = self.T, varname = 'kfelds_param1')
+			pide.sulphide_param1 = array_modifier(input = pide.sulphide_param1, array = self.T, varname = 'sulphide_param1')
+			pide.graphite_param1 = array_modifier(input = pide.graphite_param1, array = self.T, varname = 'graphite_param1')
+			pide.sp_param1 = array_modifier(input = pide.sp_param1, array = self.T, varname = 'sp_param1')
+			pide.rwd_wds_param1 = array_modifier(input = pide.rwd_wds_param1, array = self.T, varname = 'rwd_wds_param1')
+			pide.perov_param1 = array_modifier(input = pide.perov_param1, array = self.T, varname = 'perov_param1')
+			pide.mixture_param1 = array_modifier(input = pide.mixture_param1, array = self.T, varname = 'mixture_param1')
+			pide.other_param1 = array_modifier(input = pide.other_param1, array = self.T, varname = 'other_param1')
 			
 		pide.param1_mineral_list = [pide.quartz_param1, pide.plag_param1, pide.amp_param1, pide.kfelds_param1,
 			 pide.opx_param1, pide.cpx_param1, pide.mica_param1, pide.garnet_param1, pide.sulphide_param1,
@@ -1728,27 +1728,27 @@ class pide(object):
 			self.suggestion_temp_array()
 		
 		if reval == False:
-			pide.granite_param1 = self.array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param1')
-			pide.granulite_param1 = self.array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param1')
-			pide.sandstone_param1 = self.array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param1')
-			pide.gneiss_param1 = self.array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param1')
-			pide.amphibolite_param1 = self.array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param1')
-			pide.basalt_param1 = self.array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param1')
-			pide.mud_param1 = self.array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param1')
-			pide.gabbro_param1 = self.array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param1')
-			pide.other_rock_param1 = self.array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_param1')
+			pide.granite_param1 = array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param1')
+			pide.granulite_param1 = array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param1')
+			pide.sandstone_param1 = array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param1')
+			pide.gneiss_param1 = array_modifier(input = kwargs.pop('gneiss', 0), array = self.T, varname = 'gneiss_param1')
+			pide.amphibolite_param1 = array_modifier(input = kwargs.pop('amphibolite', 0), array = self.T, varname = 'amphibolite_param1')
+			pide.basalt_param1 = array_modifier(input = kwargs.pop('basalt', 0), array = self.T, varname = 'basalt_param1')
+			pide.mud_param1 = array_modifier(input = kwargs.pop('mud', 0), array = self.T, varname = 'mud_param1')
+			pide.gabbro_param1 = array_modifier(input = kwargs.pop('gabbro', 0), array = self.T, varname = 'gabbro_param1')
+			pide.other_rock_param1 = array_modifier(input = kwargs.pop('other_rock', 0), array = self.T, varname = 'other_rock_param1')
 			
 		elif reval == True:
 		
-			pide.granite_param1 = self.array_modifier(input = pide.granite_param1, array = self.T, varname = 'granite_param1')
-			pide.granulite_param1 = self.array_modifier(input = pide.granulite_param1, array = self.T, varname = 'granulite_param1')
-			pide.sandstone_param1 = self.array_modifier(input = pide.sandstone_param1, array = self.T, varname = 'sandstone_param1')
-			pide.gneiss_param1 = self.array_modifier(input = pide.gneiss_param1, array = self.T, varname = 'gneiss_param1')
-			pide.amphibolite_param1 = self.array_modifier(input = pide.amphibolite_param1, array = self.T, varname = 'amphibolite_param1')
-			pide.basalt_param1 = self.array_modifier(input = pide.basalt_param1, array = self.T, varname = 'basalt_param1')
-			pide.mud_param1 = self.array_modifier(input = pide.mud_param1, array = self.T, varname = 'mud_param1')
-			pide.gabbro_param1 = self.array_modifier(input = pide.gabbro_param1, array = self.T, varname = 'gabbro_param1')
-			pide.other_rock_param1 = self.array_modifier(input = pide.other_rock_param1, array = self.T, varname = 'other_rock_param1')
+			pide.granite_param1 = array_modifier(input = pide.granite_param1, array = self.T, varname = 'granite_param1')
+			pide.granulite_param1 = array_modifier(input = pide.granulite_param1, array = self.T, varname = 'granulite_param1')
+			pide.sandstone_param1 = array_modifier(input = pide.sandstone_param1, array = self.T, varname = 'sandstone_param1')
+			pide.gneiss_param1 = array_modifier(input = pide.gneiss_param1, array = self.T, varname = 'gneiss_param1')
+			pide.amphibolite_param1 = array_modifier(input = pide.amphibolite_param1, array = self.T, varname = 'amphibolite_param1')
+			pide.basalt_param1 = array_modifier(input = pide.basalt_param1, array = self.T, varname = 'basalt_param1')
+			pide.mud_param1 = array_modifier(input = pide.mud_param1, array = self.T, varname = 'mud_param1')
+			pide.gabbro_param1 = array_modifier(input = pide.gabbro_param1, array = self.T, varname = 'gabbro_param1')
+			pide.other_rock_param1 = array_modifier(input = pide.other_rock_param1, array = self.T, varname = 'other_rock_param1')
 		
 		pide.param1_rock_list = [pide.granite_param1, pide.granulite_param1,
 			pide.sandstone_param1, pide.gneiss_param1, pide.amphibolite_param1, pide.basalt_param1,
@@ -1759,7 +1759,7 @@ class pide(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 	
-		self.melt_fluid_mass_frac = self.array_modifier(input = value, array = self.T, varname = 'melt_fluid_mass_frac')
+		self.melt_fluid_mass_frac = array_modifier(input = value, array = self.T, varname = 'melt_fluid_mass_frac')
 		
 		if len(np.flatnonzero(self.melt_fluid_mass_frac < 0)) != 0:
 		
@@ -1791,10 +1791,10 @@ class pide(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 	
-		self.co2_melt = self.array_modifier(input = kwargs.pop('co2', 0), array = self.T, varname = 'co2_melt')  #in ppm
-		self.h2o_melt = self.array_modifier(input = kwargs.pop('water', 0), array = self.T, varname = 'h2o_melt')  #in ppm
-		self.na2o_melt = self.array_modifier(input = kwargs.pop('na2o', 0), array = self.T, varname = 'na2o_melt')  #in wt
-		self.k2o_melt = self.array_modifier(input = kwargs.pop('k2o', 0), array = self.T, varname = 'k2o_melt')  #in wt
+		self.co2_melt = array_modifier(input = kwargs.pop('co2', 0), array = self.T, varname = 'co2_melt')  #in ppm
+		self.h2o_melt = array_modifier(input = kwargs.pop('water', 0), array = self.T, varname = 'h2o_melt')  #in ppm
+		self.na2o_melt = array_modifier(input = kwargs.pop('na2o', 0), array = self.T, varname = 'na2o_melt')  #in wt
+		self.k2o_melt = array_modifier(input = kwargs.pop('k2o', 0), array = self.T, varname = 'k2o_melt')  #in wt
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
@@ -1812,7 +1812,7 @@ class pide(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 
-		self.salinity_fluid = self.array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
+		self.salinity_fluid = array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
 		
 		if len(np.flatnonzero(self.salinity_fluid < 0)) != 0:
 		
@@ -1823,11 +1823,11 @@ class pide(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 			
-		self.al_opx = self.array_modifier(input = value, array = self.T, varname = 'al_opx')
+		self.al_opx = array_modifier(input = value, array = self.T, varname = 'al_opx')
 
 	def set_grain_boundary_water_partitioning(self, value = 0.1):
 
-		self.D_GB = self.array_modifier(input = value, array = self.T, varname = 'D_GB')
+		self.D_GB = array_modifier(input = value, array = self.T, varname = 'D_GB')
 
 		if (self.D_GB > 1.0) or (self.D_GB < 0.0):
 			raise ValueError('Grain boundary water partitioning coefficient has to be in between 0 and 1.') 
@@ -1844,61 +1844,61 @@ class pide(object):
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 		if reval == False:
-			pide.ol_m = self.array_modifier(input = kwargs.pop('ol', 4), array = self.T, varname = 'ol_m') 
-			pide.opx_m = self.array_modifier(input = kwargs.pop('opx', 4), array = self.T, varname = 'opx_m') 
-			pide.cpx_m = self.array_modifier(input = kwargs.pop('cpx', 4), array = self.T, varname = 'cpx_m') 
-			pide.garnet_m = self.array_modifier(input = kwargs.pop('garnet', 4), array = self.T, varname = 'garnet_m') 
-			pide.mica_m = self.array_modifier(input = kwargs.pop('mica', 4), array = self.T, varname = 'mica_m') 
-			pide.amp_m = self.array_modifier(input = kwargs.pop('amp', 4), array = self.T, varname = 'amp_m') 
-			pide.quartz_m = self.array_modifier(input = kwargs.pop('quartz', 4), array = self.T, varname = 'quartz_m') 
-			pide.plag_m = self.array_modifier(input = kwargs.pop('plag', 4), array = self.T, varname = 'plag_m') 
-			pide.kfelds_m = self.array_modifier(input = kwargs.pop('kfelds', 4), array = self.T, varname = 'kfelds_m') 
-			pide.sulphide_m = self.array_modifier(input = kwargs.pop('sulphide', 4), array = self.T, varname = 'sulphide_m') 
-			pide.graphite_m = self.array_modifier(input = kwargs.pop('graphite', 4), array = self.T, varname = 'graphite_m') 
-			pide.mixture_m = self.array_modifier(input = kwargs.pop('mixture', 4), array = self.T, varname = 'mixture_m')
-			pide.sp_m = self.array_modifier(input = kwargs.pop('sp', 4), array = self.T, varname = 'sp_m')
-			pide.rwd_wds_m = self.array_modifier(input = kwargs.pop('rwd_wds', 4), array = self.T, varname = 'rwd_wds_m')
-			pide.perov_m = self.array_modifier(input = kwargs.pop('perov', 4), array = self.T, varname = 'perov_m')
-			pide.other_m = self.array_modifier(input = kwargs.pop('other', 4), array = self.T, varname = 'other_m') 
+			pide.ol_m = array_modifier(input = kwargs.pop('ol', 4), array = self.T, varname = 'ol_m') 
+			pide.opx_m = array_modifier(input = kwargs.pop('opx', 4), array = self.T, varname = 'opx_m') 
+			pide.cpx_m = array_modifier(input = kwargs.pop('cpx', 4), array = self.T, varname = 'cpx_m') 
+			pide.garnet_m = array_modifier(input = kwargs.pop('garnet', 4), array = self.T, varname = 'garnet_m') 
+			pide.mica_m = array_modifier(input = kwargs.pop('mica', 4), array = self.T, varname = 'mica_m') 
+			pide.amp_m = array_modifier(input = kwargs.pop('amp', 4), array = self.T, varname = 'amp_m') 
+			pide.quartz_m = array_modifier(input = kwargs.pop('quartz', 4), array = self.T, varname = 'quartz_m') 
+			pide.plag_m = array_modifier(input = kwargs.pop('plag', 4), array = self.T, varname = 'plag_m') 
+			pide.kfelds_m = array_modifier(input = kwargs.pop('kfelds', 4), array = self.T, varname = 'kfelds_m') 
+			pide.sulphide_m = array_modifier(input = kwargs.pop('sulphide', 4), array = self.T, varname = 'sulphide_m') 
+			pide.graphite_m = array_modifier(input = kwargs.pop('graphite', 4), array = self.T, varname = 'graphite_m') 
+			pide.mixture_m = array_modifier(input = kwargs.pop('mixture', 4), array = self.T, varname = 'mixture_m')
+			pide.sp_m = array_modifier(input = kwargs.pop('sp', 4), array = self.T, varname = 'sp_m')
+			pide.rwd_wds_m = array_modifier(input = kwargs.pop('rwd_wds', 4), array = self.T, varname = 'rwd_wds_m')
+			pide.perov_m = array_modifier(input = kwargs.pop('perov', 4), array = self.T, varname = 'perov_m')
+			pide.other_m = array_modifier(input = kwargs.pop('other', 4), array = self.T, varname = 'other_m') 
 			
-			pide.granite_m = self.array_modifier(input = kwargs.pop('granite', 4), array = self.T, varname = 'granite_m') 
-			pide.granulite_m = self.array_modifier(input = kwargs.pop('granulite', 4), array = self.T, varname = 'granulite_m') 
-			pide.sandstone_m = self.array_modifier(input = kwargs.pop('sandstone', 4), array = self.T, varname = 'sandstone_m') 
-			pide.gneiss_m = self.array_modifier(input = kwargs.pop('gneiss', 4), array = self.T, varname = 'gneiss_m') 
-			pide.amphibolite_m = self.array_modifier(input = kwargs.pop('amphibolite', 4), array = self.T, varname = 'amphibolite_m') 
-			pide.basalt_m = self.array_modifier(input = kwargs.pop('basalt', 4), array = self.T, varname = 'basalt_m') 
-			pide.mud_m = self.array_modifier(input = kwargs.pop('mud', 4), array = self.T, varname = 'mud_m') 
-			pide.gabbro_m = self.array_modifier(input = kwargs.pop('gabbro', 4), array = self.T, varname = 'gabbro_m') 
-			pide.other_rock_m = self.array_modifier(input = kwargs.pop('other_rock', 4), array = self.T, varname = 'other_rock_m') 
+			pide.granite_m = array_modifier(input = kwargs.pop('granite', 4), array = self.T, varname = 'granite_m') 
+			pide.granulite_m = array_modifier(input = kwargs.pop('granulite', 4), array = self.T, varname = 'granulite_m') 
+			pide.sandstone_m = array_modifier(input = kwargs.pop('sandstone', 4), array = self.T, varname = 'sandstone_m') 
+			pide.gneiss_m = array_modifier(input = kwargs.pop('gneiss', 4), array = self.T, varname = 'gneiss_m') 
+			pide.amphibolite_m = array_modifier(input = kwargs.pop('amphibolite', 4), array = self.T, varname = 'amphibolite_m') 
+			pide.basalt_m = array_modifier(input = kwargs.pop('basalt', 4), array = self.T, varname = 'basalt_m') 
+			pide.mud_m = array_modifier(input = kwargs.pop('mud', 4), array = self.T, varname = 'mud_m') 
+			pide.gabbro_m = array_modifier(input = kwargs.pop('gabbro', 4), array = self.T, varname = 'gabbro_m') 
+			pide.other_rock_m = array_modifier(input = kwargs.pop('other_rock', 4), array = self.T, varname = 'other_rock_m') 
 			
 		elif reval == True:
 		
-			pide.ol_m = self.array_modifier(input = pide.ol_m, array = self.T, varname = 'ol_m') 
-			pide.opx_m = self.array_modifier(input = pide.opx_m, array = self.T, varname = 'opx_m') 
-			pide.cpx_m = self.array_modifier(input = pide.cpx_m, array = self.T, varname = 'cpx_m') 
-			pide.garnet_m = self.array_modifier(input = pide.garnet_m, array = self.T, varname = 'garnet_m') 
-			pide.mica_m = self.array_modifier(input = pide.mica_m, array = self.T, varname = 'mica_m') 
-			pide.amp_m = self.array_modifier(input = pide.amp_m, array = self.T, varname = 'amp_m') 
-			pide.quartz_m = self.array_modifier(input = pide.quartz_m, array = self.T, varname = 'quartz_m') 
-			pide.plag_m = self.array_modifier(input = pide.plag_m, array = self.T, varname = 'plag_m') 
-			pide.kfelds_m = self.array_modifier(input = pide.kfelds_m, array = self.T, varname = 'kfelds_m') 
-			pide.sulphide_m = self.array_modifier(input = pide.sulphide_m, array = self.T, varname = 'sulphide_m') 
-			pide.graphite_m = self.array_modifier(input = pide.graphite_m, array = self.T, varname = 'graphite_m') 
-			pide.mixture_m = self.array_modifier(input = pide.mixture_m, array = self.T, varname = 'mixture_m')
-			pide.sp_m = self.array_modifier(input = pide.sp_m, array = self.T, varname = 'sp_m')
-			pide.rwd_wds_m = self.array_modifier(input = pide.rwd_wds_m, array = self.T, varname = 'rwd_wds_m')
-			pide.perov_m = self.array_modifier(input = pide.perov_m, array = self.T, varname = 'perov_m')
-			pide.other_m = self.array_modifier(input = pide.other_m, array = self.T, varname = 'other_m') 
+			pide.ol_m = array_modifier(input = pide.ol_m, array = self.T, varname = 'ol_m') 
+			pide.opx_m = array_modifier(input = pide.opx_m, array = self.T, varname = 'opx_m') 
+			pide.cpx_m = array_modifier(input = pide.cpx_m, array = self.T, varname = 'cpx_m') 
+			pide.garnet_m = array_modifier(input = pide.garnet_m, array = self.T, varname = 'garnet_m') 
+			pide.mica_m = array_modifier(input = pide.mica_m, array = self.T, varname = 'mica_m') 
+			pide.amp_m = array_modifier(input = pide.amp_m, array = self.T, varname = 'amp_m') 
+			pide.quartz_m = array_modifier(input = pide.quartz_m, array = self.T, varname = 'quartz_m') 
+			pide.plag_m = array_modifier(input = pide.plag_m, array = self.T, varname = 'plag_m') 
+			pide.kfelds_m = array_modifier(input = pide.kfelds_m, array = self.T, varname = 'kfelds_m') 
+			pide.sulphide_m = array_modifier(input = pide.sulphide_m, array = self.T, varname = 'sulphide_m') 
+			pide.graphite_m = array_modifier(input = pide.graphite_m, array = self.T, varname = 'graphite_m') 
+			pide.mixture_m = array_modifier(input = pide.mixture_m, array = self.T, varname = 'mixture_m')
+			pide.sp_m = array_modifier(input = pide.sp_m, array = self.T, varname = 'sp_m')
+			pide.rwd_wds_m = array_modifier(input = pide.rwd_wds_m, array = self.T, varname = 'rwd_wds_m')
+			pide.perov_m = array_modifier(input = pide.perov_m, array = self.T, varname = 'perov_m')
+			pide.other_m = array_modifier(input = pide.other_m, array = self.T, varname = 'other_m') 
 			
-			pide.granite_m = self.array_modifier(input = pide.granite_m, array = self.T, varname = 'granite_m') 
-			pide.granulite_m = self.array_modifier(input = pide.granulite_m, array = self.T, varname = 'granulite_m') 
-			pide.sandstone_m = self.array_modifier(input = pide.sandstone_m, array = self.T, varname = 'sandstone_m') 
-			pide.gneiss_m = self.array_modifier(input = pide.gneiss_m, array = self.T, varname = 'gneiss_m') 
-			pide.amphibolite_m = self.array_modifier(input = pide.amphibolite_m, array = self.T, varname = 'amphibolite_m') 
-			pide.basalt_m = self.array_modifier(input = pide.basalt_m, array = self.T, varname = 'basalt_m') 
-			pide.mud_m = self.array_modifier(input = pide.ol_m, array = self.T, varname = 'mud_m') 
-			pide.gabbro_m = self.array_modifier(input = pide.ol_m, array = self.T, varname = 'gabbro_m') 
-			pide.other_rock_m = self.array_modifier(input = pide.ol_m, array = self.T, varname = 'other_rock_m')
+			pide.granite_m = array_modifier(input = pide.granite_m, array = self.T, varname = 'granite_m') 
+			pide.granulite_m = array_modifier(input = pide.granulite_m, array = self.T, varname = 'granulite_m') 
+			pide.sandstone_m = array_modifier(input = pide.sandstone_m, array = self.T, varname = 'sandstone_m') 
+			pide.gneiss_m = array_modifier(input = pide.gneiss_m, array = self.T, varname = 'gneiss_m') 
+			pide.amphibolite_m = array_modifier(input = pide.amphibolite_m, array = self.T, varname = 'amphibolite_m') 
+			pide.basalt_m = array_modifier(input = pide.basalt_m, array = self.T, varname = 'basalt_m') 
+			pide.mud_m = array_modifier(input = pide.ol_m, array = self.T, varname = 'mud_m') 
+			pide.gabbro_m = array_modifier(input = pide.ol_m, array = self.T, varname = 'gabbro_m') 
+			pide.other_rock_m = array_modifier(input = pide.ol_m, array = self.T, varname = 'other_rock_m')
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
@@ -1930,16 +1930,16 @@ class pide(object):
 		if reval == False:
 		
 			if pide.fluid_or_melt_method == 0:
-				pide.melt_fluid_m = self.array_modifier(input = value, array = self.T, varname = 'melt_fluid_m') 
+				pide.melt_fluid_m = array_modifier(input = value, array = self.T, varname = 'melt_fluid_m') 
 			elif pide.fluid_or_melt_method == 1:
-				pide.melt_fluid_m = self.array_modifier(input = value, array = self.T, varname = 'melt_fluid_m') 
+				pide.melt_fluid_m = array_modifier(input = value, array = self.T, varname = 'melt_fluid_m') 
 		
 		elif reval == True:
 			
 			if pide.fluid_or_melt_method == 0:
-				pide.melt_fluid_m = self.array_modifier(input = pide.melt_fluid_m, array = self.T, varname = 'melt_fluid_m') 
+				pide.melt_fluid_m = array_modifier(input = pide.melt_fluid_m, array = self.T, varname = 'melt_fluid_m') 
 			elif pide.fluid_or_melt_method == 1:
-				pide.melt_fluid_m = self.array_modifier(input = pide.melt_fluid_m, array = self.T, varname = 'melt_fluid_m') 
+				pide.melt_fluid_m = array_modifier(input = pide.melt_fluid_m, array = self.T, varname = 'melt_fluid_m') 
 				
 		if pide.melt_fluid_m.any() < 1.0:
 		
@@ -2023,42 +2023,42 @@ class pide(object):
 			self.suggestion_temp_array()
 
 		if reval == False:
-			pide.ol_grsz = self.array_modifier(input = kwargs.pop('ol', 1), array = self.T, varname = 'ol_grsz') 
-			pide.opx_grsz = self.array_modifier(input = kwargs.pop('opx', 1), array = self.T, varname = 'opx_grsz') 
-			pide.cpx_grsz = self.array_modifier(input = kwargs.pop('cpx', 1), array = self.T, varname = 'cpx_grsz') 
-			pide.garnet_grsz = self.array_modifier(input = kwargs.pop('garnet', 1), array = self.T, varname = 'garnet_grsz') 
-			pide.mica_grsz = self.array_modifier(input = kwargs.pop('mica', 1), array = self.T, varname = 'mica_grsz') 
-			pide.amp_grsz = self.array_modifier(input = kwargs.pop('amp', 1), array = self.T, varname = 'amp_grsz') 
-			pide.quartz_grsz = self.array_modifier(input = kwargs.pop('quartz', 1), array = self.T, varname = 'quartz_grsz') 
-			pide.plag_grsz = self.array_modifier(input = kwargs.pop('plag', 1), array = self.T, varname = 'plag_grsz') 
-			pide.kfelds_grsz = self.array_modifier(input = kwargs.pop('kfelds', 1), array = self.T, varname = 'kfelds_grsz') 
-			pide.sulphide_grsz = self.array_modifier(input = kwargs.pop('sulphide', 1), array = self.T, varname = 'sulphide_grsz') 
-			pide.graphite_grsz = self.array_modifier(input = kwargs.pop('graphite', 1), array = self.T, varname = 'graphite_grsz') 
-			pide.mixture_grsz = self.array_modifier(input = kwargs.pop('mixture', 1), array = self.T, varname = 'mixture_grsz')
-			pide.sp_grsz = self.array_modifier(input = kwargs.pop('sp', 1), array = self.T, varname = 'sp_grsz')
-			pide.rwd_wds_grsz = self.array_modifier(input = kwargs.pop('rwd_wds', 1), array = self.T, varname = 'rwd_wds_grsz')
-			pide.perov_grsz = self.array_modifier(input = kwargs.pop('perov', 1), array = self.T, varname = 'perov_grsz')
-			pide.other_grsz = self.array_modifier(input = kwargs.pop('other', 1), array = self.T, varname = 'other_grsz') 
+			pide.ol_grsz = array_modifier(input = kwargs.pop('ol', 1), array = self.T, varname = 'ol_grsz') 
+			pide.opx_grsz = array_modifier(input = kwargs.pop('opx', 1), array = self.T, varname = 'opx_grsz') 
+			pide.cpx_grsz = array_modifier(input = kwargs.pop('cpx', 1), array = self.T, varname = 'cpx_grsz') 
+			pide.garnet_grsz = array_modifier(input = kwargs.pop('garnet', 1), array = self.T, varname = 'garnet_grsz') 
+			pide.mica_grsz = array_modifier(input = kwargs.pop('mica', 1), array = self.T, varname = 'mica_grsz') 
+			pide.amp_grsz = array_modifier(input = kwargs.pop('amp', 1), array = self.T, varname = 'amp_grsz') 
+			pide.quartz_grsz = array_modifier(input = kwargs.pop('quartz', 1), array = self.T, varname = 'quartz_grsz') 
+			pide.plag_grsz = array_modifier(input = kwargs.pop('plag', 1), array = self.T, varname = 'plag_grsz') 
+			pide.kfelds_grsz = array_modifier(input = kwargs.pop('kfelds', 1), array = self.T, varname = 'kfelds_grsz') 
+			pide.sulphide_grsz = array_modifier(input = kwargs.pop('sulphide', 1), array = self.T, varname = 'sulphide_grsz') 
+			pide.graphite_grsz = array_modifier(input = kwargs.pop('graphite', 1), array = self.T, varname = 'graphite_grsz') 
+			pide.mixture_grsz = array_modifier(input = kwargs.pop('mixture', 1), array = self.T, varname = 'mixture_grsz')
+			pide.sp_grsz = array_modifier(input = kwargs.pop('sp', 1), array = self.T, varname = 'sp_grsz')
+			pide.rwd_wds_grsz = array_modifier(input = kwargs.pop('rwd_wds', 1), array = self.T, varname = 'rwd_wds_grsz')
+			pide.perov_grsz = array_modifier(input = kwargs.pop('perov', 1), array = self.T, varname = 'perov_grsz')
+			pide.other_grsz = array_modifier(input = kwargs.pop('other', 1), array = self.T, varname = 'other_grsz') 
 			
 			
 		elif reval == True:
 		
-			pide.ol_grsz = self.array_modifier(input = pide.ol_grsz, array = self.T, varname = 'ol_grsz') 
-			pide.opx_grsz = self.array_modifier(input = pide.opx_grsz, array = self.T, varname = 'opx_grsz') 
-			pide.cpx_grsz = self.array_modifier(input = pide.cpx_grsz, array = self.T, varname = 'cpx_grsz') 
-			pide.garnet_grsz = self.array_modifier(input = pide.garnet_grsz, array = self.T, varname = 'garnet_grsz') 
-			pide.mica_grsz = self.array_modifier(input = pide.mica_grsz, array = self.T, varname = 'mica_grsz') 
-			pide.amp_grsz = self.array_modifier(input = pide.amp_grsz, array = self.T, varname = 'amp_grsz') 
-			pide.quartz_grsz = self.array_modifier(input = pide.quartz_grsz, array = self.T, varname = 'quartz_grsz') 
-			pide.plag_grsz = self.array_modifier(input = pide.plag_grsz, array = self.T, varname = 'plag_grsz') 
-			pide.kfelds_grsz = self.array_modifier(input = pide.kfelds_grsz, array = self.T, varname = 'kfelds_grsz') 
-			pide.sulphide_grsz = self.array_modifier(input = pide.sulphide_grsz, array = self.T, varname = 'sulphide_grsz') 
-			pide.graphite_grsz = self.array_modifier(input = pide.graphite_grsz, array = self.T, varname = 'graphite_grsz') 
-			pide.mixture_grsz = self.array_modifier(input = pide.mixture_grsz, array = self.T, varname = 'mixture_grsz')
-			pide.sp_grsz = self.array_modifier(input = pide.sp_grsz, array = self.T, varname = 'sp_grsz')
-			pide.rwd_wds_grsz = self.array_modifier(input = pide.rwd_wds_grsz, array = self.T, varname = 'rwd_wds_grsz')
-			pide.perov_grsz = self.array_modifier(input = pide.perov_grsz, array = self.T, varname = 'perov_grsz')
-			pide.other_grsz = self.array_modifier(input = pide.other_grsz, array = self.T, varname = 'other_grsz') 
+			pide.ol_grsz = array_modifier(input = pide.ol_grsz, array = self.T, varname = 'ol_grsz') 
+			pide.opx_grsz = array_modifier(input = pide.opx_grsz, array = self.T, varname = 'opx_grsz') 
+			pide.cpx_grsz = array_modifier(input = pide.cpx_grsz, array = self.T, varname = 'cpx_grsz') 
+			pide.garnet_grsz = array_modifier(input = pide.garnet_grsz, array = self.T, varname = 'garnet_grsz') 
+			pide.mica_grsz = array_modifier(input = pide.mica_grsz, array = self.T, varname = 'mica_grsz') 
+			pide.amp_grsz = array_modifier(input = pide.amp_grsz, array = self.T, varname = 'amp_grsz') 
+			pide.quartz_grsz = array_modifier(input = pide.quartz_grsz, array = self.T, varname = 'quartz_grsz') 
+			pide.plag_grsz = array_modifier(input = pide.plag_grsz, array = self.T, varname = 'plag_grsz') 
+			pide.kfelds_grsz = array_modifier(input = pide.kfelds_grsz, array = self.T, varname = 'kfelds_grsz') 
+			pide.sulphide_grsz = array_modifier(input = pide.sulphide_grsz, array = self.T, varname = 'sulphide_grsz') 
+			pide.graphite_grsz = array_modifier(input = pide.graphite_grsz, array = self.T, varname = 'graphite_grsz') 
+			pide.mixture_grsz = array_modifier(input = pide.mixture_grsz, array = self.T, varname = 'mixture_grsz')
+			pide.sp_grsz = array_modifier(input = pide.sp_grsz, array = self.T, varname = 'sp_grsz')
+			pide.rwd_wds_grsz = array_modifier(input = pide.rwd_wds_grsz, array = self.T, varname = 'rwd_wds_grsz')
+			pide.perov_grsz = array_modifier(input = pide.perov_grsz, array = self.T, varname = 'perov_grsz')
+			pide.other_grsz = array_modifier(input = pide.other_grsz, array = self.T, varname = 'other_grsz') 
 
 
 		overlookError = kwargs.pop('overlookError', False)
@@ -2097,7 +2097,8 @@ class pide(object):
 			print(str(i) + '.  ' + phs_melt_mix_list[i])
 		
 		return phs_melt_mix_list
-		
+	
+	"""
 	def array_modifier(self, input, array, varname):
 		
 		if type(input) == int:
@@ -2133,6 +2134,8 @@ class pide(object):
 				
 		return ret_array
 		
+	"""
+	
 	def suggestion_temp_array(self):
 	
 		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
