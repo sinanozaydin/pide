@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from utils.utils import array_modifier
+
 class Material(object):
 
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_frac = 0.0,
@@ -153,6 +155,10 @@ class Material(object):
 			value = None
 			
 		return value
+		
+	def set_parameter(self, param_name, value):
+	
+		setattr(self, param_name, value)
 		
 	#attributes listing here
 	@property
