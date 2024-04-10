@@ -1,5 +1,4 @@
-# pide - (P)etrophysical (I)nterpretation library for geo(D)ynamic (E)xploration
-
+# pide
 <img src="./docs/figures/pide_logo_0.png">
 
 # About
