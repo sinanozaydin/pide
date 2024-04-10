@@ -147,13 +147,3 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			
 	return c_list, residual_list
 	
-def conductivity_solver_MCMC(object, cond_list, param_list,
-	upper_limit_list, lower_limit_list, sigma_list, n_simulation= 1e5, burning_samples = 1e4,
-	distribution_method = 'gaussian'):
-	
-	from sklearn.mixture import GaussianMixture #calling to create a gaussian mixture
-	
-	
-	
-	
-	return a 

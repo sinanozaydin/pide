@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='pide',
     version='0.1.1',
-    description='A simple Python library',
+    description='A library for petrophysical interpretation.',
     author='Sinan Ozaydin',
     author_email='sinan.ozaydin@protonmail.com',
     url='https://github.com/sinanozaydin/pide',
@@ -14,6 +14,7 @@ setup(
         'matplotlib',
         'scipy',
         'satex',
-        'h5py'
+        'h5py',
+        'harmonica'
     ],
 )
