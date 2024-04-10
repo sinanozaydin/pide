@@ -15,13 +15,12 @@ def Dai2014_DryandWetOlivine_fo2(T, P, water, xFe ,param1, fo2 = None, fo2_ref =
 	r_dai = 0.8
 	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
 	q_dry = 0.16666 #Taken from Constable (2006)
-	
+		
 	dai_ref = ((10.0**0.48) * np.exp(-((e1_dai) + (p_ref*dv_dai2014)) / (R_const * T))) + (10.0**2.84 * np.exp(-((e2_dai) + (p_ref*dv_dai2014)) / (R_const * T)))
 	cond_wet = (dai_ref * (water / (cw_ref))**(r_dai) * (fo2/fo2_ref)**(q_dai)) *  np.exp(- ((P - p_ref) * dv_dai2014) / (R_const*T))
 	dai_dry =  10**2.4 * ((fo2/fo2_ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
 	
 	cond = np.real(dai_dry + cond_wet)
-
 
 	return cond
 	

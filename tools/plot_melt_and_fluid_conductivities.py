@@ -2,16 +2,9 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
-
-sys.path.append(core_path_ext)
-
 import pide
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-
 
 temp = np.arange(1200,1800,5)
 a = pide.pide() #creating the initial object
@@ -36,12 +29,10 @@ a.set_temperature(temp_fluids) #settin temperature array in K
 a.set_pressure(1.0)
 a.set_fluid_properties(salinity = np.ones(len(temp_fluids)) * 0.1)
 
-
 for i in range(0,len(list_fluid_models)):
 	a.set_melt_fluid_conductivity_choice(fluid = i)
 	cond = a.calculate_fluids_conductivity(method = 'array')
 	cond_fluid_lists.append(cond)
-	
 	
 fig = plt.figure(figsize = (15,10))
 ax = plt.subplot(121)

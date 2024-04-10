@@ -2,10 +2,6 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
-
-sys.path.append(core_path_ext)
-
 import pide
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,5 +20,4 @@ a.calculate_mineral_water_solubility(mineral_name = 'opx', method = 'array')
 ax = plt.subplot(111)
 ax.plot(temp,a.max_opx_water)
 
-ax.plot(np.array(temp_liu)+273.15,water_liu, 'o')
 plt.show()

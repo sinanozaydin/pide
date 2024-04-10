@@ -1,13 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import os,sys
-
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
-
-sys.path.append(core_path_ext)
 import pide
-from inversion import conductivity_solver_single_param
+from pide.inversion import conductivity_solver_single_param
 
 
 temp = np.arange(600,1300,5) #setting up temperature array
@@ -34,10 +29,7 @@ pide_obj.set_mantle_water_partitions(opx_ol = 3, cpx_ol = 4, garnet_ol = 0)
 
 pide_obj.revalue_arrays()
 
-
-
 max_water = pide_obj.calculate_bulk_mantle_water_solubility(method = 'array')
-
 
 cond_list = np.ones(len(max_water)) * 1e-3 #1000 ohm meter
 

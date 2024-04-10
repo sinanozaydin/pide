@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from utils.utils import array_modifier
+from .utils.utils import array_modifier
 
 class Material(object):
 

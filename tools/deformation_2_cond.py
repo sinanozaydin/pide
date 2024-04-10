@@ -2,13 +2,9 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
-core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide/pide_src')
-sys.path.append(core_path_ext)
-sys.path.append(core_path_ext_2)
 
 import pide
-from geodyn.deform_cond import plastic_strain_2_conductivity
+from pide.geodyn.deform_cond import plastic_strain_2_conductivity
 import numpy as np
 import matplotlib.pyplot as plt
 

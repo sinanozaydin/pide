@@ -27,6 +27,10 @@ def return_material_bool(material_index,model_array, material_skip, model_type):
 			
 		else:
 			_new_array_bool = array_bool
+			
+	else:
+	
+		raise ValueError('The model_type has entered wrongly.')
 	
 	return _new_array_bool
 		

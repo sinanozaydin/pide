@@ -2,20 +2,14 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL')
-core_path_ext_2 = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../SEL/sel_src')
-sys.path.append(core_path_ext)
-sys.path.append(core_path_ext_2)
-
-import SEL
-from material import Material
-from model import Model
-from geodyn.read_uw_model import *
-from geodyn.interpolate_fields import interpolate_2d_fields
-from geodyn.plot_models import *
-from geodyn.material_process import *
-from geodyn.write_uw_model import write_2d_field_h5
-from mt.mt_model_conversion import convert_2DModel_2_MARE2DEM
+import pide
+from pide.material import Material
+from pide.model import Model
+from pide.geodyn.read_uw_model import *
+from pide.geodyn.interpolate_fields import interpolate_2d_fields
+from pide.geodyn.plot_models import *
+from pide.geodyn.material_process import *
+from pide.geodyn.write_uw_model import write_2d_field_h5
 
 #setting up source folder of the files
 source_folder = os.path.join('.','example_data','uwconversion')
@@ -53,13 +47,13 @@ mesh, mesh_center, x_mesh, y_mesh, x_mesh_centers, y_mesh_centers, borders_mesh 
 material_array, air_material_idx = setup_material(material_data, material_names)
 
 #getting strain array
-pstrain_array = setup_uw_data_array_PROJ(pstrain_data)
-stress_array = setup_uw_data_array_PROJ(stress_data)
-melt_array = setup_uw_data_array_PROJ(melt_data)
-strain_rate_array = setup_uw_data_array_PROJ(strain_rate_data)
+pstrain_array = setup_uw_data_array_PROJ_2D(pstrain_data)
+stress_array = setup_uw_data_array_PROJ_2D(stress_data)
+melt_array = setup_uw_data_array_PROJ_2D(melt_data)
+strain_rate_array = setup_uw_data_array_PROJ_2D(strain_rate_data)
 
-temp_array = setup_uw_data_array_PROJ(temp_data) #mesh
-pressure_array = setup_uw_data_array_PROJ(pressure_data) / 1e9 #converting to gigapascal
+temp_array = setup_uw_data_array_PROJ_2D(temp_data) #mesh
+pressure_array = setup_uw_data_array_PROJ_2D(pressure_data) / 1e9 #converting to gigapascal
 
 
 
@@ -76,11 +70,11 @@ pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 material_array = interpolate_2d_fields(mesh,material_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 strain_rate_array = interpolate_2d_fields(mesh_center,strain_rate_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 
-# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'temperature.png',cbar_label = 'Temperature [C]', plot_save = False)
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'temperature.png',cbar_label = 'Temperature [C]', plot_save = False)
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b',label = 'material.png', cbar_label = 'Material Index',plot_save = True)
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = melt_array,cblimit_up = 1, cblimit_down = 0, log_bool=False, cb_name = 'viridis',label = 'material.png', cbar_label = 'Material Index',plot_save = False)
 
-sel_object = SEL.SEL()
+sel_object = pide.pide()
 
 # list_garnet_models = sel_object.list_mineral_econd_models('garnet')
 # list_cpx_models = sel_object.list_mineral_econd_models('cpx')
@@ -249,12 +243,12 @@ material_object_list_2 = [Eclogite_Object_2,Lithospheric_Mantle_Object_2,Astheno
 material_skip_list = [None,5,50,None,None,None,None,None,None,None,None,None,None,None,None]
 
 #creating model_object
-mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array, P = pressure_array, model_type = 'underworld', melt = melt_array,
+mt_model_object = Model(material_list = material_object_list, material_array = material_array, material_list_2 = material_object_list_2, T = temp_array, P = pressure_array, model_type = 'underworld_2d', melt = melt_array,
 p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_rate_list = material_skip_list)
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 5)
 
-# plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3,
-# cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
+plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3,
+cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
 
 # write_2d_field_h5(Field = backgr_cond, filename_out = 'BackGroundCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
 

@@ -2,10 +2,6 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
-
-sys.path.append(core_path_ext)
-
 import pide
 import numpy as np
 import matplotlib.pyplot as plt

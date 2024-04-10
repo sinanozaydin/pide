@@ -70,8 +70,8 @@ def plot_2D_underworld_Field(xmesh = None, ymesh = None, Field = None,cblimit_up
 	plot_save = kwargs.pop('plot_save', False)
 	label = kwargs.pop('label', 'Interpolated_UW_Figure.png')
 	cbar_label = kwargs.pop('cbar_label',None)
-		
-	fnew = np.squeeze(Field, axis=2)
+	
+	fnew = Field
 	
 	contains_nan = np.isnan(fnew).any()
 	

@@ -2,11 +2,11 @@
 
 import numpy as np
 
-import pide
-from geodyn.material_process import return_material_bool
+from .pide import pide
+from .geodyn.material_process import return_material_bool
 
 #importing the function
-from geodyn.deform_cond import plastic_strain_2_conductivity
+from .geodyn.deform_cond import plastic_strain_2_conductivity
 
 def run_conductivity_model(index_list, material, pide_object, t_array, p_array, melt_array):
 
@@ -187,12 +187,12 @@ def run_conductivity_model(index_list, material, pide_object, t_array, p_array, 
 			
 			pide_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection)
 			if material.melt_fluid_phase_mixing_idx == 0:
-				pide_object.set_melt_fluid_interconnectivity(melt = material.melt_fluid_m)
+				pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
 		elif material.melt_or_fluid == 'fluid':
 			pide_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection)
 			pide_object.set_fluid_properties(salinity = material.fluid_salinity)
 			if material.melt_fluid_phase_mixing_idx == 0:
-				pide_object.set_melt_fluid_interconnectivity(fluid = material.melt_fluid_m)
+				pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
 		
 	c = pide_object.calculate_conductivity(method = 'array')
 	
@@ -296,7 +296,7 @@ class Model(object):
 				model_array = self.material_array, material_skip = mat_skip, model_type = self.model_type)		
 				
 				#setting up the object for the material
-				mat_pide_obj = pide.pide()
+				mat_pide_obj = pide()
 				
 				if material_list_holder[l][i].calculation_type != 'value':
 					mat_pide_obj.set_solid_phase_method(material_list_holder[l][i].calculation_type)
@@ -422,7 +422,8 @@ class Model(object):
 					mat_skip = None
 				
 				#getting material index for each material
-				material_idx = return_material_bool(material_index = self.material_list[i].material_index, model_array = self.material_array, material_skip = mat_skip)
+				material_idx = return_material_bool(material_index = self.material_list[i].material_index, model_array = self.material_array, material_skip = mat_skip,
+				model_type=self.model_type)
 				#turning material index list to be useable format for the np.ndarray fields
 				material_idx_list = [[material_idx[0][idx],material_idx[1][idx],material_idx[2][idx]] for idx in range(0,len(material_idx[0]))]
 				

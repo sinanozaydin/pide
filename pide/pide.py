@@ -7,52 +7,48 @@ core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_
 import sys, csv, re, warnings, json
 import numpy as np
 from scipy.interpolate import interp1d
-
-#imports from satex
 from satex import Isotropy
 
-#Importing external functions
-
-sys.path.append(core_path_ext)
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 #importing odd melt/fluid functions
-from pide_src.cond_models.melt_odd import * 
-from pide_src.cond_models.fluids_odd import * 
+from .pide_src.cond_models.melt_odd import * 
+from .pide_src.cond_models.fluids_odd import * 
 #importing odd rock functions
-from pide_src.cond_models.rocks.granite_odd import * 
-from pide_src.cond_models.rocks.granulite_odd import *
-from pide_src.cond_models.rocks.sandstone_odd import *
-from pide_src.cond_models.rocks.gneiss_odd import *
-from pide_src.cond_models.rocks.amphibolite_odd import *
-from pide_src.cond_models.rocks.basalt_odd import *
-from pide_src.cond_models.rocks.mud_odd import *
-from pide_src.cond_models.rocks.gabbro_odd import *
-from pide_src.cond_models.rocks.other_rocks_odd import *
+from .pide_src.cond_models.rocks.granite_odd import * 
+from .pide_src.cond_models.rocks.granulite_odd import *
+from .pide_src.cond_models.rocks.sandstone_odd import *
+from .pide_src.cond_models.rocks.gneiss_odd import *
+from .pide_src.cond_models.rocks.amphibolite_odd import *
+from .pide_src.cond_models.rocks.basalt_odd import *
+from .pide_src.cond_models.rocks.mud_odd import *
+from .pide_src.cond_models.rocks.gabbro_odd import *
+from .pide_src.cond_models.rocks.other_rocks_odd import *
 #importing odd mineral functions
-from pide_src.cond_models.minerals.quartz_odd import *
-from pide_src.cond_models.minerals.plag_odd import *
-from pide_src.cond_models.minerals.amp_odd import *
-from pide_src.cond_models.minerals.kfelds_odd import *
-from pide_src.cond_models.minerals.opx_odd import *
-from pide_src.cond_models.minerals.cpx_odd import *
-from pide_src.cond_models.minerals.mica_odd import *
-from pide_src.cond_models.minerals.garnet_odd import *
-from pide_src.cond_models.minerals.ol_odd import *
-from pide_src.cond_models.minerals.mixtures_odd import *
-from pide_src.cond_models.minerals.rwd_wds_odd import *
-from pide_src.cond_models.minerals.other_odd import *
+from .pide_src.cond_models.minerals.quartz_odd import *
+from .pide_src.cond_models.minerals.plag_odd import *
+from .pide_src.cond_models.minerals.amp_odd import *
+from .pide_src.cond_models.minerals.kfelds_odd import *
+from .pide_src.cond_models.minerals.opx_odd import *
+from .pide_src.cond_models.minerals.cpx_odd import *
+from .pide_src.cond_models.minerals.mica_odd import *
+from .pide_src.cond_models.minerals.garnet_odd import *
+from .pide_src.cond_models.minerals.ol_odd import *
+from .pide_src.cond_models.minerals.mixtures_odd import *
+from .pide_src.cond_models.minerals.rwd_wds_odd import *
+from .pide_src.cond_models.minerals.other_odd import *
 #importing water-partitioning odd functions
-from pide_src.water_partitioning.water_part_odd import *
+from .pide_src.water_partitioning.water_part_odd import *
 #importing mineral solubility functions
-from pide_src.water_sol.ol_sol import *
-from pide_src.water_sol.opx_sol import * 
-from pide_src.water_sol.rwd_wds_sol import *
+from .pide_src.water_sol.ol_sol import *
+from .pide_src.water_sol.opx_sol import * 
+from .pide_src.water_sol.rwd_wds_sol import *
 #importing eos functions
-from pide_src.eos.fluid_eos import *
+from .pide_src.eos.fluid_eos import *
 #importing mineral stability functions
-from pide_src.min_stab.min_stab import *
+from .pide_src.min_stab.min_stab import *
 #importing utils
-from utils.utils import check_type, array_modifier
+from .utils.utils import check_type, array_modifier
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -1825,11 +1821,14 @@ class pide(object):
 			
 		self.al_opx = array_modifier(input = value, array = self.T, varname = 'al_opx')
 
-	def set_grain_boundary_water_partitioning(self, value = 0.1):
+	def set_grain_boundary_water_partitioning(self, value = 0.1, reval = False):
+		
+		if reval == False:
+			self.D_GB = array_modifier(input = value, array = self.T, varname = 'D_GB')
+		elif reval == True:
+			self.D_GB = array_modifier(input = self.D_GB, array = self.T, varname = 'D_GB')
 
-		self.D_GB = array_modifier(input = value, array = self.T, varname = 'D_GB')
-
-		if (self.D_GB > 1.0) or (self.D_GB < 0.0):
+		if (self.D_GB.any() > 1.0) or (self.D_GB.any() < 0.0):
 			raise ValueError('Grain boundary water partitioning coefficient has to be in between 0 and 1.') 
 
 	def set_grain_boundary_H_Diffusion(self, value = False):
@@ -2142,7 +2141,7 @@ class pide(object):
 		
 		
 	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
-
+		
 		if (sigma == 0.0) and (E == 0.0):
 			cond = 0.0
 		else:
@@ -2371,7 +2370,7 @@ class pide(object):
 									   E = self.h_pol[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0)
 				
 			elif pide.type[min_idx][min_sum_idx] == '1':
-			
+				
 				cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 									   sigma = self.sigma_i[min_idx][min_sum_idx],
 									   E = self.h_i[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
@@ -2457,10 +2456,7 @@ class pide(object):
 					
 					cond[idx_node] = (((DH[idx_node]) + (self.D_GB *\
 									 (3*self.delta_gb/(pide.ol_grsz[idx_node]*1e-3)) * D_GB_ol[idx_node])) * h2o_h_mineral[idx_node] * (self.el_q**2.0)) / (self.boltz*self.T[idx_node])
-					import ipdb
-					ipdb.set_trace()
-
-				
+									
 			if (pide.sec_minerals_cond_selections[min_sub_idx] != None) == True:
 				
 				cond_list.append(cond)
@@ -3075,6 +3071,7 @@ class pide(object):
 
 			for i in range(start_idx,end_idx):
 				if self.melt_fluid_mass_frac[i] != 0.0:
+					
 					self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i]))))
 			
 			if melt_method == 0:
@@ -3659,7 +3656,7 @@ class pide(object):
 						density_indv = density_indv + (phase_list[j] * dens_list[j])
 						
 					self.density_solids[i] = density_indv
-					
+				
 				self.density_loaded = True					
 				
 			elif pide.solid_phase_method == 2:
@@ -3675,7 +3672,7 @@ class pide(object):
 				satex_isot_object = Isotropy()
 
 				#if clauses for calculations involving a single mineral
-				if min_idx != None:
+				if min_idx == None:
 					min_start = 11
 					min_end = 27
 				else:
@@ -3731,18 +3728,18 @@ class pide(object):
 				if min_idx == None:		
 					self.density_loaded = True
 
-			if min_idx == None:
-				
-				density_indv = 0.0
-							
-				for j in range(0,len(phase_list)):
-					density_indv = density_indv + (phase_list[j] * dens_list[j])
-				
-				self.density_solids = density_indv
-
-			else:
-
-				return density
+				if min_idx == None:
+					
+					density_indv = 0.0
+								
+					for j in range(0,len(phase_list)):
+						density_indv = density_indv + (phase_list[j] * dens_list[j])
+					
+					self.density_solids = density_indv
+	
+				else:
+	
+					return density
 			
 	def calculate_fugacity(self,mode):
 

@@ -10,14 +10,13 @@ sys.path.append(core_path_ext)
 sys.path.append(core_path_ext_2)
 
 import pide
-from material import Material
-from model import Model
-from geodyn.read_uw_model import *
-from geodyn.interpolate_fields import interpolate_3d_fields
-from geodyn.plot_models import *
-from geodyn.material_process import *
-from geodyn.write_uw_model import write_3d_field_h5
-from mt.mt_model_conversion import convert_2DModel_2_MARE2DEM
+from pide.material import Material
+from pide.model import Model
+from pide.geodyn.read_uw_model import *
+from pide.geodyn.interpolate_fields import interpolate_3d_fields
+from pide.geodyn.plot_models import *
+from pide.geodyn.material_process import *
+from pide.geodyn.write_uw_model import write_3d_field_h5
 
 # source_folder = "/scratch/q97/so0195/pide2/3D_model_convert/3dmodel"
 # source_folder = "/scratch/q97/pxr562/2020/PullApt300r/ProtPA300r"

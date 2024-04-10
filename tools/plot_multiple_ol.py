@@ -2,10 +2,6 @@
 
 import os,sys
 
-core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , '../pide')
-
-sys.path.append(core_path_ext)
-
 import pide
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,6 +27,7 @@ a.set_temperature(temp) #settin temperature array in K
 a.set_pressure(1.0)
 a.set_param1_mineral(ol = np.ones(len(temp)) * 0)
 a.set_mineral_water(ol = np.ones(len(temp)) * 20)
+a.set_o2_buffer(0)
 idx_ol = a.get_mineral_index('ol') #getting olivine index
 list_olivine_models = a.list_mineral_econd_models('ol') #listing all olivine electrical conductivity methods
 
@@ -38,11 +35,11 @@ cond_olivine_lists = []
 
 for i in range(0,3):
 	if i == 0:
-		a.set_mineral_conductivity_choice(ol = 5)
+		a.set_mineral_conductivity_choice(ol = 0)
 	elif i == 1:
 		a.set_mineral_conductivity_choice(ol = 14)
 	elif i == 2:
-		a.set_mineral_conductivity_choice(ol = [5,14])
+		a.set_mineral_conductivity_choice(ol = [0,14])
 	cond = a.calculate_mineral_conductivity(method = 'array', min_idx= idx_ol)
 	cond_olivine_lists.append(cond)
 		
