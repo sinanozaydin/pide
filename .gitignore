@@ -1,8 +1,27 @@
-
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 *.pyc
 
 
 build/
 .eggs/
 *.egg-info/
+
+# Jupyter Notebook
+*.ipynb_checkpoints
+
+#Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# C extensions
+*.so
 
