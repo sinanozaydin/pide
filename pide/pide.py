@@ -2350,7 +2350,7 @@ class pide(object):
 			else:
 				
 				water_corr_factor = 1.0
-				
+			
 			#Pre arrangement for what to do at the calculation stage if mechanisms are selected.
 			if pide.type[min_idx][min_sum_idx] == '4':
 				print('The mechanisms selection will not work on H-diffusion conductivity selection of ' + pide.name[min_idx][min_sum_idx])
@@ -2371,12 +2371,12 @@ class pide(object):
 					sigma_p = self.sigma_p[min_idx][min_sum_idx]
 					h_p = self.h_p[min_idx][min_sum_idx]
 					r_p = self.r[min_idx][min_sum_idx]
-					alpha_p = alpha = self.alpha_p[min_idx][min_sum_idx]
+					alpha_p = self.alpha_p[min_idx][min_sum_idx]
 				elif mechanism_list[count] == 'proton':
 					sigma_p = self.sigma_p[min_idx][min_sum_idx]
 					h_p = self.h_p[min_idx][min_sum_idx]
 					r_p = self.r[min_idx][min_sum_idx]
-					alpha_p = alpha = self.alpha_p[min_idx][min_sum_idx]
+					alpha_p = self.alpha_p[min_idx][min_sum_idx]
 				elif mechanism_list[count] == 'polaron':
 					sigma_pol = self.sigma_pol[min_idx][min_sum_idx]
 					h_pol = self.h_pol[min_idx][min_sum_idx]
