@@ -2094,7 +2094,6 @@ class pide(object):
 		for i in range(0,len(phs_mix_list)):
 			print(str(i) + '.  ' + phs_mix_list[i])
 		
-		return phs_mix_list
 		
 	def list_phs_melt_fluid_mix_methods(self):
 	
