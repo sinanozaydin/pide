@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Hu2022_WetPlagioclase_Na_param1(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Hu2022_WetPlagioclase_Na_param1(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	r = 1.47
 	sigma_wet = 9139.0
@@ -28,26 +28,41 @@ def Hu2022_WetPlagioclase_Na_param1(T, P, water, xFe, param1, fo2 = None, fo2_re
 		param1 = param1[0]
 		water = water[0]
 		
-		cond = np.zeros(len(T))
+		cond_dry = np.zeros(len(T))
+		cond_wet = np.zeros(len(T))
 
 		for i in range(0,len(T)):
-
-			if T[i] <= tcrit:
-				cond[i] = (sigma1 * (param1[i]**beta1) *  np.exp(-(E1 + (alpha1 * param1[i])) / (R_const * T[i]))) + (sigma_wet * (water[i]**r) * np.exp(-E_wet / (R_const * T[i])))
-			else:
-				cond[i] = (sigma2 * (param1[i]**beta2) *  np.exp(-(E2 + (alpha2 * param1[i])) / (R_const * T[i]))) + (sigma_wet * (water[i]**r) * np.exp(-E_wet / (R_const * T[i])))
-
+			if mechanism != 'proton':
+			
+				if T[i] <= tcrit:
+					cond_dry[i] = (sigma1 * (param1[i]**beta1) *  np.exp(-(E1 + (alpha1 * param1[i])) / (R_const * T[i])))
+					
+				else:
+					cond_dry[i] = (sigma2 * (param1[i]**beta2) *  np.exp(-(E2 + (alpha2 * param1[i])) / (R_const * T[i])))
+				
+			cond_wet[i] = (sigma_wet * (water[i]**r) * np.exp(-E_wet / (R_const * T[i])))
+			
 	elif method == 'index':
+		
+		if mechanism != 'proton':
+			if T <= tcrit:
+				cond_dry = (sigma1 * (param1**beta1) *  np.exp(-(E1 + (alpha1 * param1)) / (R_const * T)))
+			else:
+				cond_dry = (sigma2 * (param1**beta2) *  np.exp(-(E2 + (alpha2 * param1)) / (R_const * T)))
 
-		if T <= tcrit:
-			cond = (sigma1 * (param1**beta1) *  np.exp(-(E1 + (alpha1 * param1)) / (R_const * T))) + (sigma_wet * (water**r) * np.exp(-E_wet / (R_const * T)))
-		else:
-			cond = (sigma2 * (param1**beta2) *  np.exp(-(E2 + (alpha2 * param1)) / (R_const * T))) + (sigma_wet * (water**r) * np.exp(-E_wet / (R_const * T)))
-
+		cond_wet = (sigma_wet * (water**r) * np.exp(-E_wet / (R_const * T)))
 	
+	if mechanism == 'proton':
+		
+		cond = cond_wet
+		
+	else:
+		
+		cond = cond_dry + cond_wet
+		
 	return cond
 	
-def Hu2015_DryAnorthite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Hu2015_DryAnorthite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	sigma_list = np.array([4.62,4.43,4.36])
 	P_list = np.array([1,2,3])
@@ -75,9 +90,15 @@ def Hu2015_DryAnorthite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, me
 			
 		cond = (10**sigma_interp) * np.exp(-(E + (P * dv)) / (R_const * T))
 		
-	return cond
+	if mechanism == 'proton':
 	
-def Hu2011_DryAlbite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Hu2015_DryAnorthite')
+		
+	else:
+			
+		return cond
+	
+def Hu2011_DryAlbite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	sigma_list = np.array([4,3.92,3.89])
 	P_list = np.array([1,2,3])
@@ -105,7 +126,13 @@ def Hu2011_DryAlbite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, metho
 			
 		cond = (10**sigma_interp) * np.exp(-(E + (P * dv)) / (R_const * T))
 		
-	return cond
+	if mechanism == 'proton':
+	
+		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Hu2011_DryAlbite')
+		
+	else:
+			
+		return cond
 	
 
 	

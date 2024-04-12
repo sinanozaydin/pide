@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import os,sys
-
 import pide
 import numpy as np
 import matplotlib.pyplot as plt
@@ -35,11 +33,11 @@ cond_olivine_lists = []
 
 for i in range(0,3):
 	if i == 0:
-		a.set_mineral_conductivity_choice(ol = 0)
+		a.set_mineral_conductivity_choice(ol = '0/proton')
 	elif i == 1:
-		a.set_mineral_conductivity_choice(ol = 14)
+		a.set_mineral_conductivity_choice(ol = '0/polaron')
 	elif i == 2:
-		a.set_mineral_conductivity_choice(ol = [0,14])
+		a.set_mineral_conductivity_choice(ol = ['0/proton','0/polaron'])
 	cond = a.calculate_mineral_conductivity(method = 'array', min_idx= idx_ol)
 	cond_olivine_lists.append(cond)
 		

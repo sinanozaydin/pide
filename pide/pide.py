@@ -1479,11 +1479,22 @@ class pide(object):
 		mineral_names = ['qtz','plag','amp','kfelds','opx','cpx','mica','garnet','sulphide','graphite','ol','sp','rwd_wds','perov','mixture','other']
 		
 		for i in range(0,len(pide.minerals_cond_selections)):
-		
-			if (pide.minerals_cond_selections[i] < 0) or (pide.minerals_cond_selections[i] > len(self.name[mineral_idx[i]])):
 			
-				raise ValueError('Bad entry for mineral conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[mineral_idx[i]])) + ' for the mineral ' + mineral_names[i])
-	
+			try:
+				if (pide.minerals_cond_selections[i] < 0) or (pide.minerals_cond_selections[i] > len(self.name[mineral_idx[i]])):
+				
+					raise ValueError('Bad entry for mineral conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[mineral_idx[i]])) + ' for the mineral ' + mineral_names[i])
+			except TypeError:
+				if type(pide.minerals_cond_selections[i]) == str:
+					
+					if ('/' in pide.minerals_cond_selections[i]) == True:
+						try:
+							idx_local = int(pide.minerals_cond_selections[i][:pide.minerals_cond_selections[i].index('/')])
+							if (idx_local < 0) or (idx_local > len(self.name[mineral_idx[i]])):
+				
+								raise ValueError('Bad entry for mineral conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[mineral_idx[i]])) + ' for the mineral ' + mineral_names[i])
+						except ValueError:
+							raise ValueError('The value cannot be converted to a floating number. Perhaps you have not entered the conduction mechanisms line correctly. An example would be 4/proton.')
 	def set_rock_conductivity_choice(self,**kwargs):
 	
 		pide.granite_cond_selection = kwargs.pop('granite', 0)
@@ -2096,45 +2107,7 @@ class pide(object):
 			print(str(i) + '.  ' + phs_melt_mix_list[i])
 		
 		return phs_melt_mix_list
-	
-	"""
-	def array_modifier(self, input, array, varname):
 		
-		if type(input) == int:
-			
-			ret_array = np.ones(len(array)) * input
-			
-		elif type(input) == float:
-			
-			ret_array = np.ones(len(array)) * input
-			
-		elif type(input) == np.float64:
-			
-			ret_array = np.ones(len(array)) * input
-			
-		elif type(input) == list:
-			
-			if len(input) == 1:
-				ret_array = np.ones(len(array)) * input[0]
-			else:
-				ret_array = np.array(input)
-				if len(ret_array) != len(array):
-					
-					raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
-			
-		elif type(input) == np.ndarray:
-		
-			if len(input) == 1:
-				ret_array = np.ones(len(array)) * input[0]
-			else:
-				ret_array = input
-				if len(ret_array) != len(array):
-					raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
-				
-		return ret_array
-		
-	"""
-	
 	def suggestion_temp_array(self):
 	
 		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
@@ -2326,19 +2299,37 @@ class pide(object):
 			idx_node = sol_idx
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
-
+				
 		if (min_idx < 11) or (min_idx > 27):
 			raise ValueError("The index chosen for mineral conductivity does not appear to be correct. It has to be a value between 11 and 27.")
 
 		min_sub_idx = min_idx - self.fluid_num - self.rock_num
 		
-		min_list = [pide.minerals_cond_selections[min_sub_idx]]
+		try:
+			idx_cond_mineral = int(pide.minerals_cond_selections[min_sub_idx])
+			mechanism_1 = None
+		except ValueError:
+			idx_cond_mineral = int(pide.minerals_cond_selections[min_sub_idx][:pide.minerals_cond_selections[min_sub_idx].index('/')])
+			mechanism_1 = pide.minerals_cond_selections[min_sub_idx][pide.minerals_cond_selections[min_sub_idx].index('/')+1:]
+		
+		min_list = [idx_cond_mineral]
+		mechanism_list = [mechanism_1]
 		
 		if pide.sec_minerals_cond_selections[min_sub_idx] != None:
 		
-			min_list.append(pide.sec_minerals_cond_selections[min_sub_idx])
+			try:
+				idx_cond_mineral_2 = int(pide.sec_minerals_cond_selections[min_sub_idx])
+				mechanism_2 = None
+			except ValueError:
+				idx_cond_mineral_2 = int(pide.sec_minerals_cond_selections[min_sub_idx][:pide.sec_minerals_cond_selections[min_sub_idx].index('/')])
+				mechanism_2 = pide.sec_minerals_cond_selections[min_sub_idx][pide.sec_minerals_cond_selections[min_sub_idx].index('/')+1:]
+		
+			min_list.append(idx_cond_mineral_2)
+			mechanism_list.append(mechanism_2)
 		
 			cond_list = []
+			
+		count = 0
 		
 		for min_sum_idx in min_list:
 			
@@ -2359,26 +2350,65 @@ class pide(object):
 			else:
 				
 				water_corr_factor = 1.0
-	
-			
+				
+			#Pre arrangement for what to do at the calculation stage if mechanisms are selected.
+			if pide.type[min_idx][min_sum_idx] == '4':
+				print('The mechanisms selection will not work on H-diffusion conductivity selection of ' + pide.name[min_idx][min_sum_idx])
+			else:
+				sigma_i = 0.0
+				h_i = 0.0
+				sigma_pol = 0.0
+				h_pol = 0.0
+				sigma_p = 0.0
+				h_p = 0.0
+				r_p = 0.0
+				alpha_p = 0.0
+				if mechanism_list[count] == None:
+					sigma_i = self.sigma_i[min_idx][min_sum_idx]
+					h_i = self.h_i[min_idx][min_sum_idx]
+					sigma_pol = self.sigma_pol[min_idx][min_sum_idx]
+					h_pol = self.h_pol[min_idx][min_sum_idx]
+					sigma_p = self.sigma_p[min_idx][min_sum_idx]
+					h_p = self.h_p[min_idx][min_sum_idx]
+					r_p = self.r[min_idx][min_sum_idx]
+					alpha_p = alpha = self.alpha_p[min_idx][min_sum_idx]
+				elif mechanism_list[count] == 'proton':
+					sigma_p = self.sigma_p[min_idx][min_sum_idx]
+					h_p = self.h_p[min_idx][min_sum_idx]
+					r_p = self.r[min_idx][min_sum_idx]
+					alpha_p = alpha = self.alpha_p[min_idx][min_sum_idx]
+				elif mechanism_list[count] == 'polaron':
+					sigma_pol = self.sigma_pol[min_idx][min_sum_idx]
+					h_pol = self.h_pol[min_idx][min_sum_idx]
+				elif mechanism_list[count] == 'ionic':
+					sigma_i = self.sigma_i[min_idx][min_sum_idx]
+					h_i = self.h_i[min_idx][min_sum_idx]
+				elif mechanism_list[count] == 'dry':
+					sigma_i = self.sigma_i[min_idx][min_sum_idx]
+					h_i = self.h_i[min_idx][min_sum_idx]
+					sigma_pol = self.sigma_pol[min_idx][min_sum_idx]
+					h_pol = self.h_pol[min_idx][min_sum_idx]
+				else:
+					raise ValueError('The chosen mechanisms has to be one of these strings: proton, polaron, ionic, dry.')
+								
 			if pide.type[min_idx][min_sum_idx] == '0':
 	
 				cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
-									   sigma = self.sigma_i[min_idx][min_sum_idx],
-									   E = self.h_i[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
-									   sigma = self.sigma_pol[min_idx][min_sum_idx],
-									   E = self.h_pol[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0)
+									   sigma = sigma_i,
+									   E = h_i,r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
+									   sigma = sigma_pol,
+									   E = h_pol,r = 0, alpha = 0, water = 0)
 				
 			elif pide.type[min_idx][min_sum_idx] == '1':
 				
 				cond[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
-									   sigma = self.sigma_i[min_idx][min_sum_idx],
-									   E = self.h_i[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
-									   sigma = self.sigma_pol[min_idx][min_sum_idx],
-									   E = self.h_pol[min_idx][min_sum_idx],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
-									   sigma = self.sigma_p[min_idx][min_sum_idx],
-									   E = self.h_p[min_idx][min_sum_idx], r = self.r[min_idx][min_sum_idx],
-									   alpha = self.alpha_p[min_idx][min_sum_idx], water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor)
+									   sigma = sigma_i,
+									   E = h_i,r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
+									   sigma = sigma_pol,
+									   E = h_pol,r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
+									   sigma = sigma_p,
+									   E = h_p, r = r_p,
+									   alpha = alpha_p, water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor)
 				
 			elif pide.type[min_idx][min_sum_idx] == '3':
 	
@@ -2395,14 +2425,15 @@ class pide(object):
 					cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
 					water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = pide.xfe_mineral_list[min_sub_idx][idx_node],\
 					param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
-					fo2 = self.calculate_fugacity(pide.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method)')
+					fo2 = self.calculate_fugacity(pide.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method,\
+					mechanism = mechanism_list[count])')
 	
 				else:
 					
 					cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
 					water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor,\
 					xFe = pide.xfe_mineral_list[min_sub_idx][idx_node], param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
-					fo2 = None, fo2_ref = None, method = method)')
+					fo2 = None, fo2_ref = None, method = method, mechanism = mechanism_list[count])')
 
 			elif pide.type[min_idx][min_sum_idx] == '4':
 
@@ -2416,9 +2447,6 @@ class pide(object):
 				else:
 	
 					odd_function = pide.name[min_idx][min_sum_idx]
-
-
-				pass #cansu
 				
 				rho_mineral = self.calculate_density_solid(min_idx = min_idx)
 				h2o_h_mineral[idx_node] = (self.avog * (rho_mineral[idx_node]*1e3) * (pide.mineral_water_list[min_sub_idx][idx_node]/(1e4))) / 153.3 #Conversion from Jones (2016)
@@ -2460,6 +2488,8 @@ class pide(object):
 			if (pide.sec_minerals_cond_selections[min_sub_idx] != None) == True:
 				
 				cond_list.append(cond)
+				
+			count = count + 1
 		
 		if (pide.sec_minerals_cond_selections[min_sub_idx] != None) == True:
 			

@@ -4,8 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-	
-def Hu2014_DryOrthoclase(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Hu2014_DryOrthoclase(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	sigma_list = np.array([4.13,4.06,4.00])
 	P_list = np.array([1,2,3])
@@ -33,9 +32,13 @@ def Hu2014_DryOrthoclase(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, m
 			
 		cond = (10**sigma_interp) * np.exp(-(E + (P * dv)) / (R_const * T))
 		
-	return cond
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Hu2014_DryOrthoclase')
+	else:
+		return cond
+
 	
-def Dai2018_DryOrthoclase_001(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Dai2018_DryOrthoclase_001(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	
 	sigma_list = np.array([4.678,4.69,4.72])
@@ -64,4 +67,7 @@ def Dai2018_DryOrthoclase_001(T, P, water, xFe, param1, fo2 = None, fo2_ref = No
 			
 		cond = (10**sigma_interp) * np.exp(-(E + (P * dv)) / (R_const * T))
 		
-	return cond
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Dai2018_DryOrthoclase_001')
+	else:
+		return cond

@@ -4,9 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 	
-def Dai2009_wetPyropeGarnet(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
-
-	#water has to be converted to wt%
+def Dai2009_DryandWetPyropeGarnet(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	A_dai = [1036.0,1950.0]
 	B = 0.044
@@ -17,13 +15,20 @@ def Dai2009_wetPyropeGarnet(T, P, water, xFe, param1, fo2 = None, fo2_ref = None
 	cond_wet = (A_dai[1] * (water**r_dai_gt) * np.exp(-((E_dai[1]) + (P*V_dai[1])) / (R_const * T)))
 	cond_dry = (A_dai[0] * (1-(B*P)) * np.exp(-((E_dai[0]) + (P*V_dai[0])) / (R_const * T)))
 
-	cond = cond_dry + cond_wet
+	if (mechanism == None):
+		cond = cond_dry + cond_wet
+	elif (mechanism == 'polaron'):
+		cond = cond_dry
+	elif (mechanism == 'dry'):
+		cond = cond_dry
+	elif (mechanism == 'proton'):
+		cond = cond_wet
+	else:
+		raise ValueError('Ionic conduction is not included in electrical conductivity model: Dai2009_wetPyropeGarnet')
 
 	return cond
 	
-def Fullea2011_DryGarnet_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
-
-	#param1 is xFE = feo / (feo+mgo)
+def Fullea2011_DryGarnet_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	sigma_pol_fullea = (10.0)**(-0.72 + np.log10(1 - (0.44*P)))
 	sigma_i_fullea = 4.96
@@ -38,13 +43,13 @@ def Fullea2011_DryGarnet_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = Non
 
 	cond = (sigma_i_fullea * np.exp(-e_i_fullea / (R_const * T))) +\
 	 (sigma_pol_fullea * np.exp(-fe_pol_fullea / (R_const * T)))
-
-	return cond
 	
-def Liu2021_WetAlmandineGarnet_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
-
-	#param1 is xFE = feo / (feo+mgo)
-	#water has to be converted to wt%
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Fullea2011_DryGarnet_xFe')
+	else:
+		return cond
+	
+def Liu2021_WetAlmandineGarnet_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	E = 89000.0
 	sigma = 4.79
@@ -52,7 +57,10 @@ def Liu2021_WetAlmandineGarnet_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref
 	alpha = -4000.0
 	beta = -15000.0
 		
-	cond = (10**sigma) * (xFe**n) * (water) * np.exp(-(E - (alpha * (xFe**(1.0/3.0))) - (beta * (water**(1.0/3.0)))) / (R_const * T))
+	if (mechanism == 'proton') or (mechanism == None):
+		cond = (10**sigma) * (xFe**n) * (water) * np.exp(-(E - (alpha * (xFe**(1.0/3.0))) - (beta * (water**(1.0/3.0)))) / (R_const * T))
+	else:
+		raise ValueError('Dry conduction (polaron and ionic) is not included in electrical conductivity model: Liu2021_WetAlmandineGarnet_xFe')
 	
 	return cond
 	

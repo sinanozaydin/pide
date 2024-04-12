@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Li2016_Phlogopite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Li2016_Phlogopite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	A_li_001 = 10**10.15
 	A_li_010 = 10**8.41
@@ -20,14 +20,22 @@ def Li2016_Phlogopite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, meth
 
 	cond = (cond_001 * cond_010 * cond_110)**(1.0/3.0)
 
-	return cond
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity models of micas')
+	else:
+		return cond
 
-def Li2017_Phlogopite_param1_F(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Li2017_Phlogopite_param1_F(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
+	#param1 is F content in weight percent
+	
 	A_li = 10**8.59
 	E_li = 191000.0
 	r_li = 0.98
 
 	cond = A_li * (param1**r_li) * np.exp(-E_li / (R_const * T))
 
-	return cond
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity models of micas')
+	else:
+		return cond

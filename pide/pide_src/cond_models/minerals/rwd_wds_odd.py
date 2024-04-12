@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Yoshino2012_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
+def Yoshino2012_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	A = 1885.0
 	E = 193000.0 #J/mol
@@ -15,9 +15,15 @@ def Yoshino2012_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref
 	
 	cond = A * xFe * np.exp(-((E - (alpha * xFe**(1.0/3.0))) + (P*(dv - beta*xFe))) / (R_const*T))
 	
-	return cond
+	if mechanism == 'proton':
 	
-def Yoshino2009_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
+		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Yoshino2012_DryRingwoodite_Xfe')
+		
+	else:
+			
+		return cond
+	
+def Yoshino2009_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	A = 10042.0
 	E = 208000.0
@@ -25,9 +31,15 @@ def Yoshino2009_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref
 	
 	cond = A * xFe * np.exp(-((E - (alpha * xFe**(1.0/3.0)))) / (R_const*T))
 	
-	return cond
+	if mechanism == 'proton':
 	
-def Yoshino2012b_DryWad(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
+		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Yoshino2009_DryRingwoodite_Xfe')
+		
+	else:
+			
+		return cond
+	
+def Yoshino2012b_DryWad(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	A = 5.51 #S/m
 	E = 94000.0 #j/mol
@@ -36,5 +48,11 @@ def Yoshino2012b_DryWad(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, me
 	
 	cond = A * np.exp(-(E + (P*dv)) / (R_const*T))
 	
-	return cond
+	if mechanism == 'proton':
+	
+		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Yoshino2012b_DryWad')
+		
+	else:
+			
+		return cond
 	

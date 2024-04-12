@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Dai2014_DryandWetOlivine_fo2(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None):
+def Dai2014_DryandWetOlivine_fo2(T, P, water, xFe ,param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	dv_dai2014 = -0.86 * 1e3 # cm^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
 	p_ref = 4.0
@@ -20,11 +20,47 @@ def Dai2014_DryandWetOlivine_fo2(T, P, water, xFe ,param1, fo2 = None, fo2_ref =
 	cond_wet = (dai_ref * (water / (cw_ref))**(r_dai) * (fo2/fo2_ref)**(q_dai)) *  np.exp(- ((P - p_ref) * dv_dai2014) / (R_const*T))
 	dai_dry =  10**2.4 * ((fo2/fo2_ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
 	
-	cond = np.real(dai_dry + cond_wet)
+	if mechanism == None:
+		cond = np.real(dai_dry + cond_wet)
+	elif mechanism == 'proton':
+		cond = np.real(cond_wet)
+	elif mechanism == 'dry':
+		cond = np.real(dai_dry)
+	else:
+		cond = np.real(dai_dry)
+		print('There is no polaron & ionic distinction for Dai2014_DryandWetOlivine_fo2.  Using Dry conductivity output...')
 
 	return cond
 	
-def Dai2020_WetOlivine_200ppmTi_fo2(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Dai2020_WetOlivine_200ppmTi_fo2(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
+
+	dv_dai2014 = -0.86 * 1e3 # m^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
+	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
+	q_dry = 0.16666 #Taken from Constable (2006)
+
+	A_dai_200 = 3.01
+
+	r_dai_200 = 0.51
+
+	E_dai_200 = 87000.0
+
+	cond_wet = (10.0 ** A_dai_200) * ((water)**r_dai_200) * np.exp(-(E_dai_200) / (R_const * T))
+
+	dai_dry =  10**2.4 * ((fo2/fo2_ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
+	
+	if mechanism == None:
+		cond = dai_dry + cond_wet
+	elif mechanism == 'proton':
+		cond = cond_wet
+	elif mechanism == 'dry':
+		cond = dai_dry
+	else:
+		cond = dai_dry
+		print('Warning: There is no polaron & ionic distinction for Dai2020_WetOlivine_200ppmTi_fo2. Using Dry conductivity output...')
+
+	return cond
+	
+def Dai2020_WetOlivine_683ppmTi_fo2(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	dv_dai2014 = -0.86 * 1e3 # m^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
 	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
@@ -40,31 +76,19 @@ def Dai2020_WetOlivine_200ppmTi_fo2(T, P, water, xFe, param1, fo2 = None, fo2_re
 
 	dai_dry =  10**2.4 * ((fo2/fo2_ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
 
-	cond = dai_dry + cond_wet
+	if mechanism == None:
+		cond = dai_dry + cond_wet
+	elif mechanism == 'proton':
+		cond = cond_wet
+	elif mechanism == 'dry':
+		cond = dai_dry
+	else:
+		cond = dai_dry
+		print('Warning: There is no polaron & ionic distinction for Dai2020_WetOlivine_683ppmTi_fo2. Using Dry conductivity output...')
 
 	return cond
 	
-def Dai2020_WetOlivine_683ppmTi_fo2(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
-
-	dv_dai2014 = -0.86 * 1e3 # m^3 /mol Taken from Dai2014b-PEPI, Error is insignificant, since the effect itself is insignificant...
-	q_dai = -0.066 #Taken from Dai2014c-P"EPI, Error is insignificant.
-	q_dry = 0.16666 #Taken from Constable (2006)
-
-	A_dai_200 = 3.01
-
-	r_dai_200 = 0.51
-
-	E_dai_200 = 87000.0
-
-	cond_wet = (10.0 ** A_dai_200) * ((water)**r_dai_200) * np.exp(-(E_dai_200) / (R_const * T))
-
-	dai_dry =  10**2.4 * ((fo2/fo2_ref)**(q_dry)) * np.exp(-(154000.0 + (P * dv_dai2014)) / (R_const * T))
-
-	cond = dai_dry + cond_wet
-
-	return cond
-	
-def Poe2010_DryandWetOlivine(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Poe2010_DryandWetOlivine(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	E1 = [146e3,126e3]
 	E2 = [112e3,150e3]
@@ -75,16 +99,26 @@ def Poe2010_DryandWetOlivine(T, P, water, xFe, param1, fo2 = None, fo2_ref = Non
 	alpha_1 = 1180
 	alpha_2 = 1430
 	alpha_3 = 700
+	
+	if (mechanism == None):
+		cond_1 = (10**sigma_1[0] * np.exp(-(E1[0])) / (R_const*T)) + (10**sigma_1[1] * water * np.exp(-(E1[1] + (alpha_1 * water)) / (R_const*T)))
+		cond_2 = (10**sigma_2[0] * np.exp(-(E2[0])) / (R_const*T)) + (10**sigma_2[1] * water * np.exp(-(E2[1] + (alpha_2 * water)) / (R_const*T)))
+		cond_3 = (10**sigma_3[0] * np.exp(-(E3[0])) / (R_const*T)) + (10**sigma_3[1] * water * np.exp(-(E3[1] + (alpha_3 * water)) / (R_const*T)))
+			
+	elif mechanism == 'proton':
+		cond_1 = (10**sigma_1[1] * water * np.exp(-(E1[1] + (alpha_1 * water)) / (R_const*T)))
+		cond_2 = (10**sigma_2[1] * water * np.exp(-(E2[1] + (alpha_2 * water)) / (R_const*T)))
+		cond_3 = (10**sigma_3[1] * water * np.exp(-(E3[1] + (alpha_3 * water)) / (R_const*T)))
 		
-	cond_1 = (10**sigma_1[0] * np.exp(-(E1[0])) / (R_const*T)) + (10**sigma_1[1] * water * np.exp(-(E1[1] + (alpha_1 * water)) / (R_const*T)))
-	cond_2 = (10**sigma_2[0] * np.exp(-(E2[0])) / (R_const*T)) + (10**sigma_2[1] * water * np.exp(-(E2[1] + (alpha_2 * water)) / (R_const*T)))
-	cond_3 = (10**sigma_3[0] * np.exp(-(E3[0])) / (R_const*T)) + (10**sigma_3[1] * water * np.exp(-(E3[1] + (alpha_3 * water)) / (R_const*T)))
+	else:
+		cond_1 = (10**sigma_1[0] * np.exp(-(E1[0])) / (R_const*T))
+		cond_2 = (10**sigma_2[0] * np.exp(-(E2[0])) / (R_const*T))
+		cond_3 = (10**sigma_3[0] * np.exp(-(E3[0])) / (R_const*T))
 		
 	cond = (cond_1*cond_2*cond_3)**(1.0/3.0)
-	
 	return cond
 	
-def Constable2006_dryOlivine_fo2(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Constable2006_dryOlivine_fo2(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	e = 1.602e-19 #charge of the electron in coulombs
 	k = 8.617e-5
@@ -96,20 +130,26 @@ def Constable2006_dryOlivine_fo2(T, P, water, xFe, param1, fo2 = None, fo2_ref =
 	condfe = bfe + (3.33e24 * np.exp(-0.02/kT) * (fo2*1e5)**(0.16666))
 	condmg = bmg + (6.21e30 * np.exp(-1.83/kT) * (fo2*1e5)**(0.16666))
 
-	cond = (condfe * ufe * e) + (2.0*condmg* umg * e)
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Constable2006_dryOlivine_fo2')
+	else:
+		cond = (condfe * ufe * e) + (2.0*condmg* umg * e)
 
 	return cond
 
-def Dai2014_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Dai2014_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	sigma_dai2014c = 10**(2.77 + (-1.19 * xFe))
 	e_dai2014c = 162000.0 + (-63000 * xFe)
 
-	cond = sigma_dai2014c * np.exp(-(e_dai2014c) / (R_const * T))
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Dai2014_DryOlivine_xFe')
+	else:
+		cond = sigma_dai2014c * np.exp(-(e_dai2014c) / (R_const * T))
 
 	return cond
 
-def Fullea2011_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Fullea2011_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	sigma_i_fullea = 10**4.73
 	sigma_pol_fullea = 10**2.7 #average value of used models Fullea et al. (2011)
@@ -119,12 +159,15 @@ def Fullea2011_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = No
 	a_ful = [1.642,0.246,-4.85,3.259] #polynomial coefficients that calculates the fe-dependency of act. enthalpies from Omura et al (1989)
 	dv_ful = 0.68 * 1e-6
 	fe_pol_fullea = (a_ful[0] + (a_ful[1] * xFe) + (a_ful[2] * (xFe**2.0)) + (a_ful[3]* (xFe**3.0)) + (P * dv_ful)) * 1e5
-
-	cond = (sigma_i_fullea * np.exp(-e_i_fullea / (R_const * T))) + (sigma_pol_fullea * np.exp(-fe_pol_fullea / (R_const * T)))
+	
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Fullea2011_DryOlivine_xFe')
+	else:
+		cond = (sigma_i_fullea * np.exp(-e_i_fullea / (R_const * T))) + (sigma_pol_fullea * np.exp(-fe_pol_fullea / (R_const * T)))
 
 	return cond
 	
-def Pommier2018_ShearedDryOlivine(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Pommier2018_ShearedDryOlivine(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	A = [284.0,780.0,261.0]
 
@@ -134,11 +177,14 @@ def Pommier2018_ShearedDryOlivine(T, P, water, xFe, param1, fo2 = None, fo2_ref 
 	sigma1 = A[1] * np.exp(-E[1] / (R_const*T))
 	sigma2 = A[2] * np.exp(-E[2] / (R_const*T))
 
-	cond = (sigma0 * sigma1 * sigma2)**(1.0/3.0)
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Fullea2011_DryOlivine_xFe')
+	else:
+		cond = (sigma0 * sigma1 * sigma2)**(1.0/3.0)
 
 	return cond
 	
-def Yoshino2012_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Yoshino2012_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	#Conductivity model from Yoshino et al. (2012, JGR:SE)
 	#Function does not contain the effects of pressure since it has almost no effect.
@@ -149,11 +195,14 @@ def Yoshino2012_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = N
 	H_yosh = 196000.0
 	alpha_yosh = 149000.0
 
-	cond = (A0_yosh) * xFe * np.exp(- ((H_yosh) - ((alpha_yosh) * xFe**(0.33))) / (R_const * T))
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Yoshino2012_DryOlivine_xFe')
+	else:
+		cond = (A0_yosh) * xFe * np.exp(- ((H_yosh) - ((alpha_yosh) * xFe**(0.33))) / (R_const * T))
 
 	return cond
 	
-def Fei2020_WetOlivineIonic_Isotropic(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Fei2020_WetOlivineIonic_Isotropic(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	sigma1 = 10**11.1
 	E1 = 372e3
@@ -163,8 +212,11 @@ def Fei2020_WetOlivineIonic_Isotropic(T, P, water, xFe, param1, fo2 = None, fo2_
 	dv2 = 0.3e3
 	r = 1.3
 		
-	cond = ((sigma1 / T) * (water ** r) * np.exp(-(E1 + (P*dv1)) / (R_const*T))) +\
-		((sigma2) * np.exp(-(E2 + (P*dv2)) / (R_const*T)))
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Yoshino2012_DryOlivine_xFe')
+	else:
+		cond = ((sigma1 / T) * (water ** r) * np.exp(-(E1 + (P*dv1)) / (R_const*T))) +\
+			((sigma2) * np.exp(-(E2 + (P*dv2)) / (R_const*T)))
 		
 	return cond
 

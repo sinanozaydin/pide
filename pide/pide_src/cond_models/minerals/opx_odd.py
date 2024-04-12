@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Dai2005_DryEnstatite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Dai2005_DryEnstatite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	sigma1 = 10**3.78
 	E = 171500.0
@@ -12,9 +12,12 @@ def Dai2005_DryEnstatite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, m
 
 	cond = sigma1 *  np.exp(-(E + (P*dv)) / (R_const * T))
 
-	return cond
+	if mechanism == 'proton':
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Dai2005_DryEnstatite')
+	else:
+		return cond
 	
-def Zhang2016_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Zhang2016_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	#Conductivity model from Zhang et al. (2016, Contr. Min. & Petr.)
 
@@ -34,10 +37,13 @@ def Zhang2016_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, m
 
 	cond = a_z1 * np.exp(- (e_z1 + (P * dv_z1)) / (R_const * T)) +\
 	 (a_z2 * xFe * np.exp(- (e_z2 - (alpha_z2 * (xFe**0.33)) + (P * (dv_z2 - (beta_z2*xFe)))) / (R_const * T)))
-
-	return cond
+	 
+	if (mechanism == 'proton') or (mechanism == 'ionic'):
+		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Zhang2016_DryOpx_xFe')
+	else:
+		return cond
 	
-def Fullea2011_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Fullea2011_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	R_const = 8.3144621
 
@@ -48,5 +54,7 @@ def Fullea2011_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, 
 
 	cond = (sigma_pol_fullea * np.exp(-fe_pol_fullea / (R_const * T)))
 
-	return cond
-	
+	if (mechanism == 'proton') or (mechanism == 'ionic'):
+		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Fullea2011_DryOpx_xFe')
+	else:
+		return cond
