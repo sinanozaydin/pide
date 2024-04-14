@@ -2090,10 +2090,11 @@ class pide(object):
 		"Hashin-Shtrikman Upper Bound (Berryman, 1995)","Parallel Model (Guegen and Palciauskas, 1994)",
 		"Perpendicular Model (Guegen and Palciauskas, 1994)","Random Model (Guegen and Palciauskas, 1994)"]
 		
-		print('Solid Phases Mixing Models:')
+		print(color.RED + 'Solid Phases Mixing Models:' + color.END)
 		for i in range(0,len(phs_mix_list)):
-			print(str(i) + '.  ' + phs_mix_list[i])
+			print(f'{str(i)}.   {phs_mix_list[i]}')
 		
+		return phs_mix_list
 		
 	def list_phs_melt_fluid_mix_methods(self):
 	
@@ -2101,9 +2102,9 @@ class pide(object):
 		"Spheres Model (ten Grotenhuis et al., 2005)","Modified Brick-layer Model (Schilling et al., 1997)",
 		"Hashin-Shtrikman Upper-Bound (Glover et al., 2000)","Hashin-Shtrikman Lower-Bound (Glover et al., 2000)"]
 		
-		print('Solid-Fluid/Melt Mixing models:')
+		print(color.RED + 'Solid-Fluid/Melt Mixing models:' +  color.END)
 		for i in range(0,len(phs_melt_mix_list)):
-			print(str(i) + '.  ' + phs_melt_mix_list[i])
+			print(f'{str(i)}.   {phs_melt_mix_list[i]}')
 		
 		return phs_melt_mix_list
 		
