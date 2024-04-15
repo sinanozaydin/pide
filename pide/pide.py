@@ -48,7 +48,7 @@ from .pide_src.eos.fluid_eos import *
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv
+from .utils.utils import check_type, array_modifier, read_csv, check_return
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -1159,7 +1159,8 @@ class pide(object):
 			raise ValueError('There is no such a mineral specifier called :' + rock_name)
 			
 		return rock_index
-		
+	
+	@check_return
 	def list_mineral_econd_models(self, mineral_name):
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
@@ -1207,7 +1208,8 @@ class pide(object):
 		print_lists(min_idx = min_index)
 		
 		return self.name[min_index]
-		
+	
+	@check_return
 	def list_rock_econd_models(self, rock_name):
 		
 		if (rock_name == 'granite'):
@@ -1243,7 +1245,8 @@ class pide(object):
 		print_lists(rock_idx = rock_idx)
 		
 		return self.name[rock_idx]
-		
+	
+	@check_return
 	def list_melt_econd_models(self):
 	
 		print(color.RED +'Conductivity models for melts:' + color.END)
@@ -1254,7 +1257,8 @@ class pide(object):
 		print('                 ')
 			
 		return self.name[1]
-		
+	
+	@check_return
 	def list_fluid_econd_models(self):
 		
 		print(color.BLUE +'Conductivity models for fluids:' + color.END)
@@ -1265,7 +1269,8 @@ class pide(object):
 		print('                 ')
 		
 		return self.name[0]
-		
+	
+	@check_return
 	def list_mantle_water_partitions_solid(self, mineral_name):
 	
 		if (mineral_name == 'opx') or (mineral_name == 'orthopyroxene'):
@@ -1294,7 +1299,8 @@ class pide(object):
 		print_lists(min_idx = min_index)
 		
 		return self.water_ol_part_name[min_index]
-		
+	
+	@check_return
 	def list_transition_zone_water_partitions_solid(self, mineral_name):
 	
 		if (mineral_name == 'cpx') or (mineral_name == 'clinopyroxene'):
@@ -1324,7 +1330,8 @@ class pide(object):
 		print_lists(min_idx = min_index)
 		
 		return self.water_rwd_wds_part_name[min_index]
-		
+	
+	@check_return
 	def list_mantle_water_partitions_melt(self, mineral_name):
 		
 		print('Mantle melt/NAMs water partition coefficients for the mineral: ' + mineral_name)
@@ -1355,9 +1362,10 @@ class pide(object):
 		print_lists(min_idx = min_index)
 		
 		return self.water_melt_part_name[min_index]
-		
-	def list_mantle_water_solubilities(self, mineral_name):
 	
+	@check_return
+	def list_mantle_water_solubilities(self, mineral_name):
+
 		print('Mantle NAM water solubility for: ' + mineral_name)
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
@@ -1380,9 +1388,12 @@ class pide(object):
 				print(str(i) + '.  ' + self.mineral_sol_name[min_idx][i])
 				
 		print_lists(min_idx = min_index)
-		
-		return self.mineral_sol_name[min_index]
-		
+
+		if not self.list_mantle_water_solubilities.var_assigned:
+			pass
+		else:
+			return self.mineral_sol_name[min_index]
+	
 	def set_melt_fluid_conductivity_choice(self,**kwargs):
 	
 		pide.melt_cond_selection = kwargs.pop('melt', 0)
@@ -2064,19 +2075,21 @@ class pide(object):
 				if len(np.flatnonzero(list_of_values_minerals[i] < 0.0)) != 0:
 				
 					raise ValueError('There is a value entered in mineral mineral grain sizes that apperas to be below 0.')
-		
+	
+	@check_return
 	def list_phs_mix_methods(self):
 	
 		phs_mix_list = ["Generalized Archie's Law (Glover, 2010)","Hashin-Shtrikman Lower Bound (Berryman, 1995)",
 		"Hashin-Shtrikman Upper Bound (Berryman, 1995)","Parallel Model (Guegen and Palciauskas, 1994)",
 		"Perpendicular Model (Guegen and Palciauskas, 1994)","Random Model (Guegen and Palciauskas, 1994)"]
 		
-		print(color.RED + 'Solid Phases Mixing Models:' + color.END)
+		print(color.RED + 'Solid Phase Mixing Models:' + color.END)
 		for i in range(0,len(phs_mix_list)):
 			print(f'{str(i)}.   {phs_mix_list[i]}')
 		
 		return phs_mix_list
-		
+	
+	@check_return
 	def list_phs_melt_fluid_mix_methods(self):
 	
 		phs_melt_mix_list = ["Modified Archie's Law (Glover et al., 2000)","Tubes Model (ten Grotenhuis et al., 2005)",

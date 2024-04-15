@@ -120,3 +120,13 @@ def associate_coordinates(sample_x, sample_y, target_x, target_y, filename, num_
 	else:
 	
 		return idx_array
+	
+def check_return(func):
+	def wrapper(*args, **kwargs):
+		result = func(*args, **kwargs)
+		if not wrapper.var_assigned:
+			return None
+		return result
+
+	wrapper.var_assigned = False
+	return wrapper
