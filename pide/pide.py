@@ -48,7 +48,7 @@ from .pide_src.eos.fluid_eos import *
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv, check_return
+from .utils.utils import check_type, array_modifier, read_csv
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -1160,7 +1160,6 @@ class pide(object):
 			
 		return rock_index
 	
-	@check_return
 	def list_mineral_econd_models(self, mineral_name):
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
@@ -1209,7 +1208,6 @@ class pide(object):
 		
 		return self.name[min_index]
 	
-	@check_return
 	def list_rock_econd_models(self, rock_name):
 		
 		if (rock_name == 'granite'):
@@ -1246,7 +1244,6 @@ class pide(object):
 		
 		return self.name[rock_idx]
 	
-	@check_return
 	def list_melt_econd_models(self):
 	
 		print(color.RED +'Conductivity models for melts:' + color.END)
@@ -1258,7 +1255,6 @@ class pide(object):
 			
 		return self.name[1]
 	
-	@check_return
 	def list_fluid_econd_models(self):
 		
 		print(color.BLUE +'Conductivity models for fluids:' + color.END)
@@ -1270,7 +1266,6 @@ class pide(object):
 		
 		return self.name[0]
 	
-	@check_return
 	def list_mantle_water_partitions_solid(self, mineral_name):
 	
 		if (mineral_name == 'opx') or (mineral_name == 'orthopyroxene'):
@@ -1300,7 +1295,6 @@ class pide(object):
 		
 		return self.water_ol_part_name[min_index]
 	
-	@check_return
 	def list_transition_zone_water_partitions_solid(self, mineral_name):
 	
 		if (mineral_name == 'cpx') or (mineral_name == 'clinopyroxene'):
@@ -1331,7 +1325,6 @@ class pide(object):
 		
 		return self.water_rwd_wds_part_name[min_index]
 	
-	@check_return
 	def list_mantle_water_partitions_melt(self, mineral_name):
 		
 		print('Mantle melt/NAMs water partition coefficients for the mineral: ' + mineral_name)
@@ -1363,7 +1356,6 @@ class pide(object):
 		
 		return self.water_melt_part_name[min_index]
 	
-	@check_return
 	def list_mantle_water_solubilities(self, mineral_name):
 
 		print('Mantle NAM water solubility for: ' + mineral_name)
@@ -2076,7 +2068,6 @@ class pide(object):
 				
 					raise ValueError('There is a value entered in mineral mineral grain sizes that apperas to be below 0.')
 	
-	@check_return
 	def list_phs_mix_methods(self):
 	
 		phs_mix_list = ["Generalized Archie's Law (Glover, 2010)","Hashin-Shtrikman Lower Bound (Berryman, 1995)",
@@ -2089,7 +2080,6 @@ class pide(object):
 		
 		return phs_mix_list
 	
-	@check_return
 	def list_phs_melt_fluid_mix_methods(self):
 	
 		phs_melt_mix_list = ["Modified Archie's Law (Glover et al., 2000)","Tubes Model (ten Grotenhuis et al., 2005)",
@@ -3946,7 +3936,7 @@ class pide(object):
 			self.d_cpx_rwd_wds = eval(self.water_rwd_wds_part_name[5][self.d_water_cpx_rwd_wds_choice] + '(p = self.p[idx_node],\
 			p_change = self.water_rwd_wds_part_pchange[5][self.d_water_cpx_rwd_wds_choice], method = method)')
 		
-	def mantle_water_distribute(self, method, **kwargs):
+	def mantle_water_distribute(self, method = 'array', **kwargs):
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
 	
