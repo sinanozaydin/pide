@@ -29,6 +29,9 @@ def interpolate_2d_fields(mesh_field, vals, mesh_out, method = 'linear'):
 			
 	points_interp = np.column_stack((np.array(points_x), np.array(points_y)))
 	
+	import ipdb
+	ipdb.set_trace()
+	
 	interp_vals = griddata(points_interp, vals, (mesh_out[0],mesh_out[1]),method = method)
 	
 	return interp_vals

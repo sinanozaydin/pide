@@ -2273,8 +2273,12 @@ class pide(object):
 		
 		return cond
 	
-	def calculate_mineral_conductivity(self, method, min_idx = None, **kwargs):
+	def calculate_mineral_conductivity(self, method = 'array', min_idx = None, **kwargs):
 	
+		if min_idx == None:
+		
+			raise ValueError('Mineral is not entered for the method calculate_mineral_conductivity!')
+		
 		sol_idx = kwargs.pop('sol_idx', 0)
 	
 		if method == 'array':
@@ -2283,7 +2287,7 @@ class pide(object):
 			idx_node = sol_idx
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
-				
+		
 		if (min_idx < 11) or (min_idx > 27):
 			raise ValueError("The index chosen for mineral conductivity does not appear to be correct. It has to be a value between 11 and 27.")
 
@@ -3141,7 +3145,7 @@ class pide(object):
 				((3 * self.melt_fluid_frac[idx_node] * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])) /\
 				(3 * self.bulk_cond[idx_node] + (vol_matrix * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])))))
 			
-	def calculate_conductivity(self, method = None,**kwargs):
+	def calculate_conductivity(self, method = 'array',**kwargs):
 		
 		sol_idx = kwargs.pop('sol_idx', 0)
 		
@@ -4243,6 +4247,11 @@ class pide(object):
 		self.max_bulk_water = (self.max_rwd_wds_water * self.rwd_wds_frac_wt) +  (self.max_cpx_water * self.cpx_frac_wt) + (self.max_garnet_water * self.garnet_frac_wt) + (self.max_perov_water * self.perov_frac_wt)
 
 		return self.max_bulk_water
+		
+	def reset(self):
+		
+		self.form_object()
+		
 
 class color:
    PURPLE = '\033[95m'

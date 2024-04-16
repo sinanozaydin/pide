@@ -1,7 +1,10 @@
 import numpy as np
 import csv
 
+
 def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
+
+    #Function to call inside this class by associate_coordinates method for parallelisation purposes.
 
 	idx_target = (np.abs(y_sample-y_target[index])).argmin()
 	idx_target_lists = [idx for idx, value in enumerate(y_sample) if value == y_sample[idx_target]]
@@ -74,7 +77,7 @@ def read_csv(filename,delim):
 		return data
 		
 		
-def associate_coordinates(sample_x, sample_y, target_x, target_y, filename, num_cpu = 1, method = 'return'):
+def associate_coordinates(sample_x, sample_y, target_x, target_y,  num_cpu = 1, filename = 'idx.mat' ,method = 'return'):
 
 	"""
 	Returns the associated indexes 

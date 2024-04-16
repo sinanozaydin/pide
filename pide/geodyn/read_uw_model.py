@@ -17,19 +17,19 @@ def read_uw_material_names_from_py_input(py_file):
 
 	#Simple function for reading csv files and give out filtered output for given delimiter (delim)
 
-	file_obj = open(py_file,'rt',encoding = "utf8") #Creating file object
-	file_csv = csv.reader(file_obj) #Reading the file object with csv module, delimiter assigned to ','
-	py_file_text = [] #Creating empty array to append data
-
-	#Appending data from csb object
-	for row in file_csv:
-		py_file_text.append(row)
-
+	with open(py_file,'rt',encoding = "utf8") as file_obj:
+		file_csv = csv.reader(file_obj) #Reading the file object with csv module, delimiter assigned to ','
+		
+		py_file_text = [] #Creating empty array to append data
+	
+		#Appending data from csb object
+		for row in file_csv:
+			py_file_text.append(row)
+	
 	#Filtering data for None elements read.
 	for j in range(0,len(py_file_text)):
 		py_file_text[j] = list(filter(None,py_file_text[j]))
 	py_file_text = list(filter(None,py_file_text))
-
 
 	idx_material_py = []
 

@@ -12,7 +12,7 @@ from pide.geodyn.material_process import *
 from pide.geodyn.write_uw_model import write_2d_field_h5
 
 #setting up source folder of the files
-source_folder = os.path.join('.','example_data','uwconversion')
+source_folder = os.path.join('..','example_data','uwconversion')
 
 #setting up filename folders for the h5 files.
 temp_fnm = os.path.join(source_folder,'temperature-501.h5')
