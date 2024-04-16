@@ -15,6 +15,10 @@ def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
 
 def check_type(input):
 
+	"""
+	A check type function
+	"""
+
 	if isinstance(input,(int,float)):
 		method_calc = 'scalar'
 	else:
@@ -23,6 +27,11 @@ def check_type(input):
 	return method_calc
 	
 def array_modifier(input, array, varname):
+
+	"""
+	A function to extend the input into the length of the given array. In pide this is mostly used for
+	arrays to match with temperature array (self.T).
+	"""
 		
 	if type(input) == int:
 		
@@ -58,8 +67,10 @@ def array_modifier(input, array, varname):
 	return ret_array
 	
 def read_csv(filename,delim):
-
-	#Simple function for reading csv files and give out filtered output for given delimiter (delim)
+	"""
+	Simple function for reading csv files and give out filtered output for given delimiter (delim)
+	"""
+	
 	with open(filename,'rt',encoding = "utf8") as file_obj:
 	
 		file_csv = csv.reader(file_obj,delimiter = delim) #Reading the file object with csv module, delimiter assigned to ','
@@ -80,7 +91,8 @@ def read_csv(filename,delim):
 def associate_coordinates(sample_x, sample_y, target_x, target_y,  num_cpu = 1, filename = 'idx.mat' ,method = 'return'):
 
 	"""
-	Returns the associated indexes 
+	Returns the closest indexes of sample_x and _y for target_x and _y arrays.
+	It can be saved as a mat file.
 	"""
 
 	if num_cpu != 1:
@@ -126,6 +138,8 @@ def associate_coordinates(sample_x, sample_y, target_x, target_y,  num_cpu = 1, 
 	
 
 class text_color:
+   
+   #color object for to be called by the print outs.
    PURPLE = '\033[95m'
    CYAN = '\033[96m'
    DARKCYAN = '\033[36m'

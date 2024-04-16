@@ -200,6 +200,24 @@ def run_conductivity_model(index_list, material, pide_object, t_array, p_array, 
 	return c
 	
 def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deformation_threshold, high_deformation_threshold, function_method, conductivity_decay_factor,strain_decay_factor):
+
+	"""
+	A function to run deformation related conductivity.
+
+	Inputs:
+	index_number: array of index numbers.
+	p_strain: Plastic strain field  - np.ndarray
+	background_cond: lower conductivity to associated with low plastic strain - np.ndarray
+	max_cond: highest conductivity to associate with high plastic strain - np.ndarray
+	low_deformation_threshold: Threshold point in plastic strain to start the linking function - float
+	high_deformation_threshold: Threshold point in plastic strain to end the linking function - float
+	function_method: The type of function to fit: 'exponential', 'linear, 'logarithmic'.
+	conductivity_decay_factor: How much conductivity mid-point is moved from the middle point: -1 to 1
+	strain_decat_factor:
+
+	To understand how this function works. Try to use the notebook deformation_related_conductivity notebook in examples.
+
+	"""
 	
 	#Global function to link deformation and conductivity.
 	if (background_cond[index_number[0],index_number[1],index_number[2]] == np.nan) or (max_cond[index_number[0],index_number[1],index_number[2]] == np.nan): 
@@ -238,6 +256,24 @@ class Model(object):
 
 	def __init__(self, material_list, material_array, T, P, model_type = 'underworld_2d', material_list_2 = None,
 	melt = None, p_strain = None, strain_rate = None, material_node_skip_rate_list = None):
+		
+		"""
+		Model object: This is an object used to append materials in a 3D or 2D space, then perform calculations in batch.
+		
+		Methods:
+		----------------------------------------------- -----------------------------------------
+		Methods                             			Description
+		----------------------------------------------- -----------------------------------------
+
+		calculate_conductivity							Calculates the conductivity of the model object
+														that is setup.
+		
+		calculate_deformation_related_conductivity		Calculates the deformation related conductivity
+														withe the given information loaded onto material
+														objects.								
+
+		
+		"""
 
 		self.material_list = material_list
 		self.material_list_2 = material_list_2
@@ -251,6 +287,10 @@ class Model(object):
 		self.material_node_skip_rate_list = material_node_skip_rate_list
 		
 	def calculate_conductivity(self,type = 'background', num_cpu = 1):
+
+		"""
+		Calculates conductivity for the given model.
+		"""
 	
 		if num_cpu > 1:
 		

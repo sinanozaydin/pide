@@ -86,6 +86,10 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 def conductivity_solver_single_param(object, cond_list, param_name,
 	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, num_cpu = 1):
 
+	"""
+	A function to fit conductivity value with a single parameter with simple search algorithm.
+	"""
+
 	index_list = np.array(list(range(0,len(object.T)))) #creating the index array tied to the T array.
 	
 	if ('water' in param_name) == True:
