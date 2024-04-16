@@ -7,6 +7,7 @@ from .geodyn.material_process import return_material_bool
 
 #importing the function
 from .geodyn.deform_cond import plastic_strain_2_conductivity
+from .utils.utils import text_color
 
 def run_conductivity_model(index_list, material, pide_object, t_array, p_array, melt_array):
 
@@ -276,7 +277,7 @@ class Model(object):
 		cond_list = []
 			
 		for l in range(0,len(material_list_holder)):
-			print('Initiating calculation for the materials appended to the model.')
+			print(text_color.RED + 'Initiating calculation for the materials appended to the model.' + text_color.END)
 			print('##############################################################')
 			for i in range(0,len(material_list_holder[l])):
 	
@@ -364,7 +365,7 @@ class Model(object):
 						for idx in range(0,len(sliced_material_idx)):
 							cond[sliced_material_idx[idx]] = c[idx]
 				
-				print('The conductivity for the material ' + material_list_holder[l][i].name + ' is calculated.')
+				print(f'The conductivity for the material  {material_list_holder[l][i].name}  is calculated.')
 				
 			#converting all zero vals in the cond to None values
 			
@@ -443,7 +444,7 @@ class Model(object):
 				cond_decay[material_idx] = [x[2] for x in c]
 				misfit[material_idx] = [x[3] for x in c]
 				
-				print('The deformation related conductivity for the material ' + self.material_list[i].name + ' is calculated.')
+				print(f'The deformation related conductivity for the material  {self.material_list[i].name}  is calculated.')
 			
 			#converting all zero vals in the cond to None values
 			deform_cond[deform_cond == 0.0] = np.nan

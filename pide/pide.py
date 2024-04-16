@@ -48,7 +48,7 @@ from .pide_src.eos.fluid_eos import *
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv
+from .utils.utils import check_type, array_modifier, read_csv, text_color
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -1129,7 +1129,7 @@ class pide(object):
 			
 		else:
 		
-			raise ValueError('There is no such a mineral specifier called :' + mineral_name)
+			raise ValueError(f'There is no such a mineral specifier called : {mineral_name}')
 			
 		return min_index
 		
@@ -1156,7 +1156,7 @@ class pide(object):
 			
 		else:
 		
-			raise ValueError('There is no such a mineral specifier called :' + rock_name)
+			raise ValueError(f'There is no such a mineral specifier called : {rock_name}')
 			
 		return rock_index
 	
@@ -1196,13 +1196,14 @@ class pide(object):
 			min_index = 26
 			
 		else:
-			raise ValueError('There is no such a mineral specifier called :' + mineral_name)
+			raise ValueError(f'There is no such a mineral specifier called : {mineral_name}')
 			
-		print(color.RED + 'Electrical conductivity models for the given mineral: ' + mineral_name + color.END)
+		print(text_color.RED + 'Electrical conductivity models for the given mineral: ' + mineral_name + text_color.END)
+
 		def print_lists(min_idx):
 		
 			for i in range(0,len(self.name[min_idx])):
-				print(str(i) + '.  ' + self.name[min_idx][i])
+				print(f'{str(i)}.   {self.name[min_idx][i]}')
 			
 		print_lists(min_idx = min_index)
 		
@@ -1231,13 +1232,13 @@ class pide(object):
 			
 		else:
 		
-			raise ValueError('There is no such a mineral specifier called :' + rock_name)
+			raise ValueError(f'There is no such a mineral specifier called : {rock_name}')
 		
-		print(color.RED +'Conductivity models for the selected rock:' + color.END)
+		print(text_color.RED +'Conductivity models for the selected rock:' + text_color.END)
 		def print_lists(rock_idx):
 		
 			for i in range(0,len(self.name[rock_idx])):
-				print(str(i) + '.  ' + self.name[rock_idx][i])
+				print(f'{str(i)}.   {self.name[rock_idx][i]}')
 			print('                 ')
 			print('                 ')
 		print_lists(rock_idx = rock_idx)
@@ -1246,9 +1247,9 @@ class pide(object):
 	
 	def list_melt_econd_models(self):
 	
-		print(color.RED +'Conductivity models for melts:' + color.END)
+		print(text_color.RED +'Conductivity models for melts:' + text_color.END)
 		for i in range(0,len(self.name[1])):
-			print(str(i) + '.  ' + self.name[1][i])
+			print(f'{str(i)}.   {self.name[1][i]}')
 			
 		print('                 ')
 		print('                 ')
@@ -1257,9 +1258,9 @@ class pide(object):
 	
 	def list_fluid_econd_models(self):
 		
-		print(color.BLUE +'Conductivity models for fluids:' + color.END)
+		print(text_color.BLUE +'Conductivity models for fluids:' + text_color.END)
 		for i in range(0,len(self.name[0])):
-			print(str(i) + '.  ' + self.name[0][i])
+			print(f'{str(i)}.   {self.name[0][i]}')
 			
 		print('                 ')
 		print('                 ')
@@ -1278,16 +1279,16 @@ class pide(object):
 			min_index = 7
 			min_str = 'Garnet/Ol'
 		else:
-			raise AttributeError('There is no mantle water partition coefficients for the chosen mineral: ' + mineral_name)
+			raise AttributeError(f'There is no mantle water partition coefficients for the chosen mineral:  {mineral_name}')
 			
 		def print_lists(min_idx):
 			
-			print(color.RED + 'Mantle solid-state water partition coefficients for the mineral: ' + mineral_name + color.END)
+			print(text_color.RED + 'Mantle solid-state water partition coefficients for the mineral: ' + mineral_name + text_color.END)
 			for i in range(0,len(self.water_ol_part_name[min_idx])):
 				if self.water_ol_part_type[min_index][i] == 0:
-					print(str(i) + '.  ' + self.water_ol_part_name[min_index][i] + ' -  Type ' + str(self.water_ol_part_type[min_index][i]) + '  -  ' + min_str + ': ' + str(self.water_ol_part_function[min_index][i]))
+					print(f'{str(i)}.   {self.water_ol_part_name[min_index][i]} -  Type   {str(self.water_ol_part_type[min_index][i])}   -   {min_str} :  {str(self.water_ol_part_function[min_index][i])}')
 				else:
-					print(str(i) + '.  ' + self.water_ol_part_name[min_index][i] + ' -  Type ' + str(self.water_ol_part_type[min_index][i]))
+					print(f'{str(i)}.   {self.water_ol_part_name[min_index][i]}  -  Type  {str(self.water_ol_part_type[min_index][i])}')
 			print('                 ')
 			print('                 ')	
 			
@@ -1307,16 +1308,16 @@ class pide(object):
 			min_index = 13
 			min_str = 'Perov/RwdWds'
 		else:
-			raise AttributeError('There is no transition zone water partition coefficients for the chosen mineral: ' + mineral_name)
+			raise AttributeError(f'There is no transition zone water partition coefficients for the chosen mineral:  {mineral_name}')
 			
 		def print_lists(min_idx):
 		
-			print(color.RED + 'Transition zone solid-state water partition coefficients for the mineral: ' + mineral_name + color.END)
+			print(text_color.RED + 'Transition zone solid-state water partition coefficients for the mineral: ' + mineral_name + text_color.END)
 			for i in range(0,len(self.water_rwd_wds_part_name[min_idx])):
 				if self.water_rwd_wds_part_type[min_index][i] == 0:
-					print(str(i) + '.  ' + self.water_rwd_wds_part_name[min_index][i] + ' -  Type ' + str(self.water_rwd_wds_part_type[min_index][i]) + '  -  ' + min_str + ': ' + str(self.water_rwd_wds_part_function[min_index][i]))
+					print(f'{str(i)} .   {self.water_rwd_wds_part_name[min_index][i]}  -  Type  {str(self.water_rwd_wds_part_type[min_index][i])}   -   {min_str} :  {str(self.water_rwd_wds_part_function[min_index][i])}')
 				else:
-					print(str(i) + '.  ' + self.water_rwd_wds_part_name[min_index][i] + ' -  Type ' + str(self.water_rwd_wds_part_type[min_index][i]) + '  -  Specific Function.' )
+					print(f'{str(i)} .   {self.water_rwd_wds_part_name[min_index][i]}  -  Type  {str(self.water_rwd_wds_part_type[min_index][i])}   -  Specific Function.')
 		
 			print('                 ')
 			print('                 ')	
@@ -1327,7 +1328,7 @@ class pide(object):
 	
 	def list_mantle_water_partitions_melt(self, mineral_name):
 		
-		print('Mantle melt/NAMs water partition coefficients for the mineral: ' + mineral_name)
+		print(f'Mantle melt/NAMs water partition coefficients for the mineral:   {mineral_name}')
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
 			min_index = 10
@@ -1342,15 +1343,15 @@ class pide(object):
 			min_index = 7
 			min_str = 'Garnet/Melt'
 		else:
-			raise AttributeError('There is no mantle water partition coefficients for the chosen mineral: ' + mineral_name)
+			raise AttributeError(f'There is no mantle water partition coefficients for the chosen mineral:  {mineral_name}')
 			
 		def print_lists(min_idx):
 		
 			for i in range(0,len(self.water_melt_part_name[min_idx])):
 				if self.water_melt_part_type[min_index][i] == 0:
-					print(str(i) + '.  ' + self.water_melt_part_name[min_index][i] + ' -  Type ' + str(self.water_melt_part_type[min_index][i]) + '  -  ' + min_str + ': ' + str(self.water_melt_part_function[min_index][i]))
+					print(f'{str(i)}.   {self.water_melt_part_name[min_index][i]}  -  Type  {str(self.water_melt_part_type[min_index][i])}   -   {min_str} :  {str(self.water_melt_part_function[min_index][i])}')
 				else:
-					print(str(i) + '.  ' + self.water_melt_part_name[min_index][i] + ' -  Type ' + str(self.water_melt_part_type[min_index][i]) + '  -  Specific Function.' )
+					print(f'{str(i)}.   {self.water_melt_part_name[min_index][i]}  -  Type  {str(self.water_melt_part_type[min_index][i])}   -  Specific Function.' )
 					
 		print_lists(min_idx = min_index)
 		
@@ -1358,7 +1359,7 @@ class pide(object):
 	
 	def list_mantle_water_solubilities(self, mineral_name):
 
-		print('Mantle NAM water solubility for: ' + mineral_name)
+		print(f'Mantle NAM water solubility for:  {mineral_name}')
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
 			min_index = 10
@@ -1371,13 +1372,13 @@ class pide(object):
 		elif (mineral_name == 'rwd_wds'):
 			min_index = 12
 		else:
-			raise AttributeError('There is no mantle water solubility adjust for the chosen mineral: ' + mineral_name)
+			raise AttributeError(f'There is no mantle water solubility adjust for the chosen mineral:  {mineral_name}')
 		
 		
 		def print_lists(min_idx):
 		
 			for i in range(0,len(self.mineral_sol_name[min_idx])):
-				print(str(i) + '.  ' + self.mineral_sol_name[min_idx][i])
+				print(f'{str(i)} .   {self.mineral_sol_name[min_idx][i]}')
 				
 		print_lists(min_idx = min_index)
 
@@ -1393,11 +1394,11 @@ class pide(object):
 		
 		if (pide.melt_cond_selection < 0) or (pide.melt_cond_selection > len(self.name[1])):
 		
-			raise ValueError('Bad entry for melt conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[1])))
+			raise ValueError(f'Bad entry for melt conductivity selection. Indexes allowed are from 0 to  {str(len(self.name[1]))}')
 			
 		if (pide.fluid_cond_selection < 0) or (pide.fluid_cond_selection > len(self.name[0])):
 		
-			raise ValueError('Bad entry for fluid conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[0])))
+			raise ValueError(f'Bad entry for fluid conductivity selection. Indexes allowed are from 0 to  {str(len(self.name[0]))}')
 		
 	def set_mineral_conductivity_choice(self,**kwargs):
 	
@@ -2074,7 +2075,7 @@ class pide(object):
 		"Hashin-Shtrikman Upper Bound (Berryman, 1995)","Parallel Model (Guegen and Palciauskas, 1994)",
 		"Perpendicular Model (Guegen and Palciauskas, 1994)","Random Model (Guegen and Palciauskas, 1994)"]
 		
-		print(color.RED + 'Solid Phase Mixing Models:' + color.END)
+		print(text_color.RED + 'Solid Phase Mixing Models:' + text_color.END)
 		for i in range(0,len(phs_mix_list)):
 			print(f'{str(i)}.   {phs_mix_list[i]}')
 		
@@ -2086,7 +2087,7 @@ class pide(object):
 		"Spheres Model (ten Grotenhuis et al., 2005)","Modified Brick-layer Model (Schilling et al., 1997)",
 		"Hashin-Shtrikman Upper-Bound (Glover et al., 2000)","Hashin-Shtrikman Lower-Bound (Glover et al., 2000)"]
 		
-		print(color.RED + 'Solid-Fluid/Melt Mixing models:' +  color.END)
+		print(text_color.RED + 'Solid-Fluid/Melt Mixing models:' +  text_color.END)
 		for i in range(0,len(phs_melt_mix_list)):
 			print(f'{str(i)}.   {phs_melt_mix_list[i]}')
 		
@@ -2095,7 +2096,6 @@ class pide(object):
 	def suggestion_temp_array(self):
 	
 		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
-		
 		
 	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
 		
@@ -2341,7 +2341,7 @@ class pide(object):
 			
 			#Pre arrangement for what to do at the calculation stage if mechanisms are selected.
 			if pide.type[min_idx][min_sum_idx] == '4':
-				print('The mechanisms selection will not work on H-diffusion conductivity selection of ' + pide.name[min_idx][min_sum_idx])
+				print(f'The mechanisms selection will not work on H-diffusion conductivity selection of  {pide.name[min_idx][min_sum_idx]}')
 			else:
 				sigma_i = 0.0
 				h_i = 0.0
@@ -4253,14 +4253,3 @@ class pide(object):
 		self.form_object()
 		
 
-class color:
-   PURPLE = '\033[95m'
-   CYAN = '\033[96m'
-   DARKCYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   END = '\033[0m'
