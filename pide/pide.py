@@ -3558,30 +3558,30 @@ class pide(object):
 		
 		if self.seismic_setup == False:
 		
-			unique_compositions, fraction_list, idx_unique, id_list_global = self._setup_seismic_calculation_()
+			self.unique_compositions, self.fraction_list, self.idx_unique, self.id_list_global = self._setup_seismic_calculation_()
 					
 		isotropy_object = Isotropy()
 		
 		if method == 'array':
 					
-			for comp_idx in range(0,len(unique_compositions)):
+			for comp_idx in range(0,len(self.unique_compositions)):
 			
-				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=unique_compositions[comp_idx], fraction_list=fraction_list[idx_unique[comp_idx]])
+				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.unique_compositions[comp_idx], fraction_list=self.fraction_list[self.idx_unique[comp_idx]])
 				
 				medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
-				pressure = self.p[idx_unique[comp_idx]], temperature=self.T[idx_unique[comp_idx]])
+				pressure = self.p[self.idx_unique[comp_idx]], temperature=self.T[self.idx_unique[comp_idx]])
 				
-				self.v_bulk[idx_unique[comp_idx]] = medium[0]
-				self.v_p[idx_unique[comp_idx]] = medium[1]
-				self.v_s[idx_unique[comp_idx]] = medium[2]
+				self.v_bulk[self.idx_unique[comp_idx]] = medium[0]
+				self.v_p[self.idx_unique[comp_idx]] = medium[1]
+				self.v_s[self.idx_unique[comp_idx]] = medium[2]
 				
-				self.v_bulk_upper[idx_unique[comp_idx]] = upper[0]
-				self.v_p_upper[idx_unique[comp_idx]] = upper[1]
-				self.v_s_upper[idx_unique[comp_idx]] = upper[2]
+				self.v_bulk_upper[self.idx_unique[comp_idx]] = upper[0]
+				self.v_p_upper[self.idx_unique[comp_idx]] = upper[1]
+				self.v_s_upper[self.idx_unique[comp_idx]] = upper[2]
 				
-				self.v_bulk_lower[idx_unique[comp_idx]] = lower[0]
-				self.v_p_lower[idx_unique[comp_idx]] = lower[1]
-				self.v_s_lower[idx_unique[comp_idx]] = lower[2]
+				self.v_bulk_lower[self.idx_unique[comp_idx]] = lower[0]
+				self.v_p_lower[self.idx_unique[comp_idx]] = lower[1]
+				self.v_s_lower[self.idx_unique[comp_idx]] = lower[2]
 			
 			if return_lower_upper == False:
 				return self.v_bulk, self.v_p, self.v_s
@@ -3590,7 +3590,7 @@ class pide(object):
 				
 		elif method == 'index':
 		
-			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=id_list_global[index], fraction_list=fraction_list[index])
+			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
 			
 			medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list[index], fraction_list=fraction_[index],
 				pressure = self.p[index], temperature=self.T[index])
@@ -3610,7 +3610,7 @@ class pide(object):
 			if return_lower_upper == False:
 				return self.v_bulk[index], self.v_p[index], self.v_s[index]
 			else:
-				return [self.v_bulk[index], self.v_p[index], self.v_s[index]],
+				return [self.v_bulk[index], self.v_p[index], self.v_s[index]],\
 				[self.v_bulk_upper[index], self.v_p_upper[index], self.v_s_upper[index]], [self.v_bulk_lower[index], self.v_p_lower[index], self.v_s_lower[index]]
 				
 	def calculate_density_solid(self, min_idx = None):

@@ -1,6 +1,6 @@
 import numpy as np
 
-def calculate_hasterok2011_geotherm(SHF, BDL_T, T_0, max_depth, moho, kinked, adiabat, **kwargs):
+def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BDL_T = 0,kinked = False, **kwargs):
 
 	'''
 
@@ -233,16 +233,24 @@ def calculate_hasterok2011_geotherm(SHF, BDL_T, T_0, max_depth, moho, kinked, ad
 
 		T_C_Adiabat, T_K_Adiabat = T_Katsura_2022_Adiabat(p)
 
-		idx_T = np.argwhere(np.diff(np.sign(T - T_K_Adiabat)) != 0)
+		idx_LAB = np.argwhere(np.diff(np.sign(T - T_K_Adiabat)) != 0)
 
 		try:
-			T[idx_T[0][0]:] = T_K_Adiabat[idx_T[0][0]:]
+			T[idx_LAB[0][0]:] = T_K_Adiabat[idx_LAB[0][0]:]
 		except IndexError:
 			pass
 
 
-	return T, depth, p, idx_geotherm_nearest
-		
+	if kinked == False:
+		if adiabat == True:
+			return T, depth, p, idx_LAB
+		else:
+			return T, depth, p
+	else:
+		if adiabat == True:
+			return T, depth, p, idx_LAB, idx_geotherm_nearest
+		else:
+			return T, depth, p, idx_geotherm_nearest
 	
 def T_Katsura_2022_Adiabat(P_input):
 
