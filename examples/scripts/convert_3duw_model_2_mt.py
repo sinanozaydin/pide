@@ -21,7 +21,8 @@ from pide.geodyn.write_uw_model import write_3d_field_h5
 # source_folder = "/scratch/q97/so0195/pide2/3D_model_convert/3dmodel"
 # source_folder = "/scratch/q97/pxr562/2020/PullApt300r/ProtPA300r"
 # source_folder = "/home/sinan/Desktop/Research/SEL/3d_work_dir/ProtPA300r"
-source_folder = "/home/sinan/Desktop/Research/SEL/3d_work_dir/ProtPA300r"
+# source_folder = "/home/sinan/Desktop/Research/SEL/3d_work_dir/ProtPA300r"
+source_folder = "/home/sinan/Desktop/Research/pide/3d_conversion"
 
 #setting up filename folders for the h5 files.
 

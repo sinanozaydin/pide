@@ -53,16 +53,26 @@ from .utils.utils import check_type, array_modifier, read_csv, text_color
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
 
-#version 0.1, June. 2023.
+"""
+               __            
+        __    /\ \           
+ _____ /\_\   \_\ \     __   
+/\ '__`\/\ \  /'_` \  /'__`\ 
+\ \ \L\ \ \ \/\ \L\ \/\  __/ 
+ \ \ ,__/\ \_\ \___,_\ \____\
+  \ \ \/  \/_/\/__,_ /\/____/
+   \ \_\                     
+    \/_/                     
+"""
+#version 0.1, April. 2024
 #pide - (P)etrophysical (I)nterpretation tools for geo(D)ynamic (E)xploration
 #initially developed by Sinan Ozaydin (University of Sydney, School of Geosciences
 #sciences, Sydney, Australia).
+__author__ = "Sinan Ozaydin | sinan.ozaydin@protonmail.com"
+
+#repository to be found at
 
 #indentation method: hard tabs ('\t')
-
-#works with Python3
-#required libraries: numpy, scipy
-#optional libraries: matplotlib,h5py,harmonica
 
 class pide(object):
 	
