@@ -1328,7 +1328,7 @@ class pide(object):
 	
 	def list_mantle_water_partitions_melt(self, mineral_name):
 		
-		print(f'Mantle melt/NAMs water partition coefficients for the mineral:   {mineral_name}')
+		print(text_color.RED + f'Mantle melt/NAMs water partition coefficients for the mineral:   {mineral_name}' + text_color.END)
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
 			min_index = 10
@@ -2106,7 +2106,7 @@ class pide(object):
 
 		return cond
 	
-	def calculate_fluids_conductivity(self, method, sol_idx = None):
+	def calculate_fluids_conductivity(self, method = 'array', sol_idx = None):
 
 		if method == 'array':
 			idx_node = None
@@ -2149,7 +2149,7 @@ class pide(object):
 	
 		return cond_fluids
 
-	def calculate_melt_conductivity(self, method, sol_idx = None):
+	def calculate_melt_conductivity(self, method = 'array', sol_idx = None):
 
 		if method == 'array':
 			idx_node = None
@@ -3967,7 +3967,7 @@ class pide(object):
 				
 			self.solid_water[idx_node] = (self.bulk_water[idx_node] * self.d_per_melt[idx_node]) /\
 				(self.melt_fluid_mass_frac[idx_node] + ((1.0 - self.melt_fluid_mass_frac[idx_node]) * self.d_per_melt[idx_node]))
-				
+			
 		else:
 		
 			self.solid_water[idx_node] = self.bulk_water[idx_node]
