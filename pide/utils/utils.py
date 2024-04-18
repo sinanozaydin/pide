@@ -1,7 +1,6 @@
 import numpy as np
 import csv
 
-
 def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
 
 	#Function to call inside this class by associate_coordinates method for parallelisation purposes.

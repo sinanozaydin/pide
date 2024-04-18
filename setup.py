@@ -13,8 +13,9 @@ setup(
         'numpy',
         'matplotlib',
         'scipy',
-        'satex',
+        'santex',
         'h5py',
-        'harmonica'
+        'harmonica',
+        'pyproj'
     ],
 )
