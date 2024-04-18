@@ -16,6 +16,12 @@ If you want to help develop and change code as it is being used:
 
 `> pip install -e .`
 
+# Workflow
+
+How to use *pide* can be learned through Jupyter notebooks provided in examples/notebooks directory. The general workflow can be tracked through the chart below:
+
+<img src="./docs/figures/pide_workflow.png">
+
 # How to Cite
 
 # Contacts
