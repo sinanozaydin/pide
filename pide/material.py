@@ -164,6 +164,12 @@ class Material(object):
 	
 		setattr(self, param_name, value)
 		
+	def copy_attributes(self, dest_object):
+	
+		for attr_name in vars(self):
+
+			setattr(dest_object, attr_name, getattr(self, attr_name))
+		
 	#attributes listing here
 	@property
 	def composition(self):

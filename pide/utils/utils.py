@@ -18,12 +18,16 @@ def check_type(input):
 	A check type function
 	"""
 
-	if isinstance(input,(int,float)):
-		method_calc = 'scalar'
+	if isinstance(input,(int,float,np.float64, np.int64)):
+		tip = 'scalar'
+	elif isinstance(input, str):
+		tip = 'string'
+	elif isinstance(input, dict):
+		tip = 'dict'
 	else:
-		method_calc = 'array'
+		tip = 'array'
 		
-	return method_calc
+	return tip
 	
 def array_modifier(input, array, varname):
 

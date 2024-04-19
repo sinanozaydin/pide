@@ -7,7 +7,7 @@ core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_
 import sys, re, warnings, json
 import numpy as np
 from scipy.interpolate import interp1d
-from satex import Isotropy
+from santex import Isotropy
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -54,15 +54,15 @@ from .utils.utils import check_type, array_modifier, read_csv, text_color
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
 
 """
-               __            
-        __    /\ \           
+			   __            
+		__    /\ \           
  _____ /\_\   \_\ \     __   
 /\ '__`\/\ \  /'_` \  /'__`\ 
 \ \ \L\ \ \ \/\ \L\ \/\  __/ 
  \ \ ,__/\ \_\ \___,_\ \____\
   \ \ \/  \/_/\/__,_ /\/____/
    \ \_\                     
-    \/_/                     
+	\/_/                     
 """
 #version 0.1, April. 2024
 #pide - (P)etrophysical (I)nterpretation tools for geo(D)ynamic (E)xploration
@@ -669,7 +669,7 @@ class pide(object):
 		self.mu = 4.0 * np.pi * 10**(-7)
 		self.delta_gb = 1e-9 #in m
 		
-		#materials.json from satex
+		#materials.json from santex
 		json_file = 'materials.json'
 		json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pide_src', json_file)
 		with open(json_path, 'r') as f:
@@ -2102,7 +2102,7 @@ class pide(object):
 			print(f'{str(i)}.   {phs_melt_mix_list[i]}')
 		
 		return phs_melt_mix_list
-		
+			
 	def suggestion_temp_array(self):
 	
 		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
@@ -3696,8 +3696,8 @@ class pide(object):
 				self.sulphide_frac, self.graphite_frac, self.ol_frac, self.sp_frac,
 				self.rwd_wds_frac, self.perov_frac, self.mixture_frac, self.other_frac]
 								
-				#calling satex object to calculate density under P-T conditions
-				satex_isot_object = Isotropy()
+				#calling santex object to calculate density under P-T conditions
+				santex_isot_object = Isotropy()
 
 				#if clauses for calculations involving a single mineral
 				if min_idx == None:
@@ -3719,7 +3719,7 @@ class pide(object):
 							if self.dens_mat[mineral][min_sel_list[mineral-11]] not in dens_xfe_calc_list:
 								#if material reference density is not dependent on xfe
 								
-								density, aks, amu = satex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
+								density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 								temperature = self.T, pressure = self.p, return_vp_vs_vbulk=False, return_aktout=False)
 								
 								dens_list.append(density / 1e3)
@@ -3734,7 +3734,7 @@ class pide(object):
 								
 									ref_dens = linear_density(xfe_input=pide.xfe_mineral_list[mineral-11], density_list = [ref_0, ref_1])
 								
-									density, aks, amu = satex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
+									density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 									temperature = self.T, pressure = self.p, ref_density = ref_dens, return_vp_vs_vbulk=False, return_aktout=False)
 								
 									dens_list.append(density / 1e3)
@@ -3745,7 +3745,7 @@ class pide(object):
 									
 									ref_dens = linear_density(xfe_input=xfe_experiment, density_list = [ref_0, ref_1])
 									
-									density, aks, amu = satex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
+									density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 									temperature = self.T, pressure = self.p, ref_density = ref_dens, return_vp_vs_vbulk=False, return_aktout=False)
 								
 									dens_list.append(density / 1e3)
