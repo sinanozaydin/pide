@@ -6,9 +6,11 @@
 
 # Installation
 
+To install pide, the user can simply go their terminal and type the following command:
+
 `> pip install pide`
 
-or alternatively, go to directory through terminal and perform:
+or alternatively, they can clone the repository, then go to the directory of the source with *cd* and perform:
 
 `> pip install .`
 
