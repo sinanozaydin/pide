@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from .utils.utils import array_modifier
+from .utils.utils import array_modifier, check_type
+from pide import pide
 
 class Material(object):
 
@@ -118,6 +119,10 @@ class Material(object):
 		
 		self.fluid_salinity = kwargs.pop('fluid_salinity', 0.0)
 		
+		#for geothermal profile material calculations
+		self.top = kwargs.pop('top', None)
+		self.bottom = kwargs.pop('bottom', None)
+		
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
 			raise AttributeError('Calculation type is selected as value. You have to set resistivity medium as a floating number in Ohm meters.')
@@ -169,6 +174,22 @@ class Material(object):
 		for attr_name in vars(self):
 
 			setattr(dest_object, attr_name, getattr(self, attr_name))
+			
+	def calculate_conductivity(self, T, P, melt = None):
+	
+		from .model import run_conductivity_model
+				
+		if check_type(T) == 'array':
+			if len(T) != len(P):
+			
+				raise IndexError('The length of the temperature and pressure arrays do not match')
+		
+		p_obj_material = pide()
+		
+		cond = run_conductivity_model(index_list=list(range(0,len(T))), material = self, pide_object=p_obj_material, 
+		t_array=T, p_array=P, melt_array=melt)
+		
+		return cond
 		
 	#attributes listing here
 	@property
