@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-from .utils.utils import array_modifier, check_type
+from .utils.utils import check_type, text_color
 from pide import pide
 
 class Material(object):
 
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_frac = 0.0,
 	interconnectivities = None, param1 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
-	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0, deformation_dict = None, **kwargs):
+	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0,
+	deformation_dict = None, **kwargs):
 	
 		"""
 		This is the core object to create a material object for pide.

@@ -139,6 +139,13 @@ def associate_coordinates(sample_x, sample_y, target_x, target_y,  num_cpu = 1, 
 	
 		return idx_array
 	
+def sort_through_external_list(first_list, second_list):
+	# A function to sort secondary list dependent on the sorting of the first list.
+	combined_lists = zip(first_list, second_list)
+	sorted_combined_lists = sorted(combined_lists)
+	sorted_second_list = [element[1] for element in sorted_combined_lists]
+	return sorted_second_list
+	
 
 class text_color:
    

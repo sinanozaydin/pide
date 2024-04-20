@@ -7,7 +7,7 @@ from .geodyn.material_process import return_material_bool
 
 #importing the function
 from .geodyn.deform_cond import plastic_strain_2_conductivity
-from .utils.utils import text_color
+from .utils.utils import text_color, sort_through_external_list
 
 def run_conductivity_model(index_list, material, pide_object, t_array, p_array, melt_array):
 
@@ -254,7 +254,7 @@ def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deform
 
 class Model(object):
 
-	def __init__(self, material_list, material_array, T, P, model_type = 'underworld_2d', material_list_2 = None,
+	def __init__(self, material_list, material_array, T, P, depth = None, model_type = 'underworld_2d', material_list_2 = None,
 	melt = None, p_strain = None, strain_rate = None, material_node_skip_rate_list = None):
 		
 		"""
@@ -280,6 +280,7 @@ class Model(object):
 		self.material_array = material_array
 		self.T = T
 		self.P = P
+		self.depth = depth
 		self.model_type = model_type
 		self.melt_frac = melt
 		self.p_strain = p_strain
@@ -289,7 +290,11 @@ class Model(object):
 	def calculate_conductivity(self,type = 'background', num_cpu = 1):
 
 		"""
-		Calculates conductivity for the given model.
+		Calculates conductivity for the given 2 or 3D model with given material_list [Material object] and associated material
+		array, where indexes of materials are stored. These index arrays has to be same length with T, P and all other comp-
+		positional arrays. These materials and indexes can be imported form a thermomechanical model, a geological model or
+		anything in particular as long as they are entered in the right format.
+
 		"""
 	
 		if num_cpu > 1:
@@ -424,7 +429,26 @@ class Model(object):
 			self.background_cond = cond_list[0]
 			self.maximum_cond = cond_list[1]
 			return cond_list[0],cond_list[1]
-	
+		
+	def calculate_geothermal_block(self, type = 'conductivity'):
+
+		if self.depth == None:
+			raise ValueError(text_color.RED + 'The depth array of the geotherm has to be entered...')
+		
+		#Getting into layer
+		top_bottom_list = []
+		for item in self.material_list:
+			top_bottom_list.append([item.top,item.bottom])
+		top_bottom_list = np.array(top_bottom_list)
+
+		if np.any(top_bottom_list == None):
+			raise ValueError(text_color.RED + 'There is None encountered in the material top-bottom values. You have to enter top bottom attributes for each material object.')
+		
+		#Order the material dependent on their 
+		
+		
+
+			
 	def calculate_deformation_related_conductivity(self, method = 'plastic_strain', function_method = 'linear',
 		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
 	
