@@ -445,9 +445,16 @@ class Model(object):
 			raise ValueError(text_color.RED + 'There is None encountered in the material top-bottom values. You have to enter top bottom attributes for each material object.')
 		
 		#Order the material dependent on their 
-		
-		
+		self.material_list = sort_through_external_list(top_bottom_list[:,0],self.material_list)
 
+		for i in range(len(self.material_list)):
+			if i == len(self.material_list):
+				continue
+			else:
+				if self.material_list[i+1].top > self.material_list[i].bottom:
+					raise ValueError(f'The depth of the "top" value is found to be over the "bottom value of the consequent layer at layer no: {str(i)}')
+
+		
 			
 	def calculate_deformation_related_conductivity(self, method = 'plastic_strain', function_method = 'linear',
 		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
