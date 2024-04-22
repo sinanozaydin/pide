@@ -24,6 +24,8 @@ def check_type(input):
 		tip = 'string'
 	elif isinstance(input, dict):
 		tip = 'dict'
+	elif isinstance(input, NoneType):
+		tip = 'None'
 	else:
 		tip = 'array'
 		

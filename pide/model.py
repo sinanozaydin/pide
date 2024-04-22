@@ -7,7 +7,7 @@ from .geodyn.material_process import return_material_bool
 
 #importing the function
 from .geodyn.deform_cond import plastic_strain_2_conductivity
-from .utils.utils import text_color, sort_through_external_list
+from .utils.utils import text_color, sort_through_external_list, check_type
 
 def run_conductivity_model(index_list, material, pide_object, t_array, p_array, melt_array):
 
@@ -254,7 +254,7 @@ def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deform
 
 class Model(object):
 
-	def __init__(self, material_list, material_array, T, P, depth = None, model_type = 'underworld_2d', material_list_2 = None,
+	def __init__(self, material_list, material_array = None, T = None, P = None, depth = None, model_type = 'underworld_2d', material_list_2 = None,
 	melt = None, p_strain = None, strain_rate = None, material_node_skip_rate_list = None):
 		
 		"""
@@ -286,6 +286,10 @@ class Model(object):
 		self.p_strain = p_strain
 		self.strain_rate = strain_rate
 		self.material_node_skip_rate_list = material_node_skip_rate_list
+
+		if self.T is not None:
+			if len(self.T) != len(self.P):
+				raise ValueError(text_color.RED + f'The length of T and P arrays do not match!' + text_color.END)
 		
 	def calculate_conductivity(self,type = 'background', num_cpu = 1):
 
@@ -432,8 +436,11 @@ class Model(object):
 		
 	def calculate_geothermal_block(self, type = 'conductivity'):
 
-		if self.depth == None:
+		if self.depth is None:
 			raise ValueError(text_color.RED + 'The depth array of the geotherm has to be entered...')
+				
+		if self.melt_frac is None:
+			self.melt_frac = np.zeros(len(self.depth))
 		
 		#Getting into layer
 		top_bottom_list = []
@@ -446,16 +453,39 @@ class Model(object):
 		
 		#Order the material dependent on their 
 		self.material_list = sort_through_external_list(top_bottom_list[:,0],self.material_list)
-
-		for i in range(len(self.material_list)):
-			if i == len(self.material_list):
-				continue
+		layer_end_list = []
+		for i in range(1,len(self.material_list)):
+			if self.material_list[i].top < self.material_list[i-1].bottom:
+				raise ValueError(text_color.RED + f'The depth of the "top" value is found to be over the "bottom value of the consequent layer at layer no:' +  text_color.GREEN + f' {str(i)}' + text_color.END)
 			else:
-				if self.material_list[i+1].top > self.material_list[i].bottom:
-					raise ValueError(f'The depth of the "top" value is found to be over the "bottom value of the consequent layer at layer no: {str(i)}')
+				if i == len(self.material_list):
+					layer_end_list.append(len(self.depth))
+				else:
+					idx_match = (np.abs(self.depth-self.material_list[i-1].bottom)).argmin()
+					layer_end_list.append(idx_match)
 
+		layer_end_list.append(len(self.depth))
+
+		if type == 'conductivity':
+
+			cond = np.zeros(len(self.depth))
+
+			sliced_material_idx = [list(range(0,layer_end_list[0]))]
+			for idx in range(1,len(layer_end_list)):
+				sliced_material_idx.append(list(range(layer_end_list[idx-1],layer_end_list[idx])))
+
+			mat_pide_obj = pide()
+
+			for layer_idx in range(0,len(sliced_material_idx)):
+
+				cond[sliced_material_idx[layer_idx]] = run_conductivity_model(index_list= sliced_material_idx[layer_idx], material = self.material_list[layer_idx],
+							pide_object = mat_pide_obj,	t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
+				
+			return cond
 		
-			
+		else:
+			raise ValueError(text_color.RED + f'The type is entered wrongly. The available type string inputs are: "conductivity"')
+	
 	def calculate_deformation_related_conductivity(self, method = 'plastic_strain', function_method = 'linear',
 		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
 	

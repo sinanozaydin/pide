@@ -8,7 +8,7 @@ class Material(object):
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_frac = 0.0,
 	interconnectivities = None, param1 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
 	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0,
-	deformation_dict = None, **kwargs):
+	deformation_dict = None, top = None, bottom = None, **kwargs):
 	
 		"""
 		This is the core object to create a material object for pide.
@@ -81,6 +81,12 @@ class Material(object):
 				
 		self._param1 = None
 		self.param1 = param1
+
+		self._top = None
+		self.top = top
+
+		self._bottom = None
+		self.bottom = bottom
 						
 		if xfe == None:
 			if self.calculation_type == 'rock':
@@ -120,9 +126,6 @@ class Material(object):
 		
 		self.fluid_salinity = kwargs.pop('fluid_salinity', 0.0)
 		
-		#for geothermal profile material calculations
-		self.top = kwargs.pop('top', None)
-		self.bottom = kwargs.pop('bottom', None)
 		
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
@@ -312,3 +315,19 @@ class Material(object):
 	@magnetic_susceptibility.setter
 	def magnetic_susceptibility(self, value):
 		self._magnetic_susceptibility = value
+
+	@property
+	def top(self):
+		return self._top
+		
+	@top.setter
+	def top(self, value):
+		self._top = value
+
+	@property
+	def bottom(self):
+		return self._bottom
+		
+	@bottom.setter
+	def bottom(self, value):
+		self._bottom = value

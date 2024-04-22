@@ -33,7 +33,7 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 
 	Output
 	-------
-	Temperature (Kelvin), Depth (meters), Pressure (GPa), index point where the geotherm
+	Temperature (Kelvin), Depth (kilometers), Pressure (GPa), index point where the geotherm
 	is kinked
 
 	'''
@@ -243,14 +243,14 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 
 	if kinked == False:
 		if adiabat == True:
-			return T, depth, p, idx_LAB
+			return T, depth/1e3, p, idx_LAB
 		else:
-			return T, depth, p
+			return T, depth/1e3, p
 	else:
 		if adiabat == True:
-			return T, depth, p, idx_LAB, idx_geotherm_nearest
+			return T, depth/1e3, p, idx_LAB, idx_geotherm_nearest
 		else:
-			return T, depth, p, idx_geotherm_nearest
+			return T, depth/1e3, p, idx_geotherm_nearest
 	
 def T_Katsura_2022_Adiabat(P_input):
 
