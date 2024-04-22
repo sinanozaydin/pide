@@ -504,8 +504,6 @@ class Model(object):
 		else:
 			raise ValueError(text_color.RED + f'The type is entered wrongly. The available type string inputs are: "conductivity"' + text_color.END)
 	
-		
-		
 	def calculate_deformation_related_conductivity(self, method = 'plastic_strain', function_method = 'linear',
 		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
 	
