@@ -2776,7 +2776,7 @@ class pide(object):
 					self.kfelds_cond[i],self.opx_cond[i],self.cpx_cond[i],self.mica_cond[i],
 					self.garnet_cond[i],self.sulphide_cond[i],self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i],
 					self.rwd_wds_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
-					
+				
 				while True:
 				
 					#while loop for deleting the zero arrays that could be encountered due to non-existence of the mineral.

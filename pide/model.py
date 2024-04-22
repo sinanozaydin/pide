@@ -9,7 +9,7 @@ from .geodyn.material_process import return_material_bool
 from .geodyn.deform_cond import plastic_strain_2_conductivity
 from .utils.utils import text_color, sort_through_external_list, check_type
 
-def run_conductivity_model(index_list, material, pide_object, t_array, p_array, melt_array):
+def run_conductivity_model(index_list, material, pide_object, t_array, p_array, melt_array, type = 'conductivity'):
 
 	#global function to run conductivity model. designed to be global def to run parallel with multiprocessing
 	
@@ -44,10 +44,12 @@ def run_conductivity_model(index_list, material, pide_object, t_array, p_array, 
 		
 	pide_object.set_watercalib(ol = material.water_calib['ol'], px_gt = material.water_calib['px_gt'], feldspar = material.water_calib['feldspar'])
 	pide_object.set_o2_buffer(o2_buffer = material.o2_buffer)
-		
+	pide_object.set_solid_phase_method(material.calculation_type)
+
 	#adjusting material parameters for the pide_object
 	if material.calculation_type == 'mineral':
 	
+		
 		pide_object.set_composition_solid_mineral(ol = material.composition['ol'],
 		opx = material.composition['opx'],
 		cpx = material.composition['cpx'],
@@ -194,8 +196,11 @@ def run_conductivity_model(index_list, material, pide_object, t_array, p_array, 
 			pide_object.set_fluid_properties(salinity = material.fluid_salinity)
 			if material.melt_fluid_phase_mixing_idx == 0:
 				pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
-		
-	c = pide_object.calculate_conductivity(method = 'array')
+	
+	if type == 'conductivity':
+		c = pide_object.calculate_conductivity(method = 'array')
+	elif type == 'seismic':
+		c = pide_object.calculate_seismic_velocities(method = 'array')
 	
 	return c
 	
@@ -466,26 +471,41 @@ class Model(object):
 
 		layer_end_list.append(len(self.depth))
 
+		sliced_material_idx = [list(range(0,layer_end_list[0]))]
+		for idx in range(1,len(layer_end_list)):
+			sliced_material_idx.append(list(range(layer_end_list[idx-1],layer_end_list[idx])))
+
+		mat_pide_obj = pide()
+
 		if type == 'conductivity':
 
 			cond = np.zeros(len(self.depth))
 
-			sliced_material_idx = [list(range(0,layer_end_list[0]))]
-			for idx in range(1,len(layer_end_list)):
-				sliced_material_idx.append(list(range(layer_end_list[idx-1],layer_end_list[idx])))
-
-			mat_pide_obj = pide()
-
 			for layer_idx in range(0,len(sliced_material_idx)):
-
+				
 				cond[sliced_material_idx[layer_idx]] = run_conductivity_model(index_list= sliced_material_idx[layer_idx], material = self.material_list[layer_idx],
 							pide_object = mat_pide_obj,	t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
-				
 			return cond
+		elif type == 'seismic':
+
+			vel_bulk = np.zeros(len(self.depth))
+			vel_p =  np.zeros(len(self.depth))
+			vel_s = np.zeros(len(self.depth))
+
+			for layer_idx in range(0,len(sliced_material_idx)):
+				
+				vel_bulk[sliced_material_idx[layer_idx]], vel_p[sliced_material_idx[layer_idx]],vel_s[sliced_material_idx[layer_idx]] = \
+					run_conductivity_model(index_list = sliced_material_idx[layer_idx], material = self.material_list[layer_idx],
+							pide_object = mat_pide_obj,	t_array = self.T, p_array=self.P, melt_array=self.melt_frac,
+							type = 'seismic')
+				
+			return vel_bulk,vel_p,vel_s
 		
 		else:
-			raise ValueError(text_color.RED + f'The type is entered wrongly. The available type string inputs are: "conductivity"')
+			raise ValueError(text_color.RED + f'The type is entered wrongly. The available type string inputs are: "conductivity"' + text_color.END)
 	
+		
+		
 	def calculate_deformation_related_conductivity(self, method = 'plastic_strain', function_method = 'linear',
 		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
 	
