@@ -406,9 +406,12 @@ class pide(object):
 
 		self.core_path = core_path
 				
-		self.form_object()
+		self._form_object()
 		
-	def form_object(self):
+	def _form_object(self):
+	
+		"""A method to set up the initial environment for the pide class.
+		"""
 		
 		#Setting up initial variables.
 
@@ -418,10 +421,10 @@ class pide(object):
 		self.density_loaded = False
 		self.seis_property_overwrite = [False] * 16
 		
-		self.read_cond_models()
-		self.read_params()
-		self.read_water_part()
-		self.read_mineral_water_solubility()
+		self._read_cond_models()
+		self._read_params()
+		self._read_water_part()
+		self._read_mineral_water_solubility()
 		self.object_formed = False
 		#setting up default values for the pide object
 		self.set_temperature(np.ones(1) * 900.0) #in Kelvin
@@ -461,7 +464,13 @@ class pide(object):
 		
 	def revalue_arrays(self):
 		
-		#revaluing the arrays with the length of the T if needed by the user.
+		"""A method to revalue the arrays to match the new array length of the environment. 
+		
+		Example:
+		
+		This can be used in an iterative process where you change a parameter but also adjust the other 
+		parameters to the same array lengths. The user do not have to enter the new values here.
+		"""
 		
 		#arrays with single values
 		self.set_temperature(self.T) #in Kelvin
@@ -487,7 +496,7 @@ class pide(object):
 			self.set_melt_fluid_interconnectivity(reval = True)
 		self.set_grain_boundary_water_partitioning(reval = True)
 		
-	def read_cond_models(self):
+	def _read_cond_models(self):
 
 		#A function that reads conductivity model files and get the data.
 
@@ -653,7 +662,7 @@ class pide(object):
 					pass
 				count += 1
 
-	def read_params(self):
+	def _read_params(self):
 
 		#READING THE PARAMETERS IN PARAMS.CSV WHICH ARE GENERAL PHYSICAL CONSTANTS
 		#AND PROPERTIES OF MATERIALS
@@ -675,7 +684,7 @@ class pide(object):
 		with open(json_path, 'r') as f:
 			self.materials_data = json.load(f)
 					
-	def read_water_part(self):
+	def _read_water_part(self):
 	
 		self.ol_min_partitioning_list = ['opx_part.csv','cpx_part.csv','gt_part.csv']
 		self.ol_min_part_index = [15,16,18] #mineral indexes for the file read
@@ -786,7 +795,7 @@ class pide(object):
 				self.water_rwd_wds_part_function.append(None)
 				self.water_rwd_wds_part_pchange.append(None)
 			
-	def read_mineral_water_solubility(self):
+	def _read_mineral_water_solubility(self):
 	
 		self.mineral_sol_file_list = ['opx_sol.csv','cpx_sol.csv','garnet_sol.csv','ol_sol.csv','rwd_wds_sol.csv','perov_sol.csv']
 		self.mineral_sol_index = [15,16,18,21,23,24] #mineral indexes for the file read
@@ -826,13 +835,41 @@ class pide(object):
 				self.mineral_sol_calib.append(None)
 				
 	def set_parameter(self, param_name, value):
+	
+		"""A method to set any kind of parameter with the given parameter name and automatically adjusts to the
+		length of the temperature. This parameter can be used by developers to try out their ideas, where
+		there is no such assigned parameter for pide yet. 
+		
+		Input:
+		str: param_name - name of the parameter
+		any: value - Any value corresponding to this parameter.
+		"""
+		
+		if self.temperature_default == True:
+			self._suggestion_temp_array()
 		
 		setattr(self, param_name, array_modifier(input = value, array=self.T,varname = param_name))
 	
 	def set_composition_solid_mineral(self, reval = False, **kwargs):
+	
+		"""A method to set composition of the environment using mineral fractions. The total fraction has to make up to
+		value of 1.
+		
+		Input:
+		dict/float: mineral_name 
+		
+		Mineral_names:
+		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.
+		
+		Example:
+		set_composition_solid_mineral(ol = 0.6, opx = 0.4)
+		
+		Organizes:
+		mineral fractions.
+		"""
 			
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 		
 		if reval == False:
 			self.ol_frac = array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_frac')
@@ -907,10 +944,24 @@ class pide(object):
 			
 	def set_composition_solid_rock(self, reval = False, **kwargs):
 	
-		#Enter composition in fraction 0.6 == 60% volumetric percentage
+		"""A method to set composition of the environment using rock fractions. The total fraction has to make up to
+		value of 1.
+		
+		Input:
+		dict/float: rock_name 
+		
+		Rock nameS:
+		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
+		
+		Example:
+		set_composition_solid_rock(granite = 0.6, granulite = 0.4)
+		
+		Organizes:
+		rock fractions.
+		"""
 		
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 		
 		if reval == False:
 			self.granite_frac = array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_frac')
@@ -956,6 +1007,13 @@ class pide(object):
 			
 	def set_temperature(self,T):
 	
+		"""A method to set temperature of the environment.
+		
+		Input:
+		float: T || in Kelvin
+		
+		"""
+	
 		try: 
 			self.T = T
 		except TypeError:
@@ -972,10 +1030,26 @@ class pide(object):
 		self.seismic_setup = False
 		
 	def set_pressure(self,P):
+	
+		"""A method to set pressure of the environment.
+		
+		Input:
+		float: P || in GPa
+		
+		"""
+		
+		def _check_p_n_T():
+	
+			if len(self.T) != len(self.p):
+				T_check = False
+			else:
+				T_check = True
+				
+			return T_check
 		
 		try: 
 			self.p = np.array(P)
-			t_check = self.check_p_n_T()
+			t_check = _check_p_n_T()
 			if t_check == False:
 				raise ValueError('The arrays of pressure and temperature are not the same...')
 				
@@ -993,6 +1067,13 @@ class pide(object):
 	
 	def set_depth(self,depth):
 	
+		"""A method to set depth of the environment.
+		
+		Input:
+		float: depth || in km
+		
+		"""
+	
 		if depth == 'auto':
 			self.depth = self.p * 33.0
 			
@@ -1002,17 +1083,12 @@ class pide(object):
 			
 		self.density_loaded = False
 		self.seismic_setup = False
-	
-	def check_p_n_T(self):
-	
-		if len(self.T) != len(self.p):
-			T_check = False
-		else:
-			T_check = True
-			
-		return T_check
 		
 	def set_watercalib(self,**kwargs):
+	
+		"""A method to set water calibration
+		
+		"""
 	
 		pide.ol_calib = kwargs.pop('ol', 3)
 		pide.px_gt_calib = kwargs.pop('px_gt', 2)
@@ -1060,7 +1136,7 @@ class pide(object):
 		self.d_water_cpx_melt_choice = kwargs.pop('cpx_melt',0)
 		self.d_water_garnet_melt_choice = kwargs.pop('garnet_melt',0)
 		
-		self.load_mantle_water_partitions(method = 'array')
+		self._load_mantle_water_partitions(method = 'array')
 		
 	def set_mantle_transition_zone_water_partitions(self, **kwargs):
 	
@@ -1525,7 +1601,7 @@ class pide(object):
 	def set_mineral_water(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 			
 		if reval == False:
 			pide.ol_water = array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_water')
@@ -1581,7 +1657,7 @@ class pide(object):
 	def set_rock_water(self, reval = False, **kwargs):
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 		
 		if reval == False:
 		
@@ -1620,7 +1696,7 @@ class pide(object):
 		float: value
 		"""
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 			
 		self.bulk_water = array_modifier(input = value, array = self.T, varname = 'bulk_water')
 		self.solid_water = array_modifier(input = value, array = self.T, varname = 'solid_water')
@@ -1646,7 +1722,7 @@ class pide(object):
 		"""
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 		
 		if reval == False:
 		
@@ -1708,7 +1784,7 @@ class pide(object):
 		"""
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 		
 		if reval == False:
 			pide.ol_param1 = array_modifier(input = kwargs.pop('ol', 0), array = self.T, varname = 'ol_param1')
@@ -1766,7 +1842,7 @@ class pide(object):
 		"""
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 		
 		if reval == False:
 			pide.granite_param1 = array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param1')
@@ -1804,7 +1880,7 @@ class pide(object):
 		"""
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 	
 		self.melt_fluid_mass_frac = array_modifier(input = value, array = self.T, varname = 'melt_fluid_mass_frac')
 		
@@ -1862,7 +1938,7 @@ class pide(object):
 		"""
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 	
 		self.co2_melt = array_modifier(input = kwargs.pop('co2', 0), array = self.T, varname = 'co2_melt')  #in ppm
 		self.h2o_melt = array_modifier(input = kwargs.pop('water', 0), array = self.T, varname = 'h2o_melt')  #in ppm
@@ -1895,7 +1971,7 @@ class pide(object):
 		"""
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 
 		self.salinity_fluid = array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
 		
@@ -1912,7 +1988,7 @@ class pide(object):
 		"""
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 			
 		self.al_opx = array_modifier(input = value, array = self.T, varname = 'al_opx')
 
@@ -1968,7 +2044,7 @@ class pide(object):
 		"""
 	
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 		if reval == False:
 			pide.ol_m = array_modifier(input = kwargs.pop('ol', 4), array = self.T, varname = 'ol_m') 
 			pide.opx_m = array_modifier(input = kwargs.pop('opx', 4), array = self.T, varname = 'opx_m') 
@@ -2214,7 +2290,7 @@ class pide(object):
 		"""
 
 		if self.temperature_default == True:
-			self.suggestion_temp_array()
+			self._suggestion_temp_array()
 
 		if reval == False:
 			pide.ol_grsz = array_modifier(input = kwargs.pop('ol', 1), array = self.T, varname = 'ol_grsz') 
@@ -2292,7 +2368,7 @@ class pide(object):
 		
 		return phs_melt_mix_list
 			
-	def suggestion_temp_array(self):
+	def _suggestion_temp_array(self):
 	
 		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
 		
@@ -2511,7 +2587,7 @@ class pide(object):
 			if ('fo2' in odd_function) == True:
 				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = pide.rock_water_list[rock_sub_idx][idx_node] \
 						  / water_corr_factor, param1 = pide.param1_rock_list[rock_sub_idx][idx_node],\
-						   fo2 = self.calculate_fugacity(pide.o2_buffer),fo2_ref = self.calculate_fugacity(3), method = method)')
+						   fo2 = self.calculate_o2_fugacity(pide.o2_buffer),fo2_ref = self.calculate_o2_fugacity(3), method = method)')
 			else:
 				cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node], water = pide.rock_water_list[rock_sub_idx][idx_node] \
 						  / water_corr_factor, param1 = pide.param1_rock_list[rock_sub_idx][idx_node],\
@@ -2670,7 +2746,7 @@ class pide(object):
 					cond[idx_node] = eval(odd_function + '(T = self.T[idx_node], P = self.p[idx_node],\
 					water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor, xFe = pide.xfe_mineral_list[min_sub_idx][idx_node],\
 					param1 = pide.param1_mineral_list[min_sub_idx][idx_node],\
-					fo2 = self.calculate_fugacity(pide.o2_buffer)[idx_node],fo2_ref = self.calculate_fugacity(3)[idx_node], method = method,\
+					fo2 = self.calculate_o2_fugacity(pide.o2_buffer)[idx_node],fo2_ref = self.calculate_o2_fugacity(3)[idx_node], method = method,\
 					mechanism = mechanism_list[count])')
 	
 				else:
@@ -4068,20 +4144,30 @@ class pide(object):
 	
 					return density
 			
-	def calculate_fugacity(self,mode):
+	def calculate_o2_fugacity(self,mode):
 
-		#Function that calculates oxygen fugacity buffers from selection.
+		"""A method to calculate the oxygen fugacity from provided buffers. 
+		
+		Input:
+		int: mode - Mode of oxygen fugacity buffer || The indexes are as follows: 
+		
+		0: FMQ:
+		1: IW: Hirsch (1991)
+		2: QIF:
+		3: NNO: Li et al. (1998)
+		4 MMO: Xu et al. (2000)
+		
+		Output:
+		Oxygen fugacity in bars
+		
+		"""
 
 		self.A_list = [-999,-27489.0,-999,-24930.0,-30650.0]
 		self.B_list = [-999,6.702,-999,9.36,8.92]
 		self.C_list = [-999,0.055,-999,0.046,0.054]
 
 		#OXYGEN FUGACITY BUFFER CONSTANTS in the lists above(self.A_list ...)
-		#Index 0: FMQ:
-		#Index 1: IW: Hirsch (1991)
-		#Index 2: QIF:
-		#Index 3: NNO: Li et al. (1998)
-		#Index 4 MMO: Xu et al. (2000)
+		
 
 		self.A_FMQ_low = -26455.3
 		self.A_FMQ_high = -25096.3
@@ -4137,13 +4223,28 @@ class pide(object):
 		
 	def calculate_water_fugacity(self):
 	
+		"""A method to calculate water fugacity for the setup environment.
+		The calculations are made with the pure-water EOS of Pitzer and Sterner (1994).
+		
+		Output:
+		water fugacity in MPa.		
+		"""
+	
 		if self.water_fugacity_calculated == False:
 		
 			self.water_fugacity = Pitzer_and_Sterner_1994_PureWaterEOS(T = self.T, P = self.p)
 			
 			self.water_fugacity_calculated = True
 		
-	def load_mantle_water_partitions(self, method, **kwargs):
+	def _load_mantle_water_partitions(self, method, **kwargs):
+	
+		"""A method to calculate the water partitioning effects. The user is not encouraged
+		to use this method. Associated set_mantle_water_partitions and calculate_water automatically
+		passes through this method.
+		
+		Output:
+		float: Water partitioning coefficients for given configuration.		
+		"""
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
 	
@@ -4216,6 +4317,14 @@ class pide(object):
 		
 	def load_mantle_transition_zone_water_partitions(self, method, **kwargs):
 	
+		"""A method to calculate the water partitioning effects at mantle transiton zone. The user is not encouraged
+		to use this method. Associated set_mantle_water_partitions and calculate_water automatically
+		passes through this method.
+		
+		Output:
+		float: Water partitioning coefficients for given configuration.		
+		"""
+	
 		sol_idx = kwargs.pop('sol_idx', 0)
 	
 		if method == 'array':
@@ -4251,6 +4360,13 @@ class pide(object):
 		
 	def mantle_water_distribute(self, method = 'array', **kwargs):
 	
+		"""A method to distribute entered bulk water content among common upper-mantle mineral
+		constituents using the set up environment.
+		
+		Organizes:
+		float: mineral_water_contents || in ppm.
+		"""
+	
 		sol_idx = kwargs.pop('sol_idx', 0)
 	
 		if method == 'array':
@@ -4268,7 +4384,7 @@ class pide(object):
 					(self.cpx_frac_wt * self.d_melt_cpx) +\
 					(self.garnet_frac_wt * self.d_melt_garnet)
 					
-			self.melt_water[idx_node] = self.calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
+			self.melt_water[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
 
 			#reassigning the zero mass frac melt layers using pre-mapped indexing array.
 			if idx_node == None:
@@ -4300,6 +4416,13 @@ class pide(object):
 		
 	def transition_zone_water_distribute(self, method, **kwargs):
 	
+		"""A method to distribute entered bulk water content among mantle transition zone mineral
+		constituents using the set up environment.
+		
+		Organizes:
+		float: mineral_water_contents || in ppm.
+		"""
+	
 		sol_idx = kwargs.pop('sol_idx', 0)
 	
 		if method == 'array':
@@ -4325,14 +4448,31 @@ class pide(object):
 		pide.perov_water[idx_node] = pide.rwd_wds_water[idx_node] * self.d_perov_rwd_wds[idx_node]
 		pide.perov_water[self.perov_frac == 0] = 0.0
 							
-	def calculate_melt_water(self, h2o_bulk, melt_mass_frac, d_per_melt):
+	def _calculate_melt_water(self, h2o_bulk, melt_mass_frac, d_per_melt):
+	
+		"""A method to calculate melt water content with the given parameters.
+		The users are not encouraged to perform this method.
+		
+		Input:
+		float: h2o_bulk - bulk water content || in ppm
+		float: melt_mass_frac - mass fraction of melt
+		float: d_per_melt - solid/melt water partitioning coefficient.
+			
+		Output:
+		melt_water || in ppm
+		
+		"""
 
 		#Calculating the h2o content of melt that is in equilibrium with the entered solid-mixture, from Sifre et al. (2014)
 		melt_water = h2o_bulk / (melt_mass_frac + ((1.0 - melt_mass_frac) * d_per_melt))
 
 		return melt_water
 		
-	def conditional_fugacity_calculations(self, min_idx, sol_choice):
+	def _conditional_fugacity_calculations(self, min_idx, sol_choice):
+	
+		"""A method to calculate oxygen fugacity with the environment set up.
+		The users are not encouraged to perform this method.
+		"""
 	
 		if self.mineral_sol_fug[min_idx][sol_choice] == 'Y':
 			if self.water_fugacity_calculated == False:
@@ -4345,14 +4485,27 @@ class pide(object):
 				
 		if self.mineral_sol_o2_fug[min_idx][sol_choice] == 'Y':
 		
-			o2_fug = self.calculate_fugacity(mode = pide.o2_buffer)
+			o2_fug = self.calculate_o2_fugacity(mode = pide.o2_buffer)
 			
 		else:
 			o2_fug = np.zeros(1)
 			
 		return water_fug, o2_fug
 			
-	def calculate_mineral_water_solubility(self, method, mineral_name, **kwargs):
+	def calculate_mineral_water_solubility(self, mineral_name, method = 'array',  **kwargs):
+	
+		"""A method to calculate individual mineral water solubility models for the environment set up.
+		Not all minerals have water solubility functions either due to their inability to hold water
+		in their usual environment or unavailability for experimental data exist in the library.
+		
+		Input:
+		str: mineral_name - name of the mineral 
+		str: method - 'array' or 'index'|| Default - 'array
+	
+		Output:
+		Mineral water 
+		
+		"""
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
 	
@@ -4364,7 +4517,7 @@ class pide(object):
 		if mineral_name == 'ol':
 			
 			min_idx = 10
-			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.ol_sol_choice)
+			water_fug, o2_fug = self._conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.ol_sol_choice)
 				
 			if ('From' in self.mineral_sol_name[min_idx][self.ol_sol_choice]) == True:
 			
@@ -4375,7 +4528,7 @@ class pide(object):
 						max_mineral_water = self.max_opx_water / self.d_opx_ol
 					except AttributeError:
 						
-						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
+						self.max_opx_water = self._rerun_sol(mineral = 'opx', method = method)
 						max_mineral_water = self.max_opx_water / self.d_opx_ol
 						self.max_ol_water = np.array(max_mineral_water) 
 			else:
@@ -4397,7 +4550,7 @@ class pide(object):
 						max_mineral_water = self.max_ol_water * self.d_opx_ol
 					except AttributeError:
 						
-						self.max_ol_water = self.rerun_sol(mineral = 'ol', method = method)
+						self.max_ol_water = self._rerun_sol(mineral = 'ol', method = method)
 						max_mineral_water = self.max_ol_water * self.d_opx_ol
 						self.max_opx_water = np.array(max_mineral_water)
 					
@@ -4410,7 +4563,7 @@ class pide(object):
 			
 			min_idx = 5
 			
-			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.cpx_sol_choice)
+			water_fug, o2_fug = self._conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.cpx_sol_choice)
 			
 				
 			if ('From' in self.mineral_sol_name[min_idx][self.cpx_sol_choice]) == True:
@@ -4420,7 +4573,7 @@ class pide(object):
 					try:
 						max_mineral_water = self.max_ol_water * self.d_cpx_ol
 					except AttributeError:
-						self.max_ol_water = self.rerun_sol(mineral = 'ol', method = method)
+						self.max_ol_water = self._rerun_sol(mineral = 'ol', method = method)
 						max_mineral_water = self.max_ol_water * self.d_cpx_ol
 						self.max_cpx_water = np.array(max_mineral_water)
 									
@@ -4429,7 +4582,7 @@ class pide(object):
 					try:
 						max_mineral_water = self.max_ol_water * (self.d_cpx_ol/self.d_opx_ol)
 					except AttributeError:
-						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
+						self.max_opx_water = self._rerun_sol(mineral = 'opx', method = method)
 						max_mineral_water = self.max_opx_water * (self.d_cpx_ol/self.d_opx_ol)
 						self.max_cpx_water = np.array(max_mineral_water)
 						
@@ -4438,7 +4591,7 @@ class pide(object):
 					try:
 						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
 					except AttributeError:
-						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
+						self.max_rwd_wds_water = self._rerun_sol(mineral = 'rwd_wds', method = method)
 						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
 						self.max_cpx_water = np.array(max_mineral_water)	
 					
@@ -4450,7 +4603,7 @@ class pide(object):
 		elif mineral_name == 'garnet':
 			
 			min_idx = 7
-			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.garnet_sol_choice)
+			water_fug, o2_fug = self._conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.garnet_sol_choice)
 				
 			if ('From' in self.mineral_sol_name[min_idx][self.garnet_sol_choice]) == True:
 			
@@ -4459,7 +4612,7 @@ class pide(object):
 					try:
 						max_mineral_water = self.max_ol_water * self.d_garnet_ol
 					except AttributeError:
-						self.max_ol_water = self.rerun_sol(mineral = 'garnet', method = method)
+						self.max_ol_water = self._rerun_sol(mineral = 'garnet', method = method)
 						max_mineral_water = self.max_ol_water * self.d_garnet_ol
 						self.max_garnet_water = np.array(max_mineral_water)
 					
@@ -4468,7 +4621,7 @@ class pide(object):
 					try:
 						max_mineral_water = self.max_opx_water * (self.d_garnet_ol/self.d_opx_ol)
 					except AttributeError:
-						self.max_opx_water = self.rerun_sol(mineral = 'opx', method = method)
+						self.max_opx_water = self._rerun_sol(mineral = 'opx', method = method)
 						max_mineral_water = self.max_opx_water * (self.d_garnet_ol/self.d_opx_ol)
 						self.max_garnet_water = np.array(max_mineral_water)
 						
@@ -4477,7 +4630,7 @@ class pide(object):
 					try:
 						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
 					except AttributeError:
-						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
+						self.max_rwd_wds_water = self._rerun_sol(mineral = 'rwd_wds', method = method)
 						max_mineral_water = self.max_rwd_wds_water * self.d_cpx_rwd_wds
 						self.max_garnet_water = np.array(max_mineral_water)
 					
@@ -4488,7 +4641,7 @@ class pide(object):
 		elif mineral_name == 'rwd_wds':
 		
 			min_idx = 12
-			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice = self.rwd_wds_sol_choice)
+			water_fug, o2_fug = self._conditional_fugacity_calculations(min_idx = min_idx, sol_choice = self.rwd_wds_sol_choice)
 			
 			max_mineral_water = eval(self.mineral_sol_name[min_idx][self.garnet_sol_choice] + "(T = self.T[idx_node],P = self.p[idx_node],depth = self.depth[idx_node],\
 			h2o_fug = water_fug[idx_node], o2_fug = o2_fug, fe_rwd_wds = self.rwd_wds_xfe[idx_node], method = 'array')")
@@ -4497,7 +4650,7 @@ class pide(object):
 		elif mineral_name == 'perov':
 		
 			min_idx = 13 
-			water_fug, o2_fug = self.conditional_fugacity_calculations(min_idx = min_idx, sol_choice = self.perov_sol_choice)
+			water_fug, o2_fug = self._conditional_fugacity_calculations(min_idx = min_idx, sol_choice = self.perov_sol_choice)
 			
 			if ('From' in self.mineral_sol_name[min_idx][self.perov_sol_choice]) == True:
 			
@@ -4506,9 +4659,13 @@ class pide(object):
 					try:
 						max_mineral_water = self.max_rwd_wds_water * self.d_perov_rwd_wds
 					except AttributeError:
-						self.max_rwd_wds_water = self.rerun_sol(mineral = 'rwd_wds', method = method)
+						self.max_rwd_wds_water = self._rerun_sol(mineral = 'rwd_wds', method = method)
 						max_mineral_water = self.max_rwd_wds_water * self.d_perov_rwd_wds
 						self.max_perov_water = np.array(max_mineral_water)
+						
+		else:
+		
+			raise NameError(f'The mineral {mineral_name} is not included in the pide library for this function.')
 			
 		if method == 'array':
 			if len(max_mineral_water) == 1:
@@ -4518,7 +4675,7 @@ class pide(object):
 		elif method == 'index':
 			return max_mineral_water
 		
-	def rerun_sol(self, mineral, method):
+	def _rerun_sol(self, mineral, method):
 		
 		if mineral == 'ol':
 			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)
@@ -4535,7 +4692,16 @@ class pide(object):
 			
 		return water_calc
 		
-	def calculate_bulk_mantle_water_solubility(self, method, **kwargs):
+	def calculate_bulk_mantle_water_solubility(self, method = 'array', **kwargs):
+	
+		"""A method to calculate upper mantle water solubility for the environment set up.
+		
+		Input:
+		str: method - 'array' or 'index'|| Default - 'array
+	
+		Output:
+		float: mantle bulk water content || in ppm
+		"""
 	
 		self.max_ol_water = self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)
 		self.max_opx_water = self.calculate_mineral_water_solubility(mineral_name = 'opx', method = method)
@@ -4546,7 +4712,17 @@ class pide(object):
 		
 		return self.max_bulk_water
 		
-	def calculate_transition_zone_water_solubility(self, method, **kwargs):
+	def calculate_transition_zone_water_solubility(self, method = 'array', **kwargs):
+	
+		"""A method to calculate mantle transition zone water solubility for the environment set up.
+		
+		Input:
+		str: method - 'array' or 'index'|| Default - 'array
+	
+		Output:
+		float: mantle transition zone bulk water content || in ppm
+		"""
+	
 	
 		self.max_rwd_wds_water = self.calculate_mineral_water_solubility(mineral_name = 'rwd_wds', method = method)
 		self.max_cpx_water = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
@@ -4557,13 +4733,19 @@ class pide(object):
 
 		return self.max_bulk_water
 		
-	def methods(self):
+	def list_methods(self):
+	
+		"""A method to list all available user-utilisible methods in the pide class.		
+		"""
 	
 		all_methods = [method for method in dir(self) if callable(getattr(self, method))]
 	
 	def reset(self):
+	
+		"""A method to reset pide object into its default state.		
+		"""
 		
-		self.form_object()
+		self._form_object()
 		
 	
 		
