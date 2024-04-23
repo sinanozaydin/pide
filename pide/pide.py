@@ -1614,8 +1614,11 @@ class pide(object):
 			
 	def set_bulk_water(self,value, index = None):
 	
-		#Running this function overrides the individual mineral water contents until another action is taken.
-	
+		"""A method to set bulk water content. This function will override the ones et in set_mineral_water.
+		
+		Input:
+		float: value
+		"""
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 			
@@ -1629,6 +1632,18 @@ class pide(object):
 			raise ValueError('There is a value entered in bulk_water content that is below zero.')
 			
 	def set_xfe_mineral(self, reval = False, **kwargs):
+	
+		"""A method to set iron content of given mineral. Some of it might not have any effect, but still able to set for future directions in library. 
+		
+		Input:
+		dict: mineral_name = 0.1 || Range: 0 - 1
+		
+		Example:
+		ol = 0.1
+		
+		Mineral_names:
+		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.
+		"""
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
@@ -1680,6 +1695,18 @@ class pide(object):
 			
 	def set_param1_mineral(self, reval = False, **kwargs):
 	
+		"""A method to set param1 value of a given mineral. Some of it might not have any effect, but still able to set for future directions in library. 
+		
+		Input:
+		dict: mineral_name = 0.1 
+		
+		Example:
+		ol = 0.1
+		
+		Mineral_names:
+		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.
+		"""
+	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 		
@@ -1726,6 +1753,18 @@ class pide(object):
 				   
 	def set_param1_rock(self, reval = False, **kwargs):
 	
+		"""A method to set param1 value of a given rock. Some of it might not have any effect, but still able to set for future directions in library. 
+		
+		Input:
+		dict: mineral_name = float
+		
+		Example:
+		granite = 0.1
+		
+		Rock names:
+		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
+		"""
+	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 		
@@ -1758,6 +1797,12 @@ class pide(object):
 						
 	def set_melt_fluid_frac(self, value):
 	
+		"""A method to set mass melt/fluid fraction of the system.
+		
+		Input:
+		float: value		
+		"""
+	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 	
@@ -1769,6 +1814,13 @@ class pide(object):
 		
 	def set_melt_or_fluid_mode(self,mode):
 	
+		"""A method to set whether melt/fluid mass fraction will be handled as melt or free fluid, since
+		these two cannot coexist in the same system.
+		
+		Input:
+		str: 'melt' or 'fluid'		
+		"""
+	
 		if mode == 'melt':
 			pide.fluid_or_melt_method = 1
 		elif mode == 'fluid':
@@ -1777,6 +1829,13 @@ class pide(object):
 			raise ValueError("You have to enter 'melt' or 'fluid' as strings.")
 		
 	def set_solid_phase_method(self,mode):
+	
+		"""A method to set whether solid system will be handled as the solid assemblage
+		is made out of minerals or rocks.
+		
+		Input:
+		str: 'mineral' or 'rock'		
+		"""
 	
 		if mode == 'mineral':
 			pide.solid_phase_method = 2
@@ -1789,6 +1848,18 @@ class pide(object):
 		self.seismic_setup = False
 			
 	def set_melt_properties(self, **kwargs):
+	
+		"""A method to set some melt properties. These are: CO_2, water, Na2O and K2O contents.
+		
+		Input:
+		dict: property_name = float
+		
+		Example:
+		set_melt_properties(co2 = 100)
+		
+		Property names:
+		co2 (in ppm), water (in ppm), na2o(in wt%), k2o(in wt%)
+		"""
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
@@ -1811,6 +1882,18 @@ class pide(object):
 				
 	def set_fluid_properties(self, **kwargs):
 	
+		"""A method to set some fluid properties. These are: salinity
+		
+		Input:
+		dict: property_name = float
+		
+		Example:
+		set_fluid_properties(salinity = 0.1)
+		
+		Property names:
+		salinity (wt%)
+		"""
+	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 
@@ -1822,12 +1905,28 @@ class pide(object):
 			
 	def set_alopx(self,value = 0):
 	
+		"""A method to set Al2O3 of Opx. This is specifically used for some water solubility limits.
+		
+		Input:
+		float: value = 0.1
+		"""
+	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
 			
 		self.al_opx = array_modifier(input = value, array = self.T, varname = 'al_opx')
 
 	def set_grain_boundary_water_partitioning(self, value = 0.1, reval = False):
+	
+		"""A method to set water partitioning ratio beween grain interiors and boundaries.
+		This is mainly used when the user wants to calculate electrical conductivities from
+		H-self diffusion measurements but also wants to include the effect of grain-boundary
+		diffusion. As of now, there are not good experimental constraints for this parameter.
+		Jones (2016) uses 0.1 value to form an argument.
+		
+		Input:
+		float: value = 0.1
+		"""
 		
 		if reval == False:
 			self.D_GB = array_modifier(input = value, array = self.T, varname = 'D_GB')
@@ -1838,6 +1937,15 @@ class pide(object):
 			raise ValueError('Grain boundary water partitioning coefficient has to be in between 0 and 1.') 
 
 	def set_grain_boundary_H_Diffusion(self, value = False):
+	
+		"""A method to set whether grain-boundary H-diffusion will be included in the electrical conductivity
+		calculations done through diffusion measurements.
+		
+		Input:
+		bool: True or False		
+		
+		Default is False
+		"""
 
 		if type(value) != bool:
 			raise ValueError('The value entered for grain boundary H diffusion has to be True or False')
@@ -1845,6 +1953,19 @@ class pide(object):
 			self.gb_diff = value
 		
 	def set_phase_interconnectivities(self,reval = False,**kwargs):
+	
+		"""A method to set cementation exponents of a given mineral that is used in only Generalised Archie's Law.
+		Input:
+		dict/float: mineral_name = 2 || Range: >1  
+		
+		Example:
+		set_phase_interconnectivities(ol = 1, opx = 2, garnet = 4)
+		
+		Mineral_names:
+		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.
+		Rock names:
+		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
+		"""
 	
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
@@ -1929,6 +2050,14 @@ class pide(object):
 					
 	def set_melt_fluid_interconnectivity(self, value = None, reval = False):
 	
+		"""A method to set cementation exponent of the melt/fluid phase, which is used in Modified Archie's Law.
+		
+		Input:
+		float: value = 0.1 || Range: > 0.0
+		
+		Default: 8.0
+		"""
+		
 		if value == None:
 			value = 8.0
 	
@@ -1952,22 +2081,71 @@ class pide(object):
 	
 	def set_solid_phs_mix_method(self, method):
 	
+		"""A method to set solid phase mixing function that will be used.
+		The values can be entered between 0 to 5. These correspond to:
+		
+		0. Generalised Archie's Law
+		1. Hashin-Shtrikman Lower-Bound
+		2. Hashin-Shtrikman Upper-Bound
+		3. Parallel Model
+		4. Perpendicular Model
+		5. Random Model
+		
+		Input:
+		int: method = 1 || Range: 0 to 5
+		
+		Example:
+		set_solid_phs_mix_method(method = 1)
+		"""
+	
 		pide.phs_mix_method = method
 		
-		if (pide.phs_mix_method < 0) or (pide.phs_mix_method > 6):
+		if (pide.phs_mix_method < 0) or (pide.phs_mix_method > 5):
 		
 			raise ValueError('The solid phase mixing method is not entered correctly, the value is not between 0 and 6')
 		
 	def set_solid_melt_fluid_mix_method(self, method):
 	
+		"""A method to set solid matrix-melt/fluid couple phase mixing function that will be used.
+		The values can be entered between 0 to 5. These correspond to:
+		
+		0. Modified Archie's Law
+		1. Tubes Model
+		2. Spheres Model
+		3. Modified Brick-layer Model
+		4. Hashin-Shtrikman Lower-Bound
+		5. Hashin-Shtrikman Upper-Bound
+				
+		Input:
+		int: method = 1 || Range: 0 to 5
+		
+		Example:
+		set_solid_melt_fluid_mix_method(method = 1)
+		"""
+	
 		pide.phs_melt_mix_method = method
 		
-		if (pide.phs_melt_mix_method < 0) or (pide.phs_melt_mix_method > 6):
+		if (pide.phs_melt_mix_method < 0) or (pide.phs_melt_mix_method > 5):
 		
 			raise ValueError('The solid-fluid phase mixing method is not entered correctly, the value is not between 0 and 6')
 				
 	def set_seismic_velocity_properties(self, **kwargs):
 
+		"""A function to set seismic velocity properties of a mineral. Default values
+		of these are encourged to use to match with electrical conductivity models chosen.
+		However, if the user only wants to calculate seismic velocities, they can choose
+		to what identifier is going to be chosen from the material libraries existin in
+		pide_src/materials.json. 
+		
+		Input: 
+		dict/str: ol = "fo"
+		
+		Example:
+		set_seismic_velocity_properties(ol = "fa") || This sets olivine for fayalite elastic
+		constants instead of default forsterite (fo).
+		
+		To see what constants are available to use, check pide_src/materials.json file.
+		"""
 		if 'ol' in kwargs:
 			pide.ol_seis_selection = kwargs.pop('ol', "fo")
 			self.seis_property_overwrite[10] = True
@@ -2023,6 +2201,17 @@ class pide(object):
 				   pide.mixture_seis_selection, pide.other_seis_selection]
 		
 	def set_grain_size(self,reval = False,**kwargs):
+	
+		"""A method to set grain size of minerals. This will be used in H-diffusion models if grain-boundary
+		diffusion is activated. Currently, there is no reason to do this other than olivine; however, the environment
+		is set to fit for future purposes.
+		
+		Input:
+		dict/float: ol = 0.1 || in mm
+		
+		Mineral_names:
+		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.		
+		"""
 
 		if self.temperature_default == True:
 			self.suggestion_temp_array()
@@ -2108,6 +2297,22 @@ class pide(object):
 		print('SUGGESTION: Temperature set up seems to be the default value. You might want to set up the temperature array first before setting up other parameters. You will likely to be get errors from this action.')
 		
 	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
+	
+		"""A method to calculate a given Arrhenian formalism in form:
+		
+		A Cw^r exp(-(E +  alpha*Cw)) / RT).
+		
+		Input:
+		float: T || in K
+		float: sigma || in (s/m)
+		float: E || in (J/mol)
+		float: r
+		float: alpha 
+		float: water || in ppm
+		
+		Output:
+		float: conductivity || in (S/m)
+		"""
 		
 		if (sigma == 0.0) and (E == 0.0):
 			cond = 0.0
@@ -2117,6 +2322,16 @@ class pide(object):
 		return cond
 	
 	def calculate_fluids_conductivity(self, method = 'array', sol_idx = None):
+	
+		"""A method to calculate fluids conductivity with the environment set up.
+		
+		Inputs:
+		str: method - 'array' or 'index'|| Default - 'array
+		sol_idx: index parameter if method|index is chosen.
+		
+		Output:
+		float: conductivity || in (S/m)
+		"""
 
 		if method == 'array':
 			idx_node = None
@@ -2160,6 +2375,16 @@ class pide(object):
 		return cond_fluids
 
 	def calculate_melt_conductivity(self, method = 'array', sol_idx = None):
+	
+		"""A method to calculate melt conductivity with the environment set up.
+		
+		Inputs:
+		str: method - 'array' or 'index'|| Default - 'array
+		sol_idx: index parameter if method|index is chosen.
+		
+		Output:
+		float: conductivity || in (S/m)
+		"""
 
 		if method == 'array':
 			idx_node = None
@@ -2217,6 +2442,17 @@ class pide(object):
 		return cond_melt
 
 	def calculate_rock_conductivity(self, method, rock_idx = None, sol_idx = None):
+	
+		"""A method to calculate rock conductivity with the environment set up.
+		
+		Inputs:
+		str: method - 'array' or 'index'|| Default - 'array
+		int: rock_idx - Index of the rock chosen.
+		int: sol_idx: index parameter if method|index is chosen.
+		
+		Output:
+		float: conductivity || in (S/m)
+		"""
 
 		if method == 'array':
 			idx_node = None
@@ -2285,6 +2521,17 @@ class pide(object):
 	
 	def calculate_mineral_conductivity(self, method = 'array', min_idx = None, **kwargs):
 	
+		"""A method to calculate mineral conductivity with the environment set up.
+		
+		Inputs:
+		str: method - 'array' or 'index'|| Default - 'array
+		int: min_idx - Index of the mineral chosen.
+		int: sol_idx: index parameter if method|index is chosen.
+		
+		Output:
+		float: conductivity || in (S/m)
+		"""
+	
 		if min_idx == None:
 		
 			raise ValueError('Mineral is not entered for the method calculate_mineral_conductivity!')
@@ -2335,7 +2582,7 @@ class pide(object):
 		
 			if ("Wet" in self.name[min_idx][min_sum_idx]) == True:
 			
-				water_corr_factor = self.Water_correction(min_idx = min_idx, cond_sel_idx = min_sum_idx)
+				water_corr_factor = self._water_correction(min_idx = min_idx, cond_sel_idx = min_sum_idx)
 				
 				if self.wtype[min_idx][min_sum_idx] == 0:
 					
@@ -2497,7 +2744,21 @@ class pide(object):
 		
 			return cond		
 		
-	def Water_correction(self, min_idx = None, cond_sel_idx = None):
+	def _water_correction(self, min_idx = None, cond_sel_idx = None):
+	
+		""" function that corrects the water content to desired calibration.
+		Numbers are taken from Demouchy and Bolfan-Casanova (2016, Lithos) for olivine, pyroxene and garnet.
+		For feldspars, the correction number is taken from Mosenfelder et al. (2015, Am. Min.).
+		It is not encouraged for users to perform this method. It is tightly connected to set_
+		and calculate_conductivity functions.
+		
+		Input:
+		int: min_idx - Index of the mineral chosen.
+		
+		Output:
+		float: corr_factor - Correction factor for chosen mineral setting.
+		
+		"""
 
 		#A function that corrects the water content to desired calibration. Numbers are taken from Demouchy and Bolfan-Casanova (2016, Lithos) for olivine, pyroxene and garnet.
 		#For feldspars, the correction number is taken from Mosenfelder et al. (2015, Am. Min.)
@@ -2619,7 +2880,12 @@ class pide(object):
 			
 		return CORR_Factor
 	
-	def phase_mixing_function(self, method = None, melt_method = None, indexing_method = None, sol_idx = None):
+	def _phase_mixing_function(self, method = None, melt_method = None, indexing_method = None, sol_idx = None):
+	
+		"""A method to perform phase mixing functions for the set up environment.
+		It is not encouraged for users to perform this method. It is tightly
+		connected to set_ and calculate_conductivity functions.		
+		"""
 
 		self.bulk_cond = np.zeros(len(self.T)) #setting up an empty bulk conductivity array for all methods
 		self.dens_melt_fluid = np.zeros(len(self.T))
@@ -3156,6 +3422,15 @@ class pide(object):
 				(3 * self.bulk_cond[idx_node] + (vol_matrix * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])))))
 			
 	def calculate_conductivity(self, method = 'array',**kwargs):
+	
+		"""A method to calculate the electrical conductivity of the environment set up.
+		
+		Input:
+		str: method - calculation method || 'array' or 'index'
+		
+		Output:
+		Electrical Conductivity || in (S/m)
+		"""
 		
 		sol_idx = kwargs.pop('sol_idx', 0)
 		
@@ -3222,7 +3497,7 @@ class pide(object):
 			else:
 				self.other_rock_cond = np.zeros(len(self.T))
 						
-			self.phase_mixing_function(method = pide.phs_mix_method, melt_method = pide.phs_melt_mix_method, indexing_method= method, sol_idx = index)
+			self._phase_mixing_function(method = pide.phs_mix_method, melt_method = pide.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 			
 		elif pide.solid_phase_method == 2:
 		
@@ -3306,7 +3581,7 @@ class pide(object):
 			else:
 				self.other_cond = np.zeros(len(self.T))
 					
-			self.phase_mixing_function(method = pide.phs_mix_method, melt_method = pide.phs_melt_mix_method, indexing_method= method, sol_idx = index)
+			self._phase_mixing_function(method = pide.phs_mix_method, melt_method = pide.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 		
 		self.cond_calculated = True
 		
@@ -3316,6 +3591,11 @@ class pide(object):
 			return self.bulk_cond[index]
 			
 	def _setup_seismic_calculation_(self):
+	
+		"""A method to setup seismic calculation environment.
+		It is not encouraged for users to perform this method. It is tightly
+		connected to calculate_seismic_velocity function.		
+		"""
 	
 		id_list_global = []
 		fraction_list = []
@@ -3550,10 +3830,19 @@ class pide(object):
 			
 		return unique_compositions, fraction_list, idx_unique, id_list_global
 		
-	def calculate_seismic_velocities(self, mixing_method = 'HS', method = 'array', return_lower_upper=False, **kwargs):
+	def calculate_seismic_velocities(self, method = 'array', return_lower_upper=False,mixing_method = 'HS', **kwargs):
 	
-		"""
-		Calculates seismic velocities of the composition array with the given mixing function (currently only HashinShtrikman).
+		"""A method to calculate seismic velocities for the environment set up.
+		
+		Input:
+		str: method - Calculation method || 'array' or 'index || Default: 'array'
+		bool: return_lower_upper - Boolean to determine whether the function return Lower and upper bounds of mixing function || True or False
+		
+		Output:
+		if return_lower_upper is True
+			v_bulk, v_p, v_s || in (km/s)
+		elif return_lower_upper is False
+			[v_bulk, v_p, v_s], [v_bulk_upper, v_p_upper, v_s_upper], [v_bulk_lower, v_p_lower, v_s_lower] || in (km/s)	
 		
 		"""
 		
@@ -3624,6 +3913,16 @@ class pide(object):
 				[self.v_bulk_upper[index], self.v_p_upper[index], self.v_s_upper[index]], [self.v_bulk_lower[index], self.v_p_lower[index], self.v_s_lower[index]]
 				
 	def calculate_density_solid(self, min_idx = None):
+	
+		"""A method to calculate density of the solid matrix for the environment setup.
+		
+		Input:
+		int: min_idx - mineral index corresponding to the mineral chosen. || 
+		
+		Output:
+		float: density in (g/cm3)
+		
+		"""
 		
 		def linear_density(xfe_input, density_list):
 		
@@ -4258,8 +4557,14 @@ class pide(object):
 
 		return self.max_bulk_water
 		
+	def methods(self):
+	
+		all_methods = [method for method in dir(self) if callable(getattr(self, method))]
+	
 	def reset(self):
 		
 		self.form_object()
+		
+	
 		
 
