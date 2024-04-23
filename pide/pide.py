@@ -933,7 +933,7 @@ class pide(object):
 					raise ValueError('There is a value entered in mineral fraction contents that is below zero.')
 		
 		if overlookError == False:
-			bool_composition = self.check_composition(method = 'mineral')
+			bool_composition = self._check_composition(method = 'mineral')
 	
 			if bool_composition == False:
 			
@@ -997,7 +997,7 @@ class pide(object):
 					raise ValueError('There is a value entered in rock fraction contents that is below zero.')
 		
 		if overlookError == False:
-			bool_composition = self.check_composition(method = 'rock')
+			bool_composition = self._check_composition(method = 'rock')
 	
 			if bool_composition == False:
 			
@@ -1086,7 +1086,18 @@ class pide(object):
 		
 	def set_watercalib(self,**kwargs):
 	
-		"""A method to set water calibration
+		"""A method to set water calibration corrections.
+
+		Input:
+		dict/int: mineral_name = int
+
+		Available minerals and assoicated index values:
+		ol:  0-Withers2012, 1-Bell2003, 2-Paterson1980 or 3-Default'
+		px and garnet: 0-Bell1995 1-Paterson1980 or 2-Default.
+		feldspars: 1-Mosenfelder2015 or 2-Default.
+
+		Example:
+		
 		
 		"""
 	
@@ -1104,14 +1115,37 @@ class pide(object):
 			raise ValueError('The feldspar calibration method has entered incorrectly. The value has to be 0-Johnson2003 1-Mosenfelder2015 or 2-Default.')
 		
 	def set_o2_buffer(self, o2_buffer = 0):
+
+		"""A method to set oxygen fugacity buffer.
+
+		Input:
+		int: o2_buffer = 0
+
+		Available buffer indexes:
+
+		0: FMQ:
+		1: IW: Hirsch (1991)
+		2: QIF:
+		3: NNO: Li et al. (1998)
+		4 MMO: Xu et al. (2000)
 		
-		# pide.o2_buffer = kwargs.pop('o2_buffer', 0)
+		"""
 		pide.o2_buffer = o2_buffer
 		
 		if (pide.o2_buffer < 0) or (pide.o2_buffer > 4):
 			raise ValueError('The oxygen fugacity buffer has entered incorrectly. The value has to be 0-FMQ, 1-IW, 2-QIF, 3-NNO, 4-MMO')
 			
 	def set_mantle_water_solubility(self,**kwargs):
+
+		"""A method to set mantle water solubility of the chosen mineral with index.
+
+		Input:
+		dict/int: mineral_name = int
+
+		Available mantle minerals for this calculation:
+		ol,opx,cpx,garnet,rwd_wds,perov
+		
+		"""
 	
 		self.ol_sol_choice = kwargs.pop('ol', 0)
 		self.opx_sol_choice = kwargs.pop('opx', 0)
@@ -1126,6 +1160,16 @@ class pide(object):
 				raise ValueError('The olivine and opx water solubilities references each other, this will generate an infinite loop during calculation. Reverting to the default value for olivine.')
 			
 	def set_mantle_water_partitions(self,**kwargs):
+
+		"""A method to set upper mantle water partition coefficients against.
+
+		Input:
+		dict/int: partition_name = int
+
+		Available partition_names:
+		opx_ol,cpx_ol,garnet_ol,ol_melt,opx_melt,cpx_melt,garnet_melt
+		
+		"""
 	
 		self.d_water_opx_ol_choice = kwargs.pop('opx_ol', 0)
 		self.d_water_cpx_ol_choice = kwargs.pop('cpx_ol', 0)
@@ -1139,6 +1183,16 @@ class pide(object):
 		self._load_mantle_water_partitions(method = 'array')
 		
 	def set_mantle_transition_zone_water_partitions(self, **kwargs):
+
+		"""A method to set mantle transition zone water partition coefficients against rwd_wds phase.
+
+		Input:
+		str: partition_name
+
+		Available partition_names:
+		garnet_rwd_wds,perov_rwd_wds,cpx_rwd_wds
+		
+		"""
 	
 		self.d_water_garnet_rwd_wds_choice = kwargs.pop('garnet_rwd_wds', 0)
 		self.d_water_perov_rwd_wds_choice = kwargs.pop('perov_rwd_wds', 0)
@@ -1146,7 +1200,7 @@ class pide(object):
 		
 		self.load_mantle_transition_zone_water_partitions(method = 'array')
 		
-	def check_composition(self, method = None):
+	def _check_composition(self, method = None):
 
 		continue_adjusting = True
 
@@ -1179,6 +1233,12 @@ class pide(object):
 		return continue_adjusting
 	
 	def get_mineral_index(self, mineral_name):
+
+		"""A method to get the index of the mineral in
+		mineral lists used in conductivity calulcation
+		methods.
+		
+		"""
 	
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
 			min_index = 21
@@ -1247,6 +1307,15 @@ class pide(object):
 		return rock_index
 	
 	def list_mineral_econd_models(self, mineral_name):
+
+		"""A method to list all possible electrical conductivity models for the chosen mineral.
+
+		Input:
+		str: mineral_name
+
+		mineral_names:
+		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.
+		"""
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
 			min_index = 21
@@ -1296,6 +1365,15 @@ class pide(object):
 		return self.name[min_index]
 	
 	def list_rock_econd_models(self, rock_name):
+
+		"""A method to list all possible electrical conductivity models for the chosen rock.
+
+		Input:
+		str: rock_name
+
+		Rock_names: 
+		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
+		"""
 		
 		if (rock_name == 'granite'):
 			rock_idx = 2
@@ -1332,6 +1410,9 @@ class pide(object):
 		return self.name[rock_idx]
 	
 	def list_melt_econd_models(self):
+
+		"""A method to list all possible melt electrical conductivity models.		
+		"""
 	
 		print(text_color.RED +'Conductivity models for melts:' + text_color.END)
 		for i in range(0,len(self.name[1])):
@@ -1343,6 +1424,9 @@ class pide(object):
 		return self.name[1]
 	
 	def list_fluid_econd_models(self):
+
+		"""A method to list all possible fluid electrical conductivity models.		
+		"""
 		
 		print(text_color.BLUE +'Conductivity models for fluids:' + text_color.END)
 		for i in range(0,len(self.name[0])):
@@ -1354,6 +1438,15 @@ class pide(object):
 		return self.name[0]
 	
 	def list_mantle_water_partitions_solid(self, mineral_name):
+
+		"""A method to list all possible upper mantle water partitioning between solid minerals
+
+		Input:
+		str: mineral_name
+
+		Mineral_names:
+		opx,cpx,garnet
+		"""
 	
 		if (mineral_name == 'opx') or (mineral_name == 'orthopyroxene'):
 			min_index = 4
@@ -1383,6 +1476,15 @@ class pide(object):
 		return self.water_ol_part_name[min_index]
 	
 	def list_transition_zone_water_partitions_solid(self, mineral_name):
+
+		"""A method to list all possible mantle transition zone water partitioning between solid minerals.
+
+		Input:
+		str: mineral_name
+
+		Mineral_names:
+		cpx,garnet,perov
+		"""
 	
 		if (mineral_name == 'cpx') or (mineral_name == 'clinopyroxene'):
 			min_index = 5
@@ -1413,6 +1515,15 @@ class pide(object):
 		return self.water_rwd_wds_part_name[min_index]
 	
 	def list_mantle_water_partitions_melt(self, mineral_name):
+
+		"""A method to list all possible upper mantle water partitioning between solid minerals and melt.
+
+		Input:
+		str: mineral_name
+
+		Mineral_names:
+		ol,opx,cpx,garnet
+		"""
 		
 		print(text_color.RED + f'Mantle melt/NAMs water partition coefficients for the mineral:   {mineral_name}' + text_color.END)
 		
@@ -1445,6 +1556,10 @@ class pide(object):
 	
 	def list_mantle_water_solubilities(self, mineral_name):
 
+		"""A method to list upper-mantle water solubility models of different minerals.
+		Not all mantle minerals have water solubility models associated in pide.		
+		"""
+
 		print(f'Mantle NAM water solubility for:  {mineral_name}')
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
@@ -1474,6 +1589,16 @@ class pide(object):
 			return self.mineral_sol_name[min_index]
 	
 	def set_melt_fluid_conductivity_choice(self,**kwargs):
+
+		"""A method to set melt/fluid electrical conductivity model choice.
+
+		Input:
+		dict/float: melt or fluid
+
+		Example:
+		set_melt_fluid_conductivity_choice(melt = 0)
+		set_melt_fluid_conductivity_choice(fluid = 2)
+		"""
 	
 		pide.melt_cond_selection = kwargs.pop('melt', 0)
 		pide.fluid_cond_selection = kwargs.pop('fluid', 0)
@@ -1487,6 +1612,18 @@ class pide(object):
 			raise ValueError(f'Bad entry for fluid conductivity selection. Indexes allowed are from 0 to  {str(len(self.name[0]))}')
 		
 	def set_mineral_conductivity_choice(self,**kwargs):
+
+		"""A method to set mineral electrical conductivity model choices.
+		
+		Input:
+		dict/float: mineral_name - Name id of the mineral
+
+		Mineral_names:
+		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.
+
+		Example:
+		set_mineral_conductivity_choice(ol = 4,opx = 1,cpx = 5,garnet = 0)		
+		"""
 	
 		pide.ol_cond_selection = kwargs.pop('ol', 0)
 		pide.opx_cond_selection = kwargs.pop('opx', 0)
@@ -1539,13 +1676,13 @@ class pide(object):
 		
 			pide.sec_minerals_cond_selections = [None] * len(pide.minerals_cond_selections)
 					
-		self.mineral_conductivity_choice_check()
+		self._mineral_conductivity_choice_check()
 		
 		self.density_loaded = False
 		self.seismic_setup = False
 		
-	def mineral_conductivity_choice_check(self):
-		
+	def _mineral_conductivity_choice_check(self):
+
 		mineral_idx = list(range(11,28))
 		mineral_names = ['qtz','plag','amp','kfelds','opx','cpx','mica','garnet','sulphide','graphite','ol','sp','rwd_wds','perov','mixture','other']
 		
@@ -1566,8 +1703,21 @@ class pide(object):
 								raise ValueError('Bad entry for mineral conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[mineral_idx[i]])) + ' for the mineral ' + mineral_names[i])
 						except ValueError:
 							raise ValueError('The value cannot be converted to a floating number. Perhaps you have not entered the conduction mechanisms line correctly. An example would be 4/proton.')
-	def set_rock_conductivity_choice(self,**kwargs):
 	
+	def set_rock_conductivity_choice(self,**kwargs):
+		
+		"""A method to set rock electrical conductivity model choices.
+
+		Input:
+		dict/float: rock_name - Name id of the mineral
+
+		Rock_names: 
+		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
+
+		Example:
+		set_rock_conductivity_choice(granite = 3, granulite = 2)			
+		"""
+
 		pide.granite_cond_selection = kwargs.pop('granite', 0)
 		pide.granulite_cond_selection = kwargs.pop('granulite', 0)
 		pide.sandstone_cond_selection = kwargs.pop('sandstone', 0)
@@ -1582,12 +1732,12 @@ class pide(object):
 				   pide.amphibolite_cond_selection, pide.basalt_cond_selection, pide.mud_cond_selection, pide.gabbro_cond_selection, pide.other_rock_cond_selection]
 				   
 				   
-		self.rock_conductivity_choice_check()
+		self._rock_conductivity_choice_check()
 		
 		self.density_loaded = False
 		self.seismic_setup = False
 		
-	def rock_conductivity_choice_check(self):
+	def _rock_conductivity_choice_check(self):
 		
 		rock_idx = list(range(2,12))
 		rock_names = ['granite','granulite','sandstone','gneiss','amphibolite','basalt','mud','gabbro','other_rock']
@@ -1599,6 +1749,18 @@ class pide(object):
 				raise ValueError('Bad entry for rock conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[rock_idx[i]])) + ' for the rock ' + rock_names[i])
 				   
 	def set_mineral_water(self, reval = False, **kwargs):
+
+		"""A method to set mineral water contents independently.
+
+		Input:
+		dict/float: mineral_name - Name id of the mineral
+
+		Mineral_names:
+		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.
+
+		Example:
+		set_mineral_water(ol = 20,opx = 100,cpx = 200,garnet = 15)		
+		"""
 	
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
@@ -1655,6 +1817,18 @@ class pide(object):
 					raise ValueError('There is a value entered in mineral water contents that is below zero.')
 				   
 	def set_rock_water(self, reval = False, **kwargs):
+
+		"""A method to set rock water contents independently.
+
+		Input:
+		dict/float: rock_name - Name id of the mineral
+
+		Rock_names: 
+		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
+
+		Example:
+		set_rock_water(granite = 100, granulite = 500)		
+		"""
 	
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
