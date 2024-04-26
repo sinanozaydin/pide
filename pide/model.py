@@ -9,7 +9,7 @@ from .geodyn.material_process import return_material_bool
 from .geodyn.deform_cond import plastic_strain_2_conductivity
 from .utils.utils import text_color, sort_through_external_list, check_type
 
-def run_conductivity_model(index_list, material, pide_object, t_array, p_array, melt_array, type = 'conductivity'):
+def run_model(index_list, material, pide_object, t_array, p_array, melt_array, type = 'conductivity'):
 
 	#global function to run conductivity model. designed to be global def to run parallel with multiprocessing
 	
@@ -199,10 +199,16 @@ def run_conductivity_model(index_list, material, pide_object, t_array, p_array, 
 	
 	if type == 'conductivity':
 		c = pide_object.calculate_conductivity(method = 'array')
+		return c
 	elif type == 'seismic':
 		c = pide_object.calculate_seismic_velocities(method = 'array')
-	
-	return c
+		return c
+	elif type == 'both':
+		c = pide_object.calculate_conductivity(method = 'array')
+		s = pide_object.calculate_seismic_velocities(method = 'array')
+		return c, s
+	else:
+		raise NameError('The type for "run_model" function entered wrongly...It has to be either "conductivity", "seismic" or "both".')
 	
 def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deformation_threshold, high_deformation_threshold, function_method, conductivity_decay_factor,strain_decay_factor):
 
@@ -403,14 +409,14 @@ class Model(object):
 				
 					if num_cpu == 1:
 						
-						cond[sliced_material_idx] = run_conductivity_model(index_list= sliced_material_idx, material = material_list_holder[l][i], pide_object = mat_pide_obj,
+						cond[sliced_material_idx] = run_model(index_list= sliced_material_idx, material = material_list_holder[l][i], pide_object = mat_pide_obj,
 						t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
 						
 					else:
 						#solving for parallel with multiprocessing
 						with multiprocessing.Pool(processes=num_cpu) as pool:
 							
-							process_item_partial = partial(run_conductivity_model, material =  material_list_holder[l][i], pide_object = mat_pide_obj, t_array = self.T,
+							process_item_partial = partial(run_model, material =  material_list_holder[l][i], pide_object = mat_pide_obj, t_array = self.T,
 							p_array = self.P, melt_array = self.melt_frac)
 							
 							c = pool.map(process_item_partial, sliced_material_idx)
@@ -483,7 +489,7 @@ class Model(object):
 
 			for layer_idx in range(0,len(sliced_material_idx)):
 				
-				cond[sliced_material_idx[layer_idx]] = run_conductivity_model(index_list= sliced_material_idx[layer_idx], material = self.material_list[layer_idx],
+				cond[sliced_material_idx[layer_idx]] = run_model(index_list= sliced_material_idx[layer_idx], material = self.material_list[layer_idx],
 							pide_object = mat_pide_obj,	t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
 			return cond
 		elif type == 'seismic':
@@ -495,7 +501,7 @@ class Model(object):
 			for layer_idx in range(0,len(sliced_material_idx)):
 				
 				vel_bulk[sliced_material_idx[layer_idx]], vel_p[sliced_material_idx[layer_idx]],vel_s[sliced_material_idx[layer_idx]] = \
-					run_conductivity_model(index_list = sliced_material_idx[layer_idx], material = self.material_list[layer_idx],
+					run_model(index_list = sliced_material_idx[layer_idx], material = self.material_list[layer_idx],
 							pide_object = mat_pide_obj,	t_array = self.T, p_array=self.P, melt_array=self.melt_frac,
 							type = 'seismic')
 				

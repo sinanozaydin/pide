@@ -181,19 +181,43 @@ class Material(object):
 			
 	def calculate_conductivity(self, T, P, melt = None):
 	
-		from .model import run_conductivity_model
+		from .model import run_model
 				
 		if check_type(T) == 'array':
 			if len(T) != len(P):
 			
 				raise IndexError('The length of the temperature and pressure arrays do not match')
+				
+		if melt is None:
+			import numpy as np
+			melt = np.zeros(len(T))
 		
 		p_obj_material = pide()
 		
-		cond = run_conductivity_model(index_list=list(range(0,len(T))), material = self, pide_object=p_obj_material, 
+		cond = run_model(index_list=list(range(0,len(T))), material = self, pide_object=p_obj_material, 
 		t_array=T, p_array=P, melt_array=melt)
 		
 		return cond
+		
+	def calculate_seismic_velocity(self, T, P, melt = None):
+	
+		from .model import run_model
+		
+		if check_type(T) == 'array':
+			if len(T) != len(P):
+			
+				raise IndexError('The length of the temperature and pressure arrays do not match')
+				
+		if melt is None:
+			import numpy as np
+			melt = np.zeros(len(T))
+				
+		p_obj_material = pide()
+		
+		v_bulk, v_p, v_s = run_model(index_list=list(range(0,len(T))), material = self, pide_object=p_obj_material, 
+		t_array=T, p_array=P, melt_array=melt, type = 'seismic')
+		
+		return v_bulk, v_p, v_s
 		
 	#attributes listing here
 	@property
