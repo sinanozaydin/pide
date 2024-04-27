@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
-import sys,os
 import numpy as np
-import random
+
+def _comp_adjust_(comp_list, comp_alien):
+
+	comp_list = comp_list * (1.0 - comp_alien)
+
+	return comp_list
 
 def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, 
 	init_guess = None, transition_zone = False, water_solv=False):

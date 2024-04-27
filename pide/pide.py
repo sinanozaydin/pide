@@ -950,7 +950,7 @@ class pide(object):
 		Input:
 		dict/float: rock_name 
 		
-		Rock nameS:
+		Rock names:
 		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
 		
 		Example:
