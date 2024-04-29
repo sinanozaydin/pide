@@ -3350,7 +3350,7 @@ class pide(object):
 			elif indexing_method == 'index':
 				start_idx = sol_idx
 				end_idx = sol_idx + 1
-				
+			
 			for i in range(start_idx,end_idx):
 				
 				if pide.solid_phase_method == 1:
