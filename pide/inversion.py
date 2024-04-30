@@ -3,6 +3,9 @@
 import numpy as np
 
 def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
+
+	"""A method to adjust composition of one mineral/rock without considering the replacement weights
+	"""
 	
 	if final == False:
 		ratio = (comp_alien - comp_old) / (np.sum(_comp_list) - comp_old)
