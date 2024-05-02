@@ -1583,10 +1583,7 @@ class pide(object):
 				
 		print_lists(min_idx = min_index)
 
-		if not self.list_mantle_water_solubilities.var_assigned:
-			pass
-		else:
-			return self.mineral_sol_name[min_index]
+		return self.mineral_sol_name[min_index]
 	
 	def set_melt_fluid_conductivity_choice(self,**kwargs):
 
@@ -4715,6 +4712,7 @@ class pide(object):
 		elif mineral_name == 'opx':
 			
 			min_idx = 4
+			water_fug, o2_fug = self._conditional_fugacity_calculations(min_idx = min_idx, sol_choice= self.opx_sol_choice)
 				
 			if ('From' in self.mineral_sol_name[min_idx][self.opx_sol_choice]) == True:
 			
@@ -4907,12 +4905,30 @@ class pide(object):
 
 		return self.max_bulk_water
 		
+	def write_data(self,list_input,header = None):
+		
+		lines = []
+		
+		try:
+			lines = [','.join(map(str, x)) for x in zip(*list_input) + '\n']
+			
+			if header is not None:
+				for item in header:
+					lines.insert(0,','.join(header))
+			
+		except IndexError:
+		
+			raise IndexError('The length of arrays selected to write a file do not match each other.')
+		
 	def list_methods(self):
 	
 		"""A method to list all available user-utilisible methods in the pide class.		
 		"""
 	
-		all_methods = [method for method in dir(self) if callable(getattr(self, method))]
+		all_methods = [method for method in dir(self) if callable(getattr(self, method)) and not method.startswith("_")]
+		
+		for item in all_methods:
+			print(f'- {item}')
 	
 	def reset(self):
 	
