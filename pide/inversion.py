@@ -16,7 +16,7 @@ def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 	return comp_list
 
 def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, 
-	init_guess = None, transition_zone = False, water_solv=False, comp_solv=False, comp_type = None, comp_index = None):
+	init_guess = None, transition_zone = False, water_solv=False, comp_solv=False, comp_type = None, comp_index = None, low_value_threshold = None):
 	
 	"""Simple grid-search solver to solve conductivities. This function should not be called directly.	
 	"""
@@ -42,7 +42,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 				
 				if comp_type == 'mineral':
 					object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
-				elif comp_type == 'mineral':
+				elif comp_type == 'rock':
 					object.rock_frac_list[idx_t][index] = comp_list[idx_t]
 	
 			exec('object.' + param + '[' + str(index) + ']='  + str(upperlimit[index]))
@@ -115,7 +115,27 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 				
 				if abs(residual) < (acceptence_threshold * 1e-2 * cond_list[index]):
 					restart = False
-					sol_param = param_search_array[j]
+					if low_value_threshold is None:
+						sol_param = param_search_array[j]
+					else:
+						if param_search_array[j] < low_value_threshold:
+						
+							sol_param = 0.0
+							
+							if comp_solv == True:
+							
+								comp_list = _comp_adjust_(np.array(_comp_list), 0.0 , comp_old)
+								
+								for idx_t in range(len(_comp_list)):
+						
+									if comp_type == 'mineral':
+										object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
+									elif comp_type == 'mineral':
+										object.rock_frac_list[idx_t][index] = comp_list[idx_t]
+									
+								exec('object.' + param + '[' + str(index) + ']='  + str(param_search_array[j]))
+						else:
+							sol_param = param_search_array[j]
 					break
 					
 				else:
@@ -153,7 +173,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 	return sol_param, residual
 	
 def conductivity_solver_single_param(object, cond_list, param_name,
-	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, num_cpu = 1):
+	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, num_cpu = 1,**kwargs):
 
 	"""
 	A function to fit conductivity value with a single parameter with simple search algorithm.
@@ -167,6 +187,8 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			'basalt_frac','mud_frac','gabbro_frac','other_rock_frac']
 
 	index_list = np.array(list(range(0,len(object.T)))) #creating the index array tied to the T array.
+	
+	low_value_threshold = kwargs.pop('low_value_threshold', None)
 	
 	if ('water' in param_name) == True:
 	
@@ -226,7 +248,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 							
 			process_item_partial = partial(_solv_cond_, cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, init_guess = 0, transition_zone = transition_zone,
-			water_solv=water_solv,comp_solv = comp_solv, comp_type = comp_type, comp_index = comp_index)
+			water_solv=water_solv,comp_solv = comp_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold)
 			
 			c = pool.map(process_item_partial, index_list)
 			
@@ -243,7 +265,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			
 			c = _solv_cond_(index = index_list[idx], cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 				lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, init_guess = 0, transition_zone = transition_zone, 
-				water_solv=water_solv, comp_solv = comp_solv, comp_type = comp_type, comp_index = comp_index)
+				water_solv=water_solv, comp_solv = comp_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold)
 			
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]
