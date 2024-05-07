@@ -3,6 +3,10 @@
 import numpy as np
 from scipy.stats import linregress
 from scipy.optimize import curve_fit
+import warnings
+from scipy.optimize import OptimizeWarning
+
+warnings.simplefilter("ignore", OptimizeWarning)
 
 scipy_methods = ['lm', 'trf', 'dogbox']
 
@@ -118,8 +122,11 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 					run_idx = run_idx
 					
 				if func_method == 'exponential':
-				
-					params, params_cov = curve_fit(func, strains, conds, method = method, sigma = cond_err)
+					
+					try:
+						params, params_cov = curve_fit(func, strains, conds, method = method, sigma = cond_err)
+					except OptimizeWarning as e:
+						pass
 					cond_calced = func(strain_func_build, params[0], params[1], params[2])
 					misfit = check_misfit(np.log10(strains),np.log10(cond_calced),np.log10(strains),np.log10(conds)) #log misfit
 					
