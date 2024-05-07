@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os,sys
-
+from pathlib import Path
 import pide
 from pide.material import Material
 from pide.model import Model
@@ -12,7 +12,8 @@ from pide.geodyn.material_process import *
 from pide.geodyn.write_uw_model import write_2d_field_h5
 
 #setting up source folder of the files
-source_folder = os.path.join('..','example_data','uwconversion')
+notebook_path = Path().resolve()
+source_folder = os.path.join(notebook_path,'..','example_data','uwconversion')
 
 #setting up filename folders for the h5 files.
 temp_fnm = os.path.join(source_folder,'temperature-501.h5')
@@ -70,7 +71,7 @@ pstrain_array = interpolate_2d_fields(mesh,pstrain_array,mesh_center)
 material_array = interpolate_2d_fields(mesh,material_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 strain_rate_array = interpolate_2d_fields(mesh_center,strain_rate_array,mesh_center,method = 'nearest') #using nearest for the material for them to stay integers
 
-plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'temperature.png',cbar_label = 'Temperature [C]', plot_save = False)
+#plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = temp_array, cblimit_up = 1500, cblimit_down = 600, log_bool=False, cb_name = 'coolwarm', label = 'temperature.png',cbar_label = 'Temperature [C]', plot_save = False)
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = material_array,cblimit_up = len(material_names), cblimit_down = 0, log_bool=False, cb_name = 'tab20b',label = 'material.png', cbar_label = 'Material Index',plot_save = True)
 # plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = melt_array,cblimit_up = 1, cblimit_down = 0, log_bool=False, cb_name = 'viridis',label = 'material.png', cbar_label = 'Material Index',plot_save = False)
 
@@ -248,7 +249,7 @@ p_strain = pstrain_array, strain_rate = strain_rate_array, material_node_skip_ra
 backgr_cond = mt_model_object.calculate_conductivity(type = 'background', num_cpu = 5)
 
 plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = backgr_cond,cblimit_up = 1e3,
-cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = True,label = 'cond.png')
+cblimit_down = 1e-8, log_bool=True, cb_name = 'Spectral_r',cbar_label = 'Conductivity',plot_save = False,label = 'cond.png')
 
 # write_2d_field_h5(Field = backgr_cond, filename_out = 'BackGroundCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
 
@@ -266,13 +267,15 @@ max_cond = mt_model_object.calculate_conductivity(type = 'maximum', num_cpu = 6)
 deform_cond, strain_decay, cond_decay, misfit = mt_model_object.calculate_deformation_related_conductivity(method = 'plastic_strain', function_method = 'exponential', 
 low_deformation_threshold = 1e-2, high_deformation_threshold = 1e2, num_cpu = 6)
 
-write_2d_field_h5(Field = deform_cond, filename_out = 'DeformCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
+#write_2d_field_h5(Field = deform_cond, filename_out = 'DeformCondField-501.h5', nan_interpolate = True, xmesh = x_mesh_centers, ymesh = y_mesh_centers)
 
 
 plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = deform_cond,
 						 cblimit_up = 1e3, cblimit_down = 1e-8, log_bool=True,
 						 cb_name = 'Spectral_r',cbar_label = 'Conductivity',
-						 plot_save = True,label = 'cond_meshed.png')
+						 plot_save = False,label = 'cond_meshed.png')
+
+sys.exit()
 plot_2D_underworld_Field(xmesh = x_mesh_centers, ymesh = y_mesh_centers, Field = strain_decay,
 						 cblimit_up = 1, cblimit_down = 0, log_bool=False,
 						 cb_name = 'plasma',cbar_label = 'Strain Decay',

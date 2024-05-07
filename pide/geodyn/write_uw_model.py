@@ -7,7 +7,7 @@ def write_2d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpola
 
 	if nan_interpolate == True:
 				
-		Field = np.squeeze(Field, axis=2)
+		Field = np.squeeze(Field, axis=1)
 		
 		contains_nan = np.isnan(Field).any()
 		

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 import numpy as np
 import os
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 
 def plot_2D_underworld_Field_scatter(x_array = None, y_array = None, Field = None,cblimit_up = None, cblimit_down = None, log_bool = False,cb_name = 'coolwarm',**kwargs):
-
-	import matplotlib.pyplot as plt
-	import matplotlib.colors as colors
 	
 	plot_save = kwargs.pop('plot_save', False)
 	label = kwargs.pop('label', 'Interpolated_UW_Figure.png')
@@ -64,8 +63,7 @@ def plot_2D_underworld_Field(xmesh = None, ymesh = None, Field = None,cblimit_up
 	
 	"""
 
-	import matplotlib.pyplot as plt
-	import matplotlib.colors as colors
+	
 	
 	plot_save = kwargs.pop('plot_save', False)
 	label = kwargs.pop('label', 'Interpolated_UW_Figure.png')

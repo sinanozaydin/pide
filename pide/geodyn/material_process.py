@@ -9,7 +9,7 @@ def return_material_bool(material_index,model_array, material_skip, model_type):
 	
 	if model_type == "underworld_2d":
 		
-		if material_skip != None:
+		if material_skip is not None:
 			# Recreate arrays with every material_skip from each original array
 			_new_array_bool = tuple(arr[::material_skip] for arr in array_bool)
 			

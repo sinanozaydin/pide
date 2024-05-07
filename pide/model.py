@@ -231,7 +231,7 @@ def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deform
 	"""
 	
 	#Global function to link deformation and conductivity.
-	if (background_cond[index_number[0],index_number[1],index_number[2]] == np.nan) or (max_cond[index_number[0],index_number[1],index_number[2]] == np.nan): 
+	if (background_cond[index_number[0],index_number[1]] == np.nan) or (max_cond[index_number[0],index_number[1]] == np.nan): 
 	
 		c = np.nan
 		str_dcy = np.nan
@@ -240,24 +240,24 @@ def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deform
 	
 	else:
 	
-		if p_strain[index_number[0],index_number[1],index_number[2]] <= low_deformation_threshold:
+		if p_strain[index_number[0],index_number[1]] <= low_deformation_threshold:
 			
-			c = background_cond[index_number[0],index_number[1],index_number[2]]
+			c = background_cond[index_number[0],index_number[1]]
 			str_dcy = np.nan
 			cnd_dcy = np.nan
 			msft = np.nan
 			
-		elif p_strain[index_number[0],index_number[1],index_number[2]] >= high_deformation_threshold:
+		elif p_strain[index_number[0],index_number[1]] >= high_deformation_threshold:
 			
-			c = max_cond[index_number[0],index_number[1],index_number[2]]
+			c = max_cond[index_number[0],index_number[1]]
 			str_dcy = np.nan
 			cnd_dcy = np.nan
 			msft = np.nan
 			
 		else:
 			
-			c, str_dcy, cnd_dcy, msft = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1],index_number[2]],low_cond = background_cond[index_number[0],index_number[1],index_number[2]],
-				high_cond=max_cond[index_number[0],index_number[1],index_number[2]],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
+			c, str_dcy, cnd_dcy, msft = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1]],low_cond = background_cond[index_number[0],index_number[1]],
+				high_cond=max_cond[index_number[0],index_number[1]],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
 				function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor, return_all_params = True)
 	
 	
@@ -337,6 +337,7 @@ class Model(object):
 		cond_list = []
 			
 		for l in range(0,len(material_list_holder)):
+
 			print(text_color.RED + 'Initiating calculation for the materials appended to the model.' + text_color.END)
 			print('##############################################################')
 			for i in range(0,len(material_list_holder[l])):
@@ -366,7 +367,7 @@ class Model(object):
 					
 				#Slicing the array for parallel calculation
 				if num_cpu > 1:
-					if len(material_idx) == 3: #if clause for 2D underworld model, yes the number is 3 for 2D and 1 for 3D. You do not need to confuse!
+					if len(material_idx) == 2: #if clause for 2D underworld model, yes the number is 3 for 2D and 1 for 3D. You do not need to confuse!
 						#condition to check if array is too small to parallelize for the material num_cpu*num_cpu 
 						if len(material_idx[0]) > (num_cpu*num_cpu):
 							size_arrays = len(material_idx[0]) // num_cpu
@@ -374,15 +375,14 @@ class Model(object):
 							#adjusting the material_index_array
 							for idx in range(0, len(material_idx[0]), size_arrays):
 								if idx >= (size_arrays*num_cpu):
-									sliced_material_idx.append(tuple((material_idx[0][idx:len(material_idx[0])], material_idx[1][idx:len(material_idx[1])],material_idx[2][idx:len(material_idx[2])])))
+									sliced_material_idx.append(tuple((material_idx[0][idx:len(material_idx[0])], material_idx[1][idx:len(material_idx[1])])))
 								else:
-									sliced_material_idx.append(tuple((material_idx[0][idx:idx+size_arrays], material_idx[1][idx:idx+size_arrays],material_idx[2][idx:idx+size_arrays])))
+									sliced_material_idx.append(tuple((material_idx[0][idx:idx+size_arrays], material_idx[1][idx:idx+size_arrays])))
 						else:
 							#revert back to the single cpu if the material_idx_list is not long enough
 							num_cpu = 1
 							sliced_material_idx = material_idx
 					else: #if clause for 3D underworld model
-					
 						if len(material_idx) > (num_cpu*num_cpu):
 							size_arrays = len(material_idx) // num_cpu
 							sliced_material_idx = []
@@ -548,11 +548,15 @@ class Model(object):
 					mat_skip = None
 				
 				#getting material index for each material
-				material_idx = return_material_bool(material_index = self.material_list[i].material_index, model_array = self.material_array, material_skip = mat_skip,
-				model_type=self.model_type)
+				material_idx = return_material_bool(material_index = self.material_list[i].material_index, model_array = self.material_array,
+				material_skip = mat_skip, model_type=self.model_type)
+
 				#turning material index list to be useable format for the np.ndarray fields
-				material_idx_list = [[material_idx[0][idx],material_idx[1][idx],material_idx[2][idx]] for idx in range(0,len(material_idx[0]))]
-				
+				if len(material_idx) == 2: 
+					material_idx_list = [[material_idx[0][idx],material_idx[1][idx]] for idx in range(0,len(material_idx[0]))]
+				else:
+					material_idx_list = material_idx
+
 				#multiprocessing loop for each material
 				with multiprocessing.Pool(processes=num_cpu) as pool:
 					
