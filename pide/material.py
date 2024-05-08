@@ -6,8 +6,8 @@ from pide import pide
 class Material(object):
 
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_frac = 0.0,
-	interconnectivities = None, param1 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'none', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
-	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0,
+	interconnectivities = None, param1 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'Field', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
+	melt_properties = None,	melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0,
 	deformation_dict = None, top = None, bottom = None, **kwargs):
 	
 		"""
@@ -105,6 +105,11 @@ class Material(object):
 		self._melt_fluid_m = None,
 		self.melt_fluid_m = melt_fluid_m
 		
+		if melt_properties == None:
+			melt_properties = {'water': 20, 'co2': 0, 'na2o': 0, 'k2o':0}
+		self._melt_properties = None
+		self.melt_properties = melt_properties
+		
 		if deformation_dict == None:
 			deformation_dict = {'function_method':'linear','conductivity_decay_factor':0, 'strain_decay_factor':0, 'strain_percolation_threshold': None}
 		
@@ -117,6 +122,8 @@ class Material(object):
 		self.mantle_water_sol_ref = kwargs.pop('mantle_water_sol_ref', 'ol')
 		
 		self.resistivity_medium = kwargs.pop('resistivity_medium', None)
+		self.vp_medium = kwargs.pop('vp_medium', None)
+		self.vs_medium = kwargs.pop('vs_medium', None)
 		
 		self.water_calib = kwargs.pop('water_calib', {'ol':3,'px_gt':2,'feldspar':2})
 		
@@ -125,7 +132,7 @@ class Material(object):
 		self.linked_material_index = kwargs.pop('linked_material_index', None)
 		
 		self.fluid_salinity = kwargs.pop('fluid_salinity', 0.0)
-		
+				
 		
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
@@ -133,52 +140,7 @@ class Material(object):
 		
 		#magnetics
 		self.magnetic_susceptibility = kwargs.pop('magnetic_susceptivility', 1e-6)
-			
-	def check_vals(self,value,type):
 		
-		for item in value:
-			
-			if self.calculation_type == 'mineral':
-				if (item in self.mineral_list) == False:
-					raise ValueError('The mineral ' + item + ' is wrongly defined in the composition dictionary. The possible mineral names are:' + str(self.mineral_list))
-			elif self.calculation_type == 'rock':
-				if (item in self.rock_list) == False:
-					raise ValueError('The rock ' + item + ' is wrongly defined in the composition dictionary. The possible rock names are:' + str(self.rock_list))
-			elif self.calculation_type == 'value':
-				pass
-			else:
-				raise ValueError('The calculation type is wrongly defined. It has to be one of those three: 1.mineral, 2.rock, 3.value.')
-		
-		if self.calculation_type == 'mineral':
-			list2check = self.mineral_list
-		elif self.calculation_type == 'rock':
-			list2check = self.rock_list
-		else:
-			list2check = None
-		
-		if list2check != None:
-		
-			for item in list2check:
-				if item not in value:
-					if type == 'comp':
-						value[item] = 0
-					elif type == 'archie':
-						value[item] = 8.0
-		else:
-			value = None
-			
-		return value
-		
-	def set_parameter(self, param_name, value):
-	
-		setattr(self, param_name, value)
-		
-	def copy_attributes(self, dest_object):
-	
-		for attr_name in vars(self):
-
-			setattr(dest_object, attr_name, getattr(self, attr_name))
-			
 	def calculate_conductivity(self, T, P, melt = None):
 	
 		from .model import run_model
@@ -218,6 +180,66 @@ class Material(object):
 		t_array=T, p_array=P, melt_array=melt, type = 'seismic')
 		
 		return v_bulk, v_p, v_s
+			
+	def check_vals(self,value,type):
+		
+		for item in value:
+			
+			if self.calculation_type == 'mineral':
+				if (item in self.mineral_list) == False:
+					raise ValueError('The mineral ' + item + ' is wrongly defined in the composition dictionary. The possible mineral names are:' + str(self.mineral_list))
+			elif self.calculation_type == 'rock':
+				if (item in self.rock_list) == False:
+					raise ValueError('The rock ' + item + ' is wrongly defined in the composition dictionary. The possible rock names are:' + str(self.rock_list))
+			elif self.calculation_type == 'value':
+				pass
+			else:
+				raise ValueError('The calculation type is wrongly defined. It has to be one of those three: 1.mineral, 2.rock, 3.value.')
+		
+		if self.calculation_type == 'mineral':
+			list2check = self.mineral_list
+		elif self.calculation_type == 'rock':
+			list2check = self.rock_list
+		else:
+			list2check = None
+		
+		if list2check != None:
+		
+			for item in list2check:
+				if item not in value:
+					if type == 'comp':
+						value[item] = 0
+					elif type == 'archie':
+						value[item] = 8.0
+		else:
+			value = None
+			
+		return value
+		
+	def check_property(self, value, list_vals):
+	
+		for item in list_vals:
+			if item not in value:
+				value[item] = 0.0
+				
+		return value
+		
+	def set_parameter(self, param_name, value):
+	
+		setattr(self, param_name, value)
+		
+	def copy_attributes(self, dest_object):
+	
+		if type(dest_object) == list:
+			for idx_list in range(0,len(dest_object)):
+				for attr_name in vars(self):
+					setattr(dest_object[idx_list], attr_name, getattr(self, attr_name))
+		else:
+		
+			for attr_name in vars(self):
+				setattr(dest_object, attr_name, getattr(self, attr_name))
+			
+	
 		
 	#attributes listing here
 	@property
@@ -251,6 +273,14 @@ class Material(object):
 	@water.setter
 	def water(self, value):
 		self._water = self.check_vals(value=value,type = 'comp')
+		
+	@property
+	def melt_properties(self):
+		return self._melt_properties
+		
+	@melt_properties.setter
+	def melt_properties(self, value):
+		self._melt_properties = self.check_property(value=value, list_vals = ['water','co2','na2o','k2o'])
 		
 	@property
 	def el_cond_selections(self):

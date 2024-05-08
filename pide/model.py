@@ -24,7 +24,6 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 	if melt_array[index_list].any() > 0.0:
 		material.melt_fluid_incorporation_method == 'field' #if melt exists it overwrites the field value.
 		
-
 	if material.melt_fluid_incorporation_method == 'value':
 
 		if material.melt_or_fluid == 'melt':
@@ -276,7 +275,7 @@ class Model(object):
 		Methods                             			Description
 		----------------------------------------------- -----------------------------------------
 
-		calculate_conductivity							Calculates the conductivity of the model object
+		calculate_model					                Calculates the conductivity of the model object
 														that is setup.
 		
 		calculate_deformation_related_conductivity		Calculates the deformation related conductivity
@@ -302,7 +301,7 @@ class Model(object):
 			if len(self.T) != len(self.P):
 				raise ValueError(text_color.RED + f'The length of T and P arrays do not match!' + text_color.END)
 		
-	def calculate_conductivity(self,type = 'background', num_cpu = 1):
+	def calculate_model(self,type = 'conductivity', num_cpu = 1):
 
 		"""
 		Calculates conductivity for the given 2 or 3D model with given material_list [Material object] and associated material
@@ -322,20 +321,20 @@ class Model(object):
 			
 			if num_cpu > max_num_cores:
 				raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
-
-		cond = np.zeros_like(self.T)
 		
-		if type == 'background':
-			material_list_holder = [self.material_list]
-		elif type == 'maximum':
-			material_list_holder = [self.material_list_2]
+		acceptable_types = ['conductivity','seismic','both']
+		
+		if type in acceptable_types:
+			pass
 		else:
-			material_list_holder = [self.material_list]
-			if self.material_list_2 != None:
-				material_list_holder.append(self.material_list_2)
-		
-		cond_list = []
+			raise NameError('Invalid entry for type entry.')
 			
+		cond = np.zeros_like(self.T)
+		v_p = np.zeros_like(self.T)
+		v_s = np.zeros_like(self.T)
+		
+		material_list_holder = [self.material_list]
+					
 		for l in range(0,len(material_list_holder)):
 
 			print(text_color.RED + 'Initiating calculation for the materials appended to the model.' + text_color.END)
@@ -403,48 +402,60 @@ class Model(object):
 
 				if material_list_holder[l][i].calculation_type == 'value':
 					#calculation not necessary for value method so automatically not parallel and indexed into sliced_material_idx
-					cond[sliced_material_idx] = 1.0 / material_list_holder[l][i].resistivity_medium
-					
+					if type == 'conductivity':
+						cond[sliced_material_idx] = 1.0 / material_list_holder[l][i].resistivity_medium
+					elif type == 'seismic':
+						v_p[sliced_material_idx] = material_list_holder[l][i].vp_medium
+						v_s[sliced_material_idx] = material_list_holder[l][i].vs_medium
 				else:
 				
 					if num_cpu == 1:
 						
-						cond[sliced_material_idx] = run_model(index_list= sliced_material_idx, material = material_list_holder[l][i], pide_object = mat_pide_obj,
-						t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
+						if type == 'conductivity':
+							cond[sliced_material_idx] = run_model(index_list= sliced_material_idx, material = material_list_holder[l][i], pide_object = mat_pide_obj,
+							t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
+						elif type == 'seismic':
+							v_bulk, v_p[sliced_material_idx], v_s[sliced_material_idx] = run_model(index_list= sliced_material_idx, material = material_list_holder[l][i], pide_object = mat_pide_obj,
+							t_array = self.T, p_array=self.P, melt_array=self.melt_frac, type='seismic') 
 						
 					else:
 						#solving for parallel with multiprocessing
 						with multiprocessing.Pool(processes=num_cpu) as pool:
 							
 							process_item_partial = partial(run_model, material =  material_list_holder[l][i], pide_object = mat_pide_obj, t_array = self.T,
-							p_array = self.P, melt_array = self.melt_frac)
+							p_array = self.P, melt_array = self.melt_frac, type = type)
 							
 							c = pool.map(process_item_partial, sliced_material_idx)
 						
 						#assigning to the global cond list
 						for idx in range(0,len(sliced_material_idx)):
-							cond[sliced_material_idx[idx]] = c[idx]
+							
+							if type == 'conductivity':
+							
+								cond[sliced_material_idx[idx]] = c[idx]
+							
+							elif type == 'seismic':
+								
+								v_p[sliced_material_idx[idx]] = c[idx][1]
+								v_s[sliced_material_idx[idx]] = c[idx][2]
 				
 				print(f'The conductivity for the material  {material_list_holder[l][i].name}  is calculated.')
 				
 			#converting all zero vals in the cond to None values
 			
-			cond[cond == 0.0] = np.nan
-						
-			cond_list.append(cond)
+			if type == 'conductivity':
+				cond[cond == 0.0] = np.nan
+			elif type == 'seismic':
+				v_p[v_p == 0.0] = np.nan
+				v_s[v_s == 0.0] = np.nan
+				
 			print('##############################################################')
 				
-		if type == 'background':
-			self.background_cond = cond_list[0]
-			return cond_list[0]
-		elif type == 'maximum':
-			self.maximum_cond = cond_list[0]
-			return cond_list[0]
-		else:
-			self.background_cond = cond_list[0]
-			self.maximum_cond = cond_list[1]
-			return cond_list[0],cond_list[1]
-		
+		if type == 'conductivity':
+			return cond
+		elif type == 'seismic':
+			return v_p, v_s
+
 	def calculate_geothermal_block(self, type = 'conductivity'):
 
 		if self.depth is None:
@@ -510,16 +521,9 @@ class Model(object):
 		else:
 			raise ValueError(text_color.RED + f'The type is entered wrongly. The available type string inputs are: "conductivity"' + text_color.END)
 	
-	def calculate_deformation_related_conductivity(self, method = 'plastic_strain', function_method = 'linear',
+	def calculate_deformation_related_conductivity(self, cond_min, cond_max, method = 'plastic_strain', function_method = 'linear',
 		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
-	
-		try:
-			self.background_cond
-			self.maximum_cond
-			
-		except NameError:
-			raise NameError('Background and maximum conductivities has to be assigned first to the model object to use deformation related conductivity function.')
-	
+		
 		if num_cpu > 1:
 			import multiprocessing
 			import os
@@ -560,8 +564,8 @@ class Model(object):
 				#multiprocessing loop for each material
 				with multiprocessing.Pool(processes=num_cpu) as pool:
 					
-					process_item_partial = partial(run_deform2cond, p_strain = self.p_strain, background_cond = self.background_cond,
-					max_cond = self.maximum_cond, low_deformation_threshold = low_deformation_threshold,
+					process_item_partial = partial(run_deform2cond, p_strain = self.p_strain, background_cond = cond_min,
+					max_cond = cond_max, low_deformation_threshold = low_deformation_threshold,
 					high_deformation_threshold = high_deformation_threshold, function_method = function_method,
 					conductivity_decay_factor = self.material_list[i].deformation_dict['conductivity_decay_factor'],
 					strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'])
