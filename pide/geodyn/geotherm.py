@@ -273,7 +273,6 @@ def T_Katsura_2022_Adiabat(P_input):
 	Depth = np.array(Depth)
 	T_C = np.array(T) - 273.15
 
-	# T_C_out = np.interp(P_input[P_input_idx_1:P_input_idx_2], P, T_C)
 	T_C_out = np.interp(P_input ,P ,T_C)
 	T_K_out = T_C_out + 273.15
 
