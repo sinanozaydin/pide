@@ -206,6 +206,7 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 		c = pide_object.calculate_conductivity(method = 'array')
 		s = pide_object.calculate_seismic_velocities(method = 'array')
 		return c, s
+		
 	else:
 		raise NameError('The type for "run_model" function entered wrongly...It has to be either "conductivity", "seismic" or "both".')
 	
