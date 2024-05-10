@@ -18,11 +18,21 @@ If you want to help develop and change code as it is being used:
 
 `> pip install -e .`
 
-# Workflow
+# Workflow and how to use
 
 How to use *pide* can be learned through Jupyter notebooks provided in examples/notebooks directory. The general workflow can be tracked through the chart below:
 
 <img src="./docs/figures/pide_workflow.png">
+
+Extra input/output docstrings can be called the pide object with method such as:
+<pre>
+```
+pide_object = pide.pide()
+
+pide_object.get_method_manual(method_name)
+```
+</pre>
+
 
 # Contacts
 
