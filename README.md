@@ -18,11 +18,22 @@ If you want to help develop and change code as it is being used:
 
 `> pip install -e .`
 
-# Workflow
+# Workflow and how to use
 
 How to use *pide* can be learned through Jupyter notebooks provided in examples/notebooks directory. The general workflow can be tracked through the chart below:
 
 <img src="./docs/figures/pide_workflow.png">
+
+Information on all methods (input/output, examples) can be accesed through the pide object method as follows:
+<pre>
+
+pide_object = pide.pide()
+
+pide_object.list_methods()
+pide_object.get_method_manual(method_name)
+
+</pre>
+
 
 # Contacts
 
