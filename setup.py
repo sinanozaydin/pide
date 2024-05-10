@@ -5,7 +5,7 @@ with open("README.md") as readme_file:
 
 setup(
     name='pide',
-    version='0.2',
+    version='0.2.1',
     description='A library for petrophysical interpretations of geophysical models.',
     author='Sinan Ozaydin, Lu Li, Utpal Singh, Patrice F. Rey, Maria Constanza Manassero',
     author_email='sinan.ozaydin@protonmail.com',
