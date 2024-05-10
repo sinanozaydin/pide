@@ -24,13 +24,14 @@ How to use *pide* can be learned through Jupyter notebooks provided in examples/
 
 <img src="./docs/figures/pide_workflow.png">
 
-Extra input/output docstrings can be called the pide object with method such as:
+Information on all methods (input/output, examples) can be accesed through the pide object method as follows:
 <pre>
-```
+
 pide_object = pide.pide()
 
+pide_object.list_methods()
 pide_object.get_method_manual(method_name)
-```
+
 </pre>
 
 
