@@ -9,7 +9,7 @@ authors = [
   { name="Maria Constanza Manassero"}
 ]
 description = "A python library for petrophysical calculations. "
-readme = "README.md"
+readme = "../README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
