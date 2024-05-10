@@ -24,11 +24,6 @@ How to use *pide* can be learned through Jupyter notebooks provided in examples/
 
 <img src="./docs/figures/pide_workflow.png">
 
-# How to Cite
-
 # Contacts
 
 | **Sinan Özaydın** | sinan.ozaydin@protonmail.com | sinan.ozaydin@sydney.edu.au
-
-# License
-
