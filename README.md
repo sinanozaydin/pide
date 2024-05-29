@@ -22,7 +22,7 @@ If you want to help develop and change code as it is being used:
 
 How to use *pide* can be learned through Jupyter notebooks provided in examples/notebooks directory. The general workflow can be tracked through the chart below:
 
-<img src="./docs/figures/pide_workflow.png">
+<img src="./docs/paper/figures/pide_workflow.png">
 
 Information on all methods (input/output, examples) can be accesed through the pide object method as follows:
 <pre>
