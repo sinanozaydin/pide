@@ -7,15 +7,15 @@ setup(
     name='pide',
     version='0.3.2',
     package_data = {
-    'pide' :[
-        'pide_src/*csv',
-        'pide_src/*json',
-        'pide_src/water_sol/*csv',
-        'pide_src/water_partitioning/*csv',
-        'pide_src/cond_models/minerals/*csv',
-        'pide_src/cond_modelsrocks/*csv'
-    ]
-    }
+        'pide' :[
+            'pide_src/*csv',
+            'pide_src/*json',
+            'pide_src/water_sol/*csv',
+            'pide_src/water_partitioning/*csv',
+            'pide_src/cond_models/minerals/*csv',
+            'pide_src/cond_modelsrocks/*csv'
+        ],
+    },
     description='A library for petrophysical interpretations of geophysical models.',
     author='Sinan Ozaydin, Lu Li, Utpal Singh, Patrice F. Rey, Maria Constanza Manassero',
     author_email='sinan.ozaydin@protonmail.com',
