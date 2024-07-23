@@ -5,7 +5,7 @@ with open("README.md") as readme_file:
 
 setup(
     name='pide',
-    version='0.3.3',
+    version='0.3.4',
     package_data = {
         'pide' :[
             'pide_src/*csv',
@@ -14,7 +14,7 @@ setup(
             'pide_src/water_partitioning/*csv',
             'pide_src/cond_models/*csv',
             'pide_src/cond_models/minerals/*csv',
-            'pide_src/cond_modelsrocks/*csv'
+            'pide_src/cond_models/rocks/*csv'
         ],
     },
     description='A library for petrophysical interpretations of geophysical models.',
