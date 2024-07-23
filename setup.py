@@ -5,13 +5,14 @@ with open("README.md") as readme_file:
 
 setup(
     name='pide',
-    version='0.3.2',
+    version='0.3.3',
     package_data = {
         'pide' :[
             'pide_src/*csv',
             'pide_src/*json',
             'pide_src/water_sol/*csv',
             'pide_src/water_partitioning/*csv',
+            'pide_src/cond_models/*csv',
             'pide_src/cond_models/minerals/*csv',
             'pide_src/cond_modelsrocks/*csv'
         ],
