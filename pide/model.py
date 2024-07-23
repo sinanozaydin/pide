@@ -67,6 +67,24 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 		perov = material.composition['perov'],
 		other = material.composition['other'])
 		
+		pide_object.set_param1_mineral(ol = material.param1['ol'],
+		opx = material.param1['opx'],
+		cpx = material.param1['cpx'],
+		garnet = material.param1['garnet'],
+		mica = material.param1['mica'],
+		amp = material.param1['amp'],
+		quartz = material.param1['quartz'],
+		plag = material.param1['plag'],
+		kfelds = material.param1['kfelds'],
+		sulphide = material.param1['sulphide'],
+		graphite = material.param1['graphite'],
+		mixture = material.param1['mixture'],
+		sp = material.param1['sp'],
+		wds = material.param1['wds'],
+		rwd = material.param1['rwd'],
+		perov = material.param1['perov'],
+		other = material.param1['other'])
+		
 		if material.solid_phase_mixing_idx == 0:
 		
 			pide_object.set_phase_interconnectivities(ol = material.interconnectivities['ol'],
@@ -149,6 +167,16 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 		mud = material.composition['mud'],
 		gabbro = material.composition['gabbro'],
 		other_rock = material.composition['other_rock'])
+		
+		pide_object.set_param1_rock(granite = material.param1['granite'],
+		granulite = material.param1['granulite'],
+		sandstone = material.param1['sandstone'],
+		gneiss = material.param1['gneiss'],
+		amphibolite = material.param1['amphibolite'],
+		basalt = material.param1['basalt'],
+		mud = material.param1['mud'],
+		gabbro = material.param1['gabbro'],
+		other_rock = material.param1['other_rock'])
 		
 		if material.solid_phase_mixing_idx == 0:
 			
