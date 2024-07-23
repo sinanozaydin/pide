@@ -44,11 +44,11 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 	pide_object.set_watercalib(ol = material.water_calib['ol'], px_gt = material.water_calib['px_gt'], feldspar = material.water_calib['feldspar'])
 	pide_object.set_o2_buffer(o2_buffer = material.o2_buffer)
 	pide_object.set_solid_phase_method(material.calculation_type)
+	pide_object.set_alopx(material.al_opx)
 
 	#adjusting material parameters for the pide_object
 	if material.calculation_type == 'mineral':
 	
-		
 		pide_object.set_composition_solid_mineral(ol = material.composition['ol'],
 		opx = material.composition['opx'],
 		cpx = material.composition['cpx'],

@@ -132,7 +132,8 @@ class Material(object):
 		self.linked_material_index = kwargs.pop('linked_material_index', None)
 		
 		self.fluid_salinity = kwargs.pop('fluid_salinity', 0.0)
-				
+		
+		self.al_opx = kwargs.pop('al_opx', 0.0)				
 		
 		if (self.calculation_type == 'value') and (self.resistivity_medium == None):
 		
