@@ -238,7 +238,8 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 	else:
 		raise NameError('The type for "run_model" function entered wrongly...It has to be either "conductivity", "seismic" or "both".')
 	
-def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deformation_threshold, high_deformation_threshold, function_method, conductivity_decay_factor,strain_decay_factor):
+def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deformation_threshold, high_deformation_threshold, function_method,
+	conductivity_decay_factor,strain_decay_factor, model_type):
 
 	"""
 	A function to run deformation related conductivity.
@@ -252,42 +253,77 @@ def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deform
 	high_deformation_threshold: Threshold point in plastic strain to end the linking function - float
 	function_method: The type of function to fit: 'exponential', 'linear, 'logarithmic'.
 	conductivity_decay_factor: How much conductivity mid-point is moved from the middle point: -1 to 1
-	strain_decat_factor:
+	strain_decay_factor:
+	model_type:
 
 	To understand how this function works. Try to use the notebook deformation_related_conductivity notebook in examples.
 
 	"""
+	if model_type == 'underworld_2d':
+		#Global function to link deformation and conductivity.
+		if (background_cond[index_number[0],index_number[1]] == np.nan) or (max_cond[index_number[0],index_number[1]] == np.nan): 
+		
+			c = np.nan
+			str_dcy = np.nan
+			cnd_dcy = np.nan
+			msft = np.nan
+		
+		else:
+		
+			if p_strain[index_number[0],index_number[1]] <= low_deformation_threshold:
+				
+				c = background_cond[index_number[0],index_number[1]]
+				str_dcy = np.nan
+				cnd_dcy = np.nan
+				msft = np.nan
+				
+			elif p_strain[index_number[0],index_number[1]] >= high_deformation_threshold:
+				
+				c = max_cond[index_number[0],index_number[1]]
+				str_dcy = np.nan
+				cnd_dcy = np.nan
+				msft = np.nan
+				
+			else:
+				
+				c, str_dcy, cnd_dcy, msft = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1]],low_cond = background_cond[index_number[0],index_number[1]],
+					high_cond=max_cond[index_number[0],index_number[1]],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
+					function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor, return_all_params = True)
 	
-	#Global function to link deformation and conductivity.
-	if (background_cond[index_number[0],index_number[1]] == np.nan) or (max_cond[index_number[0],index_number[1]] == np.nan): 
+	elif model_type == 'underworld_3d':
 	
-		c = np.nan
-		str_dcy = np.nan
-		cnd_dcy = np.nan
-		msft = np.nan
+		if (background_cond[index_number] == np.nan) or (max_cond[index_number] == np.nan): 
+		
+			c = np.nan
+			str_dcy = np.nan
+			cnd_dcy = np.nan
+			msft = np.nan
+		
+		else:
+		
+			if p_strain[index_number] <= low_deformation_threshold:
+				
+				c = background_cond[index_number]
+				str_dcy = np.nan
+				cnd_dcy = np.nan
+				msft = np.nan
+				
+			elif p_strain[index_number] >= high_deformation_threshold:
+				
+				c = max_cond[index_number]
+				str_dcy = np.nan
+				cnd_dcy = np.nan
+				msft = np.nan
+				
+			else:
+				
+				c, str_dcy, cnd_dcy, msft = plastic_strain_2_conductivity(strain = p_strain[index_number],low_cond = background_cond[index_number],
+					high_cond=max_cond[index_number],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
+					function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor, return_all_params = True)
 	
 	else:
 	
-		if p_strain[index_number[0],index_number[1]] <= low_deformation_threshold:
-			
-			c = background_cond[index_number[0],index_number[1]]
-			str_dcy = np.nan
-			cnd_dcy = np.nan
-			msft = np.nan
-			
-		elif p_strain[index_number[0],index_number[1]] >= high_deformation_threshold:
-			
-			c = max_cond[index_number[0],index_number[1]]
-			str_dcy = np.nan
-			cnd_dcy = np.nan
-			msft = np.nan
-			
-		else:
-			
-			c, str_dcy, cnd_dcy, msft = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1]],low_cond = background_cond[index_number[0],index_number[1]],
-				high_cond=max_cond[index_number[0],index_number[1]],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
-				function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor, return_all_params = True)
-	
+		raise ValueError('The model type can only be underworld_2d or underworld_3d.')
 	
 	return c, str_dcy, cnd_dcy, msft
 
@@ -469,9 +505,8 @@ class Model(object):
 								v_s[sliced_material_idx[idx]] = c[idx][2]
 				
 				print(f'The conductivity for the material  {material_list_holder[l][i].name}  is calculated.')
-				
+						
 			#converting all zero vals in the cond to None values
-			
 			if type == 'conductivity':
 				cond[cond == 0.0] = np.nan
 			elif type == 'seismic':
@@ -597,7 +632,7 @@ class Model(object):
 					max_cond = cond_max, low_deformation_threshold = low_deformation_threshold,
 					high_deformation_threshold = high_deformation_threshold, function_method = function_method,
 					conductivity_decay_factor = self.material_list[i].deformation_dict['conductivity_decay_factor'],
-					strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'])
+					strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'], model_type = self.model_type)
 					
 					c = pool.map(process_item_partial, material_idx_list)
 									

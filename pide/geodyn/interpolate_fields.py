@@ -94,7 +94,7 @@ def interpolate_3d_fields(mesh_tuple, vals, mesh_out, method = 'linear'):
 		for j in range(0,len(mesh_out_inv[1])):
 			for i in range(0,len(mesh_out_inv[0])):
 		
-				interp_array.append(np.array([mesh_out_inv[1][j],mesh_out_inv[0][i],mesh_out_inv[2][k]]))
+				interp_array.append(np.array([mesh_out_inv[0][i],mesh_out_inv[1][j],mesh_out_inv[2][k]]))
 			
 	interp_array = np.array(interp_array)
 		

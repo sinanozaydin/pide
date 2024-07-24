@@ -22,7 +22,7 @@ def return_material_bool(material_index,model_array, material_skip, model_type):
 		array_bool = array_bool[0]#tuple is not neccesary
 		if material_skip != None:
 			# Recreate arrays with every material_skip from each original array
-			_new_array_bool = [arr[::material_skip] for arr in array_bool]
+			_new_array_bool = array_bool[::material_skip]
 			_new_array_bool = np.array(_new_array_bool)
 			
 		else:
