@@ -3117,52 +3117,58 @@ class pide(object):
 					self.garnet_cond[i],self.sulphide_cond[i],self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i],
 					self.rwd_wds_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]				
 				
-				while True:
+				if np.mean(list_i) != 0.0:
 				
-					#while loop for deleting the zero arrays that could be encountered due to non-existence of the mineral.
-					min_local = np.amin(np.asarray(list_i))
-				
-					if (min_local != 0.0):
-						
-						break
+					while True:
 					
-					else:
+						#while loop for deleting the zero arrays that could be encountered due to non-existence of the mineral.
+						
+						min_local = np.amin(np.asarray(list_i))
 					
-						list_i = np.delete(list_i, np.argwhere(list_i == 0))
+						if (min_local != 0.0):
+							
+							break
 						
-				if pide.solid_phase_method == 1:
-				
-					self.bulk_cond[i] = (((self.granite_frac[i] / (self.granite_cond[i] + (2*min_local))) +\
-					(self.granulite_frac[i] / (self.granulite_cond[i] + (2*min_local))) +\
-					(self.sandstone_frac[i] / (self.sandstone_cond[i] + (2*min_local))) +\
-					(self.gneiss_frac[i] / (self.gneiss_cond[i] + (2*min_local))) +\
-					(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*min_local))) +\
-					(self.basalt_frac[i] / (self.basalt_cond[i] + (2*min_local))) +\
-					(self.mud_frac[i] / (self.mud_cond[i] + (2*min_local))) +\
-					(self.gabbro_frac[i] / (self.gabbro_cond[i] + (2*min_local))) +\
-					(self.other_rock_frac[i] / (self.other_rock_cond[i] + (2*min_local))))**(-1.0)) -\
-					2.0*min_local
+						else:
 						
-				elif pide.solid_phase_method == 2:
+							list_i = np.delete(list_i, np.argwhere(list_i == 0))
+							
+					if pide.solid_phase_method == 1:
+					
+						self.bulk_cond[i] = (((self.granite_frac[i] / (self.granite_cond[i] + (2*min_local))) +\
+						(self.granulite_frac[i] / (self.granulite_cond[i] + (2*min_local))) +\
+						(self.sandstone_frac[i] / (self.sandstone_cond[i] + (2*min_local))) +\
+						(self.gneiss_frac[i] / (self.gneiss_cond[i] + (2*min_local))) +\
+						(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*min_local))) +\
+						(self.basalt_frac[i] / (self.basalt_cond[i] + (2*min_local))) +\
+						(self.mud_frac[i] / (self.mud_cond[i] + (2*min_local))) +\
+						(self.gabbro_frac[i] / (self.gabbro_cond[i] + (2*min_local))) +\
+						(self.other_rock_frac[i] / (self.other_rock_cond[i] + (2*min_local))))**(-1.0)) -\
+						2.0*min_local
+							
+					elif pide.solid_phase_method == 2:
+					
+						self.bulk_cond[i] = (((self.quartz_frac[i] / (self.quartz_cond[i] + (2*min_local))) +\
+						(self.plag_frac[i] / (self.plag_cond[i] + (2*min_local))) +\
+						(self.amp_frac[i] / (self.amp_cond[i] + (2*min_local))) +\
+						(self.kfelds_frac[i] / (self.kfelds_cond[i] + (2*min_local))) +\
+						(self.opx_frac[i] / (self.opx_cond[i] + (2*min_local))) +\
+						(self.cpx_frac[i] / (self.cpx_cond[i] + (2*min_local))) +\
+						(self.mica_frac[i] / (self.mica_cond[i] + (2*min_local))) +\
+						(self.garnet_frac[i] / (self.garnet_cond[i] + (2*min_local))) +\
+						(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*min_local))) +\
+						(self.graphite_frac[i] / (self.graphite_cond[i] + (2*min_local))) +\
+						(self.ol_frac[i] / (self.ol_cond[i] + (2*min_local))) +\
+						(self.sp_frac[i] / (self.sp_cond[i] + (2*min_local))) +\
+						(self.rwd_wds_frac[i] / (self.rwd_wds_cond[i] + (2*min_local))) +\
+						(self.perov_frac[i] / (self.perov_cond[i] + (2*min_local))) +\
+						(self.mixture_frac[i] / (self.mixture_cond[i] + (2*min_local))) +\
+						(self.other_frac[i] / (self.other_cond[i] + (2*min_local)))
+						)**(-1.0)) -\
+						2.0*min_local
 				
-					self.bulk_cond[i] = (((self.quartz_frac[i] / (self.quartz_cond[i] + (2*min_local))) +\
-					(self.plag_frac[i] / (self.plag_cond[i] + (2*min_local))) +\
-					(self.amp_frac[i] / (self.amp_cond[i] + (2*min_local))) +\
-					(self.kfelds_frac[i] / (self.kfelds_cond[i] + (2*min_local))) +\
-					(self.opx_frac[i] / (self.opx_cond[i] + (2*min_local))) +\
-					(self.cpx_frac[i] / (self.cpx_cond[i] + (2*min_local))) +\
-					(self.mica_frac[i] / (self.mica_cond[i] + (2*min_local))) +\
-					(self.garnet_frac[i] / (self.garnet_cond[i] + (2*min_local))) +\
-					(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*min_local))) +\
-					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*min_local))) +\
-					(self.ol_frac[i] / (self.ol_cond[i] + (2*min_local))) +\
-					(self.sp_frac[i] / (self.sp_cond[i] + (2*min_local))) +\
-					(self.rwd_wds_frac[i] / (self.rwd_wds_cond[i] + (2*min_local))) +\
-					(self.perov_frac[i] / (self.perov_cond[i] + (2*min_local))) +\
-					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*min_local))) +\
-					(self.other_frac[i] / (self.other_cond[i] + (2*min_local)))
-					)**(-1.0)) -\
-					2.0*min_local
+				else:
+					self.bulk_cond[i] = 0.0
 					
 		elif method == 2:
 		
@@ -3188,53 +3194,59 @@ class pide(object):
 					self.graphite_cond[i],self.ol_cond[i], self.sp_cond[i], 
 					self.rwd_wds_cond[i], self.perov_cond[i], self.mixture_cond[i], self.other_cond[i]]
 					
-				while True:
+				if np.mean(list_i) != 0.0:
 				
-					#while loop for deleting the zero arrays that could be encountered due to non-existence of the mineral.
+					while True:
 					
-					max_local = np.amax(np.asarray(list_i))
-				
-					if (max_local != 0.0):
+						#while loop for deleting the zero arrays that could be encountered due to non-existence of the mineral.
 						
-						break
+						max_local = np.amax(np.asarray(list_i))
 					
-					else:
+						if (max_local != 0.0):
+							
+							break
+						
+						else:
+						
+							list_i = np.delete(list_i, np.argwhere(list_i == 0))
+							
+					if pide.solid_phase_method == 1:
 					
-						list_i = np.delete(list_i, np.argwhere(list_i == 0))
+						self.bulk_cond[i] = (((self.granite_frac[i] / (self.granite_cond[i] + (2*max_local))) +\
+						(self.granulite_frac[i] / (self.granulite_cond[i] + (2*max_local))) +\
+						(self.sandstone_frac[i] / (self.sandstone_cond[i] + (2*max_local))) +\
+						(self.gneiss_frac[i] / (self.gneiss_cond[i] + (2*max_local))) +\
+						(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*max_local))) +\
+						(self.basalt_frac[i] / (self.basalt_cond[i] + (2*max_local))) +\
+						(self.mud_frac[i] / (self.mud_cond[i] + (2*max_local))) +\
+						(self.gabbro_frac[i] / (self.gabbro_cond[i] + (2*max_local))) +\
+						(self.other_rock_frac[i] / (self.other_rock_cond[i] + (2*max_local))))**(-1.0)) -\
+						2.0*max_local
+							
+					elif pide.solid_phase_method == 2:
+					
+						self.bulk_cond[i] = (((self.quartz_frac[i] / (self.quartz_cond[i] + (2*max_local))) +\
+						(self.plag_frac[i] / (self.plag_cond[i] + (2*max_local))) +\
+						(self.amp_frac[i] / (self.amp_cond[i] + (2*max_local))) +\
+						(self.kfelds_frac[i] / (self.kfelds_cond[i] + (2*max_local))) +\
+						(self.opx_frac[i] / (self.opx_cond[i] + (2*max_local))) +\
+						(self.cpx_frac[i] / (self.cpx_cond[i] + (2*max_local))) +\
+						(self.mica_frac[i] / (self.mica_cond[i] + (2*max_local))) +\
+						(self.garnet_frac[i] / (self.garnet_cond[i] + (2*max_local))) +\
+						(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*max_local))) +\
+						(self.graphite_frac[i] / (self.graphite_cond[i] + (2*max_local))) +\
+						(self.ol_frac[i] / (self.ol_cond[i] + (2*max_local))) +\
+						(self.sp_frac[i] / (self.sp_cond[i] + (2*max_local))) +\
+						(self.rwd_wds_frac[i] / (self.rwd_wds_cond[i] + (2*max_local))) +\
+						(self.perov_frac[i] / (self.perov_cond[i] + (2*max_local))) +\
+						(self.mixture_frac[i] / (self.mixture_cond[i] + (2*max_local))) +\
+						(self.other_frac[i] / (self.other_cond[i] + (2*max_local)))					
+						)**(-1.0)) -\
+						2.0*max_local
 						
-				if pide.solid_phase_method == 1:
-				
-					self.bulk_cond[i] = (((self.granite_frac[i] / (self.granite_cond[i] + (2*max_local))) +\
-					(self.granulite_frac[i] / (self.granulite_cond[i] + (2*max_local))) +\
-					(self.sandstone_frac[i] / (self.sandstone_cond[i] + (2*max_local))) +\
-					(self.gneiss_frac[i] / (self.gneiss_cond[i] + (2*max_local))) +\
-					(self.amphibolite_frac[i] / (self.amphibolite_cond[i] + (2*max_local))) +\
-					(self.basalt_frac[i] / (self.basalt_cond[i] + (2*max_local))) +\
-					(self.mud_frac[i] / (self.mud_cond[i] + (2*max_local))) +\
-					(self.gabbro_frac[i] / (self.gabbro_cond[i] + (2*max_local))) +\
-					(self.other_rock_frac[i] / (self.other_rock_cond[i] + (2*max_local))))**(-1.0)) -\
-					2.0*max_local
-						
-				elif pide.solid_phase_method == 2:
-				
-					self.bulk_cond[i] = (((self.quartz_frac[i] / (self.quartz_cond[i] + (2*max_local))) +\
-					(self.plag_frac[i] / (self.plag_cond[i] + (2*max_local))) +\
-					(self.amp_frac[i] / (self.amp_cond[i] + (2*max_local))) +\
-					(self.kfelds_frac[i] / (self.kfelds_cond[i] + (2*max_local))) +\
-					(self.opx_frac[i] / (self.opx_cond[i] + (2*max_local))) +\
-					(self.cpx_frac[i] / (self.cpx_cond[i] + (2*max_local))) +\
-					(self.mica_frac[i] / (self.mica_cond[i] + (2*max_local))) +\
-					(self.garnet_frac[i] / (self.garnet_cond[i] + (2*max_local))) +\
-					(self.sulphide_frac[i] / (self.sulphide_cond[i] + (2*max_local))) +\
-					(self.graphite_frac[i] / (self.graphite_cond[i] + (2*max_local))) +\
-					(self.ol_frac[i] / (self.ol_cond[i] + (2*max_local))) +\
-					(self.sp_frac[i] / (self.sp_cond[i] + (2*max_local))) +\
-					(self.rwd_wds_frac[i] / (self.rwd_wds_cond[i] + (2*max_local))) +\
-					(self.perov_frac[i] / (self.perov_cond[i] + (2*max_local))) +\
-					(self.mixture_frac[i] / (self.mixture_cond[i] + (2*max_local))) +\
-					(self.other_frac[i] / (self.other_cond[i] + (2*max_local)))					
-					)**(-1.0)) -\
-					2.0*max_local
+				else:
+					
+					self.bulk_cond[i] == 0.0
 					
 		elif method == 3:
 		

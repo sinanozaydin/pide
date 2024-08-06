@@ -111,7 +111,8 @@ class Material(object):
 		self.melt_properties = melt_properties
 		
 		if deformation_dict == None:
-			deformation_dict = {'function_method':'linear','conductivity_decay_factor':0, 'strain_decay_factor':0, 'strain_percolation_threshold': None}
+			deformation_dict = {'function_method':'linear','conductivity_decay_factor':0, 'conductivity_decay_factor_2':0,
+			'strain_decay_factor':0, 'strain_percolation_threshold': None}
 		
 		self._deformation_dict = None
 		self.deformation_dict = deformation_dict

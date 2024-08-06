@@ -239,7 +239,7 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 		raise NameError('The type for "run_model" function entered wrongly...It has to be either "conductivity", "seismic" or "both".')
 	
 def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deformation_threshold, high_deformation_threshold, function_method,
-	conductivity_decay_factor,strain_decay_factor, model_type):
+	conductivity_decay_factor, conductivity_decay_factor_2, strain_decay_factor, model_type):
 
 	"""
 	A function to run deformation related conductivity.
@@ -264,68 +264,58 @@ def run_deform2cond(index_number,p_strain, background_cond, max_cond, low_deform
 		if (background_cond[index_number[0],index_number[1]] == np.nan) or (max_cond[index_number[0],index_number[1]] == np.nan): 
 		
 			c = np.nan
-			str_dcy = np.nan
-			cnd_dcy = np.nan
-			msft = np.nan
+			rms = np.nan
 		
 		else:
 		
 			if p_strain[index_number[0],index_number[1]] <= low_deformation_threshold:
 				
 				c = background_cond[index_number[0],index_number[1]]
-				str_dcy = np.nan
-				cnd_dcy = np.nan
-				msft = np.nan
+				rms = np.nan
 				
 			elif p_strain[index_number[0],index_number[1]] >= high_deformation_threshold:
 				
 				c = max_cond[index_number[0],index_number[1]]
-				str_dcy = np.nan
-				cnd_dcy = np.nan
-				msft = np.nan
+				rms = np.nan
 				
 			else:
 				
-				c, str_dcy, cnd_dcy, msft = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1]],low_cond = background_cond[index_number[0],index_number[1]],
+				c, rms = plastic_strain_2_conductivity(strain = p_strain[index_number[0],index_number[1]],low_cond = background_cond[index_number[0],index_number[1]],
 					high_cond=max_cond[index_number[0],index_number[1]],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
-					function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor, return_all_params = True)
+					function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, 
+					conductivity_decay_factor_2 = conductivity_decay_factor_2,strain_decay_factor = strain_decay_factor, return_all_params = True)
 	
 	elif model_type == 'underworld_3d':
 	
 		if (background_cond[index_number] == np.nan) or (max_cond[index_number] == np.nan): 
 		
 			c = np.nan
-			str_dcy = np.nan
-			cnd_dcy = np.nan
-			msft = np.nan
+			rms = np.nan
 		
 		else:
 		
 			if p_strain[index_number] <= low_deformation_threshold:
 				
 				c = background_cond[index_number]
-				str_dcy = np.nan
-				cnd_dcy = np.nan
-				msft = np.nan
+				rms = 0.0
 				
 			elif p_strain[index_number] >= high_deformation_threshold:
-				
+
 				c = max_cond[index_number]
-				str_dcy = np.nan
-				cnd_dcy = np.nan
-				msft = np.nan
+				rms = 0.0
 				
 			else:
 				
-				c, str_dcy, cnd_dcy, msft = plastic_strain_2_conductivity(strain = p_strain[index_number],low_cond = background_cond[index_number],
+				c, rms = plastic_strain_2_conductivity(strain = p_strain[index_number],low_cond = background_cond[index_number],
 					high_cond=max_cond[index_number],low_strain=low_deformation_threshold, high_strain=high_deformation_threshold,
-					function_method = function_method, conductivity_decay_factor = conductivity_decay_factor, strain_decay_factor = strain_decay_factor, return_all_params = True)
-	
+					function_method = function_method, conductivity_decay_factor = conductivity_decay_factor,
+					conductivity_decay_factor_2 = conductivity_decay_factor_2, strain_decay_factor = strain_decay_factor, return_all_params = True, index_plot = index_number)
+				
 	else:
 	
 		raise ValueError('The model type can only be underworld_2d or underworld_3d.')
-	
-	return c, str_dcy, cnd_dcy, msft
+
+	return c, rms
 
 class Model(object):
 
@@ -589,6 +579,7 @@ class Model(object):
 		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
 		
 		if num_cpu > 1:
+		
 			import multiprocessing
 			import os
 			from functools import partial
@@ -596,12 +587,10 @@ class Model(object):
 			max_num_cores = os.cpu_count()
 			
 			if num_cpu > max_num_cores:
-				raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
+				raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')			
 	
 		deform_cond = np.zeros_like(self.T)
-		strain_decay = np.zeros_like(self.T)
-		cond_decay = np.zeros_like(self.T)
-		misfit = np.zeros_like(self.T)
+		rms = np.zeros_like(self.T)
 		
 		if method == 'plastic_strain':
 						
@@ -625,31 +614,44 @@ class Model(object):
 				else:
 					material_idx_list = material_idx
 
-				#multiprocessing loop for each material
-				with multiprocessing.Pool(processes=num_cpu) as pool:
+				if num_cpu > 1:
+					#multiprocessing loop for each material
+					with multiprocessing.Pool(processes=num_cpu) as pool:
+						
+						process_item_partial = partial(run_deform2cond, p_strain = self.p_strain, background_cond = cond_min,
+						max_cond = cond_max, low_deformation_threshold = low_deformation_threshold,
+						high_deformation_threshold = high_deformation_threshold,
+						function_method = self.material_list[i].deformation_dict['function_method'],
+						conductivity_decay_factor = self.material_list[i].deformation_dict['conductivity_decay_factor'],
+						conductivity_decay_factor_2 = self.material_list[i].deformation_dict['conductivity_decay_factor_2'],
+						strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'], model_type = self.model_type)
+						
+						c = pool.map(process_item_partial, material_idx_list)
+										
+					deform_cond[material_idx] = [x[0] for x in c]
+					rms[material_idx] = [x[1] for x in c]
 					
-					process_item_partial = partial(run_deform2cond, p_strain = self.p_strain, background_cond = cond_min,
-					max_cond = cond_max, low_deformation_threshold = low_deformation_threshold,
-					high_deformation_threshold = high_deformation_threshold, function_method = function_method,
-					conductivity_decay_factor = self.material_list[i].deformation_dict['conductivity_decay_factor'],
-					strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'], model_type = self.model_type)
+				else:
 					
-					c = pool.map(process_item_partial, material_idx_list)
-									
-				deform_cond[material_idx] = [x[0] for x in c]
-				strain_decay[material_idx] = [x[1] for x in c]
-				cond_decay[material_idx] = [x[2] for x in c]
-				misfit[material_idx] = [x[3] for x in c]
-				
+					for idx_ in range(0,len(material_idx_list)):
+					
+						condd, rmss = run_deform2cond(material_idx_list[idx_],p_strain = self.p_strain, background_cond = cond_min,
+						max_cond = cond_max, low_deformation_threshold = low_deformation_threshold,
+						high_deformation_threshold = high_deformation_threshold,
+						function_method = self.material_list[i].deformation_dict['function_method'],
+						conductivity_decay_factor = self.material_list[i].deformation_dict['conductivity_decay_factor'],
+						conductivity_decay_factor_2 = self.material_list[i].deformation_dict['conductivity_decay_factor_2'],
+						strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'], model_type = self.model_type)
+						
+						deform_cond[material_idx_list[idx_]] = condd
+						rms[material_idx_list[idx_]] = rmss
+										
 				print(f'The deformation related conductivity for the material  {self.material_list[i].name}  is calculated.')
 			
 			#converting all zero vals in the cond to None values
 			deform_cond[deform_cond == 0.0] = np.nan
-			strain_decay[strain_decay == 0.0] = np.nan
-			cond_decay[cond_decay == 0.0] = np.nan
-			misfit[misfit == 0.0] = np.nan
 			
-		return deform_cond, strain_decay, cond_decay, misfit
+		return deform_cond, rms
 		
 
 

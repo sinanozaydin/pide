@@ -117,3 +117,38 @@ def convert_2DModel_2_MARE2DEM(file_out, conductivity_array, mesh, boundaries = 
 	print('|                                |')
 	print('|                                |')
 	print('--------- ' + str(boundaries['bottom']) + '---------')
+	
+	
+def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = None, station_array = None, **kwargs):
+
+	#This is a function that converts the constructed 3D geodynamic model into data points
+	#that can be readable by the 3D MT modelling algorithm ModEM.
+	"""
+	Input Paramaters
+	-----------------
+	file_out: filename or full directory to output the result. Includes the format (e.g., csv)
+	conductivity_array: calculated conductivity field in np.ndarray()
+	mesh: mesh of the associated conductivity field.
+	core_bounds: boundaries dictionary in  {'left','right','top','bottom'}	
+	
+	Keyword Arguments:
+	core_mesh_size:
+	num_horiz_bounds:
+	horiz_bound_incr:
+	num_vert_bounds:
+	vert_bound_incr:
+	"""
+	
+	core_mesh_size = kwargs.pop('core_mesh_size', mesh[0][0][1][0] - mesh[0][0][0][0])
+	num_horiz_bounds = kwargs.pop('num_horiz_bounds', 8)
+	horiz_bound_incr = kwargs.pop('horiz_bound_incr', 1.5)
+	num_vert_bounds = kwargs.pop('num_vert_bounds', 8)
+	vert_bound_incr = kwargs.pop('vert_bound_incr', 2)
+	
+	#Finding the uppermost layer with no nan values
+	
+		
+	
+	
+	
+	

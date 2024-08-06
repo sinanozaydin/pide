@@ -197,8 +197,11 @@ def setup_uw_data_array_PROJ_3D(data):
 	array = np.zeros(len(data_list))
 
 	for i in range(0,len(data_list)):
-
-		array[i] = data_list[i][0]
+		
+		try:
+			array[i] = data_list[i][0]
+		except IndexError:
+			array[i] = data_list[i]
 
 	return array
 
