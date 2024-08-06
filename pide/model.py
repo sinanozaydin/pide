@@ -615,6 +615,7 @@ class Model(object):
 					material_idx_list = material_idx
 
 				if num_cpu > 1:
+				
 					#multiprocessing loop for each material
 					with multiprocessing.Pool(processes=num_cpu) as pool:
 						
@@ -627,7 +628,7 @@ class Model(object):
 						strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'], model_type = self.model_type)
 						
 						c = pool.map(process_item_partial, material_idx_list)
-										
+					
 					deform_cond[material_idx] = [x[0] for x in c]
 					rms[material_idx] = [x[1] for x in c]
 					

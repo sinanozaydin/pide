@@ -172,33 +172,14 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 					raise ValueError('The function method can only be one of those string values: exponential, logarithmic, linear.')
 				
 			if rms > 1.5:
-				print('RMS values higher than 1.5 is detected, this does not mean a reasonable fit is achived. Mapping RMS values may help understand where this problem\
-				is occuring.')
-				"""
-				import ipdb
-				ipdb.set_trace()
-				fig = plt.figure()
-				ax = plt.subplot(111)
-				ax.plot(10**strains,10**conds, 'o')
-				ax.set_xscale('log')
-				ax.set_yscale('log')
-				ax.grid()
-				ax.plot(10**strain_func_build,10**cond_calced)
-				plt.show()
-				ipdb.set_trace()
-				"""
+				print('RMS values higher than 1.5 is detected, this does not mean an unreasonable fit is achived. Mapping RMS values may help understand where this problem	is occuring.')			
 				
-			else:
+			if func_method == 'exponential':
+				cond_calced = 10.0**expfunc(np.log10(strain), params[0], params[1], params[2])
 				
-				if func_method == 'exponential':
-					cond_calced = 10.0**expfunc(np.log10(strain), params[0], params[1], params[2])
-					
-				elif func_method == 'polynomial':
-					cond_calced = 10.0**polyfunc(np.log10(strain), params[0], params[1], params[2], params[3])
-					
-				if strain_percolation_threshold != None:
-					cond_calced[np.where(strain>strain_percolation_threshold)[0]] = 10.0**conds[-1]
-			
+			elif func_method == 'polynomial':
+				cond_calced = 10.0**polyfunc(np.log10(strain), params[0], params[1], params[2], params[3])
+							
 			return cond_calced, rms
 		
 		cond_calced, rms = fit(method = 'lm', init_start = True, run_idx = 0,
