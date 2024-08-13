@@ -139,11 +139,44 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	vert_bound_incr:
 	"""
 	
-	core_mesh_size = kwargs.pop('core_mesh_size', mesh[0][0][1][0] - mesh[0][0][0][0])
+	# core_mesh_size = kwargs.pop('core_mesh_size', mesh[0][0][1][0] - mesh[0][0][0][0])
 	num_horiz_bounds = kwargs.pop('num_horiz_bounds', 8)
 	horiz_bound_incr = kwargs.pop('horiz_bound_incr', 1.5)
 	num_vert_bounds = kwargs.pop('num_vert_bounds', 8)
 	vert_bound_incr = kwargs.pop('vert_bound_incr', 2)
+
+	x_mesh = mesh[0]
+	y_mesh = mesh[1]
+	z_mesh = mesh[2]
+
+	slice_len = len(x_mesh) * len(y_mesh)
+	rho = np.zeros((len(z_mesh),slice_len))
+	for i in range(0,len(z_mesh)):
+		for j in range(0, slice_len):
+			try:		
+				rho[i][j] = conductivity_array[(i*slice_len)+j]
+			except IndexError:
+				raise IndexError('The mesh structure entered does not match the conductivity array. Be sure the entered format mesh = (x_mesh_centers,y_mesh_centers,z_mesh_centers) in tuples are correct.')
+							
+	#determining the 
+	
+	start_index_list = []
+	sea_index_list = []
+	for i in range(0,len(rho)):
+		if np.all(rho[i] == rho[i][0]) == True:
+			start_index_list.append(i)
+		if (-999.0 in rho[i]) == False:
+			sea_index_list.append(i)
+	
+	start_index = start_index_list[0]
+	sea_index = sea_index_list[-1]
+	
+	
+	for i in range(0,len(rho)):
+		if i > sea_index:
+			rho[i][(rho[i] == -999.0)] = 1e-14
+
+	#rho = np.log(1.0 / rho) #ModEM rho format
 	
 	#Finding the uppermost layer with no nan values
 	
