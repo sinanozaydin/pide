@@ -141,8 +141,8 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	
 	# core_mesh_size = kwargs.pop('core_mesh_size', mesh[0][0][1][0] - mesh[0][0][0][0])
 	num_horiz_bounds = kwargs.pop('num_horiz_bounds', 8)
-	horiz_bound_incr = kwargs.pop('horiz_bound_incr', 1.5)
-	num_vert_bounds = kwargs.pop('num_vert_bounds', 8)
+	horiz_bound_incr = kwargs.pop('horiz_bound_incr', 2)
+	num_vert_bounds = kwargs.pop('num_vert_bounds', 9)
 	vert_bound_incr = kwargs.pop('vert_bound_incr', 2)
 
 	x_mesh = mesh[0]
@@ -168,18 +168,89 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 		if (-999.0 in rho[i]) == False:
 			sea_index_list.append(i)
 	
-	start_index = start_index_list[0]
+	air_start_index = start_index_list[0]
 	sea_index = sea_index_list[-1]
-	
 	
 	for i in range(0,len(rho)):
 		if i > sea_index:
 			rho[i][(rho[i] == -999.0)] = 1e-14
+	
+	outs = np.float64(x_mesh[1] - x_mesh[0])
+	xy_out = []
+	for i in range(0, num_horiz_bounds):
+		outs = outs * horiz_bound_incr
+		xy_out.append(outs)
+	xy_out = np.array(xy_out)
+		
+	outs_y = np.float64(y_mesh[1] - y_mesh[0])
+	yx_out = []
+	for i in range(0, num_horiz_bounds):
+		outs_y = outs_y * horiz_bound_incr
+		yx_out.append(outs_y)
+	yx_out = np.array(yx_out)
+	
+	outs_z = np.float64(z_mesh[-2] - z_mesh[-1])
+	z_out = []
+	for i in range(0, num_vert_bounds):
+		outs_z = outs_z * vert_bound_incr
+		z_out.append(outs_z)
+	outs_z = np.array(outs_z)
+	
+	x_core = np.ones(len(x_mesh)) * np.float64(x_mesh[1] - x_mesh[0])
+	y_core = np.ones(len(y_mesh)) * np.float64(y_mesh[1] - y_mesh[0])
+	z_core = np.ones(len(z_mesh)) * np.abs(np.float64(z_mesh[0] - z_mesh[1]))
+	
+	x_out = np.concatenate([xy_out[::-1],x_core,xy_out])
+	y_out = np.concatenate([yx_out[::-1],y_core,yx_out])
+	z_out = np.concatenate([z_core,z_out])
+	
+	n_len = len(x_out) * len(y_out)
+		
+	rho_new = []
+	
+	for i in range(0,len(z_mesh)):
+		rho_local = []
+		for j in range(0,(num_horiz_bounds*((2*num_horiz_bounds)+len(x_core)))):
+			rho_local.append(-998.0)
+		for j in range(0,len(y_core)):
+			for k in range(0,num_horiz_bounds):
+				rho_local.append(-998.0)
+			for k in range(j*len(x_core),j*len(x_core) + len(x_core)):
+				rho_local.append(rho[i][k])
+			for k in range(0,num_horiz_bounds):
+				rho_local.append(-998.0)
+		for j in range(0,(num_horiz_bounds*((2*num_horiz_bounds)+len(x_core)))):
+			rho_local.append(-998.0)
+		rho_new.append(np.array(rho_local))
+	
+	for i in range(0,num_vert_bounds):
+		rho_new.append(np.ones(len(rho_new[-1])) * -998.0)
+		
+	rho_new = np.array(rho_new)
 
-	#rho = np.log(1.0 / rho) #ModEM rho format
+	rho_new = np.log(1.0 / rho_new) #ModEM rho format
+	
+	lines = ["# 3D MT model written by ModEM in WS format\n"]
+	lines.append('  '+str(len(x_out))+ '   ' +str(len(y_out))+ '   '+str(len(z_out))+ '\n')
+	
+	line = np.array2string(x_out*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:10.3f}'})
+	lines.append('  ' + line[1:-1] + '\n')
+	
+	line = np.array2string(y_out*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:10.3f}'})
+	lines.append('  ' + line[1:-1] + '\n')
+	
+	line = np.array2string(z_out*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:10.3f}'})
+	lines.append('  ' + line[1:-1] + '\n')
+	
+	for i in range(0,len(rho_new)):
+		line = []
+		for j in range(0,len(rho_new[i]),len(x_out)):
+			line = np.array2string(rho_new[i*len(x_out):i*len(x_out) + len(x_out)]*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:.5E}'})
+			lines.append('  ' + line[1:-1] + '\n')
 	
 	#Finding the uppermost layer with no nan values
-	
+	import ipdb
+	ipdb.set_trace()
 		
 	
 	
