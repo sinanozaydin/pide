@@ -365,7 +365,8 @@ class Model(object):
 		anything in particular as long as they are entered in the right format.
 
 		"""
-	
+		initial_cpu = int(num_cpu)
+
 		if num_cpu > 1:
 		
 			import multiprocessing
@@ -418,11 +419,13 @@ class Model(object):
 					mat_pide_obj.set_solid_phase_method(material_list_holder[l][i].calculation_type)
 				else:
 					num_cpu = 1 #defaulting num_cpu for 1 since it is not needed for value-method
-					
+				
 				#Slicing the array for parallel calculation
 				if num_cpu > 1:
+					
 					if len(material_idx) == 2: #if clause for 2D underworld model, yes the number is 3 for 2D and 1 for 3D. You do not need to confuse!
 						#condition to check if array is too small to parallelize for the material num_cpu*num_cpu 
+						
 						if len(material_idx[0]) > (num_cpu*num_cpu):
 							size_arrays = len(material_idx[0]) // num_cpu
 							sliced_material_idx = []
@@ -495,6 +498,7 @@ class Model(object):
 								v_s[sliced_material_idx[idx]] = c[idx][2]
 				
 				print(f'The conductivity for the material  {material_list_holder[l][i].name}  is calculated.')
+				num_cpu = initial_cpu
 						
 			#converting all zero vals in the cond to None values
 			if type == 'conductivity':
