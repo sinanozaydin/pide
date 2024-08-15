@@ -227,6 +227,8 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 		rho_new.append(np.ones(len(rho_new[-1])) * -998.0)
 		
 	rho_new = np.array(rho_new)
+	import ipdb
+	ipdb.set_trace()
 
 	rho_new = np.log(1.0 / rho_new) #ModEM rho format
 	
@@ -245,12 +247,12 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	for i in range(0,len(rho_new)):
 		line = []
 		for j in range(0,len(rho_new[i]),len(x_out)):
-			line = np.array2string(rho_new[i*len(x_out):i*len(x_out) + len(x_out)]*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:.5E}'})
+			
+			line = np.array2string(rho_new[i][j*len(x_out):(j*len(x_out) + len(x_out))]*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:.5E}'})
 			lines.append('  ' + line[1:-1] + '\n')
 	
 	#Finding the uppermost layer with no nan values
-	import ipdb
-	ipdb.set_trace()
+	
 		
 	
 	
