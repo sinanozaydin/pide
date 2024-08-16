@@ -21,6 +21,9 @@ def Hu2022_WetPlagioclase_Na_param1(T, P, water, xFe, param1, fo2 = None, fo2_re
 	
 	tcrit = 873.0
 	
+	if param1.any() == 0.0:
+		raise ValueError('param1 has to be set as Na content. The Na content values cannot be zero for model Hu2022_WetPlagioclase_Na_param1')
+	
 	if method == 'array':
 
 		T = T[0]
