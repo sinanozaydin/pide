@@ -139,6 +139,8 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	vert_bound_incr:
 	"""
 	
+	from scipy.interpolate import griddata
+	
 	# core_mesh_size = kwargs.pop('core_mesh_size', mesh[0][0][1][0] - mesh[0][0][0][0])
 	num_horiz_bounds = kwargs.pop('num_horiz_bounds', 8)
 	horiz_bound_incr = kwargs.pop('horiz_bound_incr', 2)
@@ -161,7 +163,6 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 				raise IndexError('The mesh structure entered does not match the conductivity array. Be sure the entered format mesh = (x_mesh_centers,y_mesh_centers,z_mesh_centers) in tuples are correct.')
 							
 	#determining the 
-	
 	start_index_list = []
 	sea_index_list = []
 	for i in range(0,len(rho)):
@@ -226,9 +227,10 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 		rho_new.append(np.array(rho_local))
 	
 	rho_new = np.array(rho_new)
+
 	for i in range(0,num_vert_bounds):
-		rho_new = np.insert(rho_new,0,np.ones(len(rho_new[-1])) * np.nan)
-	
+		rho_new = np.insert(rho_new,0,np.ones(len(rho_new[-1])) * np.nan, axis = 0)
+		
 	for i in range(0,len(rho)):
 		rho_new[i][0] = rho[i][0]
 		rho_new[i][len(x_core) + 2*len(xy_out)] = rho[i][len(x_core)]
@@ -248,14 +250,43 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	yi = np.insert(yi,0,0.0)
 	zi = np.insert(zi,0,0.0)
 	
-	
-	
-	
 	xi_n = [((xi[i] - xi[i-1]) / 2.0) + xi[i-1] for i in range(1, len(xi))]
 	yi_n = [((yi[i] - yi[i-1]) / 2.0) + yi[i-1] for i in range(1, len(yi))]
 	zi_n = [((zi[i] - zi[i-1]) / 2.0) + zi[i-1] for i in range(1, len(zi))]
 	
+	zi_n = zi_n + z_mesh[-1] #adhjusting the air layers
+	
 	zi_n = zi_n[::-1]
+	
+	x = []
+	y = []
+	z = []
+
+	for i in range(0,len(zi_n)):
+		for j in range(0,len(yi_n)):
+			for k in range(0,len(xi_n)):
+				x.append(xi_n[k])
+				y.append(yi_n[j])
+				z.append(zi_n[i])
+				
+	x = np.array(x)
+	y = np.array(y)
+	z = np.array(z)
+	
+	mask = np.isnan(rho_interp_array)
+	mesh_out = np.meshgrid(xi_n,yi_n,zi_n)
+	
+	rho__ = griddata((x[~mask],y[~mask],z[~mask]), rho_interp_array[~mask], (mesh_out[0],mesh_out[1],mesh_out[2]), method = 'nearest')
+	
+	rho_write = []
+	for i in range(0,len(zi_n)):
+		local_rho = []
+		for j in range(0,len(yi_n)):
+			for k in range(0,len(xi_n)):
+				local_rho.append(rho__[k][j][i])
+		rho_write.append(local_rho)
+				
+	rho_write = np.array(rho_write)
 	
 	import ipdb
 	ipdb.set_trace()
