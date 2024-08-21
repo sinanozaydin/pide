@@ -147,8 +147,6 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	num_vert_bounds = kwargs.pop('num_vert_bounds', 9)
 	vert_bound_incr = kwargs.pop('vert_bound_incr', 2)
 	
-	from pide.geodyn.interpolate_fields import interpolate_3d_fields
-
 	x_mesh = mesh[0]
 	y_mesh = mesh[1]
 	z_mesh = mesh[2]
@@ -161,8 +159,9 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 				rho[i][j] = conductivity_array[(i*slice_len)+j]
 			except IndexError:
 				raise IndexError('The mesh structure entered does not match the conductivity array. Be sure the entered format mesh = (x_mesh_centers,y_mesh_centers,z_mesh_centers) in tuples are correct.')
-							
-	#determining the 
+					
+	
+	#determining the indexes
 	start_index_list = []
 	sea_index_list = []
 	for i in range(0,len(rho)):
@@ -171,7 +170,6 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 		if (-999.0 in rho[i]) == False:
 			sea_index_list.append(i)
 	
-	air_start_index = start_index_list[0]
 	sea_index = sea_index_list[-1]
 	
 	for i in range(0,len(rho)):
@@ -206,9 +204,7 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	x_out = np.concatenate([xy_out[::-1],x_core,xy_out])
 	y_out = np.concatenate([yx_out[::-1],y_core,yx_out])
 	z_out = np.concatenate([z_core,z_out])
-	
-	n_len = len(x_out) * len(y_out)
-		
+			
 	rho_new = []
 	
 	for i in range(0,len(z_mesh)):
@@ -227,19 +223,19 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 		rho_new.append(np.array(rho_local))
 	
 	rho_new = np.array(rho_new)
-
+	
 	for i in range(0,num_vert_bounds):
 		rho_new = np.insert(rho_new,0,np.ones(len(rho_new[-1])) * np.nan, axis = 0)
-		
+	
 	for i in range(0,len(rho)):
 		rho_new[i][0] = rho[i][0]
 		rho_new[i][len(x_core) + 2*len(xy_out)] = rho[i][len(x_core)]
 		rho_new[i][-(len(x_core) + 2*len(xy_out))] = rho[i][-len(x_core)]
 		rho_new[i][-1] = rho[i][-1]
 		
-	for i in range(len(rho),len(rho_new)):
-		rho_new[i] = rho_new[len(rho)]
-	
+	for i in range(0,num_vert_bounds):
+		rho_new[i] = rho_new[num_vert_bounds]
+		
 	rho_interp_array = rho_new.ravel()
 	
 	xi = np.cumsum(x_out)
@@ -254,7 +250,7 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	yi_n = [((yi[i] - yi[i-1]) / 2.0) + yi[i-1] for i in range(1, len(yi))]
 	zi_n = [((zi[i] - zi[i-1]) / 2.0) + zi[i-1] for i in range(1, len(zi))]
 	
-	zi_n = zi_n + z_mesh[-1] #adhjusting the air layers
+	zi_n = zi_n + z_mesh[-1] #adjusting the air layers
 	
 	zi_n = zi_n[::-1]
 	
@@ -273,11 +269,14 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	y = np.array(y)
 	z = np.array(z)
 	
+	#getting the mask values for nan values to leave them out of the interpolation.
 	mask = np.isnan(rho_interp_array)
 	mesh_out = np.meshgrid(xi_n,yi_n,zi_n)
 	
+	#interpolating the data using griddata
 	rho__ = griddata((x[~mask],y[~mask],z[~mask]), rho_interp_array[~mask], (mesh_out[0],mesh_out[1],mesh_out[2]), method = 'nearest')
 	
+	#rearranging the griddata output to put in a .rho file more easily.
 	rho_write = []
 	for i in range(0,len(zi_n)):
 		local_rho = []
@@ -288,34 +287,23 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 				
 	rho_write = np.array(rho_write)
 	
-	import ipdb
-	ipdb.set_trace()
+	#reversing course for writing files
+	rho_write = rho_write[::-1]
 	
-	
-	
-	"""
-	
-	
-	x_i,  y_i = np.meshgrid(xi_n,yi_n)
-	
-	
-	for i in range(0,len(rho_new)):
-		fnew = rho_new[i]
-		mask = np.isnan(fnew)
-		points = np.column_stack((x_i,y_i))
-		values = fnew[~mask]
-		import ipdb
-		ipdb.set_trace()
-		fnew = griddata(points, values, (x_i, y_i),method = 'linear')
+	#finding the index where the layer is all air
+	s_idx = []
+	for i in range(0,len(rho_write)):
+		if np.all(rho_write[i] == rho_write[i][0]) == True:
+			s_idx.append(i)
+			
+	#Getting rid of the layers only contains air
+	rho_write = rho_write[s_idx[-1]+1:]
+	z_out = z_out[s_idx[-1]+1:]
 		
-		rho_new[i] = fnew
-	"""
-		
+	rho_write = np.log(1.0 / rho_write) #ModEM rho format with natural logarithm of resistivityrho_
 	
-	rho_new = np.log(1.0 / rho_new) #ModEM rho format with natural logarithm of resistivityrho_
-	
-	lines = ["# 3D MT model written by ModEM in WS format\n"]
-	lines.append('  '+str(len(x_out))+ '   ' +str(len(y_out))+ '   '+str(len(z_out))+ '\n')
+	lines = ["#  3D MT model written by ModEM in WS format by pide\n"]
+	lines.append('   '+str(len(x_out))+ '   ' +str(len(y_out))+ '   '+str(len(z_out))+ ' 0    LOGE\n')
 	
 	line = np.array2string(x_out*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:10.3f}'})
 	lines.append('  ' + line[1:-1] + '\n')
@@ -325,15 +313,26 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	
 	line = np.array2string(z_out*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:10.3f}'})
 	lines.append('  ' + line[1:-1] + '\n')
-	
-	for i in range(0,len(rho_new)):
-		line = []
-		for j in range(0,len(rho_new[i]),len(x_out)):
-			
-			line = np.array2string(rho_new[i][j*len(x_out):(j*len(x_out) + len(x_out))]*1e3, separator=' ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:.5E}'})
+	lines.append('\n')
+
+	for i in range(0,len(rho_write)):
+		for j in range(0,len(rho_write[i]),len(x_out)):
+			line = np.array2string(rho_write[i][j:(j + len(x_out))], separator='  ', max_line_width=np.inf, formatter={'all': lambda x: f'{x:.5E}'})
 			lines.append('  ' + line[1:-1] + '\n')
+		lines.append('\n')
+		
+	center_z = 0.0
+	center_east = -0.5 * (np.sum(np.abs(x_out)))
+	center_north = -0.5 * (np.sum(np.abs(y_out)))
+	grid_center = ['    ',str(center_north),'   ',str(center_east),'   ',str(center_z),'\n']
+	grid_center = ''.join(grid_center)
+	lines.append(grid_center)
+	lines.append('    0.000\n')
 	
-	
+	filesave_composition = open(file_out ,'w')
+	filesave_composition.writelines(lines)
+	filesave_composition.close()
+	print('File for the converted model is written as: ' + file_out)
 	#Finding the uppermost layer with no nan values
 	
 		
