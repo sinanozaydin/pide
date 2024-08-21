@@ -4037,7 +4037,7 @@ class pide(object):
 		["10","8"],None, None, ["11", "12"], None, ["11", "12"], None, None, None]
 				
 		dens_xfe_calc_list = ["fo", "fa", "en", "fs", "py", "alm", "di", "hed"]
-			
+		
 		#calculating minerals here now
 		if self.density_loaded == False:
 					
@@ -4089,8 +4089,16 @@ class pide(object):
 				else:
 					min_start = min_idx
 					min_end = min_idx + 1
-
+					
+				if np.mean(phase_list) == 0.0:
+					phase_calc_mode = True
+					#overcoming the problem by adding 1.0 when you only calculate a single conductivity mineral
+					phase_list[min_idx-11] = np.array([1.0])
+				else:
+					phase_calc_mode = False
+				
 				for mineral in range(min_start, min_end):
+				
 					if np.mean(phase_list[mineral-11]) != 0.0:
 						
 						if type(self.dens_mat[mineral][min_sel_list[mineral-11]]) == float:
@@ -4134,7 +4142,7 @@ class pide(object):
 									dens_list.append(density / 1e3)
 									
 					else:
-					
+						
 						dens_list.append(0.0)
 				if min_idx == None:		
 					self.density_loaded = True
