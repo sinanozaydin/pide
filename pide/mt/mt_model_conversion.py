@@ -433,15 +433,28 @@ def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, f
 
 	dat_lines.append('#\n')
 
-
-	complete = os.path.join(os.getcwd() + '/' + file_name + '.dat')
 	filesave = open(file_out,'w')
 	filesave.writelines(dat_lines)
 	filesave.close
 	print('The data (.dat) file is written at : ' + os.getcwd())
 	
+def get_station_elevation(input_rho, station_location_arrays = None, air_resistivity = 1e-14):
+
+	from pide.mt.mt_model_read import read_ModEM_rho
+		
+	if station_location_arrays is None:
+		raise KeyError('Station locations has to be entered to create a file')
+	else:
+		if np.mean([len(station_location_arrays[0]),len(station_location_arrays[1])]) == len(station_location_arrays[0]):
+			station_location_arrays = np.array(station_location_arrays) * 1e3
+		else:
+			raise IndexError('The length of the station_locations_array are not the same.')
 	
+	#reading the rho file.
+	rho, mesh_centers_x_array, mesh_centers_y_array, z_mesh_center = read_ModEM_rho(rho_file_path=input_rho)
 	
+	import ipdb
+	ipdb.set_trace()
 	
 	
 	
