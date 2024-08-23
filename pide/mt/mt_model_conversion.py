@@ -160,7 +160,6 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 			except IndexError:
 				raise IndexError('The mesh structure entered does not match the conductivity array. Be sure the entered format mesh = (x_mesh_centers,y_mesh_centers,z_mesh_centers) in tuples are correct.')
 					
-	
 	#determining the indexes
 	start_index_list = []
 	sea_index_list = []
@@ -335,7 +334,115 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, core_bounds = No
 	print('File for the converted model is written as: ' + file_out)
 	#Finding the uppermost layer with no nan values
 	
+def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, freq_start=100, freq_end=1e-4, num_freq=120):
+
+	try:
+		file_name = input_rho[input_rho.rfind('/')+1:-3]
+	except:
+		file_name = input_rho[:-3]
 		
+	from pide.mt.mt_model_read import read_ModEM_rho
+	from pide.utils.gis_tools import utm_to_lat_lon, lat_lon_to_utm, get_utm_zone_number
+	import decimal
+
+	rho, mesh_centers_x_array, mesh_centers_y_array, z_mesh_center = read_ModEM_rho(rho_file_path=input_rho)
+	
+	#finding the unique grid locations
+	mesh_x_uniq = np.unique(mesh_centers_x_array)
+	mesh_y_uniq = np.unique(mesh_centers_y_array)
+	
+	x_grid = [mesh_x_uniq[i] - mesh_x_uniq[i-1] for i in range(1,len(mesh_x_uniq))]
+	y_grid = [mesh_y_uniq[i] - mesh_y_uniq[i-1] for i in range(1,len(mesh_y_uniq))]
+	
+	#finding the core start and end
+	idx_x_count = 0
+	for i in range(1,len(x_grid)):
+		if x_grid[i] == x_grid[i-1]:
+			idx_x_count = idx_x_count + 1
+			if idx_x_count == 1:
+				idx_x_start = i-1
+			else:
+				idx_x_end = i
+
+	idx_y_count = 0
+	for i in range(1,len(y_grid)):
+		if y_grid[i] == y_grid[i-1]:
+			idx_y_count = idx_y_count + 1
+			if idx_y_count == 1:
+				idx_y_start = i-1
+			else:
+				idx_y_end = i
+	
+	if station_location_arrays is None:
+		raise KeyError('Station locations has to be entered to create a file')
+	else:
+		if np.mean([len(station_location_arrays[0]),len(station_location_arrays[1]),len(station_location_arrays[2])]) == len(station_location_arrays[0]):
+			station_location_arrays = np.array(station_location_arrays) * 1e3
+		else:
+			raise IndexError('The length of the station_locations_array are not the same.')
+			
+	utm_zone = get_utm_zone_number(longitude = 0.0)
+	mc_x, mc_y = lat_lon_to_utm(0,0,zone_number=utm_zone)
+	x_loc = station_location_arrays[0] + mc_x
+	y_loc = station_location_arrays[1] + mc_y
+	lat_degrees_list, lon_degrees_list = utm_to_lat_lon(x_loc,y_loc,zone_number=utm_zone)
+	
+	#creating frequency array
+	freq_array = np.logspace(np.log10(freq_start), np.log10(freq_end),num_freq)
+		
+	dat_lines = []
+	dat_lines.append('# ModEM impedance responses' +  '\n')
+	dat_lines.append('# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error\n')
+	dat_lines.append('> Full_Impedance\n')
+	dat_lines.append('> exp(+i\omega t)\n')
+	dat_lines.append('> [mV/km]/[nT]\n')
+	dat_lines.append('> 0.00\n')
+	dat_lines.append('> ' + str(0.00) + ' ' + str(0.00) + '\n' )
+	dat_lines.append('> ' + str(len(freq_array)) + ' ' + str(len(station_location_arrays[0])) + '\n')
+	for i in range(0,len(station_location_arrays[0])):
+		for j in range(0,len(freq_array)):
+			for k in range(0,4):
+				if k == 0:
+					dum = 'ZXX'
+					dum2 = '% .5E' % decimal.Decimal(str(0.0))
+					dum3 = '% .5E' % decimal.Decimal(str(0.0))
+					dum4 = '% .5E' % decimal.Decimal(str(0.0))
+				elif k == 1:
+					dum = 'ZXY'
+					dum2 = '% .5E' % decimal.Decimal(str(0.0))
+					dum3 = '% .5E' % decimal.Decimal(str(0.0))
+					dum4 = '% .5E' % decimal.Decimal(str(0.0))
+
+				elif k == 2:
+					dum = 'ZYX'
+					dum2 = '% .5E' % decimal.Decimal(str(0.0))
+					dum3 = '% .5E' % decimal.Decimal(str(0.0))
+					dum4 = '% .5E' % decimal.Decimal(str(0.0))
+
+				elif k == 3:
+					dum = 'ZYY'
+					dum2 = '% .5E' % decimal.Decimal(str(0.0))
+					dum3 = '% .5E' % decimal.Decimal(str(0.0))
+					dum4 = '% .5E' % decimal.Decimal(str(0.0))
+
+
+				dat_lines.append(str('%.5E' % decimal.Decimal(1.0/freq_array[j])) + '  ' + ('%-15s' % ('C_' + str(i))) + '  ' + str('% 7.4f' % lat_degrees_list[i]) +\
+					'  ' + str('% 7.4f' % lon_degrees_list[i]) + '  ' + str('% 12.3f' % (station_location_arrays[0][i])) + '  ' +\
+					str('% 12.3f' %(station_location_arrays[1][i])) + '  ' + str('%8.3f' % float(station_location_arrays[2][i])) + '  ' +\
+					 dum + '  ' + dum2 + '  ' + dum3 + '  ' + dum4 + '\n')
+
+	dat_lines.append('#\n')
+
+
+	complete = os.path.join(os.getcwd() + '/' + file_name + '.dat')
+	filesave = open(file_out,'w')
+	filesave.writelines(dat_lines)
+	filesave.close
+	print('The data (.dat) file is written at : ' + os.getcwd())
+	
+	
+	
+	
 	
 	
 	
