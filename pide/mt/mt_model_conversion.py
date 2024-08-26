@@ -482,7 +482,7 @@ def get_station_elevation_ModEM_rho(input_rho, station_location_arrays = None, a
 
 		depth_sol.append(z_depth[idx_z])
 			
-	return (station_location_arrays[0],station_location_arrays[1],depth_sol)
+	return (station_location_arrays[0],station_location_arrays[1],np.array(depth_sol))
 		
 
 	
