@@ -36,7 +36,7 @@ pide_object.get_method_manual(method_name)
 
 # Getting Involved
 
-Since *pide* is an open-source library, users are encouraged to be contribute and become developers of the project. For further information about how to contribute, please refer to the [Contributing Guide](https://github.com/sinanozaydin/pide/blob/main/CONTRIBUTING.md).
+Since *pide* is an open-source library, users are encouraged to be contribute and become developers of the project. For further information about how to contribute, please refer to the [Contributing Guide](https://github.com/sinanozaydin/pide/blob/post_joss/CONTRIBUTING.md).
 
 # Contacts
 
