@@ -460,8 +460,7 @@ def get_station_elevation_ModEM_rho(input_rho, station_location_arrays = None, a
 
 	z_grid = [mesh_z_uniq[i] - mesh_z_uniq[i-1] for i in range(1,len(mesh_z_uniq))]
 	z_depth = np.array(mesh_z_uniq[:-1]) - (np.array(z_grid)/2.0)
-	 
-
+	
 	air_res = np.log10(1.0/air_conductivity)
 
 	depth_sol = []
@@ -482,7 +481,7 @@ def get_station_elevation_ModEM_rho(input_rho, station_location_arrays = None, a
 
 		depth_sol.append(z_depth[idx_z])
 			
-	return (station_location_arrays[0],station_location_arrays[1],np.array(depth_sol))
+	return (station_location_arrays[0]*1e-3,station_location_arrays[1]*1e-3,np.array(depth_sol)*1e-3)
 		
 
 	
