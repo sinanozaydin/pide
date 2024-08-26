@@ -438,7 +438,7 @@ def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, f
 	filesave.close
 	print('The data (.dat) file is written at : ' + os.getcwd())
 	
-def get_station_elevation(input_rho, station_location_arrays = None, air_resistivity = 1e-14):
+def get_station_elevation_ModEM_rho(input_rho, station_location_arrays = None, air_conductivity = 1e-14):
 
 	from pide.mt.mt_model_read import read_ModEM_rho
 		
@@ -451,10 +451,43 @@ def get_station_elevation(input_rho, station_location_arrays = None, air_resisti
 			raise IndexError('The length of the station_locations_array are not the same.')
 	
 	#reading the rho file.
-	rho, mesh_centers_x_array, mesh_centers_y_array, z_mesh_center = read_ModEM_rho(rho_file_path=input_rho)
+	rho, x_mesh_center, y_mesh_center, z_mesh_center = read_ModEM_rho(rho_file_path=input_rho)
+
+	#finding the unique grid locations
+	mesh_x_uniq = np.unique(x_mesh_center)
+	mesh_y_uniq = np.unique(y_mesh_center)
+	mesh_z_uniq = np.unique(z_mesh_center)
+
+	z_grid = [mesh_z_uniq[i] - mesh_z_uniq[i-1] for i in range(1,len(mesh_z_uniq))]
+	z_depth = np.array(mesh_z_uniq[:-1]) - (np.array(z_grid)/2.0)
+	 
+
+	air_res = np.log10(1.0/air_conductivity)
+
+	depth_sol = []
+
+	for i in range(0,len(station_location_arrays[0])):
 	
-	import ipdb
-	ipdb.set_trace()
+		idx_x = (np.abs(np.asarray(mesh_x_uniq) - station_location_arrays[0][i])).argmin()
+		idx_y = (np.abs(np.asarray(mesh_y_uniq) - station_location_arrays[1][i])).argmin()
+
+		rho_profile = np.log10([rho[j][idx_y][idx_x] for j in range(0,len(rho))])
+
+		idx_z_list = [j for j in range(0,len(rho_profile)) if (round(rho_profile[j],4) == air_res)]
+		
+		try:
+			idx_z = idx_z_list[-1] + 1
+		except IndexError:
+			idx_z = 0
+
+		depth_sol.append(z_depth[idx_z])
+			
+	return (station_location_arrays[0],station_location_arrays[1],depth_sol)
+		
+
+	
+	
+	
 	
 	
 	
