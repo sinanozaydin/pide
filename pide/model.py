@@ -613,7 +613,8 @@ class Model(object):
 				material_skip = mat_skip, model_type=self.model_type)
 
 				#turning material index list to be useable format for the np.ndarray fields
-				if len(material_idx) == 2: 
+
+				if self.model_type == "underworld_2d":
 					material_idx_list = [[material_idx[0][idx],material_idx[1][idx]] for idx in range(0,len(material_idx[0]))]
 				else:
 					material_idx_list = material_idx
