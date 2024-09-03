@@ -29,10 +29,13 @@ def Li2017_Phlogopite_param1_F(T, P, water, xFe, param1, fo2 = None, fo2_ref = N
 
 	#param1 is F content in weight percent
 	
+	if np.any(param1 == 0.0):
+		raise ValueError('param1 for mica has to be set to a value for this function. It denotes to F content in phlogopite.')
+	
 	A_li = 10**8.59
 	E_li = 191000.0
 	r_li = 0.98
-
+	
 	cond = A_li * (param1**r_li) * np.exp(-E_li / (R_const * T))
 
 	if mechanism == 'proton':
