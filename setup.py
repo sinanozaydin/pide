@@ -31,7 +31,8 @@ setup(
         'santex',
         'h5py',
         'harmonica',
-        'pyproj'
+        'pyproj',
+        'netCDF4'
     ],
     keywords = ['petrophysics', 'geodynamic modelling', 'magnetotelluric', 'electrical conductivity', 'seismic velocity']
 )
