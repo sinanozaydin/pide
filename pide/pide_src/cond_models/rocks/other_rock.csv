@@ -1,5 +1,5 @@
-StudyName,Type,Tmin,Tmax,Pmin,Pmax,WCalib,Mg#,sigma_i,sigma_i_err,h_i,h_i_err,sigma_pol,sigma_pol_err,h_pol,h_pol_err,sigma_p,sigma_p_err,h_p,h_p_err,r,r_err,alpha_p,alpha_p_err,wtype,dens_mat,mat_ref
-Sun2017_Phyllite_DS2_0_5GPa,0,773,1073,0.5,0.5,0,0,0,0,0,0,-0.21,0,69000,0,0,0,0,0,0,0,0,0,0,2800,phl1
-Sun2017_Phyllite_DS3_1_5GPa,0,773,973,1.5,1.5,0,0,0,0,0,0,-0.1,0,64000,0,0,0,0,0,0,0,0,0,0,2800,phl1
-Sun2017_Phyllite_DS4_2_5GPa,0,773,923,2.5,2.5,0,0,0,0,0,0,1.35,0,81000,0,0,0,0,0,0,0,0,0,0,2800,phl1
-Duba1982_Graphite,0,0,2500,0,10,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,2160,graph
+StudyName,Type,Tmin,Tmax,Pmin,Pmax,WCalib,Mg#,sigma_i,sigma_i_err,h_i,h_i_err,sigma_pol,sigma_pol_err,h_pol,h_pol_err,sigma_p,sigma_p_err,h_p,h_p_err,r,r_err,alpha_p,alpha_p_err,wtype,dens_mat,mat_ref,comp_ref,mechanisms,reference
+Sun2017_Phyllite_DS2_0_5GPa,0,773,1073,0.5,0.5,0,0,0,0,0,0,-0.21,0,69000,0,0,0,0,0,0,0,0,0,0,2800,phl1,None,NaN,
+Sun2017_Phyllite_DS3_1_5GPa,0,773,973,1.5,1.5,0,0,0,0,0,0,-0.1,0,64000,0,0,0,0,0,0,0,0,0,0,2800,phl1,None,NaN,
+Sun2017_Phyllite_DS4_2_5GPa,0,773,923,2.5,2.5,0,0,0,0,0,0,1.35,0,81000,0,0,0,0,0,0,0,0,0,0,2800,phl1,None,NaN,
+Duba1982_Graphite,0,0,2500,0,10,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,2160,graph,None,NaN,

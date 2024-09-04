@@ -1,6 +1,6 @@
-StudyName,Type,Tmin,Tmax,Pmin,Pmax,WCalib,Mg#,sigma_i,sigma_i_err,h_i,h_i_err,sigma_pol,sigma_pol_err,h_pol,h_pol_err,sigma_p,sigma_p_err,h_p,h_p_err,r,r_err,alpha_p,alpha_p_err,wtype,dens_mat,mat_ref,comp_ref,reference
-Shen2020_Amphibolite,3,473,1073,0.5,1.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hAb:0.4/hb:0.6},Shen2020_Amphibolite
-Wang2012_Amphibolite_PH_Perpendicular,3,443,900,0.5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hb:0.82/hAb:0.15/bqz:0.03},Wang2012_Amphibolite
-Wang2012_Amphibolite_PH_Parallel,3,395,857,0.5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hb:0.82/hAb:0.15/bqz:0.03},Wang2012_Amphibolite
-Wang2012_Amphibolite_HA,3,420,824,0.5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hb:0.82/hAb:0.15/bqz:0.03},Wang2012_Amphibolite
-Zhou2011_Amphibolite,0,523,973,1,1,0,0,0,0,0,0,1.73166,0,73000,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hb:0.58/hAb:0.33/phlg:0.09},Zhou2011_Amphibolite
+StudyName,Type,Tmin,Tmax,Pmin,Pmax,WCalib,Mg#,sigma_i,sigma_i_err,h_i,h_i_err,sigma_pol,sigma_pol_err,h_pol,h_pol_err,sigma_p,sigma_p_err,h_p,h_p_err,r,r_err,alpha_p,alpha_p_err,wtype,dens_mat,mat_ref,comp_ref,mechanisms,reference
+Shen2020_Amphibolite,3,473,1073,0.5,1.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hAb:0.4/hb:0.6},NaN,Shen2020_Amphibolite
+Wang2012_Amphibolite_PH_Perpendicular,3,443,900,0.5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hb:0.82/hAb:0.15/bqz:0.03},NaN,Wang2012_Amphibolite
+Wang2012_Amphibolite_PH_Parallel,3,395,857,0.5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hb:0.82/hAb:0.15/bqz:0.03},NaN,Wang2012_Amphibolite
+Wang2012_Amphibolite_HA,3,420,824,0.5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hb:0.82/hAb:0.15/bqz:0.03},NaN,Wang2012_Amphibolite
+Zhou2011_Amphibolite,0,523,973,1,1,0,0,0,0,0,0,1.73166,0,73000,0,0,0,0,0,0,0,0,0,0,2800,amp1,{hb:0.58/hAb:0.33/phlg:0.09},NaN,Zhou2011_Amphibolite

@@ -110,7 +110,7 @@ def Poe2010_DryandWetOlivine(T, P, water, xFe, param1, fo2 = None, fo2_ref = Non
 		cond_2 = (10**sigma_2[1] * water * np.exp(-(E2[1] + (alpha_2 * water)) / (R_const*T)))
 		cond_3 = (10**sigma_3[1] * water * np.exp(-(E3[1] + (alpha_3 * water)) / (R_const*T)))
 		
-	else:
+	elif (mechanism == 'polaron') or (mechanism == 'dry'):
 		cond_1 = (10**sigma_1[0] * np.exp(-(E1[0])) / (R_const*T))
 		cond_2 = (10**sigma_2[0] * np.exp(-(E2[0])) / (R_const*T))
 		cond_3 = (10**sigma_3[0] * np.exp(-(E3[0])) / (R_const*T))
@@ -130,11 +130,12 @@ def Constable2006_dryOlivine_fo2(T, P, water, xFe, param1, fo2 = None, fo2_ref =
 	condfe = bfe + (3.33e24 * np.exp(-0.02/kT) * (fo2*1e5)**(0.16666))
 	condmg = bmg + (6.21e30 * np.exp(-1.83/kT) * (fo2*1e5)**(0.16666))
 
-	if mechanism == 'proton':
+	if (mechanism == 'proton') or (mechanism == 'ionic'):
 		raise ValueError('Proton conduction is not included in electrical conductivity model: Constable2006_dryOlivine_fo2')
-	else:
+	elif (mechanism == 'polaron') or (mechanism == 'dry') or (mechanism == None):
 		cond = (condfe * ufe * e) + (2.0*condmg* umg * e)
-
+	else:
+		raise ValueError('Unknown mechanism: ' + mechanism)
 	return cond
 
 def Dai2014_DryOlivine_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
@@ -220,7 +221,7 @@ def Fei2020_WetOlivineIonic_Isotropic(T, P, water, xFe, param1, fo2 = None, fo2_
 		
 	return cond
 
-def Novella2017_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Novella2017_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
 	A_H = [-0.7,-5,-3.5]
 
@@ -245,7 +246,7 @@ def Novella2017_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None,
 
 	return DH
 
-def Sun2019_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Sun2019_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None,mechanism = None):
 
 	A_H = -7.4
 	EH = 130000.0
@@ -256,7 +257,7 @@ def Sun2019_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, met
 
 	return DH
 
-def DuFrane2012_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def DuFrane2012_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None,mechanism = None):
 
 	A_H = [-4.9,-5.4,-8.4]
 	EH = [140000.0,170000.0,100000.0]
@@ -279,7 +280,7 @@ def DuFrane2012_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None,
 
 	return DH
 
-def Kohlstedt1998_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Kohlstedt1998_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None,mechanism = None):
 
 	A_H = [-3.85,-3.82,-6.83]
 
@@ -301,7 +302,7 @@ def Kohlstedt1998_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = Non
 
 	return DH
 
-def Demouchy2006_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None):
+def Demouchy2006_HDiffusion(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None,mechanism = None):
 
 	A_H = [-4.5,-4.5,-1.4]
 

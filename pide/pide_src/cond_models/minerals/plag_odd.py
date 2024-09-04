@@ -58,6 +58,10 @@ def Hu2022_WetPlagioclase_Na_param1(T, P, water, xFe, param1, fo2 = None, fo2_re
 	if mechanism == 'proton':
 		
 		cond = cond_wet
+	
+	elif (mechanism == 'polaron') or (mechanism == None):
+	
+		cond = cond_dry
 		
 	else:
 		
@@ -93,7 +97,7 @@ def Hu2015_DryAnorthite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, me
 			
 		cond = (10**sigma_interp) * np.exp(-(E + (P * dv)) / (R_const * T))
 		
-	if mechanism == 'proton':
+	if (mechanism == 'proton') or (mechanism == 'ionic'):
 	
 		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Hu2015_DryAnorthite')
 		
@@ -129,7 +133,7 @@ def Hu2011_DryAlbite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, metho
 			
 		cond = (10**sigma_interp) * np.exp(-(E + (P * dv)) / (R_const * T))
 		
-	if mechanism == 'proton':
+	if (mechanism == 'proton') or (mechanism == 'ionic'):
 	
 		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Hu2011_DryAlbite')
 		

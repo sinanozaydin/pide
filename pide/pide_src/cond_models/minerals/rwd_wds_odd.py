@@ -17,7 +17,7 @@ def Yoshino2012_DryRingwoodite_Xfe(T, P, water, xFe ,param1, fo2 = None, fo2_ref
 	
 	if mechanism == 'proton':
 	
-		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Yoshino2012_DryRingwoodite_Xfe')
+		raise ValueError('Proton conduction is not included in electrical conductivity model: Yoshino2012_DryRingwoodite_Xfe')
 		
 	else:
 			

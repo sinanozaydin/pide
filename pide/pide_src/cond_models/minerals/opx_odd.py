@@ -12,10 +12,12 @@ def Dai2005_DryEnstatite(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, m
 
 	cond = sigma1 *  np.exp(-(E + (P*dv)) / (R_const * T))
 
-	if mechanism == 'proton':
+	if (mechanism == 'proton') or (mechanism == 'ionic'):
 		raise ValueError('Proton conduction is not included in electrical conductivity model: Dai2005_DryEnstatite')
-	else:
+	elif (mechanism == 'polaron') or (mechanism == 'dry') or (mechanism == None):
 		return cond
+	else:
+		raise ValueError('Unknown mechanism: ' + mechanism)
 	
 def Zhang2016_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
@@ -40,8 +42,10 @@ def Zhang2016_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, m
 	 
 	if (mechanism == 'proton') or (mechanism == 'ionic'):
 		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Zhang2016_DryOpx_xFe')
-	else:
+	elif (mechanism == 'polaron') or (mechanism == 'dry') or (mechanism == None):
 		return cond
+	else:
+		raise ValueError('Unknown mechanism: ' + mechanism)
 	
 def Fullea2011_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, method = None, mechanism = None):
 
@@ -56,5 +60,7 @@ def Fullea2011_DryOpx_xFe(T, P, water, xFe, param1, fo2 = None, fo2_ref = None, 
 
 	if (mechanism == 'proton') or (mechanism == 'ionic'):
 		raise ValueError('Proton and ionic conduction is not included in electrical conductivity model: Fullea2011_DryOpx_xFe')
-	else:
+	elif (mechanism == 'polaron') or (mechanism == 'dry') or (mechanism == None):
 		return cond
+	else:
+		raise ValueError('Unknown mechanism: ' + mechanism)

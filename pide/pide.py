@@ -288,6 +288,7 @@ class pide(object):
 		self.dens_mat = create_nan_array()
 		self.mat_ref = create_nan_array()
 		self.comp_ref = create_nan_array()
+		self.mechanism_model = create_nan_array()
 		self.bib_ref = create_nan_array()
 		
 		#Filling up the arrays.
@@ -326,12 +327,10 @@ class pide(object):
 				except ValueError:
 					self.dens_mat[i][count-1] = self.cond_data_array[i][count][25]
 				self.mat_ref[i][count-1] = self.cond_data_array[i][count][26]
+				self.comp_ref[i][count-1] = self.cond_data_array[i][count][27]
+				self.mechanism_model[i][count-1] = self.cond_data_array[i][count][28]
 				try:
-					self.comp_ref[i][count-1] = self.cond_data_array[i][count][27]
-				except IndexError:
-					pass
-				try:
-					self.bib_ref[i][count-1] = self.cond_data_array[i][count][28]
+					self.bib_ref[i][count-1] = self.cond_data_array[i][count][29]
 				except IndexError:
 					pass
 				count += 1
@@ -1099,7 +1098,7 @@ class pide(object):
 		def print_lists(min_idx):
 		
 			for i in range(0,len(self.name[min_idx])):
-				print(f'{str(i)}.   {self.name[min_idx][i]}')
+				print(f'{str(i)}.   {self.name[min_idx][i]}  -----  {self.mechanism_model[min_idx][i]}')
 			
 		print_lists(min_idx = min_index)
 		

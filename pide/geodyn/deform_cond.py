@@ -170,10 +170,12 @@ def plastic_strain_2_conductivity(strain, low_cond, high_cond, low_strain, high_
 				else:
 					
 					raise ValueError('The function method can only be one of those string values: exponential, logarithmic, linear.')
-				
+			
+			"""
 			if rms > 1.5:
 				print('RMS values higher than 1.5 is detected, this does not mean an unreasonable fit is achived. Mapping RMS values may help understand where this problem	is occuring.')			
-				
+			"""
+			
 			if func_method == 'exponential':
 				cond_calced = 10.0**expfunc(np.log10(strain), params[0], params[1], params[2])
 				
