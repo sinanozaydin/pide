@@ -5,7 +5,7 @@ with open("README.md") as readme_file:
 
 setup(
     name='pide',
-    version='0.3.4',
+    version='0.3.5',
     package_data = {
         'pide' :[
             'pide_src/*csv',
