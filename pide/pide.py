@@ -7,7 +7,7 @@ core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_
 import sys, re, warnings, json, inspect
 import numpy as np
 from scipy.interpolate import interp1d
-from santex import Isotropy
+from santex.isotropy import Isotropy
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
