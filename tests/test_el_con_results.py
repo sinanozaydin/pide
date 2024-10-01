@@ -25,3 +25,19 @@ for i in range(0,len(mineral_list)):
 		mineral_cond_list.append(cond[0])
 	all_cond_list.append(mineral_cond_list)
 print(all_cond_list)
+
+
+rock_list = p_obj.list_available_rocks()
+all_cond_rock_list = []
+for i in range(0,len(rock_list)):
+
+	list_models = p_obj.list_rock_econd_models(rock_list[i])
+	rock_cond_list = []
+	for j in range(0,len(list_models)):
+		
+		eval('p_obj.set_rock_conductivity_choice(' + rock_list[i] + '=' + str(j) + ')')
+		eval(f"p_obj.set_rock_water({rock_list[i]}= 50)")
+		cond = eval(f"p_obj.calculate_rock_conductivity(rock_idx = '{rock_list[i]}')")
+		rock_cond_list.append(cond[0])
+	all_cond_rock_list.append(rock_cond_list)
+print(all_cond_rock_list)
