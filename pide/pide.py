@@ -1031,6 +1031,8 @@ class pide(object):
 		print(text_color.RED +'All available minerals:')
 		for item in mineral_list:
 			print(text_color.YELLOW  + '-' + item + text_color.END)
+
+		return mineral_list
 			
 	def list_available_rocks(self):
 	
@@ -1042,6 +1044,8 @@ class pide(object):
 		for item in rock_list:
 			
 			print(text_color.YELLOW  + '-' + item + text_color.END)
+
+		return rock_list
 	
 	def list_mineral_econd_models(self, mineral_name):
 
