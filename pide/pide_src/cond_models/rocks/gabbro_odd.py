@@ -21,9 +21,9 @@ def Dai2015_DryGabbro(T,P,water, param1, fo2 = None, fo2_ref = None, method = No
 	return cond
 
 def Wang2022_DryGabbro_param1_xCpx(T, P, water, param1 = None, fo2 = None, fo2_ref = None, method = None):
-
-	if param1 == None:
 	
+	if param1 is None:
+		
 		raise ValueError('xCpx has to be defined between 0.1 to 0.9 to calculate use Wang2022_DryGabbro_param1_xCPx. Define param1 as xCpx.')
 		
 	C = 10**2.47
