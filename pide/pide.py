@@ -128,6 +128,7 @@ class pide(object):
 		self.set_grain_size()
 		self.set_melt_fluid_interconnectivity()
 		self.set_mantle_water_partitions()
+		self.set_mantle_transition_zone_water_partitions()
 		self.set_mantle_water_solubility()
 		self.set_grain_boundary_water_partitioning()
 		self.set_grain_boundary_H_Diffusion()
@@ -4272,42 +4273,40 @@ class pide(object):
 		elif method == 'index':
 			idx_node = sol_idx
 		
-		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (pide.fluid_or_melt_method == 1):
+		#calculating melt/nams water partitioning coefficients if theres any melt in the equilibrium 
+	
+		if self.water_melt_part_type[4][self.d_water_opx_melt_choice] == 0: #index 4 because it is in 4th index at the minerals list
+			
+			self.d_melt_opx = self.water_melt_part_function[4][self.d_water_opx_melt_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_melt_opx = eval(self.water_melt_part_name[4][self.d_water_opx_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[4][self.d_water_opx_melt_choice], d_opx_ol = None, method = method)')
 		
-			#calculating melt/nams water partitioning coefficients if theres any melt in the equilibrium 
+		if self.water_melt_part_type[5][self.d_water_cpx_melt_choice] == 0:
 		
-			if self.water_melt_part_type[4][self.d_water_opx_melt_choice] == 0: #index 4 because it is in 4th index at the minerals list
-				
-				self.d_melt_opx = self.water_melt_part_function[4][self.d_water_opx_melt_choice] * np.ones(len(self.T))
-				
-			else:
-				
-				self.d_melt_opx = eval(self.water_melt_part_name[4][self.d_water_opx_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[4][self.d_water_opx_melt_choice], d_opx_ol = None, method = method)')
+			self.d_melt_cpx = self.water_melt_part_function[5][self.d_water_cpx_melt_choice] * np.ones(len(self.T))
 			
-			if self.water_melt_part_type[5][self.d_water_cpx_melt_choice] == 0:
+		else:
 			
-				self.d_melt_cpx = self.water_melt_part_function[5][self.d_water_cpx_melt_choice] * np.ones(len(self.T))
-				
-			else:
-				
-				self.d_melt_cpx = eval(self.water_melt_part_name[5][self.d_water_cpx_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[5][self.d_water_cpx_melt_choice], d_opx_ol = None, method = method)')
-			
-			if self.water_melt_part_type[7][self.d_water_garnet_melt_choice] == 0:
-			
-				self.d_melt_garnet = self.water_melt_part_function[7][self.d_water_garnet_melt_choice] * np.ones(len(self.T))
-				
-			else:
-				
-				self.d_melt_garnet = eval(self.water_melt_part_name[10][self.d_water_ol_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[7][self.d_water_garnet_melt_choice], d_opx_ol = None, method = method)')
-			
-			if self.water_melt_part_type[10][self.d_water_ol_melt_choice] == 0:
-			
-				self.d_melt_ol = self.water_melt_part_function[10][self.d_water_ol_melt_choice] * np.ones(len(self.T))
-				
-			else:
-				
-				self.d_melt_ol = eval(self.water_melt_part_name + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[10][self.d_water_ol_melt_choice], d_opx_ol = None, method = method)')
+			self.d_melt_cpx = eval(self.water_melt_part_name[5][self.d_water_cpx_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[5][self.d_water_cpx_melt_choice], d_opx_ol = None, method = method)')
 		
+		if self.water_melt_part_type[7][self.d_water_garnet_melt_choice] == 0:
+		
+			self.d_melt_garnet = self.water_melt_part_function[7][self.d_water_garnet_melt_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_melt_garnet = eval(self.water_melt_part_name[10][self.d_water_ol_melt_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[7][self.d_water_garnet_melt_choice], d_opx_ol = None, method = method)')
+		
+		if self.water_melt_part_type[10][self.d_water_ol_melt_choice] == 0:
+		
+			self.d_melt_ol = self.water_melt_part_function[10][self.d_water_ol_melt_choice] * np.ones(len(self.T))
+			
+		else:
+			
+			self.d_melt_ol = eval(self.water_melt_part_name + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[10][self.d_water_ol_melt_choice], d_opx_ol = None, method = method)')
+	
 		#determining chosen nam/olivine water partitioning coefficients.
 		if self.water_ol_part_type[4][self.d_water_opx_ol_choice] == 0:
 		
@@ -4433,7 +4432,7 @@ class pide(object):
 		pide.garnet_water[idx_node] = pide.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		pide.garnet_water[self.garnet_frac == 0] = 0.0
 		
-	def transition_zone_water_distribute(self, method, **kwargs):
+	def transition_zone_water_distribute(self, method = 'array', **kwargs):
 	
 		"""A method to distribute entered bulk water content among mantle transition zone mineral
 		constituents using the set up environment.
@@ -4691,7 +4690,10 @@ class pide(object):
 			
 		if method == 'array':
 			if len(max_mineral_water) == 1:
-				return max_mineral_water[0]
+				if type(max_mineral_water[0]) is np.ndarray:
+					return max_mineral_water[0]
+				else:
+					return max_mineral_water
 			else:
 				return max_mineral_water
 		elif method == 'index':
