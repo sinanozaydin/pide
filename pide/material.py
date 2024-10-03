@@ -11,14 +11,72 @@ class Material(object):
 	deformation_dict = None, top = None, bottom = None, **kwargs):
 	
 		"""
-		This is the core object to create a material object for pide.
+		Material object: an python object to define properties of a certain material. 
+		
+		Input:
+		str: name - Name of the material
+		
+		int: material_index - Index of the material for calculations within a pide.Model object.
+		
+		str: calculation_type - Type of calculation for a solid phases || 'mineral' or 'rock'.
+		
+		dict: composition -  dictionary entered in mineral_name:fraction or rock_name:fraction fashion.
+											ol,opx,cpx... granite,granulite,sandstone...
+											
+		array: melt_fluid_frac - melt/fluid content array || in fraction.
+		
+		dict: interconnectivities - dictionary entered in mineral_name:cementation_exponent(m||float) fashion.
+		
+		dict: param1 - dictionary entered in mineral_name:param1 fashion.
+		
+		dict: el_cond_selections - electrical conductivirty model dictionary entered in mineral_name:el_cond_selection(int)
+														or rock_name:el_cond_selection(int) fashion.
+														
+		str: melt_or_fluid - liquid phase type for the given material. || 'melt' or 'fluid.
+		
+		float: melt_fluid_m - interconnectivity of liquid phase used in Archie-type mixing models.
+		
+		dict: melt_properties - properties of melt entered in property_name:value fashion. 
+											      'water','co2','na2o','k2o'
+											      
+		int: melt_fluid_cond_selection - electrical conductivity model chosen for melt/fluid phase.
+		
+		bool: water_distr - Boolean to automatically distribute water among the phases or not.
+		
+		dict: water - dictionary to enter water content of the solid phases or bulk water content in mineral_name:water_content
+																rock_name:water_content or bulk:water_content fashion.
+		
+		dict: xfe - dictionary to enter xFe value of the solid phases in mineral_name:xFe or rock_name:xFe fashion.
+		
+		int: solid_phase_mixing_idx - Solid phase mixing method selection.
+		
+		int: melt_fluid_phase_mixing_idx - solid/melt phase mixing method selection.
+		
+		dict: deformation_dict - dictionary to perform deform2cond function for the given material.
+												'function_method', 'conductivity_decay_factor', 
+												'conductivity_decay_factor_2' , 'strain_decay_factor'
+		
+		float: top - top of the material if geotherm calculation method will be used in pide.Model object. || in km.
+		
+		float: bottom - bottom of the material if geotherm calculation method will be used in pide.Model object. || in km.
+		
+		dict: mantle_water_part - mantle water partitioning dictionart entered in mineral_name:index fashion.
+		
+		
+		
+		
 		
 		---------------------------------- -----------------------------------------
 		Methods                             Description
 		---------------------------------- -------------------------------------------
+		calculate_conductivity              method to calculate conductivity of pide.Material object.
 		
+		calculate_seismic_velocity          method to calculate seismic velocity of pide.Material object.
 		
+		set_parameter                       method to set extra parameters that are not defined in default parameters.
 		
+		copy_attributes                     method to copy attributes to another pide.Material object.
+	
 		"""
 	
 		self.mineral_list = ['ol','opx','cpx','garnet','mica','amp','quartz','plag','kfelds','sulphide','graphite','mixture','sp','wds','rwd','perov','other','bulk']

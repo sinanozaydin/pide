@@ -172,8 +172,10 @@ class pide(object):
 		self.set_grain_boundary_water_partitioning(reval = True)
 		
 	def _read_cond_models(self):
-
-		#A function that reads conductivity model files and get the data.
+		
+		"""
+		A function that reads conductivity model files and get the data.
+		"""
 
 		self.fluid_cond_data = read_csv(os.path.join(self.core_path, 'cond_models' , 'fluids.csv'),delim = ',') 
 		self.melt_cond_data = read_csv(os.path.join(self.core_path, 'cond_models' , 'melt.csv'),delim = ',')
@@ -337,10 +339,10 @@ class pide(object):
 				count += 1
 
 	def _read_params(self):
-
-		#READING THE PARAMETERS IN PARAMS.CSV WHICH ARE GENERAL PHYSICAL CONSTANTS
-		#AND PROPERTIES OF MATERIALS
-
+		
+		"""
+		A function that reads parameters in params.csv and materials.json
+		"""
 		params_dat = read_csv(os.path.join(self.core_path, 'params.csv'), delim = ',')
 
 		self.g = float(params_dat[0][1]) # in kg/
@@ -359,6 +361,10 @@ class pide(object):
 			self.materials_data = json.load(f)
 					
 	def _read_water_part(self):
+	
+		"""
+		A function to read parameters from water partitioning files.
+		"""
 	
 		self.ol_min_partitioning_list = ['opx_part.csv','cpx_part.csv','gt_part.csv']
 		self.ol_min_part_index = [15,16,18] #mineral indexes for the file read
@@ -470,6 +476,10 @@ class pide(object):
 				self.water_rwd_wds_part_pchange.append(None)
 			
 	def _read_mineral_water_solubility(self):
+	
+		"""
+		A function that reads mineral water solubility parameters from the source files.
+		"""
 	
 		self.mineral_sol_file_list = ['opx_sol.csv','cpx_sol.csv','garnet_sol.csv','ol_sol.csv','rwd_wds_sol.csv','perov_sol.csv']
 		self.mineral_sol_index = [15,16,18,21,23,24] #mineral indexes for the file read
@@ -827,7 +837,7 @@ class pide(object):
 		4 MMO: Xu et al. (2000)
 		
 		Example:
-		set_o2_buffer(1) | setting it for Iron-Wustite
+		set_o2_buffer(1) | setting it to Iron-Wustite (IW) buffer.
 		
 		"""
 		pide.o2_buffer = o2_buffer
@@ -908,6 +918,10 @@ class pide(object):
 		self._load_mantle_transition_zone_water_partitions(method = 'array')
 		
 	def _check_composition(self, method = None):
+	
+		"""
+		An internal function to check input compositions sums up to 1.
+		"""
 
 		continue_adjusting = True
 
@@ -1510,7 +1524,7 @@ class pide(object):
 		"""A method to set mineral water contents independently.
 
 		Input:
-		dict/float: mineral_name - Name id of the mineral
+		dict/float: mineral_name - Name id of the mineral || in ppm.
 
 		Mineral_names:
 		ol,opx,cpx,garnet,mica,amp,quartz,plag,kfelds,sulphide,graphite,sp,rwd_wds,perov,mixture,other.
@@ -1578,7 +1592,7 @@ class pide(object):
 		"""A method to set rock water contents independently.
 
 		Input:
-		dict/float: rock_name - Name id of the mineral
+		dict/float: rock_name - Name id of the mineral || in ppm.
 
 		Rock_names: 
 		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
@@ -1624,7 +1638,7 @@ class pide(object):
 		"""A method to set bulk water content. This function will override the ones et in set_mineral_water.
 		
 		Input:
-		float: value/array
+		float: value/array || in ppm.
 		
 		Example:
 		set_bulk_water(water_content_array)
@@ -1942,7 +1956,7 @@ class pide(object):
 		"""A method to set Al2O3 of Opx. This is specifically used for some water solubility limits.
 		
 		Input:
-		float: value = 0.1
+		float: value = 0.1 \\ in wt%
 		
 		Example:
 		set_alopx(0.3)
