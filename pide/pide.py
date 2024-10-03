@@ -3330,7 +3330,7 @@ class pide(object):
 				(self.other_rock_frac[idx_node] / self.other_rock_cond[idx_node]))
 				
 			elif pide.solid_phase_method == 2:
-			
+				
 				for i in range(start_idx,end_idx):
 					if self.quartz_frac[i] == 0.0:
 						self.quartz_cond[i] = -999
@@ -3364,7 +3364,7 @@ class pide(object):
 						self.mixture_cond[i] = -999
 					if self.other_frac[i] == 0.0:
 						self.other_cond[i] = -999
-	
+				
 				self.bulk_cond[idx_node] = 1.0 / ((self.quartz_frac[idx_node] / self.quartz_cond[idx_node]) +\
 				(self.plag_frac[idx_node] / self.plag_cond[idx_node]) +\
 				(self.amp_frac[idx_node] / self.amp_cond[idx_node]) +\
