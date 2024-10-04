@@ -5,6 +5,12 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.9"
+    
+# Python-specific settings
+python:
+  install:
+    - requirements: docs/requirements.txt  # Make sure you have a requirements.txt file
+
 
 sphinx:
   configuration: docs/source/conf.py
