@@ -56,12 +56,14 @@ The general workflow diagram of the library can ben seen in Figure 1. The librar
 
 `material` is the class that can be specified as a holder of pre-defined material properties. For instance, one can create a Lherzolite material by mixing specific modal proportions of olivine (ol), orthopyroxene (opx), clinopyroxene (cpx) and garnet (gt), how these constituents are interconnected, or how water behaves among them. This class allows the user to define some parameters tied to other parameters via user-defined functions. This allows the users to streamline some specific processes in a modular manner.
 
+![Workflow Chart for pide \label{fig:pide_wflow}](figures/pide_workflow.png)
+
 The `model` class, on the other hand, is where a collection of `material` objects can be appended with specific positions indexed in 3D space.
 `model` is also where the user can calculate the magnetic and gravitational anomalies solely since these observables are dependent on the position of the materials and assigned magnetic and density parameters only. `pide` can generate synthetic data for magnetic and gravitational anomalies utilising the `harmonica` library [@fatiando_a_terra_project_2024]. `pide` can generate synthetic electric conductivity and seismic velocity models that can be saved as input files for commonly used magnetotelluric modelling algorithms `ModEM` [@Kelbert2014] and `Mare2DEM` [@Key2016]. Users then can generate synthetic data using the algorithms provided by these software packages.
 
-`pide` also comes with several modules that can exploit the library classes. 'model_modifier' functions, for instance, can be used to calculate certain specific hypothesis tests. `inversion` modules, on the other hand, can be utilised to invert for specific input parameters that fit real geophysical data.
+`pide` also comes with several modules that can exploit the library classes. 'model_modifier' functions. Utilising 'model_modifier' functions, `pide` can convert a thermomechanical model into a 'realistic' synthetic electrical conductivity model (Figure 2). Details of this conversion can be seen in the Notebook named `10_2D_Underworld_Conversion_II_Narrow_Rift.ipynb`. `inversion` modules, on the other hand, can be utilised to invert for specific input parameters (e.g., composition, melt content, mineral interconnection) that fit real geophysical data. 
 
-![Workflow Chart for pide \label{fig:pide_wflow}](figures/pide_workflow.png)
+![Example of pide is being used for conversion of a thermoemchanical model into a synthetic MT model. \label{fig:example_figure}](figures/example_figure.png)
 
 # Acknowledgements
 This study is supported by the Australian Research Council (ARC) Linkage Grant ARC-LP190100146 and ARC DP Grant ARC-DP220100709. 

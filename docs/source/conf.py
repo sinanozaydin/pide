@@ -6,32 +6,32 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import os
-import sys
-import sphinx_rtd_theme
-html_theme = 'sphinx_rtd_theme'
+import os,sys
 
-
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../examples/notebooks'))
 
 project = 'pide'
-copyright = '2024, Sinan Ozaydin, Lu Li, Utpal Singh, Patrice Rey, Maria Constanza Manassero'
-author = 'Sinan Ozaydin, Lu Li, Utpal Singh, Patrice Rey, Maria Constanza Manassero'
-release = '0.3'
+copyright = '2024, Sinan Ozaydin'
+author = 'Sinan Ozaydin'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc','sphinx.ext.viewcode']
+extensions = [
+    'nbsphinx',           # For rendering Jupyter Notebooks
+    'recommonmark',       # For rendering Markdown files
+]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
+nbsphinx_execute = 'never'  # Disables automatic execution of notebooks

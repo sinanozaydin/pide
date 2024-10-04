@@ -3,6 +3,18 @@ from pide.utils.utils import read_csv
 
 def read_ModEM_rho(rho_file_path):
 
+	"""A functions that reads ModEM file rho format and gives relevant data
+	
+	Input:
+	str: rho_file_path
+	
+	Output:
+	array: rho - 3D matrix of resistivity values || in ohm.m
+	array: mesh_centers_x_array - locations of the mesh centers in x direction for each cell
+	array: mesh_centers_y_array - locations of the mesh centers in y direction for each cell
+	array: z_mesh_center - locations of the mesh centers in z direction for each cell
+	"""
+
 	ModEM_rho_data = read_csv(filename = rho_file_path, delim = ' ')
 
 	x_num = int(ModEM_rho_data[1][0])

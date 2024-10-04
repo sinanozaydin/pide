@@ -11,6 +11,30 @@ from .utils.utils import text_color, sort_through_external_list, check_type
 
 def run_model(index_list, material, pide_object, t_array, p_array, melt_array, type = 'conductivity'):
 
+	"""
+	A global function to run conductivity model of a Model object. Designed to be global def to run parallel
+	with multiprocessing library. The users are not encouraged to use this function directly. 
+	
+	Input:
+	array: index_list - list of indexes associated with material coordinates 
+	object: material - material object associated with the indexes.
+	object: pide_object - pide object used in calculation.
+	array: t_array - temperature array || in K.
+	array: p_array - pressure array || in GPa.
+	array: melt_array - array of melt content || in fraction.
+	str: type - type of calculation. || 'conductivity' or 'seismic' or 'both'.
+	
+	Output:
+	Depending on the 'type':
+	array: conductivity || in S/m.
+	array: seismic velocity || in km/s.
+	list of arrays: [conductivity, seismic_velocity]
+	
+	Example:
+	cond = run_model(index_list= sliced_material_idx, material = material_list_holder[l][i], pide_object = mat_pide_obj,
+							t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
+	"""
+
 	#global function to run conductivity model. designed to be global def to run parallel with multiprocessing
 	
 	#setting temperatures at the pide_object
@@ -325,13 +349,39 @@ class Model(object):
 		"""
 		Model object: This is an object used to append materials in a 3D or 2D space, then perform calculations in batch.
 		
+		Inputs:
+		array: material_list - list of pide.Material objects that will be associated with the Model object.
+		array: material_array - list of indexes associated with the pide.Material objects.
+		array: T - temperature array || in K.
+		array: P - pressure array || in GPa.
+		array: depth - depth array || in km.
+		str: model_type - type of the model to used in calculations. || 'underworld_2d' or 'underworld_3d' or any other string.
+																		Only underworld_2d has special indexing conditions.
+																		Whatever else is entered for model_type will be the
+																		same methodology of single array indexing of underworld_3d.
+																		
+																		underworld_2d - Special arrays for every parameter (e.g., T,P) that
+																		should not be used for other purposes.
+																		anything else - 1D numpy arrays.
+																		
+		array: material_list_2 - list of pide.Material objects that can be used to calculate a connection between the first material list.
+		array: melt - melt array || in fraction.
+		array: p_strain - plastic strain || in plastic strain rate.
+		array: material_node_skip_rate_list -  an array to identify skipping rate for calculation for each pide.Material object listed in
+																		material_list. 
+		
+		
 		Methods:
 		----------------------------------------------- -----------------------------------------
 		Methods                             			Description
 		----------------------------------------------- -----------------------------------------
 
-		calculate_model					                Calculates the conductivity of the model object
-														that is setup.
+		calculate_model					                Calculates the conductivity or seismic
+														velocities of the model object that is setup.
+														
+		calculate_geothermal_block                      Calculates the conductivity or seismic
+														velocities of the model object with
+														material objects.
 		
 		calculate_deformation_related_conductivity		Calculates the deformation related conductivity
 														withe the given information loaded onto material
@@ -363,6 +413,16 @@ class Model(object):
 		array, where indexes of materials are stored. These index arrays has to be same length with T, P and all other comp-
 		positional arrays. These materials and indexes can be imported form a thermomechanical model, a geological model or
 		anything in particular as long as they are entered in the right format.
+		
+		Inputs:
+		str: type - type of the calculation || 'conductivity' or 'seismic' or 'both'.
+		int: num_cpu - number of cpus used in the calculation.
+		
+		Output:
+		Depending on the 'type':
+		array: conductivity || in S/m.
+		array: seismic velocity || in km/s.
+		list of arrays: [conductivity, seismic_velocity]
 
 		"""
 		initial_cpu = int(num_cpu)
@@ -515,6 +575,21 @@ class Model(object):
 			return v_p, v_s
 
 	def calculate_geothermal_block(self, type = 'conductivity'):
+	
+		"""
+		A function to calculated conductivity and seismic velocities built over material arrays specifically designed for calculations
+		along a geotherm.
+		
+		Input:
+		str: type - type of the calculation || 'conductivity' or 'seismic' or 'both'.
+		
+		Output:
+		Depending on the 'type':
+		array: conductivity || in S/m.
+		array: seismic velocity || in km/s.
+		list of arrays: [conductivity, seismic_velocity]
+
+		"""
 
 		if self.depth is None:
 			raise ValueError(text_color.RED + 'The depth array of the geotherm has to be entered...')
@@ -579,8 +654,26 @@ class Model(object):
 		else:
 			raise ValueError(text_color.RED + f'The type is entered wrongly. The available type string inputs are: "conductivity"' + text_color.END)
 	
-	def calculate_deformation_related_conductivity(self, cond_min, cond_max, method = 'plastic_strain', function_method = 'linear',
+	def calculate_deformation_related_conductivity(self, cond_min, cond_max, method = 'plastic_strain',
 		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
+		
+		"""
+		A function to calculate deformation related conductivity via given method parameter, minimum and maximum conductivity arrays.
+		The structure of the input arrays will depend on whether the model_type is entered as 'underworld_2d' or not. 
+		
+		Input:
+		array: cond_min - array of conductivity values for minimum conductivities. || in S/m
+		array: cond_max - array of conductivity values for maximum conductivities. || in S/m
+		str: method - method of linking two conductivites.
+		float: low_deformation_threshold - low plastic strain treshold where one can assume the material can be fully associated with cond_min
+		float: high_deformation_threshold - high plastic strain treshold where one can assume the material can be fully associated with cond_max
+		num_cpu: number of cpus to perform the calculation
+		
+		Output:
+		[deform_cond, rms]
+		array: deform_cond - calculated deformation related conductivity || in S/m
+		array: rms - local rms misfit array from the fitting of the conductivity-strain relationship curves.
+		"""
 		
 		if num_cpu > 1:
 		
@@ -655,6 +748,9 @@ class Model(object):
 							elif self.model_type == "underworld_2d":
 								deform_cond[material_idx] = condd
 								rms[material_idx] = rmss
+							else:
+								deform_cond[material_idx_list[idx_]] = condd
+								rms[material_idx_list[idx_]] = rmss
 						except IndexError:
 							import ipdb
 							ipdb.set_trace()

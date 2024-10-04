@@ -6,6 +6,21 @@ import matplotlib.colors as colors
 
 def plot_2D_underworld_Field_scatter(x_array = None, y_array = None, Field = None,cblimit_up = None, cblimit_down = None, log_bool = False,cb_name = 'coolwarm',**kwargs):
 	
+	"""A function to plot 2D underworld fields
+	
+	Input:
+	array: x_array - X array || np.meshgrid
+	array: y_array - Y arrray || np.meshgrid
+	array: Field - value array.
+	float: cblimit_up - colorbar upper limit
+	float: cblimit_down - colobar lower limit
+	bool: log_bool - boolean to determine whether the colobar will be logarithmic.
+	str: cb_name - colorbar to use
+	bool: plot_save - boolean to save the figure or not.
+	str: label - name of the figure when saving it.
+	
+	"""
+	
 	plot_save = kwargs.pop('plot_save', False)
 	label = kwargs.pop('label', 'Interpolated_UW_Figure.png')
 

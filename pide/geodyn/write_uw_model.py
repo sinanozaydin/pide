@@ -5,6 +5,17 @@ import h5py
 
 def write_2d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpolate = False, xmesh = None, ymesh = None):
 
+	"""A function to write 2D underworld files.
+	
+	Input: 
+	array: Field -  data array to be used.
+	str: filename_out
+	str or int: nan_placeholder - placeholder value for NaN values.
+	bool: nan_interpolate - boolean to choose whether NaN values should be deleted and replaced with an interpolated value.
+	array: x_mesh - array to have x coordinates
+	array: y_mesh - array that includes y coordinates.
+	"""
+
 	if nan_interpolate == True:
 				
 		Field = np.squeeze(Field, axis=1)
@@ -43,7 +54,19 @@ def write_2d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpola
 		
 	print('The file has written as:' + str(filename_out))
 	
-def write_3d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpolate = False, xmesh = None, ymesh = None, zmmesh = None):
+def write_3d_field_h5(Field, filename_out, nan_placeholder = -999, nan_interpolate = False, xmesh = None, ymesh = None, zmesh = None):
+
+	"""A function to write 3D underworld files.
+	
+	Input: 
+	array: Field -  data array to be used.
+	str: filename_out
+	str or int: nan_placeholder - placeholder value for NaN values.
+	bool: nan_interpolate - boolean to choose whether NaN values should be deleted and replaced with an interpolated value.
+	array: x_mesh - array to have x coordinates
+	array: y_mesh - array that includes y coordinates.
+	array: z_mesh - array that includes y coordinates.
+	"""
 
 	data_2_write = []
 

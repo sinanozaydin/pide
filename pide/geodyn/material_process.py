@@ -3,7 +3,10 @@
 import numpy as np
 
 def return_material_bool(material_index,model_array, material_skip, model_type):
-	#getting the material indexes
+	
+	"""A function to get indexes of a pide.Material object of a material array given in 
+	pide.Model object. 	
+	"""
 	
 	array_bool = np.where(model_array == material_index)
 	

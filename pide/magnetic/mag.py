@@ -6,10 +6,10 @@ import harmonica as hm
 
 def calculate_3DModel_magnetic(sus_array, mesh, height, **kwargs):
 
-
-	#This is a function that converts the constructed 3D geodynamic model into prisms
-	#that can be used by Harmonica to calculate the magnetic response from the 3D susceptibility field
 	"""
+	This is a function that converts the constructed 3D geodynamic model into prisms
+	that can be used by Harmonica to calculate the magnetic response from the 3D susceptibility field
+	
 	Input Paramaters
 	-----------------
 	sus_array: calculated susceptibility field in np.ndarray()
@@ -22,7 +22,6 @@ def calculate_3DModel_magnetic(sus_array, mesh, height, **kwargs):
 	-----------------
 	Vertical magnetic field in nT
 	"""
-	
 	
 	#optional kwarg calls
 	mesh_unit = kwargs.pop('mesh_unit', 'kilometres')

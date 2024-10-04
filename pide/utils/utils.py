@@ -2,8 +2,20 @@ import numpy as np
 import csv
 
 def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
-
-	#Function to call inside this class by associate_coordinates method for parallelisation purposes.
+	
+	"""
+	Function to associate_coordinates method for parallelisation purposes.
+	
+	Input:
+	int: index - index for the x_target array
+	array: x_target - array for the target search x-direction
+	array: y_target -array for the target search in y-direction
+	array: x_sample -array for the samples in x-direction
+	array: y_sample -array for the samples in y-direction
+	
+	Output:
+	int: idx_final - the closest index where x_sample and y_sample is closes to x_target[index] y_target[index]
+	"""
 
 	idx_target = (np.abs(y_sample-y_target[index])).argmin()
 	idx_target_lists = [idx for idx, value in enumerate(y_sample) if value == y_sample[idx_target]]
@@ -72,6 +84,13 @@ def array_modifier(input, array, varname):
 def read_csv(filename,delim):
 	"""
 	Simple function for reading csv files and give out filtered output for given delimiter (delim)
+	
+	Input:
+	str: filename - filename string or full path to the csv file.
+	str: delim - delimiter for the csv file.
+	
+	Output:
+	array: data
 	"""
 	
 	with open(filename,'rt',encoding = "utf8") as file_obj:
@@ -94,8 +113,16 @@ def read_csv(filename,delim):
 def associate_coordinates(sample_x, sample_y, target_x, target_y,  num_cpu = 1, filename = 'idx.mat' ,method = 'return'):
 
 	"""
-	Returns the closest indexes of sample_x and _y for target_x and _y arrays.
-	It can be saved as a mat file.
+	Function to associate_coordinates method for parallelisation purposes.
+	
+	Input:
+	array: x_target - array for the target search x-direction
+	array: y_target -array for the target search in y-direction
+	array: x_sample -array for the samples in x-direction
+	array: y_sample -array for the samples in y-direction
+	
+	Output:
+	array: idx_array - the closest index where x_sample and y_sample is closes to x_target y_target
 	"""
 
 	if num_cpu != 1:
@@ -146,7 +173,6 @@ def sort_through_external_list(first_list, second_list):
 	sorted_second_list = [element[1] for element in sorted_combined_lists]
 	return sorted_second_list
 	
-
 class text_color:
    
    #color object for to be called by the print outs.

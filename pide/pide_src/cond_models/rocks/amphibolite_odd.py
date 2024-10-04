@@ -4,7 +4,7 @@ import numpy as np
 
 R_const = 8.3144621
 
-def Shen2020_Amphibolite(T,P,water, param1, fo2, fo2_ref, method):
+def Shen2020_Amphibolite(T,P,water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	#ref: cond.bib -- Shen2020_Amphibolite
 
@@ -16,7 +16,7 @@ def Shen2020_Amphibolite(T,P,water, param1, fo2, fo2_ref, method):
 
 	return cond
 
-def Wang2012_Amphibolite_H_Perpendicular(T,P,water, param1, fo2, fo2_ref, method):
+def Wang2012_Amphibolite_PH_Perpendicular(T,P,water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	#ref: cond.bib -- Wang2012_Amphibolite
 
@@ -48,7 +48,7 @@ def Wang2012_Amphibolite_H_Perpendicular(T,P,water, param1, fo2, fo2_ref, method
 
 	return cond
 
-def Wang2012_Amphibolite_PH_Parallel(T,P,water, param1, fo2, fo2_ref, method):
+def Wang2012_Amphibolite_PH_Parallel(T,P,water, param1, fo2 = None, fo2_ref = None, method = None):
 
 	#ref: rock_cond.bib -- Wang2012_Amphibolite
 

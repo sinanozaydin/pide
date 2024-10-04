@@ -5,7 +5,7 @@ from ..eos.fluid_eos import Sanchez_Valle_2013_WaterDensity
 
 R_const = 8.3144621
 
-def Sakuma_2015_NaCl_H2O(T,salinity, P, method = None):
+def Sakuma_2016_NaCl_H2O(T,salinity, P, method = None):
 
 	P = P * 1e3 #converting GPa to MPa
 
@@ -78,7 +78,7 @@ def Bannard_1975_NaCl_H2O(T,salinity,P = None, method = None):
 	
 	return cond
 	
-def Sinmyo2016(T, P, salinity, method):
+def Sinmyo2017(T, P, salinity, method):
 
 	if isinstance(T, (int,float)):
 	
@@ -216,18 +216,17 @@ def Manthilake2021_Aqueous(T, P, salinity, method):
 	
 		for i in range(0,len(T)):
 			if T[i] > 673.0:
-				cond = (10.0**2.4) * np.exp((-70000.0) / R_const * T[i])
+				cond = (10.0**2.4) * np.exp((-70000.0) / (R_const * T[i]))
 			else:
-				cond = (10.0**-2.3) * np.exp((-80000.0) / R_const * T[i])
+				cond = (10.0**-2.3) * np.exp((-80000.0) / (R_const * T[i]))
 	
 	else:
 		
 		if T > 673.0:
-			cond = (10.0**2.4) * np.exp((-70000.0) / R_const * T)
+			cond = (10.0**2.4) * np.exp((-70000.0) / (R_const * T))
 		else:
-			cond = (10.0**-2.3) * np.exp((-80000.0) / R_const * T)
+			cond = (10.0**-2.3) * np.exp((-80000.0) / (R_const * T))
 		
-
 	return cond
 	
 
