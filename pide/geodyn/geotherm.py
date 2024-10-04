@@ -12,7 +12,7 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 	cited study. Generalized continental geotherm can be creating assuming
 	26% of the heat generation occurs in the upper crustal layer.
 
-	Parameters
+	Input
 	-------
 
 	SHF: Surface Heat Flow value in mW/m^2

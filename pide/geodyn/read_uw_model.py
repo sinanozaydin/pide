@@ -15,6 +15,13 @@ def read_h5_file(h5):
 
 def read_uw_material_names_from_py_input(py_file):
 
+	"""A function to scrape material names and indexes from a underworld python input.
+	Input:
+	str: py_file - full path or filename to the python file.
+	Output:
+	Materil name lists.
+	"""
+
 	#Simple function for reading csv files and give out filtered output for given delimiter (delim)
 
 	with open(py_file,'rt',encoding = "utf8") as file_obj:
@@ -168,6 +175,19 @@ def setup_3d_mesh(mesh_data):
 
 def setup_material(material_data, material_names):
 
+	"""A function to setup materials with the given material_data and material_names.
+	It will automatically get rid of the air layers.
+	
+	Input:
+	h5object: material_data - material h5 file dat ainput
+	list: material_names - names of the material scraped from the py file.
+					use the function read_uw_material_names_from_py_input to get this list.
+	
+	Output:
+	array: material_array
+	array: air_material_idx
+	"""
+
 	material_data_array = list(material_data['data'])
 
 	material_array = []
@@ -192,6 +212,9 @@ def setup_material(material_data, material_names):
 
 def setup_uw_data_array_PROJ_3D(data):
 
+	"""A function to setup 3D underworld data array.
+	"""
+
 	data_list = list(data['data'])
 
 	array = np.zeros(len(data_list))
@@ -206,6 +229,9 @@ def setup_uw_data_array_PROJ_3D(data):
 	return array
 
 def setup_uw_data_array_PROJ_2D(data):
+
+	"""A function to setup 2D underworld data array.
+	"""
 
 	data_list = list(data['data'])
 

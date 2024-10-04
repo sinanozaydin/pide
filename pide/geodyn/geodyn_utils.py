@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 
 def rewrite_uw_xmf_file(input_xmf, iter_index, output_dir, field_strs, field_search = 'projDensityField', dtype = 'Cell'):
+
+	"""A function to add new fields to Underworld xmf file format.
+	Input:
+	str: input_xmf - filename for the input xmf file.
+	int: iter_index - iteration number of the xmf file.
+	str: output_dir - output filename
+	list: field_strs - list of strings where the newly added fields will be named.
+	str: field_search - name of the field that the new fields will be added after in the tree.
+	str: dtype - type of the field to be added to the xmf file. || 'Cell' or 'Node'.
+	
+	Output:
+	Writes out edited xmf file at output_dir.
+	"""
 	
 	import os
 	import xml.etree.ElementTree as ET

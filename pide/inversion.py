@@ -176,7 +176,20 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, num_cpu = 1,**kwargs):
 
 	"""
-	A function to fit conductivity value with a single parameter with simple search algorithm.
+	A function to fit conductivity value with a single parameter with simple line-search algorithm.
+	
+	Input:
+	object: object - pide object that is going to be used for the inversion calculations.
+	array: cond_list - conductivity array list used for inversion || in S/m
+	str: param_name - parameter name to invert for. This can be any parameter that is included in pide.object.
+	array: upper_limit_list - upper limit value for the search space for the given parameter.
+	array: lower_limit_list - lower limit value for the search space for the given parameter.
+	float: search_start - initial search length used in the line search.
+	float: acceptance_threshold - acceptance value to stop inversion process.
+	array: cond_err - error floors to add to the inversion.
+	bool: transition_zone - boolean value to indicate transition zone water distribution functions are going to be used.
+	int: num_cpu - number of cpu to compute the inversion.
+	float: low_value_threshold - threshold value of parameter to revert to zero for the solution. 
 	"""
 	
 	min_list = ['quartz_frac', 'plag_frac', 'amp_frac', 'kfelds_frac', 'opx_frac', 'cpx_frac',
