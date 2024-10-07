@@ -1400,7 +1400,13 @@ class pide(object):
 		"""A method to set mineral electrical conductivity model choices.
 		
 		Input:
-		dict/float: mineral_name - Name id of the mineral
+		dict/int or str: mineral_name - Name id of the mineral
+		
+		The input can be an integer, which will take the whole model: ol = 4
+		or the input can be a string where the mechanisms of the chosen model can be specified
+			ol = '4/proton'
+
+		
 
 		Mineral_names:
 		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
@@ -1409,7 +1415,8 @@ class pide(object):
 		other (other minerals).
 
 		Example:
-		set_mineral_conductivity_choice(ol = 4,opx = 1,cpx = 5,garnet = 0)		
+		set_mineral_conductivity_choice(ol = 4,opx = 1,cpx = 5,garnet = 0)
+		set_mineral_conductivity_choice(ol = '4/proton')		
 		"""
 	
 		pide.ol_cond_selection = kwargs.pop('ol', 0)
