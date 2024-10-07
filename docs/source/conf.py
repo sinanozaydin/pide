@@ -21,7 +21,6 @@ author = 'Sinan Ozaydin'
 extensions = [
     'myst_parser', 
     'nbsphinx',           # For rendering Jupyter Notebooks
-    'recommonmark',       # For rendering Markdown files
 ]
 
 myst_enable_extensions = [
