@@ -30,6 +30,14 @@ myst_enable_extensions = [
     "linkify",           # Optional: Auto-convert URLs to links
 ]
 
+# You may also want to customize the MathJax options
+mathjax_config = {
+    'tex': {
+        'inlineMath': [['$', '$'], ['\\(', '\\)']],  # Inline math delimiters
+        'displayMath': [['$$', '$$'], ['\\[', '\\]']],  # Block math delimiters
+    },
+}
+
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
