@@ -46,8 +46,12 @@ Since *pide* is an open-source library, users are encouraged to be contribute an
 
 | **Sinan Özaydın** | sinan.ozaydin@protonmail.com | sinan.ozaydin@sydney.edu.au
 
-# General Tutorial
+# Starting with pide
 ```{include} 0_pide_general_tutorial.md
+
+# Electrical Conductivity calculations of a mineral
+
+```{include} 1_Olivine_Conduction_Mechanisms.md
 
 
 
