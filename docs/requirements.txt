@@ -1,5 +1,6 @@
-sphinx
+sphinx>=4.0
 sphinx-rtd-theme
 nbsphinx
 recommonmark
 jupyter
+myst-parser

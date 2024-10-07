@@ -19,8 +19,14 @@ author = 'Sinan Ozaydin'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    'myst_parser', 
     'nbsphinx',           # For rendering Jupyter Notebooks
     'recommonmark',       # For rendering Markdown files
+]
+
+myst_enable_extensions = [
+    "deflist",           # Optional: Add definition lists support
+    "linkify",           # Optional: Auto-convert URLs to links
 ]
 
 templates_path = ['_templates']
