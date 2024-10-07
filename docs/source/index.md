@@ -2,7 +2,7 @@
 
 # Welcome to documentation for pide!
 
-!INCLUDE "../../README.md"
+```{include} ../../README.md
 
 ## Contents
 
