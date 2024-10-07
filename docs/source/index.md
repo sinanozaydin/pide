@@ -1,5 +1,3 @@
-====================================
-
 # Welcome to documentation for pide!
 
 # pide
@@ -46,12 +44,18 @@ Since *pide* is an open-source library, users are encouraged to be contribute an
 
 | **Sinan Özaydın** | sinan.ozaydin@protonmail.com | sinan.ozaydin@sydney.edu.au
 
-# Starting with pide
-```{include} 0_pide_general_tutorial.md
+# Notebooks for learning pide
 
-# Electrical Conductivity calculations of a mineral
+```{include} Combined_Notebooks.md
+```
 
-```{include} 1_Olivine_Conduction_Mechanisms.md
+# Documentation for pide
+
+```{eval-rst}
+.. automodule:: pide
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 
 

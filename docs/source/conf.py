@@ -9,7 +9,7 @@
 import os,sys
 
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../examples/notebooks'))
+sys.path.insert(0, os.path.abspath('../../pide'))
 
 project = 'pide'
 copyright = '2024, Sinan Ozaydin'
@@ -19,6 +19,7 @@ author = 'Sinan Ozaydin'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    'sphinx.ext.autodoc',
     'myst_parser', 
     'nbsphinx',           # For rendering Jupyter Notebooks
 ]
