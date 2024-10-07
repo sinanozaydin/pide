@@ -38,6 +38,11 @@ mathjax_config = {
     },
 }
 
+# Ensure to enable mathjax in your HTML output
+html_js_files = [
+    'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML',  # Loading MathJax
+]
+
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
