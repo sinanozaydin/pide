@@ -3,3 +3,4 @@ sphinx-rtd-theme
 nbsphinx
 jupyter
 myst-parser
+linkify-it-py
