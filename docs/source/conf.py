@@ -21,6 +21,7 @@ author = 'Sinan Ozaydin'
 extensions = [
     'sphinx.ext.autodoc',
     'myst_parser', 
+    'sphinx.ext.mathjax',
     'nbsphinx',           # For rendering Jupyter Notebooks
 ]
 
