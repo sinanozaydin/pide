@@ -3,14 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pide_rtd's documentation!
+Welcome to documentation for pide!
 ====================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-../examples/notebooks/0_pide_general_tutorial.ipynb
+   ../examples/notebooks/0_pide_general_tutorial.ipynb
+   0_pide_general_tutorial.ipynb
 
 Indices and tables
 ==================
