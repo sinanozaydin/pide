@@ -47,15 +47,6 @@ Since *pide* is an open-source library, users are encouraged to be contribute an
 # Notebooks for learning pide
 
 ```{include} Combined_Notebooks.md
-```
-
-# Documentation for pide
-
-```{eval-rst}
-.. automodule:: pide
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 
 
