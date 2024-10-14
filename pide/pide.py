@@ -4859,7 +4859,3 @@ class pide(object):
 		"""
 		
 		self._form_object()
-		
-	
-		
-
