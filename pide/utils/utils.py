@@ -1,5 +1,6 @@
 import numpy as np
 import csv
+import ipdb
 
 def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
 	
@@ -22,6 +23,13 @@ def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
 	idx_ = (np.abs(x_sample[idx_target_lists]-x_target[index])).argmin()
 	idx_final = idx_target_lists[idx_]
 	
+	return idx_final
+
+def _associated_coordinates_2(index, x_target, y_target, x_sample, y_sample):
+
+	distance = np.sqrt((y_target[index] - y_sample)**2.0 + ((x_target[index] - x_sample)**2.0))
+	idx_final = np.argmin(distance)
+
 	return idx_final
 
 def check_type(input):
@@ -136,7 +144,7 @@ def associate_coordinates(sample_x, sample_y, target_x, target_y,  num_cpu = 1, 
 	
 		with multiprocessing.Pool(processes=num_cpu) as pool:
 			
-			process_item_partial = partial(_associate_coordinates_, x_target = target_x,
+			process_item_partial = partial(_associated_coordinates_2, x_target = target_x,
 			y_target = target_y, x_sample = sample_x, y_sample = sample_y)
 			
 			c = pool.map(process_item_partial, index_list)
@@ -149,7 +157,7 @@ def associate_coordinates(sample_x, sample_y, target_x, target_y,  num_cpu = 1, 
 		
 		for i in index_list:
 		
-			idx = _associate_coordinates_(i, x_target = target_x,
+			idx = _associated_coordinates_2(i, x_target = target_x,
 			y_target = target_y, x_sample = sample_x, y_sample = sample_y) 
 			idx_array.append(idx)
 		
