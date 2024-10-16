@@ -98,6 +98,7 @@ class pide(object):
 		self._read_params()
 		self._read_water_part()
 		self._read_mineral_water_solubility()
+		self._read_water_calib()
 		self.object_formed = False
 		#setting up default values for the pide object
 		self.set_temperature(np.ones(1) * 900.0) #in Kelvin
@@ -473,6 +474,23 @@ class pide(object):
 				self.water_rwd_wds_part_type.append(None)
 				self.water_rwd_wds_part_function.append(None)
 				self.water_rwd_wds_part_pchange.append(None)
+				
+	def _read_water_calib(self):
+	
+		#Reading calibration correction factors from the file.
+
+		correction_factor_dat = read_csv(os.path.join(self.core_path, 'water_calib.csv'), delim = ',')
+
+		self.pat2with = float(correction_factor_dat[0][1])
+		self.bell2with = float(correction_factor_dat[1][1])
+		self.pat2bell = float(correction_factor_dat[2][1])
+		self.with2bell = 1.0/self.bell2with
+		self.bell2path = 1.0/self.pat2bell
+		self.with2pat = 1.0/self.pat2with
+		self.pat2bell95 = float(correction_factor_dat[3][1])
+		self.bell952pat = 1.0/self.pat2bell95
+		self.john2mosen = float(correction_factor_dat[4][1])
+		self.mosen2john = 1.0/self.john2mosen
 			
 	def _read_mineral_water_solubility(self):
 	
