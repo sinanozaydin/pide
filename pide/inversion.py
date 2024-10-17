@@ -130,7 +130,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 						
 									if comp_type == 'mineral':
 										object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
-									elif comp_type == 'mineral':
+									elif comp_type == 'rock':
 										object.rock_frac_list[idx_t][index] = comp_list[idx_t]
 									
 								exec('object.' + param + '[' + str(index) + ']='  + str(param_search_array[j]))
@@ -169,7 +169,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 							break
 						else:
 							pass
-	
+							
 	return sol_param, residual
 	
 def conductivity_solver_single_param(object, cond_list, param_name,
