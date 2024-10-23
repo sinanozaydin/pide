@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import ipdb
 
 def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 
