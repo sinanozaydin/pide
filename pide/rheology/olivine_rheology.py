@@ -5,7 +5,7 @@ import numpy as np
 
 class olivine_rheology(object):
 
-	def __init__(self, T, P, water = 0, xFe = 0.1, difffusion_model = None, dislocation_model = None, GBS_model = None,):
+	def __init__(self, T, P, water = 0, xFe = 0.1, diffusion_model = None, dislocation_model = None, GBS_model = None):
 	
 		self.R_const = 8.3144621
 		self.Water_cutoff_rate = 5.0 #ppm
@@ -31,7 +31,7 @@ class olivine_rheology(object):
 			self.xFe = xFe
 			self.water = water
 		
-	def calculate_effective_viscosity(stress, strain_diff = 0.0, strain_disl = 0.0, strain_GBS = 0.0,other_strain_list = None):
+	def calculate_effective_viscosity(self, stress, strain_diff = 0.0, strain_disl = 0.0, strain_GBS = 0.0,other_strain_list = None):
 
 		#calculates the effective viscosity calculated from given stress and calculated strain rates
 		#stress in MPa
@@ -95,7 +95,7 @@ class olivine_rheology(object):
 		gr_sz = gr_sz * 1e3 #mm to micron
 		
 		if self.fugacity_calculated == False:
-			self.fh2o = self.convert_water_to_fh2o(water = self.water, fugacity_model = fugacity_model)
+			self.fh2o = self.convert_water_to_fh2o(fugacity_model = fugacity_model)
 		
 		strain_array = np.zeros(len(self.T))
 	
@@ -143,7 +143,7 @@ class olivine_rheology(object):
 		strain_array = np.zeros(len(self.T))
 
 		if self.fugacity_calculated == False:
-			self.fh2o = self.convert_water_to_fh2o(water = self.water, fugacity_model = fugacity_model)
+			self.fh2o = self.convert_water_to_fh2o(fugacity_model = fugacity_model)
 		
 		for i in range(0,len(self.T)):
 		
@@ -170,7 +170,7 @@ class olivine_rheology(object):
 				E = 530000.0
 				water_corr = 1.0
 
-			strain = A * (stress**n) * ((self.fh2o[i]**r)) * np.exp(melt * alpha) * np.exp(-(E + (self.P*1e9*dV)) / (self.R_const * self.T[i]))
+			strain = A * (stress**n) * ((self.fh2o[i]**r)) * np.exp(melt * alpha) * np.exp(-(E + (self.P[i]*1e9*dV)) / (self.R_const * self.T[i]))
 
 			strain_array[i] = strain * water_corr
 
@@ -181,7 +181,7 @@ class olivine_rheology(object):
 		gr_sz = gr_sz * 1e-3 #to m
 		
 		if self.fugacity_calculated == False:
-			self.fh2o = self.convert_water_to_fh2o(water = self.water, fugacity_model = fugacity_model)
+			self.fh2o = self.convert_water_to_fh2o(fugacity_model = fugacity_model)
 	
 		A = 10**-4.89
 		n = 3
@@ -203,3 +203,11 @@ class olivine_rheology(object):
 		strain = strain * water_corr
 		
 		return strain
+	
+	def Stress_from_grainSize_vanderWAL1977(self, grain_size):
+	
+		grain_size = grain_size * 1e-3 #converting to meters
+	
+		stress = (0.015 / grain_size) ** (1.0/1.33)
+		
+		return stress
