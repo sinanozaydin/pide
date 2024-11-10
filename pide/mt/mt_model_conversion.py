@@ -486,12 +486,42 @@ def get_station_elevation_ModEM_rho(input_rho, station_location_arrays = None, a
 			
 	return (station_location_arrays[0]*1e-3,station_location_arrays[1]*1e-3,np.array(depth_sol)*1e-3)
 		
+def reArrangeModEMdatfile(file_out, input_dat, err_function ,station_skip = None, station_selection_list = None):
 
+	from pide.utils.utils import read_csv
+
+	dat_data = read_csv(filename = input_dat, delim = ' ')
+
+	dash_found = False
 	
-	
-	
-	
-	
-	
-	
-	
+	#reading data
+	for rows in range(0,15):
+		if dat_data[rows][0] == '>':
+			start_idx = rows
+	start_idx = start_idx + 1
+
+	for row in range(start_idx,len(dat_data)):
+		if dat_data[row][0] == '#' :
+			limitlines = row-1
+			dash_found = True
+
+	if dash_found == False:
+		limitlines = len(dat_data)-1
+
+	station_names = []
+	station_change_row = []
+	for row in range(start_idx,limitlines):
+		if dat_data[row][1] != dat_data[row-1][1]:
+			station_names.append(dat_data[row][1])
+			change = row
+			station_change_row.append(change)
+			lenst = len(station_change_row)
+	station_change_row.append(limitlines)
+
+	import ipdb
+	ipdb.set_trace()
+
+	if station_skip is not None:
+		for i in range(0,len(station_change_row),station_skip):
+
+			pass
