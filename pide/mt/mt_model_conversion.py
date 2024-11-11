@@ -486,10 +486,16 @@ def get_station_elevation_ModEM_rho(input_rho, station_location_arrays = None, a
 			
 	return (station_location_arrays[0]*1e-3,station_location_arrays[1]*1e-3,np.array(depth_sol)*1e-3)
 		
-def reArrangeModEMdatfile(file_out, input_dat, err_function ,station_skip = None, station_selection_list = None):
+def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_skip = None, station_selection_list = None):
 
 	from pide.utils.utils import read_csv
-
+	
+	err_methods = ["off-diagonal","diagonal","independent","X-based"]
+	
+	if (err_function in err_methods) == False:
+	
+		raise KeyError(f'The error function has to be one of the following string values: {str(err_function)}')
+		
 	dat_data = read_csv(filename = input_dat, delim = ' ')
 
 	dash_found = False
@@ -510,18 +516,191 @@ def reArrangeModEMdatfile(file_out, input_dat, err_function ,station_skip = None
 
 	station_names = []
 	station_change_row = []
+	station_x = []
+	station_y = []
 	for row in range(start_idx,limitlines):
 		if dat_data[row][1] != dat_data[row-1][1]:
 			station_names.append(dat_data[row][1])
+			station_x.append(float(dat_data[row][4]))
+			station_y.append(float(dat_data[row][5]))
 			change = row
 			station_change_row.append(change)
 			lenst = len(station_change_row)
 	station_change_row.append(limitlines)
 
-	import ipdb
-	ipdb.set_trace()
-
+	lines = []
+	for i in range(0,station_change_row[0]):
+		lines.append(' '.join(dat_data[i]) + '\n')
+		
 	if station_skip is not None:
+	
 		for i in range(0,len(station_change_row),station_skip):
+			
+			try:
+				for j in range(station_change_row[i],station_change_row[i+1]):
+					
+					if dat_data[j][7] == "ZXX":
+						
+						if err_function == "off-diagonal":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j+1][8]) + float(dat_data[j+1][9])*1j) * (float(dat_data[j+2][8]) + float(dat_data[j+2][9])*1j)) * err_array[0] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "diagonal":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * (float(dat_data[j+3][8]) + float(dat_data[j+3][9])*1j)) * err_array[0] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "independent":
+							err = '% .5E' %  ((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * err_array[0] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "X-based":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * (float(dat_data[j+1][8]) + float(dat_data[j+1][9])*1j)) * err_array[0] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							
+					elif dat_data[j][7] == "ZXY":
+						
+						if err_function == "off-diagonal":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * (float(dat_data[j+1][8]) + float(dat_data[j+1][9])*1j)) * err_array[1] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "diagonal":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j) * (float(dat_data[j+2][8]) + float(dat_data[j+2][9])*1j)) * err_array[1] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "independent":
+							err = '% .5E' %  ((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * err_array[1] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "X-based":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j) * (float(dat_data[j][8]) + float(dat_data[j][9])*1j)) * err_array[1] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							
+					elif dat_data[j][7] == "ZYX":
+						
+						if err_function == "off-diagonal":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j) * (float(dat_data[j][8]) + float(dat_data[j][9])*1j)) * err_array[2] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "diagonal":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j-2][8]) + float(dat_data[j-2][9])*1j) * (float(dat_data[j+1][8]) + float(dat_data[j+1][9])*1j)) * err_array[2] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "independent":
+							err = '% .5E' %  ((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * err_array[2] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "X-based":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j-2][8]) + float(dat_data[j-2][9])*1j) * (float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j)) * err_array[2] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							
+					elif dat_data[j][7] == "ZYY":
+						
+						if err_function == "off-diagonal":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j-2][8]) + float(dat_data[j-2][9])*1j) * (float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j)) * err_array[3] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "diagonal":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j-3][8]) + float(dat_data[j-3][9])*1j) * (float(dat_data[j][8]) + float(dat_data[j][9])*1j)) * err_array[3] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "independent":
+							err = '% .5E' %  ((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * err_array[3] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+						elif err_function == "X-based":
+							err = '% .5E' %  (np.sqrt((float(dat_data[j-3][8]) + float(dat_data[j-3][9])*1j) * (float(dat_data[j-2][8]) + float(dat_data[j-2][9])*1j)) * err_array[3] * 1e-2)
+							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+			except IndexError:
+				pass
+		
+		lines.append('#')
+		
+		if station_skip is not None:
+			import matplotlib.pyplot as plt
+			
+			plt.plot(station_x,station_y, 'o',color = 'k', label = 'All Stations')
+			plt.plot(station_x[::station_skip],station_y[::station_skip], 's',color = 'r', markersize = 1.5,label = 'Selected Stations')
+			plt.show()
+		
+		filesave = open(file_out,'w')
+		filesave.writelines(lines)
+		filesave.close()
+		print(f'File is written at the location: {file_out}')
+		
+def createModEMHomogeneousModel(file_out, input_rho, input_resistivity):
 
-			pass
+	from pide.utils.utils import read_csv
+	
+	input_res = '% .5E' % np.log(input_resistivity)
+	
+	rho_ = read_csv(input_rho,delim = ' ',linefiltering=False)
+	
+	lines = []
+	for i in range(0,5):
+		lines.append(' '+' '.join(rho_[i]) + '\n')
+	
+	lines.append('\n')
+	
+	for i in range(6,len(rho_)-2):
+		
+		if rho_[i] == []:
+			lines.append('\n')
+		else:
+			line = (len(rho_[i]) * input_res) + '\n'
+			lines.append(line)
+	
+	lines.append(' '+' '.join(rho_[-2]) + '\n')
+	lines.append(' '+' '.join(rho_[-1]) + '\n')
+	
+	filesave = open(file_out,'w')
+	filesave.writelines(lines)
+	filesave.close()
+	print(f'File is written at the location: {file_out}')
+	
+def createModEMcovfile(file_out, input_rho, cov_val):
+
+	from pide.utils.utils import read_csv
+		
+	rho_ = read_csv(input_rho,delim = ' ')
+	
+	x_num = rho_[1][0]
+	y_num = rho_[1][1]
+	z_num = rho_[1][2]
+	
+
+	lines = ['+-----------------------------------------------------------------------------+\n',
+			'| This file defines model covariance for a recursive autoregression scheme.   |\n',
+			'| The model space may be divided into distinct areas using integer masks.     |\n',
+			'| Mask 0 is reserved for air; mask 9 is reserved for ocean. Smoothing between |\n',
+			'| air, ocean and the rest of the model is turned off automatically. You can   |\n',
+			'| also define exceptions to override smoothing between any two model areas.   |\n',
+			'| To turn off smoothing set it to zero. This header is 16 lines long.         |\n',
+			'| 1. Grid dimensions excluding air layers (Nx, Ny, NzEarth)                   |\n',
+			'| 2. Smoothing in the X direction (NzEarth real values)                       |\n',
+			'| 3. Smoothing in the Y direction (NzEarth real values)                       |\n',
+			'| 4. Vertical smoothing (1 real value)                                        |\n',
+			'| 5. Number of times the smoothing should be applied (1 integer >= 0)         |\n',
+			'| 6. Number of exceptions (1 integer >= 0)                                    |\n',
+			'| 7. Exceptions in the form e.g. 2 3 0. (to turn off smoothing between 3 & 4) |\n',
+			'| 8. Two integer layer indices and Nx x Ny block of masks, repeated as needed.|\n',
+			'+-----------------------------------------------------------------------------+\n',
+			'\n']
+			
+	lines.append(' '.join((x_num,y_num,z_num)) + '\n')
+	lines.append('\n')
+	
+	numlin = int(float(z_num) / 10.0)
+	extra = int(z_num) - (numlin*10)
+		
+	for k in range(0,2):
+		for i in range(0,numlin):
+			lines.append(((str(cov_val)+' ') * 10)+ '\n')
+		lines.append(((str(cov_val)+' ') * extra) + '\n')
+		lines.append('\n')
+		
+	lines.append(str(cov_val) + '\n')
+	lines.append('\n')
+	lines.append('1\n')
+	lines.append('\n')
+	lines.append('0\n')
+	lines.append('\n')
+	
+	for i in range(0,int(z_num)):
+		lines.append(((str(i+1)+' ')* 2)+'\n')
+		for j in range(0,int(x_num)):
+			lines.append(('1 ' * int(y_num)) + '\n')
+	lines.append('\n')
+	
+	filesave = open(file_out,'w')
+	filesave.writelines(lines)
+	filesave.close()
+	print(f'File is written at the location: {file_out}')
+	

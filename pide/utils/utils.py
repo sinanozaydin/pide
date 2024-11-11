@@ -89,7 +89,7 @@ def array_modifier(input, array, varname):
 			
 	return ret_array
 	
-def read_csv(filename,delim):
+def read_csv(filename,delim,linefiltering = True):
 	"""
 	Simple function for reading csv files and give out filtered output for given delimiter (delim)
 	
@@ -113,7 +113,9 @@ def read_csv(filename,delim):
 		#Filtering data for None elements read.
 		for j in range(0,len(data)):
 			data[j] = list(filter(None,data[j]))
-		data = list(filter(None,data))
+			
+		if linefiltering == True:
+			data = list(filter(None,data))
 	
 		return data
 		
