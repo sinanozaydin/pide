@@ -1,6 +1,5 @@
 import numpy as np
 import csv
-import ipdb
 
 def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
 	

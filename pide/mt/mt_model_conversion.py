@@ -140,7 +140,6 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, starting_index =
 	"""
 	
 	from scipy.interpolate import griddata
-	import ipdb
 	
 	# core_mesh_size = kwargs.pop('core_mesh_size', mesh[0][0][1][0] - mesh[0][0][0][0])
 	num_horiz_bounds = kwargs.pop('num_horiz_bounds', 8)
