@@ -741,19 +741,17 @@ class Model(object):
 						conductivity_decay_factor = self.material_list[i].deformation_dict['conductivity_decay_factor'],
 						conductivity_decay_factor_2 = self.material_list[i].deformation_dict['conductivity_decay_factor_2'],
 						strain_decay_factor = self.material_list[i].deformation_dict['strain_decay_factor'], model_type = self.model_type)
-						try:
-							if self.model_type == "underworld_3d":
-								deform_cond[material_idx_list[idx_]] = condd
-								rms[material_idx_list[idx_]] = rmss
-							elif self.model_type == "underworld_2d":
-								deform_cond[material_idx] = condd
-								rms[material_idx] = rmss
-							else:
-								deform_cond[material_idx_list[idx_]] = condd
-								rms[material_idx_list[idx_]] = rmss
-						except IndexError:
-							import ipdb
-							ipdb.set_trace()
+						
+						if self.model_type == "underworld_3d":
+							deform_cond[material_idx_list[idx_]] = condd
+							rms[material_idx_list[idx_]] = rmss
+						elif self.model_type == "underworld_2d":
+							deform_cond[material_idx] = condd
+							rms[material_idx] = rmss
+						else:
+							deform_cond[material_idx_list[idx_]] = condd
+							rms[material_idx_list[idx_]] = rmss
+						
 										
 				print(f'The deformation related conductivity for the material  {self.material_list[i].name}  is calculated.')
 			

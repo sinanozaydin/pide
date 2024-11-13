@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os, psutil
 import numpy as np
 import harmonica as hm
 

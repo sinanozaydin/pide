@@ -32,8 +32,6 @@ def convert_2DModel_2_MARE2DEM(file_out, conductivity_array, mesh, boundaries = 
 	else:
 		raise ValueError('Please enter a valid response for cond_unit: "conductivity" or "resistivity".')
 		
-	
-		
 	boundary_list = ['left','right','top','bottom']
 	#Defaulting into mesh boundaries if w
 	if boundaries == None:
@@ -119,7 +117,7 @@ def convert_2DModel_2_MARE2DEM(file_out, conductivity_array, mesh, boundaries = 
 	print('--------- ' + str(boundaries['bottom']) + '---------')
 	
 	
-def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, starting_index = None, first_layer_resistivity = None, core_bounds = None, station_array = None, **kwargs):
+def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, scramble_first_layer = True, starting_index = None, first_layer_resistivity = None, station_array = None, **kwargs):
 
 	#This is a function that converts the constructed 3D geodynamic model into data points
 	#that can be readable by the 3D MT modelling algorithm ModEM.
@@ -129,8 +127,10 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, starting_index =
 	file_out: filename or full directory to output the result. Includes the format (e.g., csv)
 	conductivity_array: calculated conductivity field in np.ndarray()
 	mesh: mesh of the associated conductivity field.
-	core_bounds: boundaries dictionary in  {'left','right','top','bottom'}	
-	
+	scramble_first_layer: boolean input to part the first layer automatically into multiple layer accomodate for MT modelling
+	starting_index: overriding index value to set the layer denoting to 0. Setting this will scrape all the structure below this index.
+	first_layer_resistivity: Resistivity value in ohm m to overwrite the resistivity of the first layer, mimicking the sedimentary layer with water table.
+		
 	Keyword Arguments:
 	core_mesh_size:
 	num_horiz_bounds:
@@ -140,7 +140,6 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, starting_index =
 	"""
 	
 	from scipy.interpolate import griddata
-	import ipdb
 	
 	# core_mesh_size = kwargs.pop('core_mesh_size', mesh[0][0][1][0] - mesh[0][0][0][0])
 	num_horiz_bounds = kwargs.pop('num_horiz_bounds', 8)
@@ -212,7 +211,7 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, starting_index =
 	x_out = np.concatenate([xy_out[::-1],x_core,xy_out])
 	y_out = np.concatenate([yx_out[::-1],y_core,yx_out])
 	z_out = np.concatenate([z_core,z_out])
-			
+	
 	rho_new = []
 	
 	for i in range(0,len(z_mesh)):
@@ -231,8 +230,6 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, starting_index =
 		rho_new.append(np.array(rho_local))
 	
 	rho_new = np.array(rho_new)
-	
-	
 	
 	for i in range(0,num_vert_bounds):
 		rho_new = np.insert(rho_new,0,np.ones(len(rho_new[-1])) * np.nan, axis = 0)
@@ -302,6 +299,39 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, starting_index =
 
 	if first_layer_resistivity is not None:
 		rho_write[0][:(len(xi_n) * len(yi_n))] = 1.0 / first_layer_resistivity
+		
+	if scramble_first_layer == True:
+		#calculations to scramble the first layer into 
+		
+		init_layer = 0.1
+		incr_factor = 1.2
+		total_length = z_out[0]
+		
+		if total_length > init_layer*2:
+		
+			iter_max = int(total_length / init_layer)
+			thickness = [] 
+			layer = []
+			for i in range(0,iter_max):
+				if i == 0:
+					layer.append(init_layer)
+					thickness.append(init_layer)
+				else:
+					init_layer = round(init_layer*incr_factor,3)
+					layer.append(init_layer)
+					thickness.append(sum(layer))
+					
+					if thickness[-1] >= total_length:
+						break
+						
+			del thickness[-1]
+			del layer[-1]
+			layer.append(round(total_length - thickness[-1],3))
+			layer = layer[::-1]
+			
+			for i in range(0,len(layer)-1):
+				rho_write = np.insert(rho_write,0, rho_write[0], axis = 0)
+				z_out = np.insert(z_out,0,layer[i])
 	
 	rho_write = np.log(1.0 / rho_write) #ModEM rho format with natural logarithm of resistivityrho_
 	
@@ -325,8 +355,8 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, starting_index =
 		lines.append('\n')
 		
 	center_z = 0.0
-	center_east = -0.5 * (np.sum(np.abs(x_out)))
-	center_north = -0.5 * (np.sum(np.abs(y_out)))
+	center_east = -0.5 * (np.sum(np.abs(x_out*1e3)))
+	center_north = -0.5 * (np.sum(np.abs(y_out*1e3)))
 	grid_center = ['    ',str(center_north),'   ',str(center_east),'   ',str(center_z),'\n']
 	grid_center = ''.join(grid_center)
 	lines.append(grid_center)
@@ -382,12 +412,16 @@ def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, f
 			station_location_arrays = np.array(station_location_arrays) * 1e3
 		else:
 			raise IndexError('The length of the station_locations_array are not the same.')
-			
+	
+	"""
 	utm_zone = get_utm_zone_number(longitude = 0.0)
 	mc_x, mc_y = lat_lon_to_utm(0,0,zone_number=utm_zone)
 	x_loc = station_location_arrays[0] + mc_x
 	y_loc = station_location_arrays[1] + mc_y
 	lat_degrees_list, lon_degrees_list = utm_to_lat_lon(x_loc,y_loc,zone_number=utm_zone)
+	"""
+	lat_degrees_list = np.zeros(len(station_location_arrays[0]))
+	lon_degrees_list = np.zeros(len(station_location_arrays[0]))
 	
 	#creating frequency array
 	freq_array = np.logspace(np.log10(freq_start), np.log10(freq_end),num_freq)
