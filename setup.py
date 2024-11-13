@@ -32,7 +32,7 @@ setup(
         'h5py',
         'harmonica',
         'pyproj',
-        'netCDF4'
+        'netCDF4',
         'psutil',
     ],
     keywords = ['petrophysics', 'geodynamic modelling', 'magnetotelluric', 'electrical conductivity', 'seismic velocity']
