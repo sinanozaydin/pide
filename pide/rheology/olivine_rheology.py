@@ -204,7 +204,7 @@ class olivine_rheology(object):
 		
 		return strain
 	
-	def Stress_from_grainSize_vanderWAL1977(self, grain_size):
+	def Stress_from_grainSize_vanderWAL1993(self, grain_size):
 	
 		grain_size = grain_size * 1e-3 #converting to meters
 	
