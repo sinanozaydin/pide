@@ -38,6 +38,12 @@ pide_object.get_method_manual(method_name)
 
 Since *pide* is an open-source library, users are encouraged to be contribute and become developers of the project. For further information about how to contribute, please refer to the [Contributing Guide](https://github.com/sinanozaydin/pide/blob/post_joss/CONTRIBUTING.md).
 
+# Running Tests
+
+To run the tests for the package, simply go to the test files and run them with python command:
+
+`python3 test_electrical_cond.py`
+
 # Contacts
 
 | **Sinan Özaydın** | sinan.ozaydin@protonmail.com | sinan.ozaydin@sydney.edu.au

@@ -44,6 +44,12 @@ Since *pide* is an open-source library, users are encouraged to be contribute an
 
 | **Sinan Özaydın** | sinan.ozaydin@protonmail.com | sinan.ozaydin@sydney.edu.au
 
+# Running Tests
+
+To run the tests for the package, simply go to the test files and run them with python command:
+
+`python3 test_electrical_cond.py`
+
 # Notebooks for learning pide
 
 ```{include} Combined_Notebooks.md
