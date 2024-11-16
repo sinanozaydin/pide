@@ -1,6 +1,5 @@
 # Welcome to documentation for pide!
 
-# pide
 ![Pide Logo](../figures/pide_logo.png)
 
 # About
