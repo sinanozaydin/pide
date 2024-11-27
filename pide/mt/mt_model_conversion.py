@@ -368,15 +368,22 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, scramble_first_l
 	print('File for the converted model is written as: ' + file_out)
 	#Finding the uppermost layer with no nan values
 	
-def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, freq_start=100, freq_end=1e-4, num_freq=120):
+def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, include_tipper = False, freq_start=100, freq_end=1e-4, num_freq=120):
 
 	from pathlib import Path
 	from pide.mt.mt_model_read import read_ModEM_rho
 	from pide.utils.gis_tools import utm_to_lat_lon, lat_lon_to_utm, get_utm_zone_number
 	import decimal
 
-	file_name = Path(input_rho).name[:-4]
+	
+	
+	if isinstance(include_tipper,bool):
+		pass
+	else:
+		raise KeyError('The value for include_tipper has to be a boolean (True or False)')
 		
+	file_name = Path(input_rho).name[:-4]
+	
 	rho, mesh_centers_x_array, mesh_centers_y_array, z_mesh_center = read_ModEM_rho(rho_file_path=input_rho)
 	
 	#finding the unique grid locations
@@ -413,13 +420,6 @@ def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, f
 		else:
 			raise IndexError('The length of the station_locations_array are not the same.')
 	
-	"""
-	utm_zone = get_utm_zone_number(longitude = 0.0)
-	mc_x, mc_y = lat_lon_to_utm(0,0,zone_number=utm_zone)
-	x_loc = station_location_arrays[0] + mc_x
-	y_loc = station_location_arrays[1] + mc_y
-	lat_degrees_list, lon_degrees_list = utm_to_lat_lon(x_loc,y_loc,zone_number=utm_zone)
-	"""
 	lat_degrees_list = np.zeros(len(station_location_arrays[0]))
 	lon_degrees_list = np.zeros(len(station_location_arrays[0]))
 	
@@ -466,6 +466,32 @@ def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, f
 					'  ' + str('% 7.4f' % lon_degrees_list[i]) + '  ' + str('% 12.3f' % (station_location_arrays[0][i])) + '  ' +\
 					str('% 12.3f' %(station_location_arrays[1][i])) + '  ' + str('%8.3f' % float(station_location_arrays[2][i])) + '  ' +\
 					 dum + '  ' + dum2 + '  ' + dum3 + '  ' + dum4 + '\n')
+					 
+	if include_tipper == True:
+		
+		dat_lines.append('# ModEM impedance responses for Created with MT_MESH\n')
+		dat_lines.append('# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error\n')
+		dat_lines.append('> Full_Vertical_Components\n')
+		dat_lines.append('> exp(+i\omega t)\n')
+		dat_lines.append('> [] \n')
+		dat_lines.append('> 0.00\n')
+		dat_lines.append('> ' + str(0.0) + ' ' + str(0.0) + '\n' )
+		dat_lines.append('> ' + str(len(freq_array)) + ' ' + str(len(station_location_arrays[0])) + '\n')
+		for i in range(0,len(station_location_arrays[0])):
+			for j in range(0,len(freq_array)):
+				for k in range(0,2):
+					if k == 0:
+						dum = 'TX'
+						dum2 = '% .5E' % decimal.Decimal(str(0.0))
+						dum3 = '% .5E' % decimal.Decimal(str(0.0))
+					if k == 1:
+						dum = 'TY'
+						dum2 = '% .5E' % decimal.Decimal(str(0.0))
+						dum3 = '% .5E' % decimal.Decimal(str(0.0))
+					dat_lines.append(str('%.5E' % decimal.Decimal(1.0/freq_array[j])) + '  ' + ('%-15s' % ('C_' + str(i))) +\
+					 '  ' + str('% 7.4f' % lat_degrees_list[i]) +	'  ' + str('% 7.4f' % lon_degrees_list[i]) + '  ' + str('% 12.3f' % (station_location_arrays[0][i])) + '  ' +\
+					  str('% 12.3f' %(station_location_arrays[1][i])) + '  ' + str('%8.3f' %  0.0) + '  ' + dum + '  ' + dum2 + '  ' + dum3 + '  ' +\
+						'%.5E' % decimal.Decimal(str(0.0)) + '\n')
 
 	dat_lines.append('#\n')
 
