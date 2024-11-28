@@ -244,7 +244,7 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 				pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
 		elif material.melt_or_fluid == 'fluid':
 			pide_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection)
-			pide_object.set_fluid_properties(salinity = material.fluid_salinity)
+			pide_object.set_fluid_properties(salinity = material.fluid_properties['salinity'])
 			if material.melt_fluid_phase_mixing_idx == 0:
 				pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
 	
