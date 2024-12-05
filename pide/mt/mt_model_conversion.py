@@ -329,7 +329,7 @@ def convert_3DModel_2_ModEM(file_out, conductivity_array, mesh, scramble_first_l
 			layer.append(round(total_length - thickness[-1],3))
 			layer = layer[::-1]
 			
-			for i in range(0,len(layer)-1):
+			for i in range(0,len(layer)):
 				rho_write = np.insert(rho_write,0, rho_write[0], axis = 0)
 				z_out = np.insert(z_out,0,layer[i])
 	
