@@ -42,7 +42,8 @@ def read_uw_material_names_from_py_input(py_file):
 
 	for i in range(0,len(py_file_text)):
 		if ('.add_material' in py_file_text[i][0]) == True:
-			idx_material_py.append(i)
+			if py_file_text[i][0][0] != '#':
+				idx_material_py.append(i)
 
 	material_names = []
 
