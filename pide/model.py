@@ -45,9 +45,11 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 	pide_object.set_solid_phs_mix_method(material.solid_phase_mixing_idx)
 	pide_object.set_solid_melt_fluid_mix_method(material.melt_fluid_phase_mixing_idx)
 	
+	"""
 	if melt_array[index_list].any() > 0.0:
 		material.melt_fluid_incorporation_method == 'field' #if melt exists it overwrites the field value.
-		
+	"""
+	
 	if material.melt_fluid_incorporation_method == 'value':
 
 		if material.melt_or_fluid == 'melt':
