@@ -45,10 +45,10 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 	pide_object.set_solid_phs_mix_method(material.solid_phase_mixing_idx)
 	pide_object.set_solid_melt_fluid_mix_method(material.melt_fluid_phase_mixing_idx)
 	
-	"""
+	
 	if melt_array[index_list].any() > 0.0:
-		material.melt_fluid_incorporation_method == 'field' #if melt exists it overwrites the field value.
-	"""
+		melt_fluid_bool = True
+	
 	
 	if material.melt_fluid_incorporation_method == 'value':
 
@@ -407,6 +407,9 @@ class Model(object):
 		if self.T is not None:
 			if len(self.T) != len(self.P):
 				raise ValueError(text_color.RED + f'The length of T and P arrays do not match!' + text_color.END)
+				
+		#getting rid of negative pressures at the surface, 
+		self.P[self.P<0.0] = 1e-4 #1 atm in GPa
 		
 	def calculate_model(self,type = 'conductivity', num_cpu = 1):
 
