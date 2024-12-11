@@ -83,14 +83,20 @@ def Sinmyo2017(T, P, salinity, method):
 	if isinstance(T, (int,float)):
 	
 		if T > 373.15:
-			raise ValueError('The value cannot be lower than 100C(373.15 K) to use Sinmyo2016 model.'+\
+			raise ValueError('The value cannot be lower than 100C(373.15 K) to use Sinmyo2017 fluid conductivity model.'+\
 				'It might be more appropriate to use another fluid conductivity model for current temperatures.'+\
 				'Low temperature model suggestion would be Sakuma_2015_NaCl_H2O')
 		else:
 			if len(T[T>373.15]) > 0:
-				raise ValueError('The values in temperature array cannot be lower than 100C(373.15 K) to use Sinmyo2016 model.' +\
+				raise ValueError('The values in temperature array cannot be lower than 100C(373.15 K) to use Sinmyo2017 fluid conductivity model.' +\
 				'It might be more appropriate to use another fluid conductivity model for current temperatures.'+\
 				'Low temperature model suggestion would be Sakuma_2015_NaCl_H2O')	
+				
+	else:
+		if len(T[0][T[0] < 373.15]) != 0:
+			raise ValueError('The value cannot be lower than 100C(373.15 K) to use Sinmyo2017 fluid conductivity model.'+\
+				'It might be more appropriate to use another fluid conductivity model for current temperatures.'+\
+				'Low temperature model suggestion would be Sakuma_2015_NaCl_H2O')
 	
 	#first calculating pure water density at T and P using iapws08
 	
@@ -153,16 +159,21 @@ def Sinmyo2017(T, P, salinity, method):
 
 def Guo2019(T, P, salinity, method):
 
-
 	if isinstance(T, (int,float)):
 	
 		if T > 373.15:
-			raise ValueError('The value cannot be lower than 100C(373.15 K) to use Sinmyo2016 model.'+\
+			raise ValueError('The value cannot be lower than 100C(373.15 K) to use Guo2019 fluid conductivity model.'+\
 				'It might be more appropriate to use another fluid conductivity model for current temperatures.')
 		else:
 			if len(T[T>373.15]) > 0:
-				raise ValueError('The values in temperature array cannot be lower than 100C(373.15 K) to use Sinmyo2016 model.' +\
+				raise ValueError('The values in temperature array cannot be lower than 100C(373.15 K) to use Guo2019 fluid conductivity model.' +\
 				'It might be more appropriate to use another fluid conductivity model for current temperatures.')	
+				
+	else:
+		if len(T[0][T[0] < 373.15]) != 0:
+			raise ValueError('The value cannot be lower than 100C(373.15 K) to use Guo2019 fluid conductivity model.'+\
+				'It might be more appropriate to use another fluid conductivity model for current temperatures.'+\
+				'Low temperature model suggestion would be Sakuma_2015_NaCl_H2O')
 				
 	#first calculating pure water density at T and P using iapws08
 

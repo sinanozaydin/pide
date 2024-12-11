@@ -408,7 +408,7 @@ class Model(object):
 			if len(self.T) != len(self.P):
 				raise ValueError(text_color.RED + f'The length of T and P arrays do not match!' + text_color.END)
 				
-		#getting rid of negative pressures at the surface, 
+		#getting rid of negative pressures at the surface.
 		self.P[self.P<0.0] = 1e-4 #1 atm in GPa
 		
 	def calculate_model(self,type = 'conductivity', num_cpu = 1):
@@ -660,7 +660,7 @@ class Model(object):
 			raise ValueError(text_color.RED + f'The type is entered wrongly. The available type string inputs are: "conductivity"' + text_color.END)
 	
 	def calculate_deformation_related_conductivity(self, cond_min, cond_max, method = 'plastic_strain',
-		low_deformation_threshold = 1e-2, high_deformation_threshold = 100, num_cpu = 1):
+		low_deformation_threshold = 1e-2, high_deformation_threshold = 1, num_cpu = 1):
 		
 		"""
 		A function to calculate deformation related conductivity via given method parameter, minimum and maximum conductivity arrays.
