@@ -1405,13 +1405,13 @@ class pide(object):
 		pide.melt_cond_selection = kwargs.pop('melt', 0)
 		pide.fluid_cond_selection = kwargs.pop('fluid', 0)
 		
-		if (pide.melt_cond_selection < 0) or (pide.melt_cond_selection > len(self.name[1])):
+		if (pide.melt_cond_selection < 0) or (pide.melt_cond_selection > len(self.name[1])-1):
 		
-			raise ValueError(f'Bad entry for melt conductivity selection. Indexes allowed are from 0 to  {str(len(self.name[1]))}')
+			raise ValueError(f'Bad entry for melt conductivity selection. Indexes allowed are from 0 to  {str(len(self.name[1])-1)}')
 			
-		if (pide.fluid_cond_selection < 0) or (pide.fluid_cond_selection > len(self.name[0])):
+		if (pide.fluid_cond_selection < 0) or (pide.fluid_cond_selection > len(self.name[0])-1):
 		
-			raise ValueError(f'Bad entry for fluid conductivity selection. Indexes allowed are from 0 to  {str(len(self.name[0]))}')
+			raise ValueError(f'Bad entry for fluid conductivity selection. Indexes allowed are from 0 to  {str(len(self.name[0])-1)}')
 		
 	def set_mineral_conductivity_choice(self,**kwargs):
 
@@ -1510,9 +1510,9 @@ class pide(object):
 					if ('/' in pide.minerals_cond_selections[i]) == True:
 						try:
 							idx_local = int(pide.minerals_cond_selections[i][:pide.minerals_cond_selections[i].index('/')])
-							if (idx_local < 0) or (idx_local > len(self.name[mineral_idx[i]])):
+							if (idx_local < 0) or (idx_local > len(self.name[mineral_idx[i]])-1):
 				
-								raise ValueError('Bad entry for mineral conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[mineral_idx[i]])) + ' for the mineral ' + mineral_names[i])
+								raise ValueError('Bad entry for mineral conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[mineral_idx[i]])-1) + ' for the mineral ' + mineral_names[i])
 						except ValueError:
 							raise ValueError('The value cannot be converted to a floating number. Perhaps you have not entered the conduction mechanisms line correctly. An example would be 4/proton.')
 	
@@ -1556,9 +1556,9 @@ class pide(object):
 		
 		for i in range(0,len(pide.rock_cond_selections)):
 		
-			if (pide.rock_cond_selections[i] < 0) or (pide.rock_cond_selections[i] > len(self.name[rock_idx[i]])):
+			if (pide.rock_cond_selections[i] < 0) or (pide.rock_cond_selections[i] > len(self.name[rock_idx[i]])-1):
 			
-				raise ValueError('Bad entry for rock conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[rock_idx[i]])) + ' for the rock ' + rock_names[i])
+				raise ValueError('Bad entry for rock conductivity selection. Indexes allowed are from 0 to ' + str(len(self.name[rock_idx[i]])-1) + ' for the rock ' + rock_names[i])
 				   
 	def set_mineral_water(self, reval = False, **kwargs):
 
