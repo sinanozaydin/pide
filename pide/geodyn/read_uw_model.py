@@ -190,7 +190,6 @@ def setup_material(material_data, material_names):
 	"""
 
 	material_data_array = list(material_data['data'])
-
 	material_array = []
 
 	for i in range(0,len(material_data_array)):

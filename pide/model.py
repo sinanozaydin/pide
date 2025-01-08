@@ -34,7 +34,7 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 	cond = run_model(index_list= sliced_material_idx, material = material_list_holder[l][i], pide_object = mat_pide_obj,
 							t_array = self.T, p_array=self.P, melt_array=self.melt_frac)
 	"""
-
+	
 	#global function to run conductivity model. designed to be global def to run parallel with multiprocessing
 	
 	#setting temperatures at the pide_object
@@ -239,16 +239,17 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 			other_rock = material.el_cond_selections['other_rock'])
 	
 	if material.melt_fluid_cond_selection != None:
+	
 		if material.melt_or_fluid == 'melt':
-			
+		
 			pide_object.set_melt_fluid_conductivity_choice(melt = material.melt_fluid_cond_selection)
-			if material.melt_fluid_phase_mixing_idx == 0:
-				pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
+			pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
+			
 		elif material.melt_or_fluid == 'fluid':
+		
 			pide_object.set_melt_fluid_conductivity_choice(fluid = material.melt_fluid_cond_selection)
 			pide_object.set_fluid_properties(salinity = material.fluid_properties['salinity'])
-			if material.melt_fluid_phase_mixing_idx == 0:
-				pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
+			pide_object.set_melt_fluid_interconnectivity(material.melt_fluid_m)
 	
 	if type == 'conductivity':
 		c = pide_object.calculate_conductivity(method = 'array')

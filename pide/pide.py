@@ -2168,6 +2168,7 @@ class pide(object):
 		"""
 		
 		if value == None:
+		
 			value = 8.0
 	
 		if reval == False:
@@ -2184,9 +2185,11 @@ class pide(object):
 			elif pide.fluid_or_melt_method == 1:
 				pide.melt_fluid_m = array_modifier(input = pide.melt_fluid_m, array = self.T, varname = 'melt_fluid_m') 
 				
-		if pide.melt_fluid_m.any() < 1.0:
+		if pide.phs_melt_mix_method == 0:
 		
-			raise ValueError('The fluid_melt interconnectivity value is below 0, which is not accepted.')
+			if pide.melt_fluid_m.any() < 1.0:
+			
+				raise ValueError('The fluid_melt interconnectivity value is below 0, which is not accepted.')
 	
 	def set_solid_phs_mix_method(self, method):
 	
