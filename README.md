@@ -1,11 +1,18 @@
 <img src="./docs/figures/pide_logo.png">
 
-[![PyPI version](https://img.shields.io/pypi/v/pide.svg)](https://pypi.org/project/pide/) [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![PyPI version](https://img.shields.io/pypi/v/pide.svg)](https://pypi.org/project/pide/) [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![DOI](https://joss.theoj.org/papers/10.21105/joss.07021/status.svg)](https://doi.org/10.21105/joss.07021)
  
 
 # About
 
 `pide` is a Python3 library for calculating geophysical parameters (e.g., electrical conductivity, seismic velocity), employing the results from experimental petrology, mineral/rock physics, and thermomechanical modelling studies. `pide` can calculate the theoretical electrical conductivity of any earth material that exists in the literature. `pide` can also calculate seismic velocity utilising the external 'sister' library `santex`. Using these theoretical calculations, users can utilise inversion modules to decode geophysical anomalies compositionally or convert thermomechanical models into geophysical observables. With a given spatial mapping of earth materials, which can preferentially be loaded from a thermomechanical model, `pide`  can be used to build synthetic electrical conductivity and seismic velocity models and generate gravity and magnetic anomalies. Moreover, it is built as a modular tool, so users can easily build their functions.
+
+# How to Cite
+
+If you are using this library in a scientific publication, please consider citing the following paper:
+
+- Özaydın, S., Li, L., Singh, U., Rey, P.F, Manassero, M.C., 2025. pide: Petrophysical Interpretation tools for geoDynamic Exploration. Journal of Open Source Software, 10(105), 7021. https://doi.org/10.21105/joss.07021 
+
 
 # Installation
 
