@@ -11,7 +11,22 @@
 
 If you are using this library in a scientific publication, please consider citing the following paper:
 
-- Özaydın, S., Li, L., Singh, U., Rey, P.F, Manassero, M.C., 2025. pide: Petrophysical Interpretation tools for geoDynamic Exploration. Journal of Open Source Software, 10(105), 7021. https://doi.org/10.21105/joss.07021 
+- Özaydın, S., Li, L., Singh, U., Rey, P.F, Manassero, M.C., 2025. pide: Petrophysical Interpretation tools for geoDynamic Exploration. Journal of Open Source Software, 10(105), 7021. https://doi.org/10.21105/joss.07021
+
+Bibtex:
+
+```bibtex
+@article{Ozaydin2025,
+  title={pide: Petrophysical Interpretation tools for geoDynamic Exploration.},
+  author={Ozaydin, Sinan and Li, Lu and Singh, Utpal and Rey, Patrice F and Manassero, Maria Constanza},
+  journal={Journal of Open Source Software},
+  volume={10},
+  number={105},
+  pages={7021},
+  year={2025}
+}
+
+```
 
 
 # Installation
