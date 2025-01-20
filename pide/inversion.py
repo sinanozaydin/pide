@@ -325,3 +325,202 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			
 	return c_list, residual_list
 	
+#misfit function
+def _misfit(cond, cond_external):
+	#misfit at log scale
+	misf = abs(np.log10(cond) - np.log10(cond_external))
+	return misf
+
+# The likelihood function
+def _likelihood(cond, cond_external, sigma):
+	misf = _misfit(cond, cond_external)
+	like = np.exp(-misf**2 / (2 * sigma**2))
+	return like, misf
+
+def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1, param_name_2, upper_limits,
+	lower_limits, sigma_cond,proposal_stds,n_iter,water_solv, comp_solv, comp_type = ['mineral','mineral'], comp_index = [0,0],
+	transition_zone = False, num_cpu = 1):
+
+	#Using Metropolis-Hastings algorithm
+	param_1_init, param_2_init = initial_params
+	(param_1_max,param_2_max) = upper_limits
+	(param_1_min,param_2_min) = lower_limits
+	current_params = np.array([param_1_init, param_2_init])
+	
+	#Initial setting of the parameters.
+	exec('object.' + param_name_1 + '[' + str(index) + ']='  + str(param_1_init[index]))
+	exec('object.' + param_name_2 + '[' + str(index) + ']='  + str(param_2_init[index]))
+	
+	#Checking if initial water content is entered as other than 0.
+	if object.bulk_water[index] > 0.0:
+		water_solv = True
+	
+	if water_solv == True:
+	
+		if transition_zone == False:
+			object.mantle_water_distribute(method = 'index', sol_idx = index)
+		else:
+			object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+	
+	#Calculating the initial conductivity
+	cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
+	current_likelihood, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond)
+	
+	#empty arrays
+	samples = []
+	misfits = []
+	accepted = 0
+	
+	#loop for monte-carlo
+	for _ in range(n_iter):
+		# Propose new parameters
+		proposal = current_params + np.random.normal(0, proposal_stds, size=2)
+		
+		# Ensure the proposal respects bounds
+		proposal[0] = np.clip(proposal[0], param_1_min, param_1_max)
+		proposal[1] = np.clip(proposal[1], param_2_min, param_2_max)
+		
+		object.set_bulk_water(proposal[0])
+		object.set_melt_fluid_frac(proposal[1])
+		if water_solv == True:
+			if transition_zone == False:
+				object.mantle_water_distribute(method = 'index', sol_idx = index)
+			else:
+				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+				
+		proposed_cond = p_obj.calculate_conductivity()[0]
+		proposed_likelihood, misf = likelihood(proposed_cond, cond_external, sigma)
+		
+		# Calculate acceptance probability
+		acceptance_ratio = proposed_likelihood / current_likelihood
+		if np.random.rand() < acceptance_ratio:
+			current_params = proposal
+			current_likelihood = proposed_likelihood
+			misfits.append(misf)
+			accepted += 1
+
+		samples.append(current_params)
+		
+
+	acceptance_rate = accepted / n_iterations
+	return np.array(samples), acceptance_rate, misfits
+
+	
+	
+	
+def conductivity_metropolis_hastings_two_param(object, cond_list, param_name_1, param_name_2, upper_limits,
+	lower_limits, sigma_cond,proposal_stds,n_iter,transition_zone = False,num_cpu = 1):
+
+	"""
+	MCMC algorithm
+	"""
+	
+	min_list = ['quartz_frac', 'plag_frac', 'amp_frac', 'kfelds_frac', 'opx_frac', 'cpx_frac',
+		'mica_frac', 'garnet_frac', 'sulphide_frac', 'graphite_frac', 'ol_frac', 'sp_frac', 'rwd_wds_frac',
+		'perov_frac', 'mixture_frac', 'other_frac']
+
+	rock_list = ['granite_frac','granulite_frac','sandstone_frac','gneiss_frac','amphibolite_frac',
+			'basalt_frac','mud_frac','gabbro_frac','other_rock_frac']
+	
+	index_list = np.array(list(range(0,len(object.T)))) #creating the index array tied to the T array.
+	param_names = [param_name_1, param_name_2]
+	
+	if any('water' in xx for xx in param_names) == True:
+	
+		if 'bulk_water' in param_names:
+			
+			water_solv = True
+			comp_solv = False
+			comp_type = None
+			comp_index = None
+			#setting the object.bulk_water as same length as T if that has not done already...
+			if len(getattr(object,param_names[param_names.index('bulk_water')])) != len(object.T):
+				object.set_bulk_water(0.0)
+		else:
+			raise ValueError('You cannot change just a single phase water content. If you are after fitting for a single phase, try bulk_water as the parameter.')
+			
+	if ('melt' in xx for xx in param_names) == True:
+	
+		water_solv = True
+		comp_solv = False
+		comp_type = None
+		comp_index = None
+		for ii in range(2):
+			if len(getattr(object,param_names[ii])) != len(object.T):
+				object.set_parameter(param_names[ii], 0.0)
+	
+	else:
+		water_solv = False
+		#setting the object as same length as T if that has not done already...
+		
+		comp_index = []
+		comp_type_list = []
+		
+		if ('frac' in xx for xx in param_names) == True:
+			
+			comp_solv = True
+			
+			for ii in range(len(param_names)):
+				if param_names[ii] in min_list:
+					comp_type = 'mineral'
+					comp_type_list.append(comp_type)
+					comp_index.append(min_list.index(param_names[ii]))
+					
+				elif param_names[ii] in rock_list:
+					comp_type = 'rock'
+					comp_type_list.append(comp_type)
+					comp_index.append(rock_list.index(param_names[ii]))
+				
+				if len(getattr(object,param_names[ii])) != len(object.T):
+					object.set_parameter(param_names[ii], 0.0)
+				
+				else:
+					raise NameError('The mineral/rock name you entered is not included as a parameter in pide.')
+		
+		if (('mineral' in comp_type_list) == True) and (('rock' in comp_type_list) == True):
+			raise ValueError('The user cannot enter both rock and mineral as the inversion parameter. Choose only one.')
+			
+	if num_cpu > 1:
+		
+		import multiprocessing
+		import os
+		from functools import partial
+		
+		max_num_cores = os.cpu_count()
+		
+		if num_cpu > max_num_cores:
+			raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
+			
+	if num_cpu > 1:
+		
+		manager = multiprocessing.Manager()
+		shared_results = manager.list()
+	
+		with multiprocessing.Pool(processes=num_cpu) as pool:
+							
+			process_item_partial = partial(_solv_MCMC_two_param, cond_list = cond_list, param_name_1 = param_name_1, param_name_2= param_name_2,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, num_cpu = num_cpu)
+			
+			c = pool.map(process_item_partial, index_list)
+			
+		param1_distr = [x[0] for x in c]
+		param2_distr = [x[1] for x in c]
+		
+	else:
+	
+		param1_distr = np.zeros(len(index_list))
+		param2_distr = np.zeros(len(index_list))
+		
+		for idx in range(0,len(index_list)):
+			
+			if idx > 0:
+				init_guess_ = c_list[idx-1]
+			else:
+				init_guess_ = None
+			c = _solv_MCMC_two_param(index = index_list[idx], cond_list = cond_list, param_name_1 = param_name_1, param_name_2= param_name_2,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter,
+			water_solv = water_solv, comp_solv = comp_solv, num_cpu = 1)
+			
+			param1_distr[idx] = c[0]
+			param2_distr[idx] = c[1]
+	
