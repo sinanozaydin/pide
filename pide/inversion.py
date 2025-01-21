@@ -373,23 +373,24 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	
 	#loop for monte-carlo
 	for _ in range(n_iter):
-		# Propose new parameters
+		#proposing the new parameters
 		proposal = current_params + np.random.normal(0, proposal_stds, size=2)
 		
-		# Ensure the proposal respects bounds
-		proposal[0] = np.clip(proposal[0], param_1_min, param_1_max)
-		proposal[1] = np.clip(proposal[1], param_2_min, param_2_max)
+		#clipping the proposal distribution, respecting the bounds set up
+		proposal[0] = np.clip(proposal[0], param_1_min[index], param_1_max[index])
+		proposal[1] = np.clip(proposal[1], param_2_min[index], param_2_max[index])
 		
-		object.set_bulk_water(proposal[0])
-		object.set_melt_fluid_frac(proposal[1])
+		#setting up the random parameter
+		exec(f'object.{param_name_1}[{str(index)}]={str(proposal[0])}')
+		exec(f'object.{param_name_2}[{str(index)}]={str(proposal[1])}')
 		if water_solv == True:
 			if transition_zone == False:
 				object.mantle_water_distribute(method = 'index', sol_idx = index)
 			else:
 				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
 				
-		proposed_cond = p_obj.calculate_conductivity()[0]
-		proposed_likelihood, misf = likelihood(proposed_cond, cond_external, sigma)
+		proposed_cond = object.calculate_conductivity(method = 'index',sol_idx = index)
+		proposed_likelihood, misf = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
 		
 		# Calculate acceptance probability
 		acceptance_ratio = proposed_likelihood / current_likelihood
@@ -401,13 +402,9 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 
 		samples.append(current_params)
 		
-
-	acceptance_rate = accepted / n_iterations
+	acceptance_rate = accepted / n_iter
 	return np.array(samples), acceptance_rate, misfits
 
-	
-	
-	
 def conductivity_metropolis_hastings_two_param(object, cond_list, param_name_1, param_name_2, upper_limits,
 	lower_limits, sigma_cond,proposal_stds,n_iter,transition_zone = False,num_cpu = 1):
 
@@ -476,6 +473,11 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, param_name_1, 
 				
 				else:
 					raise NameError('The mineral/rock name you entered is not included as a parameter in pide.')
+					
+		else:
+			for ii in range(len(param_names)):
+				if len(getattr(object,param_names[ii])) != len(object.T):
+					object.set_parameter(param_names[ii], 0.0)
 		
 		if (('mineral' in comp_type_list) == True) and (('rock' in comp_type_list) == True):
 			raise ValueError('The user cannot enter both rock and mineral as the inversion parameter. Choose only one.')
@@ -503,24 +505,25 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, param_name_1, 
 			
 			c = pool.map(process_item_partial, index_list)
 			
-		param1_distr = [x[0] for x in c]
-		param2_distr = [x[1] for x in c]
+		sample_distr = [x[0] for x in c]
+		acceptance_rate = [x[1] for x in c]
+		misfits = [x[2] for x in c]
 		
 	else:
 	
-		param1_distr = np.zeros(len(index_list))
-		param2_distr = np.zeros(len(index_list))
+		sample_distr = []
+		acceptance_rate = np.zeros(len(index_list))
+		misfits = []
 		
 		for idx in range(0,len(index_list)):
 			
-			if idx > 0:
-				init_guess_ = c_list[idx-1]
-			else:
-				init_guess_ = None
 			c = _solv_MCMC_two_param(index = index_list[idx], cond_list = cond_list, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter,
 			water_solv = water_solv, comp_solv = comp_solv, num_cpu = 1)
 			
-			param1_distr[idx] = c[0]
-			param2_distr[idx] = c[1]
-	
+			sample_distr.append(c[0])
+			acceptance_rate[idx] = c[1]
+			misfits.append(c[2])
+			
+			
+	return sample_distr, acceptance_rate, misfits
