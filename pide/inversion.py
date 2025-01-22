@@ -342,14 +342,14 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	transition_zone = False, num_cpu = 1):
 
 	#Using Metropolis-Hastings algorithm
-	param_1_init, param_2_init = initial_params
+	param_1_init, param_2_init = initial_params[index]
 	(param_1_max,param_2_max) = upper_limits
 	(param_1_min,param_2_min) = lower_limits
 	current_params = np.array([param_1_init, param_2_init])
 	
 	#Initial setting of the parameters.
-	exec('object.' + param_name_1 + '[' + str(index) + ']='  + str(param_1_init[index]))
-	exec('object.' + param_name_2 + '[' + str(index) + ']='  + str(param_2_init[index]))
+	exec('object.' + param_name_1 + '[' + str(index) + ']='  + str(param_1_init))
+	exec('object.' + param_name_2 + '[' + str(index) + ']='  + str(param_2_init))
 	
 	#Checking if initial water content is entered as other than 0.
 	if object.bulk_water[index] > 0.0:
@@ -381,8 +381,12 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		proposal[1] = np.clip(proposal[1], param_2_min[index], param_2_max[index])
 		
 		#setting up the random parameter
-		exec(f'object.{param_name_1}[{str(index)}]={str(proposal[0])}')
-		exec(f'object.{param_name_2}[{str(index)}]={str(proposal[1])}')
+		if comp_solv == False:
+			exec(f'object.{param_name_1}[{str(index)}] = proposal[0]')
+			exec(f'object.{param_name_2}[{str(index)}] = proposal[1]')
+		else:
+			pass
+			
 		if water_solv == True:
 			if transition_zone == False:
 				object.mantle_water_distribute(method = 'index', sol_idx = index)
@@ -405,7 +409,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	acceptance_rate = accepted / n_iter
 	return np.array(samples), acceptance_rate, misfits
 
-def conductivity_metropolis_hastings_two_param(object, cond_list, param_name_1, param_name_2, upper_limits,
+def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params, param_name_1, param_name_2, upper_limits,
 	lower_limits, sigma_cond,proposal_stds,n_iter,transition_zone = False,num_cpu = 1):
 
 	"""
@@ -500,7 +504,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, param_name_1, 
 	
 		with multiprocessing.Pool(processes=num_cpu) as pool:
 							
-			process_item_partial = partial(_solv_MCMC_two_param, cond_list = cond_list, param_name_1 = param_name_1, param_name_2= param_name_2,
+			process_item_partial = partial(_solv_MCMC_two_param, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, num_cpu = num_cpu)
 			
 			c = pool.map(process_item_partial, index_list)
@@ -517,7 +521,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, param_name_1, 
 		
 		for idx in range(0,len(index_list)):
 			
-			c = _solv_MCMC_two_param(index = index_list[idx], cond_list = cond_list, param_name_1 = param_name_1, param_name_2= param_name_2,
+			c = _solv_MCMC_two_param(index = index_list[idx], object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter,
 			water_solv = water_solv, comp_solv = comp_solv, num_cpu = 1)
 			
