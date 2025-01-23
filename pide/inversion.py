@@ -211,6 +211,8 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 	
 	low_value_threshold = kwargs.pop('low_value_threshold', None)
 	
+	object.revalue_arrays()
+	
 	if ('water' in param_name) == True:
 	
 		if param_name == 'bulk_water':
@@ -342,6 +344,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	transition_zone = False, num_cpu = 1):
 
 	#Using Metropolis-Hastings algorithm
+	
 	param_1_init, param_2_init = initial_params[index]
 	(param_1_max,param_2_max) = upper_limits
 	(param_1_min,param_2_min) = lower_limits
@@ -364,9 +367,9 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	
 	#Calculating the initial conductivity
 	cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
-	current_likelihood, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond)
-	
-	#empty arrays
+	current_likelihood, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+		
+	#empty arrays to fill it up with samples
 	samples = []
 	misfits = []
 	accepted = 0
@@ -398,6 +401,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		
 		# Calculate acceptance probability
 		acceptance_ratio = proposed_likelihood / current_likelihood
+		
 		if np.random.rand() < acceptance_ratio:
 			current_params = proposal
 			current_likelihood = proposed_likelihood
@@ -415,6 +419,11 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	"""
 	MCMC algorithm
 	"""
+	
+	if len(cond_list) == len(initial_params) == len(upper_limits) == len(lower_limits) == len(sigma_cond):
+		pass
+	else:
+		raise IndexError('The length of the arrays for each conductivity solution (cond_list) are not same. cond_list, initial_params, upper_limits, lower_limits and sigma_conds has to be the same length.')
 	
 	min_list = ['quartz_frac', 'plag_frac', 'amp_frac', 'kfelds_frac', 'opx_frac', 'cpx_frac',
 		'mica_frac', 'garnet_frac', 'sulphide_frac', 'graphite_frac', 'ol_frac', 'sp_frac', 'rwd_wds_frac',
@@ -504,9 +513,11 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	
 		with multiprocessing.Pool(processes=num_cpu) as pool:
 							
-			process_item_partial = partial(_solv_MCMC_two_param, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
-			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, num_cpu = num_cpu)
-			
+			process_item_partial = partial(_solv_MCMC_two_param, object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter,
+			water_solv = water_solv, comp_solv = comp_solv, num_cpu = num_cpu)
+			import ipdb
+			ipdb.set_trace()
 			c = pool.map(process_item_partial, index_list)
 			
 		sample_distr = [x[0] for x in c]

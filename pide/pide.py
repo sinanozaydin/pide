@@ -3041,9 +3041,15 @@ class pide(object):
 			idx_node = None
 		elif indexing_method == 'index':
 			idx_node = sol_idx
-		
+					
 		if method == 0:
-
+			
+			if pide.solid_phase_method == 2:
+				if len(self.T) != len(self.quartz_m):
+					self.revalue_arrays()
+			elif pide.solid_phase_method == 1:
+				if len(self.T) != len(self.granite_m):
+					self.revalue_arrays()
 			#Calculating phase exponent of the abundant mineral to make connectedness equal to unity.
 			#From Glover (2010, Geophysics), analytic solution.
 
@@ -3599,7 +3605,7 @@ class pide(object):
 			index = None
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
-			
+						
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
 		
 			self.calculate_density_solid() #calculate solid density only when it is needed.
@@ -4336,11 +4342,14 @@ class pide(object):
 		"""
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
-	
+		
 		if method == 'array':
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
+			
+		if len(self.al_opx) != len(self.T):
+			self.set_alopx(self.al_opx)
 		
 		#calculating melt/nams water partitioning coefficients if theres any melt in the equilibrium 
 	
@@ -4375,16 +4384,15 @@ class pide(object):
 		else:
 			
 			self.d_melt_ol = eval(self.water_melt_part_name + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_melt_part_pchange[10][self.d_water_ol_melt_choice], d_opx_ol = None, method = method)')
-	
+		
 		#determining chosen nam/olivine water partitioning coefficients.
 		if self.water_ol_part_type[4][self.d_water_opx_ol_choice] == 0:
-		
 			self.d_opx_ol = self.water_ol_part_function[4][self.d_water_opx_ol_choice] * np.ones(len(self.T))
 			
 		else:
 			
 			self.d_opx_ol = eval(self.water_ol_part_name[4][self.d_water_opx_ol_choice] + '(al_opx = self.al_opx[idx_node], p = self.p[idx_node], p_change = self.water_ol_part_pchange[4][self.d_water_opx_ol_choice], d_opx_ol = 0, method = method)')
-		
+			
 		if self.water_ol_part_type[5][self.d_water_cpx_ol_choice] == 0:
 		
 			self.d_cpx_ol = self.water_ol_part_function[5][self.d_water_cpx_ol_choice] * np.ones(len(self.T))
@@ -4460,6 +4468,10 @@ class pide(object):
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
+			
+		if len(self.T) != len(self.d_opx_ol):
+			
+			self._load_mantle_water_partitions(method = 'array')
 						
 		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (pide.fluid_or_melt_method == 1):
 		
@@ -4485,7 +4497,6 @@ class pide(object):
 			self.solid_water[idx_node] = self.bulk_water[idx_node]
 		
 		#calculating olivine water content from bulk water using mineral partitioning contents
-				
 		pide.ol_water[idx_node] = self.solid_water[idx_node] / (self.ol_frac_wt[idx_node] + ((self.opx_frac_wt[idx_node] * self.d_opx_ol[idx_node]) +\
 		(self.cpx_frac_wt[idx_node] * self.d_cpx_ol[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_ol[idx_node])))
 		

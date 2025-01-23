@@ -12,7 +12,7 @@ def Ozaydin2020_Opx1(al_opx, p,  p_change, d_opx_ol, method):
 	
 	if method == 'array':
 		al_opx = al_opx[0]
-
+	
 	part = (1.393 * al_opx) + 1.947 
 	
 	return part

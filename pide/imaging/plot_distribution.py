@@ -46,4 +46,5 @@ def plot_posterior_distribution_two_params(data_param_1, data_param_2, burning =
 		plt.show()
 	else:
 		plt.savefig(file_name,dpi = 300)
+		print(f'The image is saved as: {file_name}')
 	
