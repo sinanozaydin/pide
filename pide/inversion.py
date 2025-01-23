@@ -516,8 +516,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 			process_item_partial = partial(_solv_MCMC_two_param, object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter,
 			water_solv = water_solv, comp_solv = comp_solv, num_cpu = num_cpu)
-			import ipdb
-			ipdb.set_trace()
+			
 			c = pool.map(process_item_partial, index_list)
 			
 		sample_distr = [x[0] for x in c]
