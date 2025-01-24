@@ -340,14 +340,23 @@ def _likelihood(cond, cond_external, sigma):
 	return like, misf
 
 def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1, param_name_2, upper_limits,
-	lower_limits, sigma_cond,proposal_stds,n_iter,water_solv, comp_solv, comp_type = ['mineral','mineral'], comp_index = [0,0],
+	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, comp_type = ['mineral','mineral'], comp_index = [0,0],
 	transition_zone = False, num_cpu = 1):
 
 	#Using Metropolis-Hastings algorithm
 	
+	frac_1 = False
+	frac_2 = False
+	
+	if 'frac' in param_name_1:
+		frac_1 = True
+	if 'frac' in param_name_2:
+		frac_2 = True
+	
 	param_1_init, param_2_init = initial_params[index]
 	(param_1_max,param_2_max) = upper_limits
 	(param_1_min,param_2_min) = lower_limits
+	
 	current_params = np.array([param_1_init, param_2_init])
 	
 	#Initial setting of the parameters.
@@ -388,6 +397,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 			exec(f'object.{param_name_1}[{str(index)}] = proposal[0]')
 			exec(f'object.{param_name_2}[{str(index)}] = proposal[1]')
 		else:
+			#Determine which parameter has the
 			pass
 			
 		if water_solv == True:
@@ -403,24 +413,45 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		acceptance_ratio = proposed_likelihood / current_likelihood
 		
 		if np.random.rand() < acceptance_ratio:
+			
 			current_params = proposal
 			current_likelihood = proposed_likelihood
 			misfits.append(misf)
-			accepted += 1
-
-		samples.append(current_params)
-		
-	acceptance_rate = accepted / n_iter
+			
+			if _ > burning:
+				samples.append(current_params)
+				accepted += 1
+	
+	acceptance_rate = accepted / (n_iter - burning)
+	
 	return np.array(samples), acceptance_rate, misfits
 
 def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params, param_name_1, param_name_2, upper_limits,
-	lower_limits, sigma_cond,proposal_stds,n_iter,transition_zone = False,num_cpu = 1):
+	lower_limits, sigma_cond,proposal_stds,n_iter, burning = 0, transition_zone = False,num_cpu = 1):
 
 	"""
-	MCMC algorithm
+	A function to perform stochastic inversion for electrical conductivity with the given two parameters and predefined sets.
+	This function utilizes Metropolis-Hastings Markov-Chain Monte Carlo method to produce a posterior distribution of variables.
+	
+	Input:
+	object: object - pide object that is going to be used for the inversion calculations.
+	array: cond_list - conductivity array list used for inversion || in S/m
+	str: param_name - parameter name to invert for. This can be any parameter that is included in pide.object.
+	array: upper_limit_list - upper limit value for the search space for the given parameter.
+	array: lower_limit_list - lower limit value for the search space for the given parameter.
+	float: search_start - initial search length used in the line search.
+	float: acceptance_threshold - acceptance value to stop inversion process.
+	array: cond_err - error floors to add to the inversion.
+	bool: transition_zone - boolean value to indicate transition zone water distribution functions are going to be used.
+	int: num_cpu - number of cpu to compute the inversion.
+	float: low_value_threshold - threshold value of parameter to revert to zero for the solution. 
 	"""
 	
-	if len(cond_list) == len(initial_params) == len(upper_limits) == len(lower_limits) == len(sigma_cond):
+	if burning >= n_iter:
+		
+		raise ValueError('Burning samples cannot be larger than the total iteration number (n_iter).')
+
+	if len(cond_list) == len(initial_params) == len(upper_limits[0]) == len(lower_limits[0]) == len(sigma_cond):
 		pass
 	else:
 		raise IndexError('The length of the arrays for each conductivity solution (cond_list) are not same. cond_list, initial_params, upper_limits, lower_limits and sigma_conds has to be the same length.')
@@ -469,6 +500,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 		if ('frac' in xx for xx in param_names) == True:
 			
 			comp_solv = True
+			water_solv = True
 			
 			for ii in range(len(param_names)):
 				if param_names[ii] in min_list:
@@ -514,7 +546,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 		with multiprocessing.Pool(processes=num_cpu) as pool:
 							
 			process_item_partial = partial(_solv_MCMC_two_param, object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
-			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
 			water_solv = water_solv, comp_solv = comp_solv, num_cpu = num_cpu)
 			
 			c = pool.map(process_item_partial, index_list)
@@ -532,7 +564,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 		for idx in range(0,len(index_list)):
 			
 			c = _solv_MCMC_two_param(index = index_list[idx], object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
-			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
 			water_solv = water_solv, comp_solv = comp_solv, num_cpu = 1)
 			
 			sample_distr.append(c[0])
