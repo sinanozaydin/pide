@@ -340,7 +340,7 @@ def _likelihood(cond, cond_external, sigma):
 	return like, misf
 
 def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1, param_name_2, upper_limits,
-	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, comp_type = ['mineral','mineral'], comp_index = [0,0],
+	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, adaptive_alg = True, ideal_acceptance_ratios = [0.2,0.3], comp_type = ['mineral','mineral'], comp_index = [0,0],
 	transition_zone = False, num_cpu = 1):
 
 	#Using Metropolis-Hastings algorithm
@@ -381,6 +381,9 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	#empty arrays to fill it up with samples
 	samples = []
 	misfits = []
+	misfits_all = []
+	samples_all = []
+	acceptance_rates = []
 	accepted = 0
 	
 	#loop for monte-carlo
@@ -416,15 +419,29 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 			
 			current_params = proposal
 			current_likelihood = proposed_likelihood
-			misfits.append(misf)
 			
 			if _ > burning:
 				samples.append(current_params)
+				misfits.append(misf)
 				accepted += 1
+				
+		if _ > burning:
+			acceptance_rate = accepted / (_ - burning)
+			acceptance_rates.append(acceptance_rate)
+			misfits_all.append(misf)
+			samples_all.append(current_params)
+			if adaptive_alg == True:
+				if (_ + 1) % 1000 == 0:
+					if acceptance_rate <= ideal_acceptance_ratios[0]:
+						proposal_stds = np.array(proposal_stds) * 0.95
+						print(f'Stds for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}')
+					elif acceptance_rate >= ideal_acceptance_ratios[1]:
+						proposal_stds = np.array(proposal_stds) * 1.05
+						print(f'Stds for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}')
+					else:
+						print(f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)}')
 	
-	acceptance_rate = accepted / (n_iter - burning)
-	
-	return np.array(samples), acceptance_rate, misfits
+	return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
 
 def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params, param_name_1, param_name_2, upper_limits,
 	lower_limits, sigma_cond,proposal_stds,n_iter, burning = 0, transition_zone = False,num_cpu = 1):
@@ -552,14 +569,18 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 			c = pool.map(process_item_partial, index_list)
 			
 		sample_distr = [x[0] for x in c]
-		acceptance_rate = [x[1] for x in c]
+		acceptance_rates = [x[1] for x in c]
 		misfits = [x[2] for x in c]
+		samples_all = [x[3] for x in c]
+		misfits_all = [x[4] for x in c]
 		
 	else:
 	
 		sample_distr = []
-		acceptance_rate = np.zeros(len(index_list))
+		acceptance_rates = []
 		misfits = []
+		samples_all = []
+		misfits_all = []
 		
 		for idx in range(0,len(index_list)):
 			
@@ -568,8 +589,9 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 			water_solv = water_solv, comp_solv = comp_solv, num_cpu = 1)
 			
 			sample_distr.append(c[0])
-			acceptance_rate[idx] = c[1]
+			acceptance_rates.append(c[1])
 			misfits.append(c[2])
-			
-			
-	return sample_distr, acceptance_rate, misfits
+			samples_all.append(c[3])
+			misfits_all.append(c[4])
+					
+	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all

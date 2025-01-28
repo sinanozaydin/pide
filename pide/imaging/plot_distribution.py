@@ -45,7 +45,7 @@ def plot_posterior_distribution_two_params(data_param_1, data_param_2, save = Fa
 		plt.savefig(file_name,dpi = 300)
 		print(f'The image is saved as: {file_name}')
 		
-def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, **kwargs):
+def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, save = False, file_name = 'PosteriorSolution.png', **kwargs):
 	
 	param_1_min = kwargs.pop('param_1_min', np.amax(data_param_1))
 	param_1_max = kwargs.pop('param_1_max', np.amax(data_param_1))
@@ -57,8 +57,8 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, *
 	
 	# Define the histogram bins
 	
-	bins_param1 = np.linspace(param_1_min, param_1_max, 100)
-	bins_param2 = np.linspace(param_2_min, param_2_max, 100)
+	bins_param1 = np.linspace(param_1_min, param_1_max, 300)
+	bins_param2 = np.linspace(param_2_min, param_2_max, 300)
 	
 	# Create a 2D histogram
 	heatmap, xedges, yedges = np.histogram2d(data_param_1, data_param_2, bins=(bins_param1, bins_param2))
@@ -66,11 +66,13 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, *
 	# Plot the heatmap
 	plt.figure(figsize=(8, 6))
 	plt.imshow(
-	    heatmap.T, 
-	    origin='lower', 
-	    extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]], 
-	    cmap=colormap,
-	    aspect='auto'
+		heatmap.T, 
+		origin='lower', 
+		extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]], 
+		cmap=colormap,
+		vmin = 0.0,
+		vmax = np.amax(heatmap) / 2.0,
+		aspect='auto'
 	)
 	plt.colorbar(label='Density')
 	plt.axvline(np.median(data_param_1),linestyle = "--",color = 'r',label = "Median")
@@ -82,5 +84,38 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, *
 	plt.ylabel(param2_name)
 	plt.title('Sample Distribution Heatmap')
 	plt.tight_layout()
-	plt.show()
+	if save == False:
+		plt.show()
+	else:
+		plt.savefig(file_name, dpi = 300)
+		
+def plot_misfit_distribution_two_params(data_param_1, data_param_2, misfits, save = False, file_name = 'MisfitsSolution.png', **kwargs):
+
+	from scipy.interpolate import griddata
+
+	param_1_min = kwargs.pop('param_1_min', np.amin(data_param_1))
+	param_1_max = kwargs.pop('param_1_max', np.amax(data_param_1))
+	param_2_min = kwargs.pop('param_2_min', np.amin(data_param_2))
+	param_2_max = kwargs.pop('param_2_max', np.amax(data_param_2))
+	param1_name = kwargs.pop('param1_name', 'Param 1')
+	param2_name = kwargs.pop('param2_name', 'Param 2')
+	colormap = kwargs.pop('colormap','viridis')
+	
+	grid_x, grid_y = np.mgrid[param_1_min:param_1_max:100j, param_2_min:param_2_max:100j]
+	
+	grid_vals = griddata((data_param_1, data_param_2), misfits, (grid_x, grid_y), method='nearest')
+	
+	# Plot the interpolated data
+	fig = plt.figure(figsize=(8, 6))
+	ax = plt.subplot(111)
+	scatter = ax.scatter(data_param_1,data_param_2,c = misfits, cmap = 'cividis', s = 0.5)
+	ax.set_xlim(param_1_min,param_1_max)
+	ax.set_ylim(param_2_min,param_2_max)
+	# plt.imshow(grid_vals.T, origin='lower', cmap='cividis')
+	cbar = plt.colorbar(scatter, ax = ax, label='Misfits')
+	
+	if save == False:
+		plt.show()
+	else:
+		plt.savefig(file_name,dpi = 300)
 	
