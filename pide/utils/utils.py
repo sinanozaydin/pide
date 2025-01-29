@@ -182,6 +182,18 @@ def sort_through_external_list(first_list, second_list):
 	sorted_second_list = [element[1] for element in sorted_combined_lists]
 	return sorted_second_list
 	
+def save_h5_files(array_list, array_names, file_name = "Data.h5"):
+
+	import h5py
+	
+	with h5py.File(file_name, 'w') as f:
+		
+		for i in range(len(array_list)):
+		
+			f.create_dataset(array_names[i], data = array_list[i])
+
+	print(f'Results are saved at: {file_name}')
+	
 class text_color:
    
    #color object for to be called by the print outs.

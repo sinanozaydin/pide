@@ -326,125 +326,198 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 					eval(f"object.set_parameter('{rock_list[idx_set]}',comp_list[idx_set])")
 			
 	return c_list, residual_list
-	
-#misfit function
+
 def _misfit(cond, cond_external):
+	
+	#Internal function to calculate misfit in log10.
+	
 	#misfit at log scale
 	misf = abs(np.log10(cond) - np.log10(cond_external))
 	return misf
 
-# The likelihood function
 def _likelihood(cond, cond_external, sigma):
+
+	#Internal function to calculate likelihood.
+
 	misf = _misfit(cond, cond_external)
 	like = np.exp(-misf**2 / (2 * sigma**2))
 	return like, misf
 
 def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1, param_name_2, upper_limits,
-	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, adaptive_alg = True, ideal_acceptance_ratios = [0.2,0.3], comp_type = ['mineral','mineral'], comp_index = [0,0],
-	transition_zone = False, num_cpu = 1):
-
-	#Using Metropolis-Hastings algorithm
+	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, continue_bool, adaptive_alg = True,
+	ideal_acceptance_ratios = [0.2,0.3], comp_index = [0,0],
+	transition_zone = False):
 	
-	frac_1 = False
-	frac_2 = False
+	if continue_bool[index] == True:
 	
-	if 'frac' in param_name_1:
-		frac_1 = True
-	if 'frac' in param_name_2:
-		frac_2 = True
-	
-	param_1_init, param_2_init = initial_params[index]
-	(param_1_max,param_2_max) = upper_limits
-	(param_1_min,param_2_min) = lower_limits
-	
-	current_params = np.array([param_1_init, param_2_init])
-	
-	#Initial setting of the parameters.
-	exec('object.' + param_name_1 + '[' + str(index) + ']='  + str(param_1_init))
-	exec('object.' + param_name_2 + '[' + str(index) + ']='  + str(param_2_init))
-	
-	#Checking if initial water content is entered as other than 0.
-	if object.bulk_water[index] > 0.0:
-		water_solv = True
-	
-	if water_solv == True:
-	
-		if transition_zone == False:
-			object.mantle_water_distribute(method = 'index', sol_idx = index)
-		else:
-			object.transition_zone_water_distribute(method = 'index', sol_idx = index)
-	
-	#Calculating the initial conductivity
-	cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
-	current_likelihood, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+		#Using Metropolis-Hastings algorithm
 		
-	#empty arrays to fill it up with samples
-	samples = []
-	misfits = []
-	misfits_all = []
-	samples_all = []
-	acceptance_rates = []
-	accepted = 0
-	
-	#loop for monte-carlo
-	for _ in range(n_iter):
-		#proposing the new parameters
-		proposal = current_params + np.random.normal(0, proposal_stds, size=2)
+		frac_bool = [False, False]		
 		
-		#clipping the proposal distribution, respecting the bounds set up
-		proposal[0] = np.clip(proposal[0], param_1_min[index], param_1_max[index])
-		proposal[1] = np.clip(proposal[1], param_2_min[index], param_2_max[index])
-		
-		#setting up the random parameter
-		if comp_solv == False:
-			exec(f'object.{param_name_1}[{str(index)}] = proposal[0]')
-			exec(f'object.{param_name_2}[{str(index)}] = proposal[1]')
-		else:
-			#Determine which parameter has the
-			pass
+		if 'frac' in param_name_1:
+			if param_name_1 != 'melt_fluid_mass_frac':
+				frac_bool[0] = True
+				comp_index_sub = 0
 			
+		if 'frac' in param_name_2:
+			if param_name_2 != 'melt_fluid_mass_frac':
+				frac_bool[1] = True
+				comp_index_sub = 1
+				
+		if sum(frac_bool) == 2:
+			
+			raise KeyError('Currently only one of the parameters chosen can be modal compositional parameter.')
+		
+		param_1_init, param_2_init = initial_params[index]
+		(param_1_max,param_2_max) = upper_limits
+		(param_1_min,param_2_min) = lower_limits
+		
+		current_params = np.array([param_1_init, param_2_init])
+		
+		#Initial setting of the parameters.
+		if sum(frac_bool) == 1:
+		
+			if object.solid_phase_method == 2: #if mineral
+				_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
+					object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
+					object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
+			else: #if rock
+				_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
+					object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
+		
+			comp_old = _comp_list[comp_index[comp_index_sub]]
+			
+			if frac_bool[0] == True:
+				comp_list = _comp_adjust_(np.array(_comp_list), param_1_init, comp_old)
+			else:
+				comp_list = _comp_adjust_(np.array(_comp_list), param_2_init, comp_old)
+			
+			for idx_t in range(len(_comp_list)):
+				
+				if object.solid_phase_method == 2: #if mineral
+					object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
+				else: #if rock
+					object.rock_frac_list[idx_t][index] = comp_list[idx_t]
+					
+			water_solv = True
+		
+		#Executing the commands
+		exec(f'object.{param_name_1}[{str(index)}] = param_1_init')
+		exec(f'object.{param_name_2}[{str(index)}] = param_2_init')
+				
 		if water_solv == True:
+		
 			if transition_zone == False:
 				object.mantle_water_distribute(method = 'index', sol_idx = index)
 			else:
 				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
-				
-		proposed_cond = object.calculate_conductivity(method = 'index',sol_idx = index)
-		proposed_likelihood, misf = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
 		
-		# Calculate acceptance probability
-		acceptance_ratio = proposed_likelihood / current_likelihood
+		#Calculating the initial conductivity
+		cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
+		current_likelihood, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+			
+		#empty arrays to fill it up with samples
+		samples = []
+		misfits = []
+		misfits_all = []
+		samples_all = []
+		acceptance_rates = []
+		accepted = 0
 		
-		if np.random.rand() < acceptance_ratio:
+		#loop for monte-carlo
+		for _ in range(n_iter):
+			#proposing the new parameters
+			proposal = current_params + np.random.normal(0, proposal_stds, size=2)
 			
-			current_params = proposal
-			current_likelihood = proposed_likelihood
+			#clipping the proposal distribution, respecting the bounds set up
+			proposal[0] = np.clip(proposal[0], param_1_min[index], param_1_max[index])
+			proposal[1] = np.clip(proposal[1], param_2_min[index], param_2_max[index])
 			
-			if _ > burning:
-				samples.append(current_params)
-				misfits.append(misf)
-				accepted += 1
+			
+			#adjusting for composition if needed...
+			if comp_solv == True:
 				
-		if _ > burning:
-			acceptance_rate = accepted / (_ - burning)
-			acceptance_rates.append(acceptance_rate)
-			misfits_all.append(misf)
-			samples_all.append(current_params)
-			if adaptive_alg == True:
-				if (_ + 1) % 1000 == 0:
-					if acceptance_rate <= ideal_acceptance_ratios[0]:
-						proposal_stds = np.array(proposal_stds) * 0.95
-						print(f'Stds for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}')
-					elif acceptance_rate >= ideal_acceptance_ratios[1]:
-						proposal_stds = np.array(proposal_stds) * 1.05
-						print(f'Stds for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}')
+				if sum(frac_bool) == 1:
+				
+					if object.solid_phase_method == 2: #if mineral
+						_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
+							object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
+							object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
+					else: #if rock
+						_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
+							object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
+				
+					comp_old = _comp_list[comp_index[comp_index_sub]]
+					
+					if frac_bool[0] == True:
+						comp_list = _comp_adjust_(np.array(_comp_list), param_1_init, comp_old)
 					else:
-						print(f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)}')
+						comp_list = _comp_adjust_(np.array(_comp_list), param_2_init, comp_old)
+					
+					for idx_t in range(len(_comp_list)):
+						
+						if object.solid_phase_method == 2: #if mineral
+							object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
+						else: #if rock
+							object.rock_frac_list[idx_t][index] = comp_list[idx_t]
+			
+			#setting up the random parameter
+			exec(f'object.{param_name_1}[{str(index)}] = proposal[0]')
+			exec(f'object.{param_name_2}[{str(index)}] = proposal[1]')
+			
+			#distribute water if needed
+			if water_solv == True:
+				if transition_zone == False:
+					object.mantle_water_distribute(method = 'index', sol_idx = index)
+				else:
+					object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+					
+			proposed_cond = object.calculate_conductivity(method = 'index',sol_idx = index)
+			proposed_likelihood, misf = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
+			
+			# Calculate acceptance probability
+			acceptance_ratio = proposed_likelihood / current_likelihood
+			
+			if np.random.rand() < acceptance_ratio:
+				
+				current_params = proposal
+				current_likelihood = proposed_likelihood
+				
+				if _ > burning:
+					samples.append(current_params)
+					misfits.append(misf)
+					accepted += 1
+					
+			if _ > burning:
+				acceptance_rate = accepted / (_ - burning)
+				acceptance_rates.append(acceptance_rate)
+				misfits_all.append(misf)
+				samples_all.append(current_params)
+				if adaptive_alg == True:
+					if (_ + 1) % 1000 == 0:
+						if acceptance_rate <= ideal_acceptance_ratios[0]:
+							proposal_stds = np.array(proposal_stds) * 0.95
+							print(f'Stds for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}')
+						elif acceptance_rate >= ideal_acceptance_ratios[1]:
+							proposal_stds = np.array(proposal_stds) * 1.05
+							print(f'Stds for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}')
+						else:
+							print(f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)}')
+							
+	else:
+		
+		samples = np.array([None])
+		acceptance_rates = np.array([None])
+		misfits = np.array([None])
+		samples_all = np.array([None])
+		misfits_all = np.array([None])
+		
+		print(f'The value of {index}th index is below the dry conductivity of composition entered, therefore no solution is required.')
 	
 	return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
 
 def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params, param_name_1, param_name_2, upper_limits,
-	lower_limits, sigma_cond,proposal_stds,n_iter, burning = 0, transition_zone = False,num_cpu = 1):
+	lower_limits, sigma_cond,proposal_stds,n_iter, burning = 0, transition_zone = False, num_cpu = 1):
 
 	"""
 	A function to perform stochastic inversion for electrical conductivity with the given two parameters and predefined sets.
@@ -464,6 +537,21 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	float: low_value_threshold - threshold value of parameter to revert to zero for the solution. 
 	"""
 	
+	#Pre-checks for if 
+	if object.solid_phase_method == 2:
+		object.set_mineral_water(ol = 0, opx = 0, cpx = 0, garnet = 0, mica = 0, amp = 0,
+		quartz = 0, plag = 0, kfelds = 0, sulphide = 0, graphite = 0, sp = 0, rwd_wds = 0,
+		perov = 0, mixture = 0, other = 0)
+	elif object.solid_phase_method == 1:
+		object.set_rock_water(granite = 0, granulite = 0, sandstone = 0, gneiss = 0,
+		amphibolite = 0, basalt = 0, mud = 0, gabbro = 0, other_rock = 0)
+	
+	cond_check = object.calculate_conductivity()
+	
+	continue_bool = []
+	for i in range(len(cond_list)):
+		continue_bool.append(cond_list[i] > cond_check[i])
+			
 	if burning >= n_iter:
 		
 		raise ValueError('Burning samples cannot be larger than the total iteration number (n_iter).')
@@ -508,6 +596,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 				object.set_parameter(param_names[ii], 0.0)
 	
 	else:
+	
 		water_solv = False
 		#setting the object as same length as T if that has not done already...
 		
@@ -564,7 +653,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 							
 			process_item_partial = partial(_solv_MCMC_two_param, object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
-			water_solv = water_solv, comp_solv = comp_solv, num_cpu = num_cpu)
+			water_solv = water_solv, comp_solv = comp_solv, continue_bool = continue_bool)
 			
 			c = pool.map(process_item_partial, index_list)
 			
@@ -586,7 +675,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 			
 			c = _solv_MCMC_two_param(index = index_list[idx], object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
-			water_solv = water_solv, comp_solv = comp_solv, num_cpu = 1)
+			water_solv = water_solv, comp_solv = comp_solv, continue_bool = continue_bool)
 			
 			sample_distr.append(c[0])
 			acceptance_rates.append(c[1])
