@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from .utils.utils import text_color
 
 def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 
@@ -11,6 +12,7 @@ def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 		ratio = (comp_alien - comp_old) / (np.sum(_comp_list) - comp_old)
 	else:
 		ratio = (comp_alien - comp_old) / (np.sum(_comp_list,axis = 0) - comp_old)
+		
 	comp_list = _comp_list - (_comp_list * ratio)
 	
 	return comp_list
@@ -34,6 +36,9 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 		sol_param = upperlimit[index]
 		
 		if comp_solv == True:
+		
+			print(text_color.RED + 'WARNING: There is no search array can be created with the given lower/upper limit and search increment for composition. Try to change these parameters to have a more reliable solution.' + text_color.END)
+			
 			if comp_type == 'mineral':
 				_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
 				object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
@@ -42,8 +47,8 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 			elif comp_type == 'rock':
 				_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
 				object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
-							
-			comp_list = _comp_adjust_(np.array(_comp_list), param_search_array[j], comp_old)
+			
+			comp_list = _comp_adjust_(np.array(_comp_list), upperlimit[index], comp_old)
 			
 			for idx_t in range(len(_comp_list)):
 				
@@ -404,7 +409,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		#Executing the commands
 		exec(f'object.{param_name_1}[{str(index)}] = param_1_init')
 		exec(f'object.{param_name_2}[{str(index)}] = param_2_init')
-				
+		
 		if water_solv == True:
 		
 			if transition_zone == False:
@@ -415,7 +420,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		#Calculating the initial conductivity
 		cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
 		current_likelihood, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
-			
+		
 		#empty arrays to fill it up with samples
 		samples = []
 		misfits = []
@@ -450,10 +455,10 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 					comp_old = _comp_list[comp_index[comp_index_sub]]
 					
 					if frac_bool[0] == True:
-						comp_list = _comp_adjust_(np.array(_comp_list), param_1_init, comp_old)
+						comp_list = _comp_adjust_(np.array(_comp_list), proposal[0], comp_old)
 					else:
-						comp_list = _comp_adjust_(np.array(_comp_list), param_2_init, comp_old)
-					
+						comp_list = _comp_adjust_(np.array(_comp_list), proposal[1], comp_old)
+											
 					for idx_t in range(len(_comp_list)):
 						
 						if object.solid_phase_method == 2: #if mineral
@@ -497,12 +502,12 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 					if (_ + 1) % 1000 == 0:
 						if acceptance_rate <= ideal_acceptance_ratios[0]:
 							proposal_stds = np.array(proposal_stds) * 0.95
-							print(f'Stds for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}')
+							print(text_color.YELLOW + f'Stds for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 						elif acceptance_rate >= ideal_acceptance_ratios[1]:
 							proposal_stds = np.array(proposal_stds) * 1.05
-							print(f'Stds for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}')
+							print(text_color.RED + f'Stds for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 						else:
-							print(f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)}')
+							print(text_color.GREEN + f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 							
 	else:
 		
@@ -571,67 +576,75 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	index_list = np.array(list(range(0,len(object.T)))) #creating the index array tied to the T array.
 	param_names = [param_name_1, param_name_2]
 	
+	comp_solv = False
+	water_solv = False
+	comp_type = None
+	comp_index = []
+	comp_type_list = []
+	
 	if any('water' in xx for xx in param_names) == True:
 	
 		if 'bulk_water' in param_names:
 			
 			water_solv = True
-			comp_solv = False
-			comp_type = None
-			comp_index = None
 			#setting the object.bulk_water as same length as T if that has not done already...
 			if len(getattr(object,param_names[param_names.index('bulk_water')])) != len(object.T):
 				object.set_bulk_water(0.0)
 		else:
 			raise ValueError('You cannot change just a single phase water content. If you are after fitting for a single phase, try bulk_water as the parameter.')
 			
-	if ('melt' in xx for xx in param_names) == True:
+	if any('melt' in xx for xx in param_names) == True:
 	
 		water_solv = True
-		comp_solv = False
-		comp_type = None
-		comp_index = None
+		
 		for ii in range(2):
 			if len(getattr(object,param_names[ii])) != len(object.T):
 				object.set_parameter(param_names[ii], 0.0)
-	
-	else:
-	
-		water_solv = False
-		#setting the object as same length as T if that has not done already...
+
+	if any('frac' in xx for xx in param_names) == True:
+				
+		comp_solv = True
+		water_solv = True
 		
-		comp_index = []
-		comp_type_list = []
-		
-		if ('frac' in xx for xx in param_names) == True:
+		for ii in range(len(param_names)):
 			
-			comp_solv = True
-			water_solv = True
+			if param_names[ii] != 'melt_fluid_mass_frac':
 			
-			for ii in range(len(param_names)):
 				if param_names[ii] in min_list:
+				
 					comp_type = 'mineral'
 					comp_type_list.append(comp_type)
 					comp_index.append(min_list.index(param_names[ii]))
 					
 				elif param_names[ii] in rock_list:
+				
 					comp_type = 'rock'
 					comp_type_list.append(comp_type)
 					comp_index.append(rock_list.index(param_names[ii]))
-				
-				if len(getattr(object,param_names[ii])) != len(object.T):
-					object.set_parameter(param_names[ii], 0.0)
-				
-				else:
-					raise NameError('The mineral/rock name you entered is not included as a parameter in pide.')
 					
-		else:
-			for ii in range(len(param_names)):
+				else:
+					
+					comp_type = None
+					comp_type_list.append(comp_type)
+					comp_index.append(None)
+					
+			else:
+				
+				comp_type = None
+				comp_type_list.append(comp_type)
+				comp_index.append(None)
+			
+			if comp_type is not None:
 				if len(getattr(object,param_names[ii])) != len(object.T):
 					object.set_parameter(param_names[ii], 0.0)
-		
+			
 		if (('mineral' in comp_type_list) == True) and (('rock' in comp_type_list) == True):
 			raise ValueError('The user cannot enter both rock and mineral as the inversion parameter. Choose only one.')
+		
+	#The last check for setting up other parameters.
+	for ii in range(len(param_names)):
+		if len(getattr(object,param_names[ii])) != len(object.T):
+			object.set_parameter(param_names[ii], 0.0)
 			
 	if num_cpu > 1:
 		
@@ -643,7 +656,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 		
 		if num_cpu > max_num_cores:
 			raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
-			
+	
 	if num_cpu > 1:
 		
 		manager = multiprocessing.Manager()
@@ -653,7 +666,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 							
 			process_item_partial = partial(_solv_MCMC_two_param, object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
-			water_solv = water_solv, comp_solv = comp_solv, continue_bool = continue_bool)
+			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool)
 			
 			c = pool.map(process_item_partial, index_list)
 			
@@ -675,7 +688,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 			
 			c = _solv_MCMC_two_param(index = index_list[idx], object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
-			water_solv = water_solv, comp_solv = comp_solv, continue_bool = continue_bool)
+			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool)
 			
 			sample_distr.append(c[0])
 			acceptance_rates.append(c[1])

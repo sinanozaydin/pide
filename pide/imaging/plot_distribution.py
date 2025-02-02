@@ -53,7 +53,7 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	param_2_max = kwargs.pop('param_2_max', np.amax(data_param_2))
 	param1_name = kwargs.pop('param1_name', 'Param 1')
 	param2_name = kwargs.pop('param2_name', 'Param 2')
-	colormap = kwargs.pop('colormap','viridis')
+	colormap = kwargs.pop('colormap','Greys')
 	
 	# Define the histogram bins
 	
@@ -65,16 +65,20 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	heatmap_masked = np.where(heatmap == 0, np.nan, heatmap)
 	# Plot the heatmap
 	plt.figure(figsize=(8, 6))
-	plt.imshow(
+	vmin_ = 0.0
+	vmax_ = np.amax(heatmap_masked) / 2.0
+	
+	im = plt.imshow(
 		heatmap_masked.T, 
 		origin='lower', 
 		extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]], 
 		cmap=colormap,
-		vmin = 0.0,
-		vmax = np.amax(heatmap_masked) / 2.0,
+		vmin = vmin_,
+		vmax = vmax_,
 		aspect='auto'
 	)
-	plt.colorbar(label='Density')
+	cbar = plt.colorbar(im, label='Density')
+	im.set_clim([vmin_, vmax_])
 	plt.axvline(np.median(data_param_1),linestyle = "--",color = 'r',label = "Median")
 	plt.axvline(np.mean(data_param_1),linestyle = "-",color = 'r', label = "Mean")
 	plt.axhline(np.median(data_param_2),linestyle = "--",color = 'r')

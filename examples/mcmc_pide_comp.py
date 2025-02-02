@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Observed value (target output)
-T = np.array([1000.0])
+T = np.array([1100.0])
 P = np.array([2])
 
 #Bounds for the search space.
@@ -23,29 +23,32 @@ p_obj.set_temperature(T)
 p_obj.set_pressure(P)
 p_obj.set_composition_solid_mineral(ol = 0.6,opx = 0.38,mica = 0.02)
 p_obj.set_param1_mineral(mica = 0.48)
+p_obj.set_solid_phs_mix_method(2) #Upper
 
 
-p_obj.set_bulk_water(0)
+
+
+"""
+p_obj.set_bulk_water(800)
 p_obj.mantle_water_distribute()
-cond = p_obj.calculate_conductivity()
 
+
+cond = p_obj.calculate_conductivity()
+print(cond)
 import ipdb
 ipdb.set_trace()
 sys.exit()
+"""
 
-cond_external = [1e-3]
+cond_external = [1e-2]
 initial_water = 100
 initial_phlg = 0.02
 initial_params = [[initial_water, initial_phlg]]
 
 sigma = 1e-2 * np.ones(len(T))#in log
-n_iterations = 100000
+n_iterations = 500000
 proposal_std = [100,0.03]
 burning = 10000
-
-c_list, residual_list = conductivity_solver_single_param(object = p_obj, cond_list = cond_external,
-param_name = 'bulk_water', upper_limit_list = np.ones(len(T))* 1e4, lower_limit_list= np.zeros(len(T)),
-search_start = 30, acceptence_threshold = 0.5, num_cpu = 1)
 
 for i in range(1):
 	start_time = time.time()
