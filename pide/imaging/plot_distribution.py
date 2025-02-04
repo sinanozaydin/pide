@@ -47,9 +47,9 @@ def plot_posterior_distribution_two_params(data_param_1, data_param_2, save = Fa
 		
 def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, save = False, file_name = 'PosteriorSolution.png', **kwargs):
 	
-	param_1_min = kwargs.pop('param_1_min', np.amax(data_param_1))
+	param_1_min = kwargs.pop('param_1_min', np.amin(data_param_1))
 	param_1_max = kwargs.pop('param_1_max', np.amax(data_param_1))
-	param_2_min = kwargs.pop('param_2_min', np.amax(data_param_2))
+	param_2_min = kwargs.pop('param_2_min', np.amin(data_param_2))
 	param_2_max = kwargs.pop('param_2_max', np.amax(data_param_2))
 	param1_name = kwargs.pop('param1_name', 'Param 1')
 	param2_name = kwargs.pop('param2_name', 'Param 2')
@@ -62,20 +62,24 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	
 	# Create a 2D histogram
 	heatmap, xedges, yedges = np.histogram2d(data_param_1, data_param_2, bins=(bins_param1, bins_param2))
-	heatmap_masked = np.where(heatmap == 0, np.nan, heatmap)
+	# heatmap_masked = np.where(heatmap == 0, np.nan, heatmap)
+	heatmap[heatmap == 0] = np.min(heatmap[heatmap > 0]) * 0.1
 	# Plot the heatmap
 	plt.figure(figsize=(8, 6))
-	vmin_ = 0.0
-	vmax_ = np.amax(heatmap_masked) / 2.0
+	# vmin_ = 0.0
+	# vmax_ = np.amax(heatmap_masked) / 2.0
+	vmin_ = np.percentile(heatmap, 1)
+	vmax_ = np.percentile(heatmap, 99)
 	
 	im = plt.imshow(
-		heatmap_masked.T, 
+		heatmap.T, 
 		origin='lower', 
 		extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]], 
 		cmap=colormap,
 		vmin = vmin_,
 		vmax = vmax_,
-		aspect='auto'
+		aspect='auto',
+		norm=LogNorm(vmin=vmin_, vmax=vmax_) 
 	)
 	cbar = plt.colorbar(im, label='Density')
 	im.set_clim([vmin_, vmax_])

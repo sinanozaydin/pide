@@ -350,7 +350,7 @@ def _likelihood(cond, cond_external, sigma):
 
 def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1, param_name_2, upper_limits,
 	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, continue_bool, adaptive_alg = True,
-	ideal_acceptance_ratios = [0.2,0.3], comp_index = [0,0],
+	ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000, comp_index = [0,0], 
 	transition_zone = False):
 	
 	if continue_bool[index] == True:
@@ -499,11 +499,11 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 				misfits_all.append(misf)
 				samples_all.append(current_params)
 				if adaptive_alg == True:
-					if (_ + 1) % 1000 == 0:
-						if acceptance_rate <= ideal_acceptance_ratios[0]:
+					if (_ + 1) % adaptive_check_length == 0:
+						if acceptance_rate <= ideal_acceptance_bounds[0]:
 							proposal_stds = np.array(proposal_stds) * 0.95
 							print(text_color.YELLOW + f'Stds for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
-						elif acceptance_rate >= ideal_acceptance_ratios[1]:
+						elif acceptance_rate >= ideal_acceptance_bounds[1]:
 							proposal_stds = np.array(proposal_stds) * 1.05
 							print(text_color.RED + f'Stds for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 						else:
@@ -522,7 +522,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
 
 def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params, param_name_1, param_name_2, upper_limits,
-	lower_limits, sigma_cond,proposal_stds,n_iter, burning = 0, transition_zone = False, num_cpu = 1):
+	lower_limits, sigma_cond,proposal_stds,n_iter, burning = 0, transition_zone = False, num_cpu = 1, **kwargs):
 
 	"""
 	A function to perform stochastic inversion for electrical conductivity with the given two parameters and predefined sets.
@@ -539,7 +539,8 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	array: cond_err - error floors to add to the inversion.
 	bool: transition_zone - boolean value to indicate transition zone water distribution functions are going to be used.
 	int: num_cpu - number of cpu to compute the inversion.
-	float: low_value_threshold - threshold value of parameter to revert to zero for the solution. 
+	
+	
 	"""
 	
 	#Pre-checks for if 
@@ -553,6 +554,25 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	
 	cond_check = object.calculate_conductivity()
 	
+	adaptive_alg = kwargs.pop('adaptive_alg', True)
+	ideal_acceptance_bounds = kwargs.pop('ideal_acceptance_bounds',[0.2,0.3])
+	adaptive_check_length = kwargs.pop('adaptive_check_length', 1000)
+	
+	#Pre checks for the input parameters.
+	if type(ideal_acceptance_bounds) == list:
+		if len(ideal_acceptance_bounds) == 2:
+			pass
+		else:
+			raise ValueError(f'ideal_acceptance_bounds has to be a list containing two values. Currently it is {ideal_acceptance_bounds}')
+	else:
+		raise ValueError(f'ideal_acceptance_bounds has to be a list containing two values. Currently it is {ideal_acceptance_bounds}')
+				
+	try:
+		exec(f'object.{param_name_1}')
+		exec(f'object.{param_name_2}')
+	except AttributeError:
+		raise AttributeError(f'There is no such parameter name {param_name_1} or {param_name_2} for the pide object.')
+	
 	continue_bool = []
 	for i in range(len(cond_list)):
 		continue_bool.append(cond_list[i] > cond_check[i])
@@ -561,7 +581,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 		
 		raise ValueError('Burning samples cannot be larger than the total iteration number (n_iter).')
 
-	if len(cond_list) == len(initial_params) == len(upper_limits[0]) == len(lower_limits[0]) == len(sigma_cond):
+	if len(cond_list) == len(initial_params) == len(upper_limits[0]) == len(lower_limits[0]) == len(sigma_cond) == len(object.T):
 		pass
 	else:
 		raise IndexError('The length of the arrays for each conductivity solution (cond_list) are not same. cond_list, initial_params, upper_limits, lower_limits and sigma_conds has to be the same length.')
@@ -666,7 +686,8 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 							
 			process_item_partial = partial(_solv_MCMC_two_param, object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
-			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool)
+			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool, adaptive_alg = adaptive_alg, adaptive_check_length = adaptive_check_length,
+			ideal_acceptance_bounds = ideal_acceptance_bounds)
 			
 			c = pool.map(process_item_partial, index_list)
 			
@@ -688,7 +709,8 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 			
 			c = _solv_MCMC_two_param(index = index_list[idx], object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
-			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool)
+			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool, adaptive_alg = adaptive_alg, adaptive_check_length = adaptive_check_length,
+			ideal_acceptance_bounds = ideal_acceptance_bounds)
 			
 			sample_distr.append(c[0])
 			acceptance_rates.append(c[1])

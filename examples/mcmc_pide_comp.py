@@ -25,9 +25,6 @@ p_obj.set_composition_solid_mineral(ol = 0.6,opx = 0.38,mica = 0.02)
 p_obj.set_param1_mineral(mica = 0.48)
 p_obj.set_solid_phs_mix_method(2) #Upper
 
-
-
-
 """
 p_obj.set_bulk_water(800)
 p_obj.mantle_water_distribute()
@@ -46,7 +43,7 @@ initial_phlg = 0.02
 initial_params = [[initial_water, initial_phlg]]
 
 sigma = 1e-2 * np.ones(len(T))#in log
-n_iterations = 500000
+n_iterations = 100000
 proposal_std = [100,0.03]
 burning = 10000
 
@@ -55,7 +52,8 @@ for i in range(1):
 	samples, acceptance_rates, misfits, samples_all, misfits_all = conductivity_metropolis_hastings_two_param(object = p_obj, cond_list = cond_external, initial_params = initial_params,param_name_1 = 'bulk_water',
 	param_name_2= "mica_frac", upper_limits = (water_max,phlg_max),
 		lower_limits = (water_min,phlg_min), sigma_cond = sigma,proposal_stds=proposal_std
-		,n_iter = n_iterations, burning = burning, transition_zone = False,num_cpu = 1)
+		,n_iter = n_iterations, burning = burning, transition_zone = False,num_cpu = 1,
+		ideal_acceptance_bounds = [0.21,0.27])
 	
 	end_time = time.time()
 	print(f'Time passed for processing: {end_time-start_time} seconds')
