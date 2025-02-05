@@ -174,7 +174,7 @@ def setup_3d_mesh(mesh_data):
 
 	return mesh, mesh_center, x_mesh, y_mesh, z_mesh, x_mesh_centers, y_mesh_centers, z_mesh_centers, borders_mesh
 
-def setup_material(material_data, material_names):
+def setup_material(material_data, material_names, rounding_method = 'Default'):
 
 	"""A function to setup materials with the given material_data and material_names.
 	It will automatically get rid of the air layers.
@@ -188,27 +188,34 @@ def setup_material(material_data, material_names):
 	array: material_array
 	array: air_material_idx
 	"""
-
+	
 	material_data_array = list(material_data['data'])
 	material_array = []
 
 	for i in range(0,len(material_data_array)):
-		material_array.append(round(material_data_array[i][0]))
+		if rounding_method == 'Default':
+			material_array.append(round(material_data_array[i][0]))
+		else:
+			material_array.append(material_data_array[i][0])
 
 	print(' ')
 	print('Materials included in the py startup file, matching up with the projMaterial.h5 material index identifiers.')
-	unique_materials = np.unique(material_array)
-
-	air_material_idx = []
-	print('id    materialname')
-	for i in range(0,len(unique_materials)):
-
-		print(str(int(unique_materials[i])) + '    ' + str(material_names[i]))
-
-		if (('air' in material_names[i]) or ('Air' in material_names[i])) == True:
-			air_material_idx.append(i)
+	if rounding_method == 'Default':
+		unique_materials = np.unique(material_array)
+	
+		air_material_idx = []
+		print('id    materialname')
+		for i in range(0,len(unique_materials)):
+	
+			print(str(int(unique_materials[i])) + '    ' + str(material_names[i]))
+	
+			if (('air' in material_names[i]) or ('Air' in material_names[i])) == True:
+				air_material_idx.append(i)
+	else:
+		air_material_idx = None
 
 	return material_array, air_material_idx
+
 
 def setup_uw_data_array_PROJ_3D(data):
 
