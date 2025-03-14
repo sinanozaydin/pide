@@ -45,7 +45,6 @@ def read_ModEM_rho(rho_file_path):
 
 	rho = np.exp(np.array(rho))
 
-	
 	z_depth = np.array([0.0])
 	z_grid = np.cumsum(z_grid)
 	

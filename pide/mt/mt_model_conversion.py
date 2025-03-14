@@ -372,11 +372,8 @@ def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, i
 
 	from pathlib import Path
 	from pide.mt.mt_model_read import read_ModEM_rho
-	from pide.utils.gis_tools import utm_to_lat_lon, lat_lon_to_utm, get_utm_zone_number
 	import decimal
 
-	
-	
 	if isinstance(include_tipper,bool):
 		pass
 	else:
@@ -546,7 +543,7 @@ def get_station_elevation_ModEM_rho(input_rho, station_location_arrays = None, a
 			
 	return (station_location_arrays[0]*1e-3,station_location_arrays[1]*1e-3,np.array(depth_sol)*1e-3)
 		
-def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_skip = None, station_selection_list = None):
+def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_skip = None, station_offset = None, station_selection_list = None):
 
 	from pide.utils.utils import read_csv
 	
@@ -592,9 +589,14 @@ def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_
 	for i in range(0,station_change_row[0]):
 		lines.append(' '.join(dat_data[i]) + '\n')
 		
+	if station_offset is not None:
+		station_offset = int(station_offset)
+	else:
+		station_offset = 0
+		
 	if station_skip is not None:
 	
-		for i in range(0,len(station_change_row),station_skip):
+		for i in range(0+station_offset,len(station_change_row),station_skip):
 			
 			try:
 				for j in range(station_change_row[i],station_change_row[i+1]):
@@ -666,8 +668,12 @@ def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_
 		if station_skip is not None:
 			import matplotlib.pyplot as plt
 			
+			
 			plt.plot(station_x,station_y, 'o',color = 'k', label = 'All Stations')
-			plt.plot(station_x[::station_skip],station_y[::station_skip], 's',color = 'r', markersize = 1.5,label = 'Selected Stations')
+			if station_offset is None:
+				plt.plot(station_x[::station_skip],station_y[::station_skip], 's',color = 'r', markersize = 1.5,label = 'Selected Stations')
+			else:
+				plt.plot(station_x[station_offset:][::station_skip],station_y[station_offset:][::station_skip], 's',color = 'r', markersize = 1.5,label = 'Selected Stations')
 			plt.show()
 		
 		filesave = open(file_out,'w')
@@ -675,6 +681,59 @@ def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_
 		filesave.close()
 		print(f'File is written at the location: {file_out}')
 		
+def selectstationsModEMdatFile(file_out, input_dat, station_str_list):
+
+	from pide.utils.utils import read_csv
+	dat_data = read_csv(filename = input_dat, delim = ' ')
+
+	dash_found = False
+	
+	#reading data
+	for rows in range(0,15):
+		if dat_data[rows][0] == '>':
+			start_idx = rows
+	start_idx = start_idx + 1
+
+	for row in range(start_idx,len(dat_data)):
+		if dat_data[row][0] == '#' :
+			limitlines = row-1
+			dash_found = True
+
+	if dash_found == False:
+		limitlines = len(dat_data)-1
+
+	station_names = []
+	station_change_row = []
+	station_x = []
+	station_y = []
+	for row in range(start_idx,limitlines):
+		if dat_data[row][1] != dat_data[row-1][1]:
+			station_names.append(dat_data[row][1])
+			station_x.append(float(dat_data[row][4]))
+			station_y.append(float(dat_data[row][5]))
+			change = row
+			station_change_row.append(change)
+			lenst = len(station_change_row)
+	station_change_row.append(limitlines)
+	
+	#changing the station length
+	dat_data[7][2] = str(len(station_str_list))
+
+	lines = []
+	for i in range(0,station_change_row[0]):
+		lines.append(' '.join(dat_data[i]) + '\n')
+		
+	for i in range(station_change_row[0], len(dat_data)-1):
+		
+		if dat_data[i][1] in station_str_list:
+			lines.append(' '.join(dat_data[i]) + '\n')
+	lines.append('#')
+	
+	filesave = open(file_out,'w')
+	filesave.writelines(lines)
+	filesave.close()
+	print(f'File is written at the location: {file_out}')
+	
 def createModEMHomogeneousModel(file_out, input_rho, input_resistivity):
 
 	from pide.utils.utils import read_csv
@@ -763,4 +822,142 @@ def createModEMcovfile(file_out, input_rho, cov_val):
 	filesave.writelines(lines)
 	filesave.close()
 	print(f'File is written at the location: {file_out}')
+	
+def modem_rho_to_vtk(rho_file, filename_out):
+
+	from pide.mt.mt_model_read import read_ModEM_rho
+	import vtk
+	
+	rho, mesh_centers_x_array, mesh_centers_y_array, z_mesh_center = read_ModEM_rho(rho_file)
+	
+	mesh_centers_x_array = mesh_centers_x_array * 1e-3
+	mesh_centers_y_array = mesh_centers_y_array * 1e-3
+	z_mesh_center = z_mesh_center * 1e-3
+	
+	rho_flatten = rho.flatten()
+	
+	x_uniq = np.unique(mesh_centers_x_array)
+	y_uniq = np.unique(mesh_centers_y_array)
+	
+	leny = len(y_uniq)
+	lenx = len(x_uniq)
+	
+	idx_core_start_y = np.where(np.diff(y_uniq) == np.median(np.diff(y_uniq)))[0][1] - 1
+	idx_core_end_y = np.where(np.diff(y_uniq) == np.median(np.diff(y_uniq)))[0][-1] + 1
+	mesh_y_start = y_uniq[idx_core_start_y]
+	mesh_y_end = y_uniq[idx_core_end_y]
+	
+	idx_core_start_x = np.where(np.diff(x_uniq) == np.median(np.diff(x_uniq)))[0][1] - 1
+	idx_core_end_x = np.where(np.diff(x_uniq) == np.median(np.diff(x_uniq)))[0][-1] + 1
+	mesh_x_start = y_uniq[idx_core_start_x]
+	mesh_x_end = y_uniq[idx_core_end_x]
+	
+	idx_core_end_z = np.where(np.diff(z_mesh_center) == np.median(np.diff(z_mesh_center)))[0][-1] + 1
+	mesh_z_end = z_mesh_center[idx_core_end_z]
+	
+	resolution = np.median(np.diff(z_mesh_center)) / 4.0
+	
+	data = []
+	
+	for i in range(len(z_mesh_center)):
+		for j in range(0,len(mesh_centers_x_array)):
+			if z_mesh_center[i] <= mesh_z_end:
+				if (mesh_centers_x_array[j] >= mesh_x_start) and (mesh_centers_x_array[j] <= mesh_x_end):
+					if (mesh_centers_y_array[j] >= mesh_y_start) and (mesh_centers_y_array[j] <= mesh_y_end):
+						data.append([mesh_centers_x_array[j],mesh_centers_y_array[j],z_mesh_center[i],rho_flatten[(i*len(mesh_centers_x_array)) + j]])
+	"""
+	points = vtk.vtkPoints()
+	scalars = vtk.vtkFloatArray()
+	scalars.SetName("Resistivity[ohm.m]")
+	
+	
+	
+	# Insert points and values
+	for x, y, z, v in data:
+		points.InsertNextPoint(x, y, z)
+		scalars.InsertNextValue(v)
+	"""
+	# Separate coordinates and scalar values
+	
+	import ipdb
+	ipdb.set_trace()
+	data = np.array(data)
+	points = data[:, :3]
+	values = data[:, 3]
+	
+	# Determine bounds for the grid
+	nx = int((mesh_x_end - mesh_x_start) / resolution)
+	ny = int((mesh_y_end - mesh_y_start) / resolution)
+	nz = int(mesh_z_end / resolution)
+
+	# Create a regular grid in the domain defined by the bounds
+	xi = np.linspace(mesh_x_start, mesh_x_end, nx)
+	yi = np.linspace(mesh_y_start, mesh_y_end, ny)
+	zi = np.linspace(0, mesh_z_end, nz)
+	grid_x, grid_y, grid_z = np.meshgrid(xi, yi, zi, indexing='ij')
+	
+	# Flatten grid coordinates for interpolation
+	grid_points = np.vstack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel())).T
+	
+	# Interpolate the scattered scalar values onto the grid
+	# "linear" interpolation is used here; "nearest" or "cubic" are also available.
+	from scipy.interpolate import griddata
+	
+	grid_values = griddata(points, values, grid_points, method='linear')
+	
+	# Reshape the interpolated values into a 3D array with dimensions (nx, ny, nz)
+	grid_values = grid_values.reshape((nx, ny, nz))
+	
+	# Create a UniformGrid (structured grid) in PyVista
+	grid = pv.UniformGrid()
+	
+	# Set the dimensions: note that dimensions are number of points in each direction.
+	grid.dimensions = np.array(grid_values.shape)
+	
+	# Set the origin and spacing for the grid.
+	# Spacing is computed based on the grid resolution and the extents of the data.
+	grid.origin = (x_min, y_min, z_min)
+	grid.spacing = ((x_max - x_min) / (nx - 1),
+	                (y_max - y_min) / (ny - 1),
+	                (z_max - z_min) / (nz - 1))
+	
+	# Assign the interpolated values to the grid as point data.
+	# Note: For UniformGrid, the point data array size should match the total number of grid points.
+	grid.point_arrays["interpolated_values"] = grid_values.ravel(order="F")
+	
+	# Save the volume to a VTK file.
+	grid.save("volume_output.vtk")
+	
+	print("Volume saved to 'volume_output.vtk'")
+
+	"""
+	# Create polydata
+	polydata = vtk.vtkPolyData()
+	polydata.SetPoints(points)
+	polydata.GetPointData().SetScalars(scalars)
+	
+	# Convert points to vertex cells using vtkVertexGlyphFilter
+	vertex_filter = vtk.vtkVertexGlyphFilter()
+	vertex_filter.SetInputData(polydata)
+	vertex_filter.Update()
+	
+	polydata_with_vertices = vertex_filter.GetOutput()
+	
+	# Write the output to a VTK file in ASCII format
+	writer = vtk.vtkPolyDataWriter()
+	writer.SetFileName("output_with_vertices.vtk")
+	writer.SetInputData(polydata_with_vertices)
+	writer.SetFileTypeToASCII()  # Force ASCII output for compatibility
+	writer.Write()
+	"""
+	
+	
+	"""
+	import matplotlib.pyplot as plt
+
+	fig = plt.figure()
+	ax = plt.subplot(111)
+	ax.scatter(mesh_centers_x_array,mesh_centers_y_array,c = rho.flatten()[:len(mesh_centers_x_array)])
+	plt.show()
+	"""
 	
