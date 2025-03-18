@@ -826,15 +826,16 @@ def createModEMcovfile(file_out, input_rho, cov_val):
 def modem_rho_to_vtk(rho_file, filename_out):
 
 	from pide.mt.mt_model_read import read_ModEM_rho
-	import vtk
+	import pyvista as pv
 	
 	rho, mesh_centers_x_array, mesh_centers_y_array, z_mesh_center = read_ModEM_rho(rho_file)
 	
 	mesh_centers_x_array = mesh_centers_x_array * 1e-3
 	mesh_centers_y_array = mesh_centers_y_array * 1e-3
-	z_mesh_center = z_mesh_center * 1e-3
+	z_mesh_center = z_mesh_center * -1e-3
 	
 	rho_flatten = rho.flatten()
+	rho_flatten = rho_flatten[::-1]
 	
 	x_uniq = np.unique(mesh_centers_x_array)
 	y_uniq = np.unique(mesh_centers_y_array)
@@ -855,109 +856,55 @@ def modem_rho_to_vtk(rho_file, filename_out):
 	idx_core_end_z = np.where(np.diff(z_mesh_center) == np.median(np.diff(z_mesh_center)))[0][-1] + 1
 	mesh_z_end = z_mesh_center[idx_core_end_z]
 	
-	resolution = np.median(np.diff(z_mesh_center)) / 4.0
+	resolution = abs(np.median(np.diff(z_mesh_center)) / 4.0)
 	
 	data = []
 	
 	for i in range(len(z_mesh_center)):
 		for j in range(0,len(mesh_centers_x_array)):
-			if z_mesh_center[i] <= mesh_z_end:
+			if z_mesh_center[i] >= mesh_z_end:
 				if (mesh_centers_x_array[j] >= mesh_x_start) and (mesh_centers_x_array[j] <= mesh_x_end):
 					if (mesh_centers_y_array[j] >= mesh_y_start) and (mesh_centers_y_array[j] <= mesh_y_end):
-						data.append([mesh_centers_x_array[j],mesh_centers_y_array[j],z_mesh_center[i],rho_flatten[(i*len(mesh_centers_x_array)) + j]])
-	"""
-	points = vtk.vtkPoints()
-	scalars = vtk.vtkFloatArray()
-	scalars.SetName("Resistivity[ohm.m]")
-	
-	
-	
-	# Insert points and values
-	for x, y, z, v in data:
-		points.InsertNextPoint(x, y, z)
-		scalars.InsertNextValue(v)
-	"""
-	# Separate coordinates and scalar values
-	
-	import ipdb
-	ipdb.set_trace()
+						data.append([-mesh_centers_x_array[j],mesh_centers_y_array[j],z_mesh_center[i],rho_flatten[(i*len(mesh_centers_x_array)) + j]])
+
 	data = np.array(data)
+	
 	points = data[:, :3]
 	values = data[:, 3]
 	
-	# Determine bounds for the grid
 	nx = int((mesh_x_end - mesh_x_start) / resolution)
 	ny = int((mesh_y_end - mesh_y_start) / resolution)
-	nz = int(mesh_z_end / resolution)
-
-	# Create a regular grid in the domain defined by the bounds
+	nz = abs(int(mesh_z_end / resolution))
+	
 	xi = np.linspace(mesh_x_start, mesh_x_end, nx)
 	yi = np.linspace(mesh_y_start, mesh_y_end, ny)
-	zi = np.linspace(0, mesh_z_end, nz)
+	zi = np.linspace(0,mesh_z_end, nz)
 	grid_x, grid_y, grid_z = np.meshgrid(xi, yi, zi, indexing='ij')
 	
-	# Flatten grid coordinates for interpolation
 	grid_points = np.vstack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel())).T
+
+	print('Started interpolating')
+	grid_values = griddata(points, values, grid_points, method='nearest')
+	print('Interpolation Finished')
 	
-	# Interpolate the scattered scalar values onto the grid
-	# "linear" interpolation is used here; "nearest" or "cubic" are also available.
-	from scipy.interpolate import griddata
-	
-	grid_values = griddata(points, values, grid_points, method='linear')
-	
-	# Reshape the interpolated values into a 3D array with dimensions (nx, ny, nz)
 	grid_values = grid_values.reshape((nx, ny, nz))
 	
-	# Create a UniformGrid (structured grid) in PyVista
-	grid = pv.UniformGrid()
-	
-	# Set the dimensions: note that dimensions are number of points in each direction.
+	grid = pv.ImageData()
+
 	grid.dimensions = np.array(grid_values.shape)
 	
-	# Set the origin and spacing for the grid.
-	# Spacing is computed based on the grid resolution and the extents of the data.
-	grid.origin = (x_min, y_min, z_min)
-	grid.spacing = ((x_max - x_min) / (nx - 1),
-	                (y_max - y_min) / (ny - 1),
-	                (z_max - z_min) / (nz - 1))
+	grid.origin = (0, 0, mesh_z_end)
+	grid.spacing = ((mesh_x_end - mesh_x_start) / (nx - 1),
+					(mesh_y_end - mesh_y_start) / (ny - 1),
+					abs((mesh_z_end - 0) / (nz - 1)))
 	
-	# Assign the interpolated values to the grid as point data.
-	# Note: For UniformGrid, the point data array size should match the total number of grid points.
-	grid.point_arrays["interpolated_values"] = grid_values.ravel(order="F")
+	grid.point_data["resistivity"] = grid_values.ravel(order="F")
 	
 	# Save the volume to a VTK file.
-	grid.save("volume_output.vtk")
+	if '.vtk' in filename_out:
+		grid.save(filename_out)
+	else:
+		grid.save(filename_out + '.vtk')
 	
-	print("Volume saved to 'volume_output.vtk'")
-
-	"""
-	# Create polydata
-	polydata = vtk.vtkPolyData()
-	polydata.SetPoints(points)
-	polydata.GetPointData().SetScalars(scalars)
-	
-	# Convert points to vertex cells using vtkVertexGlyphFilter
-	vertex_filter = vtk.vtkVertexGlyphFilter()
-	vertex_filter.SetInputData(polydata)
-	vertex_filter.Update()
-	
-	polydata_with_vertices = vertex_filter.GetOutput()
-	
-	# Write the output to a VTK file in ASCII format
-	writer = vtk.vtkPolyDataWriter()
-	writer.SetFileName("output_with_vertices.vtk")
-	writer.SetInputData(polydata_with_vertices)
-	writer.SetFileTypeToASCII()  # Force ASCII output for compatibility
-	writer.Write()
-	"""
-	
-	
-	"""
-	import matplotlib.pyplot as plt
-
-	fig = plt.figure()
-	ax = plt.subplot(111)
-	ax.scatter(mesh_centers_x_array,mesh_centers_y_array,c = rho.flatten()[:len(mesh_centers_x_array)])
-	plt.show()
-	"""
+	print(f"Volume saved as {filename_out}.")
 	
