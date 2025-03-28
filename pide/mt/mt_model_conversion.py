@@ -826,6 +826,7 @@ def createModEMcovfile(file_out, input_rho, cov_val):
 def modem_rho_to_vtk(rho_file, filename_out):
 
 	from pide.mt.mt_model_read import read_ModEM_rho
+	from scipy.interpolate import griddata
 	import pyvista as pv
 	
 	rho, mesh_centers_x_array, mesh_centers_y_array, z_mesh_center = read_ModEM_rho(rho_file)
@@ -850,8 +851,8 @@ def modem_rho_to_vtk(rho_file, filename_out):
 	
 	idx_core_start_x = np.where(np.diff(x_uniq) == np.median(np.diff(x_uniq)))[0][1] - 1
 	idx_core_end_x = np.where(np.diff(x_uniq) == np.median(np.diff(x_uniq)))[0][-1] + 1
-	mesh_x_start = y_uniq[idx_core_start_x]
-	mesh_x_end = y_uniq[idx_core_end_x]
+	mesh_x_start = x_uniq[idx_core_start_x]
+	mesh_x_end = x_uniq[idx_core_end_x]
 	
 	idx_core_end_z = np.where(np.diff(z_mesh_center) == np.median(np.diff(z_mesh_center)))[0][-1] + 1
 	mesh_z_end = z_mesh_center[idx_core_end_z]
