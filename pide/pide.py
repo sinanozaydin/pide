@@ -153,6 +153,7 @@ class pide(object):
 		self.set_bulk_water(self.bulk_water)
 		self.set_alopx(self.al_opx)
 		self.set_melt_fluid_frac(self.melt_fluid_mass_frac)
+		self.set_melt_properties(reval = True)
 		
 		#arrays with mineral specific arrays
 		if pide.solid_phase_method == 2:
@@ -733,9 +734,10 @@ class pide(object):
 	
 		try: 
 			self.T = T
+			self.T = np.array(T)
 		except TypeError:
 			self.T = np.array(T)
-			
+
 		if len(np.flatnonzero(self.T < 0)) != 0:
 		
 			raise ValueError('There is a value entered in temperature contents that is below zero.')
@@ -1937,7 +1939,7 @@ class pide(object):
 		self.density_loaded = False
 		self.seismic_setup = False
 			
-	def set_melt_properties(self, **kwargs):
+	def set_melt_properties(self, reval = False, **kwargs):
 	
 		"""A method to set some melt properties. These are: CO_2, water, Na2O and K2O contents.
 		
@@ -1955,10 +1957,17 @@ class pide(object):
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
 	
-		self.co2_melt = array_modifier(input = kwargs.pop('co2', 0), array = self.T, varname = 'co2_melt')  #in ppm
-		self.h2o_melt = array_modifier(input = kwargs.pop('water', 0), array = self.T, varname = 'h2o_melt')  #in ppm
-		self.na2o_melt = array_modifier(input = kwargs.pop('na2o', 0), array = self.T, varname = 'na2o_melt')  #in wt
-		self.k2o_melt = array_modifier(input = kwargs.pop('k2o', 0), array = self.T, varname = 'k2o_melt')  #in wt
+		if reval == False:
+			self.co2_melt = array_modifier(input = kwargs.pop('co2', 0), array = self.T, varname = 'co2_melt')  #in ppm
+			self.h2o_melt = array_modifier(input = kwargs.pop('water', 0), array = self.T, varname = 'h2o_melt')  #in ppm
+			self.na2o_melt = array_modifier(input = kwargs.pop('na2o', 0), array = self.T, varname = 'na2o_melt')  #in wt
+			self.k2o_melt = array_modifier(input = kwargs.pop('k2o', 0), array = self.T, varname = 'k2o_melt')  #in wt
+		elif reval == True:
+		
+			self.co2_melt = array_modifier(input = self.co2_melt, array = self.T, varname = 'co2_melt')  #in ppm
+			self.h2o_melt = array_modifier(input = self.h2o_melt, array = self.T, varname = 'h2o_melt')  #in ppm
+			self.na2o_melt = array_modifier(input = self.na2o_melt, array = self.T, varname = 'na2o_melt')  #in wt
+			self.k2o_melt = array_modifier(input = self.k2o_melt, array = self.T, varname = 'k2o_melt')  #in wt
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
@@ -2561,10 +2570,9 @@ class pide(object):
 
 				melt_odd_function = pide.name[1][pide.melt_cond_selection]
 			
-			
 			cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
-			'Melt_CO2 = self.co2_melt, Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], method = method)')
-		
+			'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], method = method)')
+
 		return cond_melt
 
 	def calculate_rock_conductivity(self, rock_idx = None, method = 'array', **kwargs):

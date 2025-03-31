@@ -190,5 +190,14 @@ def Guo2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
 	cond = 10.0**(3.205 - (0.102 * Melt_H2O) -\
 		(-(4228.5 - (354.7 * Melt_H2O) + (693.6 * P)) / T))
+		
+	return cond
 
+def Poe2008_Phonotephrite_Average(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+
+	Ea = 116000.0
+	sigma_cond = 34700.0
+	
+	cond = sigma_cond * np.exp((-Ea) / (R_const*T))
+		
 	return cond
