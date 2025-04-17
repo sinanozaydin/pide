@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Observed value (target output)
-T = np.array([1100.0])
+T = np.array([1050.0])
 P = np.array([2])
 
 #Bounds for the search space.
@@ -37,14 +37,14 @@ ipdb.set_trace()
 sys.exit()
 """
 
-cond_external = [1e-2]
+cond_external = [1e-3]
 initial_water = 100
-initial_phlg = 0.02
+initial_phlg = 0.0
 initial_params = [[initial_water, initial_phlg]]
 
 sigma = 1e-2 * np.ones(len(T))#in log
 n_iterations = 100000
-proposal_std = [100,0.03]
+proposal_std = [100,0.01]
 burning = 10000
 
 for i in range(1):
