@@ -39,8 +39,25 @@ def Pommier2008_WetBasalt_Na(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,metho
 
 
 def Ni2011_WetBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+	
+	if method == 'array':
+		P = P[0]
+		T = T[0]
+		Melt_H2O = Melt_H2O[0]
 
-	cond = 10**(2.172 - ((860.82 - (204.46*np.sqrt(Melt_H2O))) / (T - 1146.8)))
+		cond = np.zeros(len(T))
+
+		for i in range(len(T)):
+			if T[i] > 1146.8:
+				cond[i] = 10**(2.172 - ((860.82 - (204.46*np.sqrt(Melt_H2O[i]))) / (T[i] - 1146.8)))
+			else:
+				cond[i] = np.nan
+	else:
+
+		if T > 1146.8:
+			cond = 10**(2.172 - ((860.82 - (204.46*np.sqrt(Melt_H2O))) / (T - 1146.8)))
+		else:
+			cond = np.nan
 
 	return cond
 

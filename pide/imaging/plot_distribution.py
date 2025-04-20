@@ -53,7 +53,9 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	param_2_max = kwargs.pop('param_2_max', np.amax(data_param_2))
 	param1_name = kwargs.pop('param1_name', 'Param 1')
 	param2_name = kwargs.pop('param2_name', 'Param 2')
-	colormap = kwargs.pop('colormap','Greys')
+	colormap = kwargs.pop('colormap','viridis')
+
+	from matplotlib.colors import LogNorm
 	
 	# Define the histogram bins
 	
@@ -66,10 +68,10 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	heatmap[heatmap == 0] = np.min(heatmap[heatmap > 0]) * 0.1
 	# Plot the heatmap
 	plt.figure(figsize=(8, 6))
-	# vmin_ = 0.0
-	# vmax_ = np.amax(heatmap_masked) / 2.0
-	vmin_ = np.percentile(heatmap, 1)
-	vmax_ = np.percentile(heatmap, 99)
+	vmin_ = 0.0
+	vmax_ = np.amax(heatmap) / 2.0
+	# vmin_ = np.percentile(heatmap, 1)
+	# vmax_ = np.percentile(heatmap, 99)
 	
 	im = plt.imshow(
 		heatmap.T, 
@@ -79,7 +81,6 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 		vmin = vmin_,
 		vmax = vmax_,
 		aspect='auto',
-		norm=LogNorm(vmin=vmin_, vmax=vmax_) 
 	)
 	cbar = plt.colorbar(im, label='Density')
 	im.set_clim([vmin_, vmax_])

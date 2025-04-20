@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Observed value (target output)
-T = np.array([1200.0])
+T = np.array([1300.0])
 P = np.array([2])
 
 #Bounds for the search space.
@@ -32,27 +32,29 @@ import ipdb
 ipdb.set_trace()
 """
 
-cond_external = [1e-2]
+cond_external = [1e-1]
 initial_water = 1000
 initial_melt = 0.3
 initial_params = [[initial_water, initial_melt]]
 
-sigma = 0.05 * np.ones(len(T))#in log
+sigma = 0.1 * np.ones(len(T))#in log
 n_iterations = 1000000
-proposal_std = [100,0.02]
-burning = 0
+proposal_std = [12500,0.25]
+burning = 50000
 
 c_list, residual_list = conductivity_solver_single_param(object = p_obj, cond_list = cond_external,
 param_name = 'bulk_water', upper_limit_list = np.ones(len(T))* 1e4, lower_limit_list= np.zeros(len(T)),
 search_start = 30, acceptence_threshold = 0.5, num_cpu = 1)
 
 for i in range(1):
+	
 	start_time = time.time()
 	samples, acceptance_rates, misfits, samples_all, misfits_all = conductivity_metropolis_hastings_two_param(object = p_obj, cond_list = cond_external,
 	initial_params = initial_params,param_name_1 = 'bulk_water',
 	param_name_2= "melt_fluid_mass_frac", upper_limits = (water_max,melt_max),
 		lower_limits = (water_min,melt_min), sigma_cond = sigma,proposal_stds=proposal_std
-		,n_iter = n_iterations, burning = burning, transition_zone = False,num_cpu = 1,adaptive_alg = False)
+		,n_iter = n_iterations, burning = burning, transition_zone = False,num_cpu = 1,adaptive_alg = True,
+		step_size_limits = [25000,0.5])
 	
 	end_time = time.time()
 	print(f'Time passed for processing: {end_time-start_time} seconds')
@@ -68,7 +70,10 @@ for i in range(1):
 	plot_posterior_distribution_two_params(data_param_1 = water_samples,data_param_2 = melt_samples, file_name = f"{i}_distr.png",save = True)
 	plot_posterior_distribution_heatmap_two_params(data_param_1 = water_samples,
 	data_param_2 = melt_samples, param_1_min = 0, param_1_max = np.amax(water_samples_all),
-	param_2_min = 0, param_2_max = np.amax(melt_samples_all),file_name = f"{i}_solution.png",save = True)
+	param_2_min = 0, param_2_max = np.amax(melt_samples_all),
+	param1_name = "Water Content (ppm)",
+	param2_name = 'Melt Fraction',
+	file_name = f"{i}_solution.png",save = True)
 	"""
 	sc = plt.scatter(water_samples,melt_samples,c = misfits,cmap = 'viridis', vmin = np.amin(misfits),vmax = np.amax(misfits))
 	cbar = plt.colorbar(sc)

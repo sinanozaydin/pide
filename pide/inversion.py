@@ -351,7 +351,7 @@ def _likelihood(cond, cond_external, sigma):
 
 def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1, param_name_2, upper_limits,
 	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, continue_bool, adaptive_alg = True,
-	ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000, comp_index = [0,0],
+	ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000, comp_index = [0,0], step_size_limits = None,
 	transition_zone = False):
 
 	if continue_bool[index] == True:
@@ -429,10 +429,11 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		samples_all = []
 		acceptance_rates = []
 		accepted = 0
-		
+		print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
+
 		#loop for monte-carlo
 		for _ in range(n_iter):
-		
+
 			#proposing the new parameters
 			proposal = np.array(current_params)
 			rand_node = int(np.floor(np.random.rand(1)*2.0)[0]) #randomnode generation 1 or 0
@@ -510,11 +511,17 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 					if adaptive_alg == True:
 						if (_ + 1) % adaptive_check_length == 0:
 							if acceptance_rate <= ideal_acceptance_bounds[0]:
-								proposal_stds = np.array(proposal_stds) * 0.95
-								print(text_color.YELLOW + f'Stds for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+								proposal_stds[rand_node] = proposal_stds[rand_node] * 0.95
+								if step_size_limits is not None:
+									if proposal_stds[rand_node] > step_size_limits[rand_node]:
+										proposal_stds[rand_node] = step_size_limits[rand_node]
+								print(text_color.YELLOW + f'Step size (std) for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 							elif acceptance_rate >= ideal_acceptance_bounds[1]:
-								proposal_stds = np.array(proposal_stds) * 1.05
-								print(text_color.RED + f'Stds for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+								proposal_stds[rand_node] = proposal_stds[rand_node] * 1.05
+								if step_size_limits is not None:
+									if proposal_stds[rand_node] > step_size_limits[rand_node]:
+										proposal_stds[rand_node] = step_size_limits[rand_node]
+								print(text_color.RED + f'Step size (std) for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 							else:
 								print(text_color.GREEN + f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 					else:
@@ -549,9 +556,10 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	float: acceptance_threshold - acceptance value to stop inversion process.
 	array: cond_err - error floors to add to the inversion.
 	bool: transition_zone - boolean value to indicate transition zone water distribution functions are going to be used.
+	bool: adaptive_alg - boolean value to indicate whethere adaptive algorithm that changes step size dependent on acceptance rate.
+	int: adaptive_check_length - integer to indicate checking adaptive algorithm change.
+	array: step_size_limits - 
 	int: num_cpu - number of cpu to compute the inversion.
-
-
 	"""
 
 	#Pre-checks for if
@@ -565,9 +573,12 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 
 	cond_check = object.calculate_conductivity()
 
+	save_distr = kwargs.pop('save_distr',False)
+	distr_file_names = kwargs.pop('distr_file_names','distribution_solution')
 	adaptive_alg = kwargs.pop('adaptive_alg', True)
 	ideal_acceptance_bounds = kwargs.pop('ideal_acceptance_bounds',[0.2,0.3])
 	adaptive_check_length = kwargs.pop('adaptive_check_length', 1000)
+	step_size_limits = kwargs.pop('step_size_limits',None)
 
 	#Pre checks for the input parameters.
 	if type(ideal_acceptance_bounds) == list:
@@ -698,7 +709,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 			process_item_partial = partial(_solv_MCMC_two_param, object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool, adaptive_alg = adaptive_alg, adaptive_check_length = adaptive_check_length,
-			ideal_acceptance_bounds = ideal_acceptance_bounds)
+			step_size_limits = step_size_limits, ideal_acceptance_bounds = ideal_acceptance_bounds)
 
 			c = pool.map(process_item_partial, index_list)
 
@@ -721,12 +732,25 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 			c = _solv_MCMC_two_param(index = index_list[idx], object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool, adaptive_alg = adaptive_alg, adaptive_check_length = adaptive_check_length,
-			ideal_acceptance_bounds = ideal_acceptance_bounds)
+			step_size_limits = step_size_limits, ideal_acceptance_bounds = ideal_acceptance_bounds)
 
 			sample_distr.append(c[0])
 			acceptance_rates.append(c[1])
 			misfits.append(c[2])
 			samples_all.append(c[3])
 			misfits_all.append(c[4])
+
+	if save_distr == True:
+
+		from pide.utils.utils import save_h5_files
+
+		array_names_idx = list(range(len(sample_distr)))
+		array_names_idx = [str(element) for element in array_names_idx]
+
+		save_h5_files(array_list=sample_distr, array_names=array_names_idx, file_name=distr_file_names + '_distr.h5')
+		save_h5_files(array_list=acceptance_rates, array_names=array_names_idx, file_name=distr_file_names + '_acceptance.h5')
+		save_h5_files(array_list=misfits, array_names=array_names_idx, file_name=distr_file_names + '_misfit.h5')
+		save_h5_files(array_list=samples_all, array_names=array_names_idx, file_name=distr_file_names + '_distr_all.h5')
+		save_h5_files(array_list=misfits_all, array_names=array_names_idx, file_name=distr_file_names + '_misfit_all.h5')
 
 	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all

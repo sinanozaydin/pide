@@ -4480,22 +4480,20 @@ class pide(object):
 		if len(self.T) != len(self.d_opx_ol):
 			
 			self._load_mantle_water_partitions(method = 'array')
-						
+		
 		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (pide.fluid_or_melt_method == 1):
-		
-			self.melt_water = np.zeros(len(self.T))
-		
+				
 			#peridotite melt partitioning
 			self.d_per_melt = (self.ol_frac_wt * self.d_melt_ol) +\
 					(self.opx_frac_wt * self.d_melt_opx) +\
 					(self.cpx_frac_wt * self.d_melt_cpx) +\
 					(self.garnet_frac_wt * self.d_melt_garnet)
 					
-			self.melt_water[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
+			self.h2o_melt[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
 
 			#reassigning the zero mass frac melt layers using pre-mapped indexing array.
 			if idx_node == None:
-				self.melt_water[self.melt_fluid_mass_frac <= 0.0] = 0.0
+				self.h2o_melt[self.melt_fluid_mass_frac <= 0.0] = 0.0
 				
 			self.solid_water[idx_node] = (self.bulk_water[idx_node] * self.d_per_melt[idx_node]) /\
 				(self.melt_fluid_mass_frac[idx_node] + ((1.0 - self.melt_fluid_mass_frac[idx_node]) * self.d_per_melt[idx_node]))
