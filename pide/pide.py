@@ -2320,6 +2320,12 @@ class pide(object):
 				   pide.cpx_seis_selection, pide.mica_seis_selection, pide.garnet_seis_selection, pide.sulphide_seis_selection,
 				   pide.graphite_seis_selection, pide.ol_seis_selection, pide.sp_seis_selection, pide.rwd_wds_seis_selection, pide.perov_seis_selection,
 				   pide.mixture_seis_selection, pide.other_seis_selection]
+				   
+	def set_melt_composition(self, composition, method = 'library')
+	
+		if method == 'library':
+		
+			
 		
 	def set_grain_size(self,reval = False,**kwargs):
 	
@@ -3999,6 +4005,10 @@ class pide(object):
 		self.v_s_lower = np.zeros(len(self.T))
 		self.v_p_lower = np.zeros(len(self.T))
 		
+		if np.mean(self.melt_fluid_mass_frac) != 0:
+		
+			cansu = 1
+		
 		self.seismic_setup = True
 			
 		return unique_compositions, fraction_list, idx_unique, id_list_global
@@ -4039,20 +4049,21 @@ class pide(object):
 			
 				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.unique_compositions[comp_idx], fraction_list=self.fraction_list[self.idx_unique[comp_idx]])
 				
-				medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
-				pressure = self.p[self.idx_unique[comp_idx]], temperature=self.T[self.idx_unique[comp_idx]])
+				medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
+				pressure = self.p[self.idx_unique[comp_idx]], temperature=self.T[self.idx_unique[comp_idx]], modulii_return = True)
 				
 				self.v_bulk[self.idx_unique[comp_idx]] = medium[0]
 				self.v_p[self.idx_unique[comp_idx]] = medium[1]
 				self.v_s[self.idx_unique[comp_idx]] = medium[2]
 				
-				self.v_bulk_upper[self.idx_unique[comp_idx]] = upper[0]
-				self.v_p_upper[self.idx_unique[comp_idx]] = upper[1]
-				self.v_s_upper[self.idx_unique[comp_idx]] = upper[2]
-				
-				self.v_bulk_lower[self.idx_unique[comp_idx]] = lower[0]
-				self.v_p_lower[self.idx_unique[comp_idx]] = lower[1]
-				self.v_s_lower[self.idx_unique[comp_idx]] = lower[2]
+				if return_lower_upper == True:
+					self.v_bulk_upper[self.idx_unique[comp_idx]] = upper[0]
+					self.v_p_upper[self.idx_unique[comp_idx]] = upper[1]
+					self.v_s_upper[self.idx_unique[comp_idx]] = upper[2]
+					
+					self.v_bulk_lower[self.idx_unique[comp_idx]] = lower[0]
+					self.v_p_lower[self.idx_unique[comp_idx]] = lower[1]
+					self.v_s_lower[self.idx_unique[comp_idx]] = lower[2]
 			
 			if return_lower_upper == False:
 				return self.v_bulk, self.v_p, self.v_s
@@ -4070,13 +4081,14 @@ class pide(object):
 			self.v_p[index] = medium[1]
 			self.v_s[index] = medium[2]
 			
-			self.v_bulk_upper[index] = upper[0]
-			self.v_p_upper[index] = upper[1]
-			self.v_s_upper[index] = upper[2]
-			
-			self.v_bulk_lower[index] = lower[0]
-			self.v_p_lower[index] = lower[1]
-			self.v_s_lower[index] = lower[2]
+			if return_lower_upper == True:
+				self.v_bulk_upper[index] = upper[0]
+				self.v_p_upper[index] = upper[1]
+				self.v_s_upper[index] = upper[2]
+				
+				self.v_bulk_lower[index] = lower[0]
+				self.v_p_lower[index] = lower[1]
+				self.v_s_lower[index] = lower[2]
 		
 			if return_lower_upper == False:
 				return self.v_bulk[index], self.v_p[index], self.v_s[index]
