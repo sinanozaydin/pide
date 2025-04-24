@@ -2,7 +2,7 @@
 
 import numpy as np
 
-def Howell_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3,h2o):
+def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3,h2o):
 
 	from burnman.minerals.HGP_2018_ds633 import make_melt_class, q4L, sl1L, wo1L, fo2L, fa2L, jdL, hmL, ekL, tiL, kjL, ctL, h2o1L
 	
