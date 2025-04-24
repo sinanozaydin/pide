@@ -2,7 +2,7 @@ StudyName,Type,Tmin,Tmax,Pmin,Pmax,WCalib,Mg#,sigma_i,sigma_i_err,h_i,h_i_err,si
 Sifre2014_Wet_Carbonated,3,1473,1923,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,melt,None,NaN,Sifre2014_Wet_Carbonated
 Pommier2008_WetBasalt_Na,3,1473,1923,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,melt,None,NaN,Pommier2008_WetBasalt_Na
 Ni2011_WetBasalt,3,1473,1923,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,melt,None,NaN,Ni2011_WetBasalt
-Scarlato2004_DryBasalt,0,400,800,0.9,0.9,0,0,0,0,0,0,2.489,0,82000,0,0,0,0,0,0,0,0,0,0,2800,melt,None,NaN,Scarlato2004_DryBasalt
+Scarlato2004_DryBasalt_H1604,0,400,800,0.9,0.9,0,0,0,0,0,0,2.469,0,80000,0,0,0,0,0,0,0,0,0,0,2800,melt,None,NaN,Scarlato2004_DryBasalt
 TyburczyWaff1983_DryTholeiite,3,1300,1900,0.43,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,melt,None,NaN,TyburczyWaff1983_Basalts
 TyburczyWaff1983_DryAndesite,3,1300,1900,0.43,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,melt,None,NaN,TyburczyWaff1983_Basalts
 Guo2017_WetAndesite,3,1164,1573,0.5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2800,melt,None,NaN,Guo2017_WetAndesite
