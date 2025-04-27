@@ -2333,8 +2333,17 @@ class pide(object):
 				   
 	def set_melt_composition(self, comp):
 	
-		self.melt_comp = array_modifier(input = comp, array = self.T, varname = 'melt_comp')
-			
+		if check_type(comp) is 'array':
+			if isinstance(comp, (list, tuple)) and all(isinstance(item, (list, tuple)) for item in comp):
+				if len(comp) != len(self.T):
+					raise ValueError('The entered melt composition is in a wrong format. It has to be [sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3] x temperature array')
+				else:
+					self.melt_comp = comp
+			else:
+				self.melt_comp = [comp.copy() for _ in range(len(self.T))]
+
+			self.melt_comp = np.array(self.melt_comp)
+
 	def set_grain_size(self,reval = False,**kwargs):
 	
 		"""A method to set grain size of minerals. This will be used in H-diffusion models if grain-boundary
@@ -2919,14 +2928,14 @@ class pide(object):
 		idx_melt_comp, = np.where(self.melt_composition_names==pide.name[1][pide.melt_cond_selection])
 		idx_melt_comp = idx_melt_comp[0]
 		melt_comp = np.array(self.melt_composition_data[idx_melt_comp+1])[1:-2]
-		
+
 		#searching if variable is assigned other than water content
 		if 'Variable' in melt_comp:
 			self.idx_melt_var, = np.where(melt_comp == 'Variable')
+			melt_comp[self.idx_melt_var] = 0
 		else:
 			self.idx_melt_var = None
 		
-		melt_comp[self.idx_melt_var] = 0
 		melt_comp = np.array(melt_comp, dtype = float)
 
 		return melt_comp
@@ -3658,12 +3667,13 @@ class pide(object):
 					if self.melt_comp is None:
 						raise KeyError('You have to define melt composition first with the method: set_melt_composition.')
 				
-				import ipdb
-				ipdb.set_trace()
 				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T, P = self.p, sio2 = self.melt_comp[:,0],
 				al2o3 = self.melt_comp[:,1],mgo = self.melt_comp[:,2],feo = self.melt_comp[:,3],cao = self.melt_comp[:,4],
 				na2o = self.melt_comp[:,5],k2o = self.melt_comp[:,6],tio2 = self.melt_comp[:,7],mno = self.melt_comp[:,8],p2o5 = self.melt_comp[:,9],
 				cr2o3 = self.melt_comp[:,10],h2o = self.h2o_melt*1e-4)
+
+				import ipdb
+				ipdb.set_trace()
 				# self.dens_melt_dry = float(self.dens_mat[1][pide.melt_cond_selection]) / 1e3 #index 1 is equate to melt
 				#Determining xvol, first have to calculate the density of the melt from Sifre et al. (2014)
 				

@@ -14,9 +14,9 @@ def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,
 	density_melt = np.zeros(len(T))
 	bulk_modulus_melt = np.zeros(len(T))
 	
-	for i in range(T):
+	for i in range(len(T)):
 	
-		melt = MyMeltClass([sio2[i],al2o3[i],mgo[i],feo[i],cao[i],
+		melt = melt_class([sio2[i],al2o3[i],mgo[i],feo[i],cao[i],
 		na2o[i],k2o[i],tio2[i],mno[i],p2o5[i],cr2o3[i],h2o[i]])
 		
 		melt.set_state(P[i]*1e9,T[i]) #Pa and K
