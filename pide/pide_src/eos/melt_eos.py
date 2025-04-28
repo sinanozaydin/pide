@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+from pide.utils.utils import _comp_adjust_idx_based
 import numpy as np
+import os, contextlib
 
 def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3,h2o):
 
@@ -15,15 +17,23 @@ def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,
 	bulk_modulus_melt = np.zeros(len(T))
 	
 	for i in range(len(T)):
+		with open(os.devnull, 'w') as fnull, contextlib.redirect_stdout(fnull), contextlib.redirect_stderr(fnull):
+			comp = [sio2[i],al2o3[i],mgo[i],feo[i],cao[i],
+			na2o[i],k2o[i],tio2[i],mno[i],p2o5[i],cr2o3[i],h2o[i]]
+			
+			if sum(comp) != 1.0:
+				#adjusting for h2o if needed...
+				comp = [sio2[i],al2o3[i],mgo[i],feo[i],cao[i],
+				na2o[i],k2o[i],tio2[i],mno[i],p2o5[i],cr2o3[i],0.0]
+				comp = _comp_adjust_idx_based(_comp_list = comp, comp_alien = h2o[i],idx = 11)
+		
+			melt = melt_class(comp)
+			
+			melt.set_state(P[i]*1e9,T[i]) #Pa and K
+			
+			vp_melt[i] = melt.v_p
+			density_melt[i] = melt.density
+			bulk_modulus_melt[i] = melt.density * (melt.v_p**2.0)
 	
-		melt = melt_class([sio2[i],al2o3[i],mgo[i],feo[i],cao[i],
-		na2o[i],k2o[i],tio2[i],mno[i],p2o5[i],cr2o3[i],h2o[i]])
-		
-		melt.set_state(P[i]*1e9,T[i]) #Pa and K
-		
-		vp_melt[i] = melt.vp
-		density_melt[i] = melt.density
-		bulk_modulus_melt[i] = melt.density * (melt.vp**2.0)
-		
-	return density_melt,vp_melt,bulk_modulus_melt
+	return density_melt*1e-3,vp_melt,bulk_modulus_melt
 

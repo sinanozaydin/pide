@@ -194,6 +194,22 @@ def save_h5_files(array_list, array_names, file_name = "Data.h5"):
 
 	print(f'Results are saved at: {file_name}')
 	
+def _comp_adjust_idx_based(_comp_list, comp_alien, idx, final = False):
+
+	"""A method to adjust composition of one mineral/rock without considering the replacement weights
+	"""
+	
+	if final == False:
+		ratio = (comp_alien - _comp_list[idx]) / (np.sum(_comp_list) - _comp_list[idx])
+	else:
+		ratio = (comp_alien - _comp_list[idx]) / (np.sum(_comp_list, axis = 0) - _comp_list[idx])
+
+	comp_list = _comp_list - (_comp_list * ratio)
+	comp_list[idx] = comp_alien
+	
+	return comp_list
+
+	
 class text_color:
    
    #color object for to be called by the print outs.

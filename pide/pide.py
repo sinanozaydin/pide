@@ -49,7 +49,7 @@ from .pide_src.eos.melt_eos import Holland_Green_Powell_2018_ds633_MeltEOS
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv, text_color
+from .utils.utils import check_type, array_modifier, read_csv, text_color, _comp_adjust_idx_based
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -93,6 +93,7 @@ class pide(object):
 		self.cond_calculated = False
 		self.temperature_default = False
 		self.density_loaded = False
+		self.density_fluid_loaded = False
 		self.seis_property_overwrite = [False] * 16
 		self.melt_composition_method = 'Default'
 		
@@ -175,6 +176,7 @@ class pide(object):
 		if self.phs_melt_mix_method == 0:
 			self.set_melt_fluid_interconnectivity(reval = True)
 		self.set_grain_boundary_water_partitioning(reval = True)
+		
 		
 	def _read_cond_models(self):
 		
@@ -756,6 +758,7 @@ class pide(object):
 		self.water_fugacity_calculated = False
 		
 		self.density_loaded = False
+		self.density_fluid_loaded = False
 		self.seismic_setup = False
 		
 	def set_pressure(self,P):
@@ -797,6 +800,7 @@ class pide(object):
 		self.water_fugacity_calculated = False
 		
 		self.density_loaded = False
+		self.density_fluid_loaded = False
 		self.seismic_setup = False
 	
 	def set_depth(self,depth):
@@ -819,6 +823,7 @@ class pide(object):
 			self.depth = array_modifier(input = depth, array = self.T, varname = 'depth')
 			
 		self.density_loaded = False
+		self.density_fluid_loaded = False
 		self.seismic_setup = False
 		
 	def set_watercalib(self,**kwargs):
@@ -1989,6 +1994,8 @@ class pide(object):
 				if len(np.flatnonzero(list_of_values[i] < 0)) != 0:
 				
 					raise ValueError('There is a value entered in melt properties that is below zero.')
+					
+		self.density_fluid_loaded = False
 				
 	def set_fluid_properties(self, **kwargs):
 	
@@ -2013,6 +2020,8 @@ class pide(object):
 		if len(np.flatnonzero(self.salinity_fluid < 0)) != 0:
 		
 			raise ValueError('There is a value entered for fluid properties that is below zero.')
+			
+		self.density_fluid_loaded = False
 			
 	def set_alopx(self,value = 0):
 	
@@ -2333,7 +2342,9 @@ class pide(object):
 				   
 	def set_melt_composition(self, comp):
 	
-		if check_type(comp) is 'array':
+		comp = comp * 1e-2
+		
+		if check_type(comp) == 'array':
 			if isinstance(comp, (list, tuple)) and all(isinstance(item, (list, tuple)) for item in comp):
 				if len(comp) != len(self.T):
 					raise ValueError('The entered melt composition is in a wrong format. It has to be [sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3] x temperature array')
@@ -2343,6 +2354,7 @@ class pide(object):
 				self.melt_comp = [comp.copy() for _ in range(len(self.T))]
 
 			self.melt_comp = np.array(self.melt_comp)
+			
 
 	def set_grain_size(self,reval = False,**kwargs):
 	
@@ -2475,7 +2487,7 @@ class pide(object):
 		if (sigma == 0.0) and (E == 0.0):
 			cond = 0.0
 		else:
-			cond = (10.0**sigma) * (water**r) * np.exp(-(E + (alpha * water)**(1.0/3.0)) / (self.R * T))
+			cond = (10.0**sigma) * (water**r) * np.exp(-(E + (alpha * water)**(0.3333333333333333333)) / (self.R * T))
 
 		return cond
 	
@@ -3084,7 +3096,6 @@ class pide(object):
 		"""
 
 		self.bulk_cond = np.zeros(len(self.T)) #setting up an empty bulk conductivity array for all methods
-		self.dens_melt_fluid = np.zeros(len(self.T))
 
 		if indexing_method == 'array':
 			idx_node = None
@@ -3548,11 +3559,11 @@ class pide(object):
 			self.bulk_cond = self.bckgr_res
 
 		self.solid_phase_cond = np.array(self.bulk_cond)
-			
+		
 		#Calculations regarding solid phases and fluid phases mixing take place after this.
 		#checking if there's any melt/fluid on the list at all.
 		if np.mean(self.melt_fluid_mass_frac) != 0:
-						
+			
 			if indexing_method == 'array':
 				self.melt_fluid_frac = np.zeros(len(self.melt_fluid_mass_frac))
 				start_idx = 0
@@ -3560,7 +3571,7 @@ class pide(object):
 			elif indexing_method == 'index':
 				start_idx = sol_idx
 				end_idx = sol_idx + 1
-
+			
 			self.melt_fluid_frac = np.zeros(len(self.melt_fluid_mass_frac))
 
 			for i in range(start_idx,end_idx):
@@ -3579,7 +3590,7 @@ class pide(object):
 						p = np.log10(1.0 - self.melt_fluid_frac[i]**pide.melt_fluid_m[i]) / np.log10(1.0 - self.melt_fluid_frac[i])
 
 						self.bulk_cond[i] = (self.bulk_cond[i] * (1.0 - self.melt_fluid_frac[i])**p) + (self.melt_fluid_cond[i] * (self.melt_fluid_frac[i]**pide.melt_fluid_m[i]))
-							
+			
 			elif melt_method == 1:
 
 				#Tubes model for melt and solid mixture from ten Grotenhuis et al. (2005) eq.5
@@ -3642,47 +3653,15 @@ class pide(object):
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
 						
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
-		
-			self.calculate_density_solid() #calculate solid density only when it is needed (in this case, existence of melt/fluid).
+			
+			self.calculate_density_solid()
+			self.calculate_density_fluid(method = method, sol_idx = sol_idx)
 			
 			if pide.fluid_or_melt_method == 0:
 				self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
 			elif pide.fluid_or_melt_method == 1:
 				self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
-				
-			#Calculating density, bulk_modulus and vp of melt_fluid
-			if pide.fluid_or_melt_method == 0: #fluid
-				
-				dens = Sanchez_Valle_2013_WaterDensity(T = self.T, P = self.p)
-				self.dens_melt_fluid = dens / 1e3
-				
-			elif pide.fluid_or_melt_method == 1: #melt
-				
-				if self.melt_composition_method == 'Default':
-					self.melt_comp = self._get_melt_composition(type = 'Default')
-					if self.idx_melt_var is not None:
-						cansu = 1
-					self.set_melt_composition(self.melt_comp)
-				elif self.melt_composition_method == 'Input':
-					if self.melt_comp is None:
-						raise KeyError('You have to define melt composition first with the method: set_melt_composition.')
-				
-				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T, P = self.p, sio2 = self.melt_comp[:,0],
-				al2o3 = self.melt_comp[:,1],mgo = self.melt_comp[:,2],feo = self.melt_comp[:,3],cao = self.melt_comp[:,4],
-				na2o = self.melt_comp[:,5],k2o = self.melt_comp[:,6],tio2 = self.melt_comp[:,7],mno = self.melt_comp[:,8],p2o5 = self.melt_comp[:,9],
-				cr2o3 = self.melt_comp[:,10],h2o = self.h2o_melt*1e-4)
 
-				import ipdb
-				ipdb.set_trace()
-				# self.dens_melt_dry = float(self.dens_mat[1][pide.melt_cond_selection]) / 1e3 #index 1 is equate to melt
-				#Determining xvol, first have to calculate the density of the melt from Sifre et al. (2014)
-				
-				"""
-				self.dens_melt_fluid[idx_node] = (((self.h2o_melt[idx_node] * 1e-4) / 1e2) * 1.4) +\
-				(((self.co2_melt[idx_node] * 1e-4) / 1e2) * 2.4) + (1 - (((self.h2o_melt[idx_node] * 1e-4) +\
-				(self.co2_melt[idx_node] * 1e-4)) / 1e2)) * self.dens_melt_dry #calculating how much volatiles changed its density
-				"""
-	
 		if pide.solid_phase_method == 1:
 		
 			if np.mean(self.granite_frac) != 0:
@@ -3813,7 +3792,7 @@ class pide(object):
 				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 26, sol_idx = index)
 			else:
 				self.other_cond = np.zeros(len(self.T))
-					
+								
 			self._phase_mixing_function(method = pide.phs_mix_method, melt_method = pide.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 		
 		self.cond_calculated = True
@@ -4308,6 +4287,73 @@ class pide(object):
 				else:
 	
 					return density
+					
+	def calculate_density_fluid(self, method = 'array', **kwargs):
+			
+		sol_idx = kwargs.pop('sol_idx', 0)
+		
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+	
+		#Calculating density, bulk_modulus and vp of melt_fluid
+		if pide.fluid_or_melt_method == 0: #fluid
+			
+			dens = Sanchez_Valle_2013_WaterDensity(T = self.T, P = self.p)
+			self.dens_melt_fluid = dens * 1e-3
+			
+			self.density_fluid_loaded = True
+			
+		elif pide.fluid_or_melt_method == 1: #melt
+			
+			if self.density_fluid_loaded == False:
+			
+				if self.melt_composition_method == 'Default':
+				
+					self.melt_comp = self._get_melt_composition(type = 'Default')
+					
+					if self.idx_melt_var is not None:
+						if 5 in self.idx_melt_var:
+							if np.mean(self.na2o_melt) == 0.0:
+								raise ValueError('You have to define Na2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(na2o = 5.3)')
+							else:
+								if np.mean(self.na2o_melt) == self.na2o_melt[0]:
+									self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.na2o_melt[0], idx = 5)
+									
+					if self.idx_melt_var is not None:
+						if 6 in self.idx_melt_var:
+							if np.mean(self.k2o_melt) == 0.0:
+								raise ValueError('You have to define K2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(k2o = 3.2)')
+							else:
+								if np.mean(self.k2o_melt) == self.k2o_melt[0]:
+									self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.k2o_melt[0], idx = 6)
+									
+					self.set_melt_composition(self.melt_comp)
+					
+				elif self.melt_composition_method == 'Input':
+					if self.melt_comp is None:
+						raise KeyError('You have to define melt composition first with the method: set_melt_composition.')
+			
+			if method == 'array':
+				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T, P = self.p, sio2 = self.melt_comp[:,0],
+				al2o3 = self.melt_comp[:,1],mgo = self.melt_comp[:,2],feo = self.melt_comp[:,3],cao = self.melt_comp[:,4],
+				na2o = self.melt_comp[:,5],k2o = self.melt_comp[:,6],tio2 = self.melt_comp[:,7],mno = self.melt_comp[:,8],p2o5 = self.melt_comp[:,9],
+				cr2o3 = self.melt_comp[:,10],h2o = self.h2o_melt*1e-4)
+			elif method == 'index':
+				self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T[idx_node], P = self.p[idx_node], sio2 = self.melt_comp[:,0][idx_node],
+				al2o3 = self.melt_comp[:,1][idx_node],mgo = self.melt_comp[:,2][idx_node],feo = self.melt_comp[:,3][idx_node],cao = self.melt_comp[:,4][idx_node],
+				na2o = self.melt_comp[:,5][idx_node],k2o = self.melt_comp[:,6][idx_node],tio2 = self.melt_comp[:,7][idx_node],mno = self.melt_comp[:,8][idx_node],p2o5 = self.melt_comp[:,9][idx_node],
+				cr2o3 = self.melt_comp[:,10][idx_node],h2o = self.h2o_melt[idx_node]*1e-4)
+				
+			#dealing with addition of co2, because HWGP_2018 do not calculate the effects of CO2
+			if np.mean(self.co2_melt) > 0.0:
+				if method == 'array':
+					self.dens_melt_fluid =  (((self.co2_melt * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt * 1e-4)) * 1e-2)) * self.dens_melt_fluid
+				else:
+					self.dens_melt_fluid[idx_node] =  (((self.co2_melt[idx_node] * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt[idx_node] * 1e-4)) * 1e-2)) * self.dens_melt_fluid[idx_node]
+					
+			self.density_fluid_loaded = True
 			
 	def calculate_o2_fugacity(self,mode):
 
