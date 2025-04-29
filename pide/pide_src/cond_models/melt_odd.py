@@ -23,12 +23,12 @@ def Pommier2008_WetBasalt_Na(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,metho
 
 	P = P * 1e3 #converting GPa to MPa
 
-	phi = (2.439e-11 * Melt_Na2O) + 1.72e-10
 	G = (-2.107e11 * Melt_Na2O) + 1.297e12
-
-	Eb = 0.23 * (1*8*(1.602e-19)**2) / (phi * (1.02e-10 - 1.4e-10))
+	phi = (2.439e-11 * Melt_Na2O) + 1.72e-10
+	
 	Es = 4.0 * np.pi * G * 1.7e-10 * (1.02e-10 - 9.3e-11)**2.0 + (1e3 * Melt_H2O**2.0)
-
+	Eb = 0.23 * (1*8*(1.602e-19)**2) / (phi * (1.02e-10 - 1.4e-10))
+	
 	Ea = Eb + Es
 
 	sigma_0 = np.exp((Ea + 9.9) / 12.5)
@@ -36,7 +36,6 @@ def Pommier2008_WetBasalt_Na(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,metho
 	cond = sigma_0 * np.exp((-Ea - (P * 20)) / (R_const*T))
 
 	return cond
-
 
 def Ni2011_WetBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 	

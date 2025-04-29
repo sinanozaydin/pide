@@ -153,12 +153,13 @@ class pide(object):
 		"""
 		
 		#arrays with single values
-		self.set_temperature(self.T) #in Kelvin
-		self.set_pressure(self.p) #in GPa
-		self.set_bulk_water(self.bulk_water)
+		self.set_temperature(self.T,reval = True) #in Kelvin
+		self.set_pressure(self.p,reval = True) #in GPa
+		self.set_bulk_water(self.bulk_water,reval = True)
 		self.set_alopx(self.al_opx)
-		self.set_melt_fluid_frac(self.melt_fluid_mass_frac)
+		self.set_melt_fluid_frac(self.melt_fluid_mass_frac,reval = True)
 		self.set_melt_properties(reval = True)
+		self.set_fluid_properties(reval = True)
 		
 		#arrays with mineral specific arrays
 		if pide.solid_phase_method == 2:
@@ -176,7 +177,6 @@ class pide(object):
 		if self.phs_melt_mix_method == 0:
 			self.set_melt_fluid_interconnectivity(reval = True)
 		self.set_grain_boundary_water_partitioning(reval = True)
-		
 		
 	def _read_cond_models(self):
 		
@@ -730,7 +730,7 @@ class pide(object):
 				
 		self.density_loaded = False			
 			
-	def set_temperature(self,T):
+	def set_temperature(self,T,reval = False):
 	
 		"""A method to set temperature of the environment.
 		
@@ -753,15 +753,16 @@ class pide(object):
 		if len(np.flatnonzero(self.T < 0)) != 0:
 		
 			raise ValueError('There is a value entered in temperature contents that is below zero.')
+		
+		if reval == False:
+			self.temperature_default = False
+			self.water_fugacity_calculated = False
 			
-		self.temperature_default = False
-		self.water_fugacity_calculated = False
+			self.density_loaded = False
+			self.density_fluid_loaded = False
+			self.seismic_setup = False
 		
-		self.density_loaded = False
-		self.density_fluid_loaded = False
-		self.seismic_setup = False
-		
-	def set_pressure(self,P):
+	def set_pressure(self,P,reval = False):
 	
 		"""A method to set pressure of the environment.
 		
@@ -796,14 +797,15 @@ class pide(object):
 			except TypeError:
 				self.p = np.ones(1) * P
 		
-		self.set_depth(depth = 'auto')
-		self.water_fugacity_calculated = False
+		self.set_depth(depth = 'auto',reval = reval)
 		
-		self.density_loaded = False
-		self.density_fluid_loaded = False
-		self.seismic_setup = False
+		if reval == False:
+			self.water_fugacity_calculated = False
+			self.density_loaded = False
+			self.density_fluid_loaded = False
+			self.seismic_setup = False
 	
-	def set_depth(self,depth):
+	def set_depth(self,depth,reval = False):
 	
 		"""A method to set depth of the environment.
 		
@@ -821,10 +823,11 @@ class pide(object):
 		else:
 		
 			self.depth = array_modifier(input = depth, array = self.T, varname = 'depth')
-			
-		self.density_loaded = False
-		self.density_fluid_loaded = False
-		self.seismic_setup = False
+		
+		if reval == False:
+			self.density_loaded = False
+			self.density_fluid_loaded = False
+			self.seismic_setup = False
 		
 	def set_watercalib(self,**kwargs):
 	
@@ -1696,7 +1699,7 @@ class pide(object):
 			pide.sandstone_water, pide.gneiss_water, pide.amphibolite_water, pide.basalt_water,
 			pide.mud_water, pide.gabbro_water, pide.other_rock_water]
 			
-	def set_bulk_water(self,value, index = None):
+	def set_bulk_water(self,value, reval = False, index = None):
 	
 		"""A method to set bulk water content. This function will override the ones et in set_mineral_water.
 		
@@ -1718,6 +1721,9 @@ class pide(object):
 		if len(np.flatnonzero(self.bulk_water < 0)) != 0:
 				
 			raise ValueError('There is a value entered in bulk_water content that is below zero.')
+			
+		if reval == False:
+			self.density_fluid_loaded = False
 			
 	def set_xfe_mineral(self, reval = False, **kwargs):
 	
@@ -1866,6 +1872,7 @@ class pide(object):
 			self._suggestion_temp_array()
 		
 		if reval == False:
+		
 			pide.granite_param1 = array_modifier(input = kwargs.pop('granite', 0), array = self.T, varname = 'granite_param1')
 			pide.granulite_param1 = array_modifier(input = kwargs.pop('granulite', 0), array = self.T, varname = 'granulite_param1')
 			pide.sandstone_param1 = array_modifier(input = kwargs.pop('sandstone', 0), array = self.T, varname = 'sandstone_param1')
@@ -1892,7 +1899,7 @@ class pide(object):
 			pide.sandstone_param1, pide.gneiss_param1, pide.amphibolite_param1, pide.basalt_param1,
 			pide.mud_param1, pide.gabbro_param1, pide.other_rock_param1]
 						
-	def set_melt_fluid_frac(self, value):
+	def set_melt_fluid_frac(self, value, reval = False):
 	
 		"""A method to set mass melt/fluid fraction of the system.
 		
@@ -1912,6 +1919,9 @@ class pide(object):
 		if len(np.flatnonzero(self.melt_fluid_mass_frac < 0)) != 0:
 		
 			raise ValueError('There is a value entered for melt/fluid fraction that is below zero.')
+			
+		if reval == False:
+			self.density_fluid_loaded = False		
 		
 	def set_melt_or_fluid_mode(self,mode):
 	
@@ -1994,10 +2004,11 @@ class pide(object):
 				if len(np.flatnonzero(list_of_values[i] < 0)) != 0:
 				
 					raise ValueError('There is a value entered in melt properties that is below zero.')
-					
-		self.density_fluid_loaded = False
+		
+		if reval == False:
+			self.density_fluid_loaded = False
 				
-	def set_fluid_properties(self, **kwargs):
+	def set_fluid_properties(self, reval = False, **kwargs):
 	
 		"""A method to set some fluid properties. These are: salinity
 		
@@ -2011,17 +2022,21 @@ class pide(object):
 		set_fluid_properties(salinity = 0.1)
 		set_fluid_properties(salinity = [0.1,0.15])
 		"""
-	
+		
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
-
-		self.salinity_fluid = array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
+		
+		if reval == False:
+			self.salinity_fluid = array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
+		elif reval == True:
+			self.salinity_fluid = array_modifier(input = kwargs.pop(self.salinity_fluid, 0), array = self.T, varname = 'salinity_fluid')
 		
 		if len(np.flatnonzero(self.salinity_fluid < 0)) != 0:
 		
 			raise ValueError('There is a value entered for fluid properties that is below zero.')
-			
-		self.density_fluid_loaded = False
+		
+		if reval == False:
+			self.density_fluid_loaded = False
 			
 	def set_alopx(self,value = 0):
 	
@@ -2342,7 +2357,7 @@ class pide(object):
 				   
 	def set_melt_composition(self, comp):
 	
-		comp = comp * 1e-2
+		comp = comp
 		
 		if check_type(comp) == 'array':
 			if isinstance(comp, (list, tuple)) and all(isinstance(item, (list, tuple)) for item in comp):
@@ -2939,7 +2954,7 @@ class pide(object):
 		#Getting the relevant melt composition index
 		idx_melt_comp, = np.where(self.melt_composition_names==pide.name[1][pide.melt_cond_selection])
 		idx_melt_comp = idx_melt_comp[0]
-		melt_comp = np.array(self.melt_composition_data[idx_melt_comp+1])[1:-2]
+		melt_comp = np.array(self.melt_composition_data[idx_melt_comp+1])[1:-1]
 
 		#searching if variable is assigned other than water content
 		if 'Variable' in melt_comp:
@@ -3661,7 +3676,7 @@ class pide(object):
 				self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
 			elif pide.fluid_or_melt_method == 1:
 				self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
-
+		
 		if pide.solid_phase_method == 1:
 		
 			if np.mean(self.granite_frac) != 0:
@@ -3792,7 +3807,7 @@ class pide(object):
 				self.other_cond = self.calculate_mineral_conductivity(method = method, min_idx= 26, sol_idx = index)
 			else:
 				self.other_cond = np.zeros(len(self.T))
-								
+			
 			self._phase_mixing_function(method = pide.phs_mix_method, melt_method = pide.phs_melt_mix_method, indexing_method= method, sol_idx = index)
 		
 		self.cond_calculated = True
@@ -4042,19 +4057,15 @@ class pide(object):
 			
 		return unique_compositions, fraction_list, idx_unique, id_list_global
 		
-	def calculate_seismic_velocities(self, return_lower_upper=False, mixing_method = 'HS', method = 'array', **kwargs):
+	def calculate_seismic_velocities(self, mixing_method = 'HS', method = 'array', **kwargs):
 	
 		"""A method to calculate seismic velocities for the environment set up.
 		
 		Input:
 		str: method - Calculation method || 'array' or 'index || Default: 'array'
-		bool: return_lower_upper - Boolean to determine whether the function return Lower and upper bounds of mixing function || True or False
 		
 		Output:
-		if return_lower_upper is True
 			v_bulk, v_p, v_s || in (km/s)
-		elif return_lower_upper is False
-			[v_bulk, v_p, v_s], [v_bulk_upper, v_p_upper, v_s_upper], [v_bulk_lower, v_p_lower, v_s_lower] || in (km/s)	
 		"""
 		
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -4075,7 +4086,7 @@ class pide(object):
 		if method == 'array':
 					
 			for comp_idx in range(0,len(self.unique_compositions)):
-			
+				
 				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.unique_compositions[comp_idx], fraction_list=self.fraction_list[self.idx_unique[comp_idx]])
 				
 				medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
@@ -4085,46 +4096,63 @@ class pide(object):
 				self.v_p[self.idx_unique[comp_idx]] = medium[1]
 				self.v_s[self.idx_unique[comp_idx]] = medium[2]
 				
-				if return_lower_upper == True:
-					self.v_bulk_upper[self.idx_unique[comp_idx]] = upper[0]
-					self.v_p_upper[self.idx_unique[comp_idx]] = upper[1]
-					self.v_s_upper[self.idx_unique[comp_idx]] = upper[2]
-					
-					self.v_bulk_lower[self.idx_unique[comp_idx]] = lower[0]
-					self.v_p_lower[self.idx_unique[comp_idx]] = lower[1]
-					self.v_s_lower[self.idx_unique[comp_idx]] = lower[2]
 			
-			if return_lower_upper == False:
-				return self.v_bulk, self.v_p, self.v_s
-			else:
-				return [self.v_bulk, self.v_p, self.v_s], [self.v_bulk_upper, self.v_p_upper, self.v_s_upper], [self.v_bulk_lower, self.v_p_lower, self.v_s_lower]
-				
+							
 		elif method == 'index':
 		
 			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
 			
-			medium,upper,lower = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list[index], fraction_list=fraction_[index],
-				pressure = self.p[index], temperature=self.T[index])
+			medium,upper,lower,bulk_mod,shear_mod = isotropy_object.HashinShtrikmanBounds(phase_constant_list=phase_constant_list[index], fraction_list=fraction_[index],
+				pressure = self.p[index], temperature=self.T[index], modulii_return = True)
 				
 			self.v_bulk[index] = medium[0]
 			self.v_p[index] = medium[1]
 			self.v_s[index] = medium[2]
 			
-			if return_lower_upper == True:
-				self.v_bulk_upper[index] = upper[0]
-				self.v_p_upper[index] = upper[1]
-				self.v_s_upper[index] = upper[2]
+		if np.mean(self.melt_fluid_mass_frac) != 0.0:
+			
+			if self.density_fluid_loaded == False:
+				self.calculate_density_solid()
+				self.calculate_density_fluid(method = method,sol_idx = index)
 				
-				self.v_bulk_lower[index] = lower[0]
-				self.v_p_lower[index] = lower[1]
-				self.v_s_lower[index] = lower[2]
-		
-			if return_lower_upper == False:
-				return self.v_bulk[index], self.v_p[index], self.v_s[index]
-			else:
-				return [self.v_bulk[index], self.v_p[index], self.v_s[index]],\
-				[self.v_bulk_upper[index], self.v_p_upper[index], self.v_s_upper[index]], [self.v_bulk_lower[index], self.v_p_lower[index], self.v_s_lower[index]]
+				self.melt_fluid_frac = np.zeros(len(self.melt_fluid_mass_frac))
 				
+				for i in range(0,len(self.melt_fluid_mass_frac)):
+				
+					if self.melt_fluid_mass_frac[i] != 0.0:
+						
+						self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i]))))
+			
+			alpha = (shear_mod * (9*bulk_mod + 8*shear_mod)) / (6*(bulk_mod + 2*shear_mod))
+			if method == 'array':
+				#Hashin-Shtrikman Lower-Bound 
+				shear_mod_mixture = (((self.melt_fluid_frac / alpha) + ((1-self.melt_fluid_frac) / (shear_mod + alpha)))**-1) - alpha
+				bulk_mod_mixture = (((self.melt_fluid_frac / (self.K_melt_fluid + (1.3333333333333333 * shear_mod))) +\
+				((1-self.melt_fluid_frac) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
+				
+				density_mixture = (self.melt_fluid_mass_frac * self.dens_melt_fluid) + ((1-self.melt_fluid_mass_frac) * self.density_solids) * 1e3
+				self.v_bulk = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
+				self.v_p = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
+				self.v_s = 0.001 * np.sqrt(shear_mod_mixture / density_mixture)
+				
+			elif method == 'index':
+				#Hashin-Shtrikman Lower-Bound 
+				
+				shear_mod_mixture = (((self.melt_fluid_frac[index] / alpha) + ((1-self.melt_fluid_frac[index]) / (shear_mod + alpha)))**-1) - alpha
+				bulk_mod_mixture = (((self.melt_fluid_frac[index] / (self.K_melt_fluid[index] + (1.3333333333333333 * shear_mod))) +\
+				((1-self.melt_fluid_frac[index]) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
+				
+				density_mixture = (self.melt_fluid_mass_frac[index] * self.dens_melt_fluid[index]) + ((1-self.melt_fluid_mass_frac[index]) * self.density_solids[index]) * 1e3
+				self.v_bulk[index] = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
+				self.v_p[index] = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
+				self.v_s[index] = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
+				
+		if method == 'array':
+			return self.v_bulk, self.v_p, self.v_s
+			
+		elif method == 'index':
+			return self.v_bulk[index], self.v_p[index], self.v_s[index]
+
 	def calculate_density_solid(self, min_idx = None):
 	
 		"""A method to calculate density of the solid matrix for the environment setup.
@@ -4313,23 +4341,25 @@ class pide(object):
 				
 					self.melt_comp = self._get_melt_composition(type = 'Default')
 					
+					self.set_melt_composition(self.melt_comp)
+					
 					if self.idx_melt_var is not None:
 						if 5 in self.idx_melt_var:
 							if np.mean(self.na2o_melt) == 0.0:
 								raise ValueError('You have to define Na2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(na2o = 5.3)')
 							else:
-								if np.mean(self.na2o_melt) == self.na2o_melt[0]:
-									self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.na2o_melt[0], idx = 5)
+								self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.na2o_melt, idx = 5,array = True)
 									
 					if self.idx_melt_var is not None:
 						if 6 in self.idx_melt_var:
 							if np.mean(self.k2o_melt) == 0.0:
 								raise ValueError('You have to define K2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(k2o = 3.2)')
 							else:
-								if np.mean(self.k2o_melt) == self.k2o_melt[0]:
-									self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.k2o_melt[0], idx = 6)
-									
-					self.set_melt_composition(self.melt_comp)
+								self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.k2o_melt, idx = 6,array = True)
+					if self.idx_melt_var is not None:
+						if 11 in self.idx_melt_var:
+							if np.mean(self.h2o_melt) != 0.0:
+								self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.h2o_melt*1e-4, idx = 11, array = True)
 					
 				elif self.melt_composition_method == 'Input':
 					if self.melt_comp is None:
@@ -4339,12 +4369,12 @@ class pide(object):
 				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T, P = self.p, sio2 = self.melt_comp[:,0],
 				al2o3 = self.melt_comp[:,1],mgo = self.melt_comp[:,2],feo = self.melt_comp[:,3],cao = self.melt_comp[:,4],
 				na2o = self.melt_comp[:,5],k2o = self.melt_comp[:,6],tio2 = self.melt_comp[:,7],mno = self.melt_comp[:,8],p2o5 = self.melt_comp[:,9],
-				cr2o3 = self.melt_comp[:,10],h2o = self.h2o_melt*1e-4)
+				cr2o3 = self.melt_comp[:,10],h2o = self.melt_comp[:,11])
 			elif method == 'index':
 				self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T[idx_node], P = self.p[idx_node], sio2 = self.melt_comp[:,0][idx_node],
 				al2o3 = self.melt_comp[:,1][idx_node],mgo = self.melt_comp[:,2][idx_node],feo = self.melt_comp[:,3][idx_node],cao = self.melt_comp[:,4][idx_node],
 				na2o = self.melt_comp[:,5][idx_node],k2o = self.melt_comp[:,6][idx_node],tio2 = self.melt_comp[:,7][idx_node],mno = self.melt_comp[:,8][idx_node],p2o5 = self.melt_comp[:,9][idx_node],
-				cr2o3 = self.melt_comp[:,10][idx_node],h2o = self.h2o_melt[idx_node]*1e-4)
+				cr2o3 = self.melt_comp[:,10][idx_node],h2o = self.melt_comp[:,11][idx_node])
 				
 			#dealing with addition of co2, because HWGP_2018 do not calculate the effects of CO2
 			if np.mean(self.co2_melt) > 0.0:
@@ -4352,7 +4382,7 @@ class pide(object):
 					self.dens_melt_fluid =  (((self.co2_melt * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt * 1e-4)) * 1e-2)) * self.dens_melt_fluid
 				else:
 					self.dens_melt_fluid[idx_node] =  (((self.co2_melt[idx_node] * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt[idx_node] * 1e-4)) * 1e-2)) * self.dens_melt_fluid[idx_node]
-					
+			
 			self.density_fluid_loaded = True
 			
 	def calculate_o2_fugacity(self,mode):
@@ -4590,6 +4620,8 @@ class pide(object):
 			self._load_mantle_water_partitions(method = 'array')
 		
 		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (pide.fluid_or_melt_method == 1):
+		
+			self.density_fluid_loaded = False
 				
 			#peridotite melt partitioning
 			self.d_per_melt = (self.ol_frac_wt * self.d_melt_ol) +\

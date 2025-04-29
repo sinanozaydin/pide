@@ -194,18 +194,19 @@ def save_h5_files(array_list, array_names, file_name = "Data.h5"):
 
 	print(f'Results are saved at: {file_name}')
 	
-def _comp_adjust_idx_based(_comp_list, comp_alien, idx, final = False):
+def _comp_adjust_idx_based(_comp_list, comp_alien, idx, array = False):
 
 	"""A method to adjust composition of one mineral/rock without considering the replacement weights
 	"""
 	
-	if final == False:
+	if array == False:
 		ratio = (comp_alien - _comp_list[idx]) / (np.sum(_comp_list) - _comp_list[idx])
+		comp_list = _comp_list - (_comp_list * ratio)
+		comp_list[idx] = comp_alien
 	else:
-		ratio = (comp_alien - _comp_list[idx]) / (np.sum(_comp_list, axis = 0) - _comp_list[idx])
-
-	comp_list = _comp_list - (_comp_list * ratio)
-	comp_list[idx] = comp_alien
+		ratio = (comp_alien - _comp_list[:,idx]) / (np.sum(_comp_list, axis = 1) - _comp_list[:,idx])
+		comp_list = _comp_list - (_comp_list.T * ratio).T
+		comp_list[:,idx] = comp_alien
 	
 	return comp_list
 
