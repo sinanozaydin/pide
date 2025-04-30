@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from pide.utils.utils import _comp_adjust_idx_based
 import numpy as np
 import os, contextlib
 
@@ -29,5 +28,5 @@ def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,
 			density_melt[i] = melt.density
 			bulk_modulus_melt[i] = melt.density * (melt.v_p**2.0)
 		
-	return density_melt*1e-3,vp_melt,bulk_modulus_melt
+	return density_melt*1e-3, vp_melt, bulk_modulus_melt
 

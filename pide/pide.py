@@ -96,6 +96,7 @@ class pide(object):
 		self.density_fluid_loaded = False
 		self.seis_property_overwrite = [False] * 16
 		self.melt_composition_method = 'Default'
+		self.melt_comp_manual = False
 		
 		self._read_cond_models()
 		self._read_params()
@@ -2355,9 +2356,27 @@ class pide(object):
 				   pide.graphite_seis_selection, pide.ol_seis_selection, pide.sp_seis_selection, pide.rwd_wds_seis_selection, pide.perov_seis_selection,
 				   pide.mixture_seis_selection, pide.other_seis_selection]
 				   
-	def set_melt_composition(self, comp):
-	
-		comp = comp
+	def set_melt_composition(self, comp, library_ref = False ,default = False):
+
+		"""A method to set melt composition used in melt velocity and density calculations.
+		With this format, h2o entry will be defaulted to zero. Please set melt wate content from other methods.
+		The sum of all entries should be equal to 100.0
+		
+		Input:
+		array: [sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3,h2o] || in %w.t.
+
+		Example:
+		set_melt_composition([49.8,19.52,12.99,0,13,3.47,0,1.15,0.05,0,0.02,0])
+		or enter an array that matches the length of temperature array:
+
+		for a T array with 2 length:
+		set_melt_composition([[49.8,19.52,12.99,0,13,3.47,0,1.15,0.05,0,0.02,0],
+							[74.64,14.83,0.18,0.96,0.74,4.49,3.97,0.05,0,0.14,0,0]])
+		"""
+
+		if default == False:
+			
+			 self.melt_composition_method = 'Manual'
 		
 		if check_type(comp) == 'array':
 			if isinstance(comp, (list, tuple)) and all(isinstance(item, (list, tuple)) for item in comp):
@@ -2369,7 +2388,6 @@ class pide(object):
 				self.melt_comp = [comp.copy() for _ in range(len(self.T))]
 
 			self.melt_comp = np.array(self.melt_comp)
-			
 
 	def set_grain_size(self,reval = False,**kwargs):
 	
@@ -2955,7 +2973,7 @@ class pide(object):
 		idx_melt_comp, = np.where(self.melt_composition_names==pide.name[1][pide.melt_cond_selection])
 		idx_melt_comp = idx_melt_comp[0]
 		melt_comp = np.array(self.melt_composition_data[idx_melt_comp+1])[1:-1]
-
+		
 		#searching if variable is assigned other than water content
 		if 'Variable' in melt_comp:
 			self.idx_melt_var, = np.where(melt_comp == 'Variable')
@@ -4341,7 +4359,7 @@ class pide(object):
 				
 					self.melt_comp = self._get_melt_composition(type = 'Default')
 					
-					self.set_melt_composition(self.melt_comp)
+					self.set_melt_composition(self.melt_comp, default = True)
 					
 					if self.idx_melt_var is not None:
 						if 5 in self.idx_melt_var:
@@ -4356,15 +4374,14 @@ class pide(object):
 								raise ValueError('You have to define K2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(k2o = 3.2)')
 							else:
 								self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.k2o_melt, idx = 6,array = True)
-					if self.idx_melt_var is not None:
-						if 11 in self.idx_melt_var:
-							if np.mean(self.h2o_melt) != 0.0:
-								self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.h2o_melt*1e-4, idx = 11, array = True)
-					
+
 				elif self.melt_composition_method == 'Input':
 					if self.melt_comp is None:
 						raise KeyError('You have to define melt composition first with the method: set_melt_composition.')
 			
+			if np.mean(self.h2o_melt) != 0.0:
+				self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.h2o_melt*1e-4, idx = 11, array = True)
+
 			if method == 'array':
 				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T, P = self.p, sio2 = self.melt_comp[:,0],
 				al2o3 = self.melt_comp[:,1],mgo = self.melt_comp[:,2],feo = self.melt_comp[:,3],cao = self.melt_comp[:,4],
@@ -4622,13 +4639,16 @@ class pide(object):
 		if (np.mean(self.melt_fluid_mass_frac) != 0.0) and (pide.fluid_or_melt_method == 1):
 		
 			self.density_fluid_loaded = False
+			
+			if len(self.h2o_melt) != len(self.bulk_water):
+				self.h2o_melt = np.zeros(len(self.bulk_water))
 				
 			#peridotite melt partitioning
 			self.d_per_melt = (self.ol_frac_wt * self.d_melt_ol) +\
 					(self.opx_frac_wt * self.d_melt_opx) +\
 					(self.cpx_frac_wt * self.d_melt_cpx) +\
 					(self.garnet_frac_wt * self.d_melt_garnet)
-					
+			
 			self.h2o_melt[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
 
 			#reassigning the zero mass frac melt layers using pre-mapped indexing array.
