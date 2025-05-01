@@ -139,9 +139,16 @@ class pide(object):
 		self.set_grain_boundary_H_Diffusion()
 		self.object_formed = True
 		
-
 		#Some check for temperature being the controlling array errors.
 		self.temperature_default = True
+		
+		try:
+			self.dens_melt_fluid
+			del self.dens_melt_fluid
+			del self.vp_melt_fluid
+			del self.K_melt_fluid
+		except AttributeError:
+			pass
 		
 	def revalue_arrays(self):
 		
@@ -1715,7 +1722,7 @@ class pide(object):
 			self._suggestion_temp_array()
 			
 		self.bulk_water = array_modifier(input = value, array = self.T, varname = 'bulk_water')
-		self.solid_water = array_modifier(input = value, array = self.T, varname = 'solid_water')
+		self.solid_water = array_modifier(input = 0, array = self.T, varname = 'solid_water')
 		
 		self.set_mineral_water() #Running an empty run of this to equate the length of mineral water arrays with the defined T
 		
@@ -4114,8 +4121,6 @@ class pide(object):
 				self.v_p[self.idx_unique[comp_idx]] = medium[1]
 				self.v_s[self.idx_unique[comp_idx]] = medium[2]
 				
-			
-							
 		elif method == 'index':
 		
 			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
@@ -4381,7 +4386,14 @@ class pide(object):
 			
 			if np.mean(self.h2o_melt) != 0.0:
 				self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.h2o_melt*1e-4, idx = 11, array = True)
-
+				
+			try:
+				self.dens_melt_fluid
+			except:
+				self.dens_melt_fluid = np.zeros(len(self.T))
+				self.vp_melt_fluid = np.zeros(len(self.T))
+				self.K_melt_fluid = np.zeros(len(self.T))
+							
 			if method == 'array':
 				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T, P = self.p, sio2 = self.melt_comp[:,0],
 				al2o3 = self.melt_comp[:,1],mgo = self.melt_comp[:,2],feo = self.melt_comp[:,3],cao = self.melt_comp[:,4],
@@ -4391,7 +4403,7 @@ class pide(object):
 				self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T[idx_node], P = self.p[idx_node], sio2 = self.melt_comp[:,0][idx_node],
 				al2o3 = self.melt_comp[:,1][idx_node],mgo = self.melt_comp[:,2][idx_node],feo = self.melt_comp[:,3][idx_node],cao = self.melt_comp[:,4][idx_node],
 				na2o = self.melt_comp[:,5][idx_node],k2o = self.melt_comp[:,6][idx_node],tio2 = self.melt_comp[:,7][idx_node],mno = self.melt_comp[:,8][idx_node],p2o5 = self.melt_comp[:,9][idx_node],
-				cr2o3 = self.melt_comp[:,10][idx_node],h2o = self.melt_comp[:,11][idx_node])
+				cr2o3 = self.melt_comp[:,10][idx_node],h2o = self.melt_comp[:,11][idx_node], method = 'index')
 				
 			#dealing with addition of co2, because HWGP_2018 do not calculate the effects of CO2
 			if np.mean(self.co2_melt) > 0.0:
@@ -4399,7 +4411,7 @@ class pide(object):
 					self.dens_melt_fluid =  (((self.co2_melt * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt * 1e-4)) * 1e-2)) * self.dens_melt_fluid
 				else:
 					self.dens_melt_fluid[idx_node] =  (((self.co2_melt[idx_node] * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt[idx_node] * 1e-4)) * 1e-2)) * self.dens_melt_fluid[idx_node]
-			
+				
 			self.density_fluid_loaded = True
 			
 	def calculate_o2_fugacity(self,mode):
@@ -4624,14 +4636,14 @@ class pide(object):
 		Organizes:
 		float: mineral_water_contents || in ppm.
 		"""
-	
+
 		sol_idx = kwargs.pop('sol_idx', 0)
-	
+		
 		if method == 'array':
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
-			
+		
 		if len(self.T) != len(self.d_opx_ol):
 			
 			self._load_mantle_water_partitions(method = 'array')
@@ -4650,18 +4662,18 @@ class pide(object):
 					(self.garnet_frac_wt * self.d_melt_garnet)
 			
 			self.h2o_melt[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
-
+			
 			#reassigning the zero mass frac melt layers using pre-mapped indexing array.
 			if idx_node == None:
 				self.h2o_melt[self.melt_fluid_mass_frac <= 0.0] = 0.0
-				
+			
 			self.solid_water[idx_node] = (self.bulk_water[idx_node] * self.d_per_melt[idx_node]) /\
 				(self.melt_fluid_mass_frac[idx_node] + ((1.0 - self.melt_fluid_mass_frac[idx_node]) * self.d_per_melt[idx_node]))
-			
+				
 		else:
-		
-			self.solid_water[idx_node] = self.bulk_water[idx_node]
-		
+			
+			self.solid_water[idx_node] = np.array(self.bulk_water[idx_node])
+			
 		#calculating olivine water content from bulk water using mineral partitioning contents
 		pide.ol_water[idx_node] = self.solid_water[idx_node] / (self.ol_frac_wt[idx_node] + ((self.opx_frac_wt[idx_node] * self.d_opx_ol[idx_node]) +\
 		(self.cpx_frac_wt[idx_node] * self.d_cpx_ol[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_ol[idx_node])))
@@ -4677,6 +4689,7 @@ class pide(object):
 		#calculating garnet water content
 		pide.garnet_water[idx_node] = pide.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		pide.garnet_water[self.garnet_frac == 0] = 0.0
+		
 		
 	def transition_zone_water_distribute(self, method = 'array', **kwargs):
 	
@@ -4695,7 +4708,10 @@ class pide(object):
 			idx_node = sol_idx
 			
 		#assuming not melting in transition zone
-		self.solid_water[idx_node] = self.bulk_water[idx_node]
+		if method == 'array':
+			self.solid_water[idx_node] = np.array(self.bulk_water[idx_node])
+		else:
+			self.solid_water[idx_node] = self.bulk_water[idx_node]
 		
 		pide.rwd_wds_water[idx_node] = self.solid_water[idx_node] / (self.rwd_wds_frac_wt[idx_node] + ((self.cpx_frac_wt[idx_node] * self.d_cpx_rwd_wds[idx_node]) +\
 		(self.perov_frac_wt[idx_node] * self.d_perov_rwd_wds[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_rwd_wds[idx_node])))
@@ -4726,7 +4742,7 @@ class pide(object):
 		melt_water || in ppm
 		
 		"""
-
+		
 		#Calculating the h2o content of melt that is in equilibrium with the entered solid-mixture, from Sifre et al. (2014)
 		melt_water = h2o_bulk / (melt_mass_frac + ((1.0 - melt_mass_frac) * d_per_melt))
 

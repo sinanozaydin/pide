@@ -44,7 +44,7 @@ class test_water_distribution_functions(unittest.TestCase):
 		self.p_obj.set_bulk_water(2000.0)
 		self.p_obj.mantle_water_distribute()
 		
-		water_list = [self.p_obj.ol_water[0],self.p_obj.opx_water[0],self.p_obj.cpx_water[0],self.p_obj.garnet_water[0], self.p_obj.melt_water[0]]
+		water_list = [self.p_obj.ol_water[0],self.p_obj.opx_water[0],self.p_obj.cpx_water[0],self.p_obj.garnet_water[0], self.p_obj.h2o_melt[0]]
 		
 		assert np.allclose(np.array(water_list),np.array(self.lithosphere_water_melt_results),atol = self.atol)
 		

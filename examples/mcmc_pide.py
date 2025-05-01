@@ -22,6 +22,7 @@ p_obj = pide.pide()
 p_obj.set_temperature(T)
 p_obj.set_pressure(P)
 p_obj.set_composition_solid_mineral(ol = 0.6,opx = 0.4)
+p_obj.set_melt_fluid_conductivity_choice
 
 """
 p_obj.set_bulk_water(34.21875)
@@ -44,7 +45,7 @@ burning = 50000
 
 c_list, residual_list = conductivity_solver_single_param(object = p_obj, cond_list = cond_external,
 param_name = 'bulk_water', upper_limit_list = np.ones(len(T))* 1e4, lower_limit_list= np.zeros(len(T)),
-search_start = 30, acceptence_threshold = 0.5, num_cpu = 1)
+search_start = 0.01, acceptence_threshold = 0.5, num_cpu = 1)
 
 for i in range(1):
 	

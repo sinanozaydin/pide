@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from .utils.utils import text_color
+from .utils.utils import text_color, check_type
 
 def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 
@@ -28,7 +28,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 			init_guess = None
 		else:
 			init_guess = results_list[-1]
-
+	
 	param_search_array = np.arange(lowerlimit[index], upperlimit[index] , search_increment)
 
 	if len(param_search_array) == 1:
@@ -132,7 +132,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 						object.transition_zone_water_distribute(method = 'index', sol_idx = index)
 
 				cond_calced = object.calculate_conductivity(method = 'index',sol_idx = index)
-
+				
 				residual = cond_list[index] - cond_calced
 
 				if abs(residual) < (acceptence_threshold * 1e-2 * cond_list[index]):
@@ -217,6 +217,9 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 	low_value_threshold = kwargs.pop('low_value_threshold', None)
 
 	object.revalue_arrays()
+	
+	if check_type(cond_list) != 'array':
+		raise KeyError('The value entered for cond_list has to be a list or a numpy array matching the length of temperature array.')
 
 	if ('water' in param_name) == True:
 
@@ -627,7 +630,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	if any('water' in xx for xx in param_names) == True:
 
 		if 'bulk_water' in param_names:
-
+			
 			water_solv = True
 			#setting the object.bulk_water as same length as T if that has not done already...
 			if len(getattr(object,param_names[param_names.index('bulk_water')])) != len(object.T):
@@ -638,7 +641,7 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	if any('melt' in xx for xx in param_names) == True:
 
 		water_solv = True
-
+		
 		for ii in range(2):
 			if len(getattr(object,param_names[ii])) != len(object.T):
 				object.set_parameter(param_names[ii], 0.0)
