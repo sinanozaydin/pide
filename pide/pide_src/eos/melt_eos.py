@@ -10,6 +10,7 @@ def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,
 	#defining the thermodynamic environment
 	endmembers = [q4L, sl1L, wo1L, fo2L, fa2L, jdL, hmL, ekL, tiL, kjL, ctL, h2o1L]
 	melt_class = make_melt_class(endmembers)
+
 	
 	if method == 'array':
 		vp_melt = np.zeros(len(T))

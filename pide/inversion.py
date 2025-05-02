@@ -376,6 +376,14 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		if sum(frac_bool) == 2:
 
 			raise KeyError('Currently only one of the parameters chosen can be modal compositional parameter.')
+			
+		if 'melt_fluid_mass_frac' in [param_name_1, param_name_2]:
+		
+			melt_solv = True
+			
+		else:
+			
+			melt_solv = False
 
 		param_1_init, param_2_init = initial_params[index]
 		(param_1_max,param_2_max) = upper_limits
@@ -420,6 +428,11 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 				object.mantle_water_distribute(method = 'index', sol_idx = index)
 			else:
 				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+				
+			if melt_solv == True:
+				import ipdb
+				ipdb.set_trace()
+				object.calculate_density_fluid(sol_idx = index, method = 'array', interp_for_iter = True)
 
 		#Calculating the initial conductivity
 		cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
@@ -433,10 +446,12 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		acceptance_rates = []
 		accepted = 0
 		print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
+		print(text_color.YELLOW + f'{n_iter} total samples.' + text_color.END)
+		print(text_color.RED + f'{burning} burning samples.' + text_color.END)
 
 		#loop for monte-carlo
 		for _ in range(n_iter):
-
+			
 			#proposing the new parameters
 			proposal = np.array(current_params)
 			rand_node = int(np.floor(np.random.rand(1)*2.0)[0]) #randomnode generation 1 or 0
@@ -518,15 +533,15 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 								if step_size_limits is not None:
 									if proposal_stds[rand_node] > step_size_limits[rand_node]:
 										proposal_stds[rand_node] = step_size_limits[rand_node]
-								print(text_color.YELLOW + f'Step size (std) for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+								print(text_color.YELLOW + f'Step size (std) for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}- Completed :% {round((_/n_iter)*1e2)}' + text_color.END)
 							elif acceptance_rate >= ideal_acceptance_bounds[1]:
 								proposal_stds[rand_node] = proposal_stds[rand_node] * 1.05
 								if step_size_limits is not None:
 									if proposal_stds[rand_node] > step_size_limits[rand_node]:
 										proposal_stds[rand_node] = step_size_limits[rand_node]
-								print(text_color.RED + f'Step size (std) for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+								print(text_color.RED + f'Step size (std) for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)} - Completed :% {(_/n_iter)*1e2}' + text_color.END)
 							else:
-								print(text_color.GREEN + f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+								print(text_color.GREEN + f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)} - Completed :% {round((_/n_iter)*1e2)}' + text_color.END)
 					else:
 						if (_ + 1) % adaptive_check_length == 0:
 							print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)

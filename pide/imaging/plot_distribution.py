@@ -59,8 +59,8 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	
 	# Define the histogram bins
 	
-	bins_param1 = np.linspace(param_1_min, param_1_max, 300)
-	bins_param2 = np.linspace(param_2_min, param_2_max, 300)
+	bins_param1 = np.linspace(param_1_min, param_1_max, 150)
+	bins_param2 = np.linspace(param_2_min, param_2_max, 150)
 	
 	# Create a 2D histogram
 	heatmap, xedges, yedges = np.histogram2d(data_param_1, data_param_2, bins=(bins_param1, bins_param2))

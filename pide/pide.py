@@ -4288,7 +4288,7 @@ class pide(object):
 						
 							if self.dens_mat[mineral][min_sel_list[mineral-11]] not in dens_xfe_calc_list:
 								#if material reference density is not dependent on xfe
-								
+
 								density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 								temperature = self.T, pressure = self.p, return_vp_vs_vbulk=False, return_aktout=False)
 								
@@ -4343,15 +4343,30 @@ class pide(object):
 			
 		sol_idx = kwargs.pop('sol_idx', 0)
 		
+		interp_for_iter = kwargs.pop('interp_for_iter', False)
+		water_start = kwargs.pop('water_start', 0)
+		water_end = kwargs.pop('water_end', 10000)
+		
 		if method == 'array':
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
+		
+		if interp_for_iter == True:
+			h2o_melt_local = np.linspace(water_start,water_end,100)
+			temp = np.ones(len(h2o_melt_local)) * self.T[sol_idx]
+			pres = np.ones(len(h2o_melt_local)) * self.p[sol_idx]
+		else:
+			h2o_melt_local = np.array(self.h2o_melt)
+			temp = np.array(self.T)
+			pres = np.array(self.p)
+		import ipdb
+		ipdb.set_trace()
 	
 		#Calculating density, bulk_modulus and vp of melt_fluid
 		if pide.fluid_or_melt_method == 0: #fluid
 			
-			dens = Sanchez_Valle_2013_WaterDensity(T = self.T, P = self.p)
+			dens = Sanchez_Valle_2013_WaterDensity(T = temp, P = pres)
 			self.dens_melt_fluid = dens * 1e-3
 			
 			self.density_fluid_loaded = True
@@ -4384,26 +4399,32 @@ class pide(object):
 					if self.melt_comp is None:
 						raise KeyError('You have to define melt composition first with the method: set_melt_composition.')
 			
-			if np.mean(self.h2o_melt) != 0.0:
-				self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.h2o_melt*1e-4, idx = 11, array = True)
+			if np.mean(h2o_melt_local) != 0.0:
+				self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = h2o_melt_local*1e-4, idx = 11, array = True)
 				
 			try:
 				self.dens_melt_fluid
 			except:
-				self.dens_melt_fluid = np.zeros(len(self.T))
-				self.vp_melt_fluid = np.zeros(len(self.T))
-				self.K_melt_fluid = np.zeros(len(self.T))
+				self.dens_melt_fluid = np.zeros(len(temp))
+				self.vp_melt_fluid = np.zeros(len(temp))
+				self.K_melt_fluid = np.zeros(len(temp))
 							
 			if method == 'array':
-				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T, P = self.p, sio2 = self.melt_comp[:,0],
+								
+				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp, P = pres, sio2 = self.melt_comp[:,0],
 				al2o3 = self.melt_comp[:,1],mgo = self.melt_comp[:,2],feo = self.melt_comp[:,3],cao = self.melt_comp[:,4],
 				na2o = self.melt_comp[:,5],k2o = self.melt_comp[:,6],tio2 = self.melt_comp[:,7],mno = self.melt_comp[:,8],p2o5 = self.melt_comp[:,9],
 				cr2o3 = self.melt_comp[:,10],h2o = self.melt_comp[:,11])
+				
 			elif method == 'index':
-				self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = self.T[idx_node], P = self.p[idx_node], sio2 = self.melt_comp[:,0][idx_node],
-				al2o3 = self.melt_comp[:,1][idx_node],mgo = self.melt_comp[:,2][idx_node],feo = self.melt_comp[:,3][idx_node],cao = self.melt_comp[:,4][idx_node],
-				na2o = self.melt_comp[:,5][idx_node],k2o = self.melt_comp[:,6][idx_node],tio2 = self.melt_comp[:,7][idx_node],mno = self.melt_comp[:,8][idx_node],p2o5 = self.melt_comp[:,9][idx_node],
-				cr2o3 = self.melt_comp[:,10][idx_node],h2o = self.melt_comp[:,11][idx_node], method = 'index')
+				
+				#to avoid redundant re-calculation with iterative inversion things.
+				if self.dens_melt_fluid[idx_node] == 0.0:
+					
+					self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp[idx_node], P = pres[idx_node], sio2 = self.melt_comp[:,0][idx_node],
+					al2o3 = self.melt_comp[:,1][idx_node],mgo = self.melt_comp[:,2][idx_node],feo = self.melt_comp[:,3][idx_node],cao = self.melt_comp[:,4][idx_node],
+					na2o = self.melt_comp[:,5][idx_node],k2o = self.melt_comp[:,6][idx_node],tio2 = self.melt_comp[:,7][idx_node],mno = self.melt_comp[:,8][idx_node],p2o5 = self.melt_comp[:,9][idx_node],
+					cr2o3 = self.melt_comp[:,10][idx_node],h2o = self.melt_comp[:,11][idx_node], method = 'index')
 				
 			#dealing with addition of co2, because HWGP_2018 do not calculate the effects of CO2
 			if np.mean(self.co2_melt) > 0.0:
