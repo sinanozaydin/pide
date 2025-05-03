@@ -4360,8 +4360,6 @@ class pide(object):
 			h2o_melt_local = np.array(self.h2o_melt)
 			temp = np.array(self.T)
 			pres = np.array(self.p)
-		import ipdb
-		ipdb.set_trace()
 	
 		#Calculating density, bulk_modulus and vp of melt_fluid
 		if pide.fluid_or_melt_method == 0: #fluid
@@ -4376,31 +4374,42 @@ class pide(object):
 			if self.density_fluid_loaded == False:
 			
 				if self.melt_composition_method == 'Default':
-				
+					
 					self.melt_comp = self._get_melt_composition(type = 'Default')
 					
 					self.set_melt_composition(self.melt_comp, default = True)
-					
+
+					if interp_for_iter == False:
+
+						melt_comp_calc = self.melt_comp.copy()
+					else:
+
+						melt_comp_calc = np.array([self.melt_comp[sol_idx].copy() for _ in range(len(temp))])
+						
 					if self.idx_melt_var is not None:
 						if 5 in self.idx_melt_var:
 							if np.mean(self.na2o_melt) == 0.0:
 								raise ValueError('You have to define Na2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(na2o = 5.3)')
 							else:
-								self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.na2o_melt, idx = 5,array = True)
+								melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.na2o_melt, idx = 5,array = True)
 									
 					if self.idx_melt_var is not None:
 						if 6 in self.idx_melt_var:
 							if np.mean(self.k2o_melt) == 0.0:
 								raise ValueError('You have to define K2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(k2o = 3.2)')
 							else:
-								self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = self.k2o_melt, idx = 6,array = True)
+								melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.k2o_melt, idx = 6,array = True)
 
 				elif self.melt_composition_method == 'Input':
-					if self.melt_comp is None:
+					if melt_comp_calc is None:
 						raise KeyError('You have to define melt composition first with the method: set_melt_composition.')
+					
+			else:
+
+				melt_comp_calc = self.melt_comp.copy()
 			
 			if np.mean(h2o_melt_local) != 0.0:
-				self.melt_comp = _comp_adjust_idx_based(_comp_list = self.melt_comp, comp_alien = h2o_melt_local*1e-4, idx = 11, array = True)
+				melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = h2o_melt_local*1e-4, idx = 11, array = True)
 				
 			try:
 				self.dens_melt_fluid
@@ -4410,21 +4419,35 @@ class pide(object):
 				self.K_melt_fluid = np.zeros(len(temp))
 							
 			if method == 'array':
-								
-				self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp, P = pres, sio2 = self.melt_comp[:,0],
-				al2o3 = self.melt_comp[:,1],mgo = self.melt_comp[:,2],feo = self.melt_comp[:,3],cao = self.melt_comp[:,4],
-				na2o = self.melt_comp[:,5],k2o = self.melt_comp[:,6],tio2 = self.melt_comp[:,7],mno = self.melt_comp[:,8],p2o5 = self.melt_comp[:,9],
-				cr2o3 = self.melt_comp[:,10],h2o = self.melt_comp[:,11])
+				
+				if interp_for_iter == False:
+					self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp, P = pres, sio2 = melt_comp_calc[:,0],
+					al2o3 = melt_comp_calc[:,1],mgo = melt_comp_calc[:,2],feo = melt_comp_calc[:,3],cao = melt_comp_calc[:,4],
+					na2o = melt_comp_calc[:,5],k2o = melt_comp_calc[:,6],tio2 = melt_comp_calc[:,7],mno = melt_comp_calc[:,8],p2o5 = melt_comp_calc[:,9],
+					cr2o3 = melt_comp_calc[:,10],h2o = melt_comp_calc[:,11])
+
+				else:
+
+					dens_melt_fluid, vp_melt_fluid, K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp, P = pres, sio2 = melt_comp_calc[:,0],
+					al2o3 = melt_comp_calc[:,1],mgo = melt_comp_calc[:,2],feo = melt_comp_calc[:,3],cao = melt_comp_calc[:,4],
+					na2o = melt_comp_calc[:,5],k2o = melt_comp_calc[:,6],tio2 = melt_comp_calc[:,7],mno = melt_comp_calc[:,8],p2o5 = melt_comp_calc[:,9],
+					cr2o3 = melt_comp_calc[:,10],h2o = melt_comp_calc[:,11])
+
+					self.interp_1d_dens_fluid = interp1d(h2o_melt_local,dens_melt_fluid)
 				
 			elif method == 'index':
 				
 				#to avoid redundant re-calculation with iterative inversion things.
 				if self.dens_melt_fluid[idx_node] == 0.0:
 					
-					self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp[idx_node], P = pres[idx_node], sio2 = self.melt_comp[:,0][idx_node],
-					al2o3 = self.melt_comp[:,1][idx_node],mgo = self.melt_comp[:,2][idx_node],feo = self.melt_comp[:,3][idx_node],cao = self.melt_comp[:,4][idx_node],
-					na2o = self.melt_comp[:,5][idx_node],k2o = self.melt_comp[:,6][idx_node],tio2 = self.melt_comp[:,7][idx_node],mno = self.melt_comp[:,8][idx_node],p2o5 = self.melt_comp[:,9][idx_node],
-					cr2o3 = self.melt_comp[:,10][idx_node],h2o = self.melt_comp[:,11][idx_node], method = 'index')
+					self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp[idx_node], P = pres[idx_node], sio2 = melt_comp_calc[:,0][idx_node],
+					al2o3 = melt_comp_calc[:,1][idx_node],mgo = melt_comp_calc[:,2][idx_node],feo = melt_comp_calc[:,3][idx_node],cao = melt_comp_calc[:,4][idx_node],
+					na2o = melt_comp_calc[:,5][idx_node],k2o = melt_comp_calc[:,6][idx_node],tio2 = melt_comp_calc[:,7][idx_node],mno = melt_comp_calc[:,8][idx_node],p2o5 = melt_comp_calc[:,9][idx_node],
+					cr2o3 = melt_comp_calc[:,10][idx_node],h2o = melt_comp_calc[:,11][idx_node], method = 'index')
+
+				else:
+
+					self.dens_melt_fluid[idx_node] = self.interp_1d_dens_fluid(h2o_melt_local[idx_node])
 				
 			#dealing with addition of co2, because HWGP_2018 do not calculate the effects of CO2
 			if np.mean(self.co2_melt) > 0.0:

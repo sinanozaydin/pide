@@ -133,7 +133,7 @@ initial_water = 1000
 initial_melt = 0.3
 initial_params = [[initial_water, initial_melt]]
 
-sigma = 0.01 * np.ones(len(temperature))#in log
+sigma = 0.1 * np.ones(len(temperature))#in log
 n_iterations = 200000
 proposal_std = [1500,0.25]
 burning = 10000

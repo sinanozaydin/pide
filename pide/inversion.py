@@ -430,9 +430,16 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
 				
 			if melt_solv == True:
-				import ipdb
-				ipdb.set_trace()
-				object.calculate_density_fluid(sol_idx = index, method = 'array', interp_for_iter = True)
+				
+				#to interpolation of fluid density so eos do not have to be solved at each iteration.
+				try:
+					water_index = [param_name_1,param_name_2].index('bulk_water')
+					water_end = upper_limits[water_index] + (upper_limits[water_index] * 1000)
+					water_end = water_end[0]
+				except ValueError:
+					water_end = 1e6
+
+				object.calculate_density_fluid(sol_idx = index, method = 'array', interp_for_iter = True, water_start = 0, water_end = water_end)
 
 		#Calculating the initial conductivity
 		cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
