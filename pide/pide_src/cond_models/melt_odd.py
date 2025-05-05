@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from pide.utils.utils import text_color
 
 R_const = 8.3144621
 
@@ -174,7 +175,14 @@ def Laumonier2015_WetDacite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method
 	return cond
 
 def Gaillard2004_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
-
+	
+	if method == 'array':
+		if np.any(Melt_H2O) == 0:
+			print(text_color.RED + 'Gaillard2004_WetRhyolite cannot accomodate any dry material.' + text_color.END)
+	else:
+		if Melt_H2O == 0.0:
+			print(text_color.RED + 'Gaillard2004_WetRhyolite cannot accomodate any dry material. + text_color.END')
+	
 	P = P * 1e3 #to MPa
 
 	Ea = (-2925.0 * np.log(Melt_H2O)) + 64132.0

@@ -18,7 +18,7 @@ def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 	return comp_list
 
 def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, results_list = None,
-	init_guess = None, transition_zone = False, water_solv=False, comp_solv=False, comp_type = None, comp_index = None, low_value_threshold = None,):
+	init_guess = None, transition_zone = False, water_solv=False, comp_solv=False, melt_solv=False, comp_type = None, comp_index = None, low_value_threshold = None):
 
 	"""Simple line-search solver to solve conductivities. This function should not be called directly.
 	"""
@@ -28,7 +28,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 			init_guess = None
 		else:
 			init_guess = results_list[-1]
-	
+		
 	param_search_array = np.arange(lowerlimit[index], upperlimit[index] , search_increment)
 
 	if len(param_search_array) == 1:
@@ -215,6 +215,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 	index_list = np.array(list(range(0,len(object.T)))) #creating the index array tied to the T array.
 
 	low_value_threshold = kwargs.pop('low_value_threshold', None)
+	melt_solv = kwargs.pop('melt_solv', False)
 
 	object.revalue_arrays()
 	
@@ -233,16 +234,17 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 				object.set_bulk_water(0.0)
 		else:
 			raise ValueError('You cannot change just a single phase water content. If you are after fitting for a single phase, try bulk_water as the parameter.')
-
+			
 	elif ('melt' in param_name) == True:
 
 		water_solv = True
 		comp_solv = False
+		melt_solv = True
 		comp_type = None
 		comp_index = None
 		if len(getattr(object,param_name)) != len(object.T):
 			object.set_parameter(0.0)
-
+			
 	else:
 		water_solv = False
 		#setting the object as same length as T if that has not done already...
@@ -282,7 +284,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 
 			process_item_partial = partial(_solv_cond_, cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list = shared_results, init_guess = None,
-			transition_zone = transition_zone, water_solv=water_solv,comp_solv = comp_solv, comp_type = comp_type, comp_index = comp_index,
+			transition_zone = transition_zone, water_solv=water_solv,comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index,
 			low_value_threshold = low_value_threshold)
 
 			c = pool.map(process_item_partial, index_list)
@@ -290,12 +292,11 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 		c_list = [x[0] for x in c]
 		residual_list= [x[1] for x in c]
 
-
 	else:
 
 		c_list = np.zeros(len(index_list))
 		residual_list = np.zeros(len(index_list))
-
+		
 		for idx in range(0,len(index_list)):
 
 			if idx > 0:
@@ -304,7 +305,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 				init_guess_ = None
 			c = _solv_cond_(index = index_list[idx], cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 				lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list= None, init_guess = init_guess_, transition_zone = transition_zone,
-				water_solv=water_solv, comp_solv = comp_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold)
+				water_solv=water_solv, comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold)
 
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]

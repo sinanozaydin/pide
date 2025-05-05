@@ -10,7 +10,7 @@ from pide.imaging.plot_distribution import plot_posterior_distribution_two_param
 #creating a pide object
 p_obj = pide.pide()
 
-#setting up and environment at 1300 K and 3 GPa 
+#setting up and environment at 1300 K and 3 GPa
 temperature = np.array([1500])
 pressure = np.array([3.0])
 
@@ -49,10 +49,10 @@ param_name = 'melt_fluid_mass_frac', upper_limit_list = np.ones(len(temperature)
 search_start = 0.01, acceptence_threshold = 0.5, num_cpu = 1)
 """
 
-"""
+
 p_obj = pide.pide()
 
-temperature = np.ones(100) * 1500
+temperature = np.ones(100) * 1373
 pressure = np.ones(100) * 3
 bulk_water_array = np.linspace(100,3000,100)
 
@@ -78,8 +78,9 @@ p_obj.mantle_water_distribute()
 
 #Setting up the melt-solid mixture relationship to Tubes model
 p_obj.set_solid_melt_fluid_mix_method(1)
+p_obj.set_mantle_water_partitions(opx_melt = 1,cpx_melt = 1)
 
-cond_external = np.ones(len(temperature)) * 1e-1
+cond_external = np.ones(len(temperature)) * (1.0/20)
 
 #Now setting up the conductivity_solver_single_param
 #we are using the parameter melt_fluid_mass_frac to estimate instead volumetric parameter melt_frac.
@@ -87,7 +88,7 @@ cond_external = np.ones(len(temperature)) * 1e-1
 #with more accuracy.
 melt_frac_solution, residual_list = conductivity_solver_single_param(object = p_obj, cond_list = cond_external,
 param_name = 'melt_fluid_mass_frac', upper_limit_list = np.ones(len(temperature)), lower_limit_list= np.zeros(len(temperature)),
-search_start = 0.01, acceptence_threshold = 0.05, num_cpu = 5)
+search_start = 0.01, acceptence_threshold = 0.05, num_cpu = 1)
 
 fig = plt.figure()
 ax = plt.subplot(111)
@@ -95,7 +96,8 @@ ax.plot(np.array(melt_frac_solution) * 1e2, bulk_water_array)
 ax.set_xlabel('Melt Fraction (%)')
 ax.set_ylabel('Bulk Water Content (ppm)')
 ax.grid(which = 'both')
-plt.savefig('melt_estimate.png')
+# plt.show()
+plt.savefig('melt_frac_estimate_single.png')
 """
 p_obj = pide.pide()
 
@@ -120,7 +122,9 @@ p_obj.set_melt_properties(co2 = 100)
 #Setting up the melt-solid mixture relationship to Tubes model
 p_obj.set_solid_melt_fluid_mix_method(1)
 
-cond_external = np.ones(len(temperature)) * 1e-1
+p_obj.set_mantle_water_partitions(opx_melt = 1,cpx_melt = 1)
+
+res_external = 20
 
 #Bounds for the search space.
 water_min = np.zeros(len(temperature))
@@ -128,14 +132,14 @@ water_max = 3000.0 * np.ones(len(temperature))
 melt_min = 0.00 * np.ones(len(temperature))
 melt_max = 0.5 * np.ones(len(temperature))
 
-cond_external = [1e-1]
+cond_external = [1.0/res_external]
 initial_water = 1000
 initial_melt = 0.3
 initial_params = [[initial_water, initial_melt]]
 
-sigma = 0.1 * np.ones(len(temperature))#in log
+sigma = 0.01 * np.ones(len(temperature))#in log
 n_iterations = 200000
-proposal_std = [1500,0.25]
+proposal_std = [200,0.25]
 burning = 10000
 
 samples, acceptance_rates, misfits, samples_all, misfits_all = conductivity_metropolis_hastings_two_param(object = p_obj, cond_list = cond_external,
@@ -158,6 +162,7 @@ param_2_min = 0, param_2_max = np.amax(water_samples_all),
 param1_name = 'Melt Fraction (%)',
 param2_name = "Water Content (ppm)",
 file_name = f"melt_frac_solution.png",save = True)
+"""
 
 import ipdb
 ipdb.set_trace()
