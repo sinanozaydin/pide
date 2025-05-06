@@ -49,7 +49,7 @@ param_name = 'melt_fluid_mass_frac', upper_limit_list = np.ones(len(temperature)
 search_start = 0.01, acceptence_threshold = 0.5, num_cpu = 1)
 """
 
-
+"""
 p_obj = pide.pide()
 
 temperature = np.ones(100) * 1373
@@ -137,7 +137,7 @@ initial_water = 1000
 initial_melt = 0.3
 initial_params = [[initial_water, initial_melt]]
 
-sigma = 0.01 * np.ones(len(temperature))#in log
+sigma = 0.05 * np.ones(len(temperature))#in log
 n_iterations = 200000
 proposal_std = [200,0.25]
 burning = 10000
@@ -162,7 +162,7 @@ param_2_min = 0, param_2_max = np.amax(water_samples_all),
 param1_name = 'Melt Fraction (%)',
 param2_name = "Water Content (ppm)",
 file_name = f"melt_frac_solution.png",save = True)
-"""
+
 
 import ipdb
 ipdb.set_trace()

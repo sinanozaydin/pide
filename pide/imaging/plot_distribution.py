@@ -91,6 +91,8 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	
 	plt.xlabel(param1_name)
 	plt.ylabel(param2_name)
+	plt.xlim(0,15)
+	plt.ylim(0,800)
 	plt.title('Sample Distribution Heatmap')
 	plt.tight_layout()
 	if save == False:
