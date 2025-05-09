@@ -18,7 +18,8 @@ def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 	return comp_list
 
 def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, results_list = None,
-	init_guess = None, transition_zone = False, water_solv=False, comp_solv=False, melt_solv=False, comp_type = None, comp_index = None, low_value_threshold = None):
+	init_guess = None, transition_zone = False, water_solv=False, comp_solv=False, melt_solv=False, comp_type = None, comp_index = None, low_value_threshold = None,
+	sfd = False):
 
 	"""Simple line-search solver to solve conductivities. This function should not be called directly.
 	"""
@@ -70,7 +71,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 				object.mantle_water_distribute(method = 'index', sol_idx = index)
 			else:
 				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
-		cond_calced = object.calculate_conductivity(method = 'index', sol_idx = index)
+		cond_calced = object.calculate_conductivity(method = 'index', sol_idx = index, sfd = sfd)
 		residual = cond_list[index] - cond_calced
 
 	else:
@@ -131,7 +132,7 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 					else:
 						object.transition_zone_water_distribute(method = 'index', sol_idx = index)
 
-				cond_calced = object.calculate_conductivity(method = 'index',sol_idx = index)
+				cond_calced = object.calculate_conductivity(method = 'index',sol_idx = index, sfd = sfd)
 				
 				residual = cond_list[index] - cond_calced
 
@@ -186,7 +187,8 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 
 
 def conductivity_solver_single_param(object, cond_list, param_name,
-	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, num_cpu = 1,**kwargs):
+	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, simplify_fluid_density = False,
+	num_cpu = 1,**kwargs):
 
 	"""
 	A function to fit conductivity value with a single parameter with simple line-search algorithm.
@@ -285,7 +287,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			process_item_partial = partial(_solv_cond_, cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list = shared_results, init_guess = None,
 			transition_zone = transition_zone, water_solv=water_solv,comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index,
-			low_value_threshold = low_value_threshold)
+			low_value_threshold = low_value_threshold,sfd = simplify_fluid_density)
 
 			c = pool.map(process_item_partial, index_list)
 
@@ -305,7 +307,8 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 				init_guess_ = None
 			c = _solv_cond_(index = index_list[idx], cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 				lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list= None, init_guess = init_guess_, transition_zone = transition_zone,
-				water_solv=water_solv, comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold)
+				water_solv=water_solv, comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold,
+				sfd = simplify_fluid_density)
 
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]

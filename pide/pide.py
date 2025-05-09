@@ -3690,6 +3690,7 @@ class pide(object):
 		"""
 		
 		sol_idx = kwargs.pop('sol_idx', 0)
+		sfd = kwargs.pop('sfd', False)
 		
 		if method == 'index':
 			index = sol_idx
@@ -3706,7 +3707,7 @@ class pide(object):
 				self.melt_fluid_cond = np.zeros(len(self.T))
 			
 			self.calculate_density_solid()
-			self.calculate_density_fluid(method = method, sol_idx = sol_idx)
+			self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
 			
 			if pide.fluid_or_melt_method == 0:
 				if method == 'index':
@@ -4368,6 +4369,7 @@ class pide(object):
 		interp_for_iter = kwargs.pop('interp_for_iter', False)
 		water_start = kwargs.pop('water_start', 0)
 		water_end = kwargs.pop('water_end', 10000)
+		sfd = kwargs.pop('sfd', False)
 		
 		if method == 'array':
 			idx_node = None
@@ -4431,7 +4433,8 @@ class pide(object):
 				melt_comp_calc = self.melt_comp.copy()
 			
 			if np.mean(h2o_melt_local) != 0.0:
-				melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = h2o_melt_local*1e-4, idx = 11, array = True)
+				if sfd == False:
+					melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = h2o_melt_local*1e-4, idx = 11, array = True)
 				
 			try:
 				self.dens_melt_fluid
@@ -4472,18 +4475,24 @@ class pide(object):
 					try:
 						self.dens_melt_fluid[idx_node] = self.interp_1d_dens_fluid(h2o_melt_local[idx_node])
 					except:
-						self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp[idx_node], P = pres[idx_node], sio2 = melt_comp_calc[:,0][idx_node],
-						al2o3 = melt_comp_calc[:,1][idx_node],mgo = melt_comp_calc[:,2][idx_node],feo = melt_comp_calc[:,3][idx_node],cao = melt_comp_calc[:,4][idx_node],
-						na2o = melt_comp_calc[:,5][idx_node],k2o = melt_comp_calc[:,6][idx_node],tio2 = melt_comp_calc[:,7][idx_node],mno = melt_comp_calc[:,8][idx_node],p2o5 = melt_comp_calc[:,9][idx_node],
-						cr2o3 = melt_comp_calc[:,10][idx_node],h2o = melt_comp_calc[:,11][idx_node], method = 'index')
-				
+					
+						if sfd == False:
+							self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp[idx_node], P = pres[idx_node], sio2 = melt_comp_calc[:,0][idx_node],
+							al2o3 = melt_comp_calc[:,1][idx_node],mgo = melt_comp_calc[:,2][idx_node],feo = melt_comp_calc[:,3][idx_node],cao = melt_comp_calc[:,4][idx_node],
+							na2o = melt_comp_calc[:,5][idx_node],k2o = melt_comp_calc[:,6][idx_node],tio2 = melt_comp_calc[:,7][idx_node],mno = melt_comp_calc[:,8][idx_node],p2o5 = melt_comp_calc[:,9][idx_node],
+							cr2o3 = melt_comp_calc[:,10][idx_node],h2o = melt_comp_calc[:,11][idx_node], method = 'index')
+					
 			#dealing with addition of co2, because HWGP_2018 do not calculate the effects of CO2
 			if np.mean(self.co2_melt) > 0.0:
 				if method == 'array':
 					self.dens_melt_fluid =  (((self.co2_melt * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt * 1e-4)) * 1e-2)) * self.dens_melt_fluid
 				else:
-					self.dens_melt_fluid[idx_node] =  (((self.co2_melt[idx_node] * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt[idx_node] * 1e-4)) * 1e-2)) * self.dens_melt_fluid[idx_node]
-				
+					if sfd == False:
+						self.dens_melt_fluid[idx_node] =  (((self.co2_melt[idx_node] * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt[idx_node] * 1e-4)) * 1e-2)) * self.dens_melt_fluid[idx_node]
+					else:
+						self.dens_melt_fluid[idx_node] = (((self.h2o_melt[idx_node] * 1e-4) / 1e2) * 1.4) +\
+						(((self.co2_melt[idx_node] * 1e-4) / 1e2) * 2.4) + (1 - (((self.h2o_melt[idx_node] * 1e-4) +\
+						(self.co2_melt[idx_node] * 1e-4)) / 1e2)) * self.dens_melt_fluid[idx_node]
 			self.density_fluid_loaded = True
 			
 	def calculate_o2_fugacity(self,mode):
