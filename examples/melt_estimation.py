@@ -49,10 +49,10 @@ param_name = 'melt_fluid_mass_frac', upper_limit_list = np.ones(len(temperature)
 search_start = 0.01, acceptence_threshold = 0.5, num_cpu = 1)
 """
 
-"""
+
 p_obj = pide.pide()
 
-temperature = np.ones(100) * 1373
+temperature = np.ones(100) * 1500
 pressure = np.ones(100) * 3
 bulk_water_array = np.linspace(100,3000,100)
 
@@ -88,17 +88,43 @@ cond_external = np.ones(len(temperature)) * (1.0/20)
 #with more accuracy.
 melt_frac_solution, residual_list = conductivity_solver_single_param(object = p_obj, cond_list = cond_external,
 param_name = 'melt_fluid_mass_frac', upper_limit_list = np.ones(len(temperature)), lower_limit_list= np.zeros(len(temperature)),
-search_start = 0.01, acceptence_threshold = 0.05, num_cpu = 1)
+search_start = 0.01, acceptence_threshold = 0.05, num_cpu = 1, simplify_fluid_density=True)
+melt_water = np.array(p_obj.h2o_melt)
+melt_density = np.array(p_obj.dens_melt_fluid)
+
+"""
+melt_frac_solution2, residual_list2 = conductivity_solver_single_param(object = p_obj, cond_list = cond_external,
+param_name = 'melt_fluid_mass_frac', upper_limit_list = np.ones(len(temperature)), lower_limit_list= np.zeros(len(temperature)),
+search_start = 0.01, acceptence_threshold = 0.05, num_cpu = 1, simplify_fluid_density=False)
+melt_water2 = np.array(p_obj.h2o_melt)
+melt_density2 = np.array(p_obj.dens_melt_fluid)
+"""
 
 fig = plt.figure()
-ax = plt.subplot(111)
-ax.plot(np.array(melt_frac_solution) * 1e2, bulk_water_array)
+ax = plt.subplot(131)
+ax2 = plt.subplot(132)
+ax3 = plt.subplot(133)
+# ax.plot(np.array(melt_frac_solution) * 1e2, bulk_water_array)
+ax.plot(np.array(melt_frac_solution) * 1e2, bulk_water_array,color = 'red')
 ax.set_xlabel('Melt Fraction (%)')
 ax.set_ylabel('Bulk Water Content (ppm)')
 ax.grid(which = 'both')
-# plt.show()
-plt.savefig('melt_frac_estimate_single.png')
-"""
+# ax2.plot(np.array(melt_frac_solution) * 1e2,melt_water)
+ax2.plot(np.array(melt_frac_solution) * 1e2,melt_water,color = 'red')
+ax2.set_yscale('log')
+ax2.set_ylabel('Melt Water')
+ax2.grid(which='both')
+# ax3.plot(np.array(melt_frac_solution) * 1e2,melt_density)
+ax3.plot(np.array(melt_frac_solution) * 1e2,melt_density,color = 'red')
+ax3.set_ylabel('Melt Density')
+ax3.grid(which='both')
+#plt.show()
+plt.savefig('new.png')
+
+import ipdb
+ipdb.set_trace()
+
+sys.exit()
 p_obj = pide.pide()
 
 temperature = [1500]
