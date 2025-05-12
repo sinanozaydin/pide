@@ -4464,12 +4464,11 @@ class pide(object):
 				
 				#to avoid redundant re-calculation with iterative inversion things.
 				if self.dens_melt_fluid[idx_node] == 0.0:
-					
 					self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp[idx_node], P = pres[idx_node], sio2 = melt_comp_calc[:,0][idx_node],
 					al2o3 = melt_comp_calc[:,1][idx_node],mgo = melt_comp_calc[:,2][idx_node],feo = melt_comp_calc[:,3][idx_node],cao = melt_comp_calc[:,4][idx_node],
 					na2o = melt_comp_calc[:,5][idx_node],k2o = melt_comp_calc[:,6][idx_node],tio2 = melt_comp_calc[:,7][idx_node],mno = melt_comp_calc[:,8][idx_node],p2o5 = melt_comp_calc[:,9][idx_node],
 					cr2o3 = melt_comp_calc[:,10][idx_node],h2o = melt_comp_calc[:,11][idx_node], method = 'index')
-
+					self.dens_melt_fluid_unchanged = self.dens_melt_fluid[idx_node].copy()
 				else:
 					
 					try:
@@ -4481,18 +4480,24 @@ class pide(object):
 							al2o3 = melt_comp_calc[:,1][idx_node],mgo = melt_comp_calc[:,2][idx_node],feo = melt_comp_calc[:,3][idx_node],cao = melt_comp_calc[:,4][idx_node],
 							na2o = melt_comp_calc[:,5][idx_node],k2o = melt_comp_calc[:,6][idx_node],tio2 = melt_comp_calc[:,7][idx_node],mno = melt_comp_calc[:,8][idx_node],p2o5 = melt_comp_calc[:,9][idx_node],
 							cr2o3 = melt_comp_calc[:,10][idx_node],h2o = melt_comp_calc[:,11][idx_node], method = 'index')
-					
-			#dealing with addition of co2, because HWGP_2018 do not calculate the effects of CO2
-			if np.mean(self.co2_melt) > 0.0:
+			
+			if (np.mean(self.co2_melt) > 0.0) or (sfd == True):
+				#gets stuck into recursiveness and keep updating the same density index...
 				if method == 'array':
-					self.dens_melt_fluid =  (((self.co2_melt * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt * 1e-4)) * 1e-2)) * self.dens_melt_fluid
+					co2_dens = co2_eos_coolprop(T = self.T, P = self.p, method = 'array')
+					water_dens = water_eos_coolprop(T = self.T, P = self.p, method = 'array')
+					self.dens_melt_fluid =  (((self.co2_melt * 1e-4) * 1e-2) * co2_dens) + (1 - (((self.co2_melt * 1e-4)) * 1e-2)) * self.dens_melt_fluid
 				else:
+					co2_dens = co2_eos_coolprop(T = self.T[idx_node], P = self.p[idx_node], method = 'index')
+					
 					if sfd == False:
-						self.dens_melt_fluid[idx_node] =  (((self.co2_melt[idx_node] * 1e-4) * 1e-2) * 2.4) + (1 - (((self.co2_melt[idx_node] * 1e-4)) * 1e-2)) * self.dens_melt_fluid[idx_node]
+						self.dens_melt_fluid[idx_node] =  (((self.co2_melt[idx_node] * 1e-4) * 1e-2) * co2_dens) +\
+						(1 - (((self.co2_melt[idx_node] * 1e-4)) * 1e-2)) * self.dens_melt_fluid_unchanged
 					else:
-						self.dens_melt_fluid[idx_node] = (((self.h2o_melt[idx_node] * 1e-4) / 1e2) * 1.4) +\
-						(((self.co2_melt[idx_node] * 1e-4) / 1e2) * 2.4) + (1 - (((self.h2o_melt[idx_node] * 1e-4) +\
-						(self.co2_melt[idx_node] * 1e-4)) / 1e2)) * self.dens_melt_fluid[idx_node]
+						water_dens = water_eos_coolprop(T = self.T[idx_node], P = self.p[idx_node], method = 'index')
+						self.dens_melt_fluid[idx_node] = ((self.h2o_melt[idx_node] * 1e-6) * water_dens) +\
+						((self.co2_melt[idx_node] * 1e-6) * co2_dens) +\
+						((1 - (self.h2o_melt[idx_node] * 1e-6) - (self.co2_melt[idx_node] * 1e-6)) * self.dens_melt_fluid_unchanged)
 			self.density_fluid_loaded = True
 			
 	def calculate_o2_fugacity(self,mode):

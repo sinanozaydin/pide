@@ -3,6 +3,7 @@
 import numpy as np
 import math
 from scipy import optimize
+from CoolProp.CoolProp import PropsSI
 
 def Sanchez_Valle_2013_WaterDensity(T,P):
 	
@@ -87,3 +88,29 @@ def Pitzer_and_Sterner_1994_PureWaterEOS(T, P):
 		h2o_fug[i] = PSfugacity(P[i]*1e4,float(T[i])) / 1e4 #in GPa
 			
 	return h2o_fug
+	
+def co2_eos_coolprop(T,P, method = 'array'):
+
+	P = P * 1e9 #converting to Pa
+
+	if method == 'index':
+		rho = PropsSI("D", "P", P, "T", T, "CO2")
+	else:
+		rho = np.zeros(len(T))
+		for i in range(len(T)):
+			rho[i] = PropsSI("D", "P", P[i], "T", T[i], "CO2")
+			
+	return rho * 1e-3
+	
+def water_eos_coolprop(T,P, method = 'array'):
+
+	P = P * 1e9 #converting to Pa
+	
+	if method == 'index':
+		rho = PropsSI("D", "P", P, "T", T, "Water")
+	else:
+		rho = np.zeros(len(T))
+		for i in range(len(T)):
+			rho[i] = PropsSI("D", "P", P[i], "T", T[i], "Water")
+			
+	return rho * 1e-3

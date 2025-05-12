@@ -2,11 +2,10 @@
 
 import numpy as np
 import os, contextlib
+from burnman.minerals.HGP_2018_ds633 import make_melt_class, q4L, sl1L, wo1L, fo2L, fa2L, jdL, hmL, ekL, tiL, kjL, ctL, h2o1L
 
 def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3,h2o,method = 'array'):
 
-	from burnman.minerals.HGP_2018_ds633 import make_melt_class, q4L, sl1L, wo1L, fo2L, fa2L, jdL, hmL, ekL, tiL, kjL, ctL, h2o1L
-	
 	#defining the thermodynamic environment
 	endmembers = [q4L, sl1L, wo1L, fo2L, fa2L, jdL, hmL, ekL, tiL, kjL, ctL, h2o1L]
 	melt_class = make_melt_class(endmembers)
