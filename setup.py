@@ -5,7 +5,7 @@ with open("README.md") as readme_file:
 
 setup(
     name='pide',
-    version='1.0.2',
+    version='1.1.0',
     package_data = {
         'pide' :[
             'pide_src/*csv',
@@ -14,7 +14,8 @@ setup(
             'pide_src/water_partitioning/*csv',
             'pide_src/cond_models/*csv',
             'pide_src/cond_models/minerals/*csv',
-            'pide_src/cond_models/rocks/*csv'
+            'pide_src/cond_models/rocks/*csv',
+            'pide_src/eos/*csv'
         ],
     },
     description='A library for petrophysical interpretations of geophysical models.',
@@ -34,6 +35,8 @@ setup(
         'pyproj',
         'netCDF4',
         'psutil',
+        'burnman',
+        'CoolProp'
     ],
     keywords = ['petrophysics', 'geodynamic modelling', 'magnetotelluric', 'electrical conductivity', 'seismic velocity']
 )

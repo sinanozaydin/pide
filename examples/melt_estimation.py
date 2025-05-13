@@ -69,7 +69,7 @@ p_obj.set_solid_phs_mix_method(1) #HS lower bound
 p_obj.set_melt_fluid_conductivity_choice(melt = 0)
 
 #Setting up melt CO2
-p_obj.set_melt_properties(co2 = 100)
+# p_obj.set_melt_properties(co2 = 100)
 
 #Setting up bulk water.
 #Try to avoid setting up melt_h2o from set_melt properties, because this will not distribute water among minerals.

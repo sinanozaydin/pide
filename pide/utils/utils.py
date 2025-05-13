@@ -210,6 +210,16 @@ def _comp_adjust_idx_based(_comp_list, comp_alien, idx, array = False):
 	
 	return comp_list
 
+def _all_equal(arrays):
+
+	"""
+	Return True if every sub-list in `arrays` is equal to the first one.
+	"""
+	if not arrays:
+		return True   # empty → trivially “all the same”
+	first = arrays[0]
+	return all(sub == first for sub in arrays)
+
 	
 class text_color:
    
