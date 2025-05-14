@@ -4363,6 +4363,11 @@ class pide(object):
 					return density
 					
 	def calculate_density_fluid(self, method = 'array', **kwargs):
+	
+		"""A method to calculate density of the melt/fluid for the environment setup.
+				
+		Output:
+		float: density in (g/cm3)"""
 			
 		sol_idx = kwargs.pop('sol_idx', 0)
 		
@@ -4478,6 +4483,7 @@ class pide(object):
 					
 					try:
 						self.dens_melt_fluid[idx_node] = self.interp_1d_dens_fluid(h2o_melt_local[idx_node])
+						self.dens_melt_fluid_unchanged = self.dens_melt_fluid[idx_node].copy()
 					except:
 					
 						if sfd == False:
@@ -4485,6 +4491,7 @@ class pide(object):
 							al2o3 = melt_comp_calc[:,1][idx_node],mgo = melt_comp_calc[:,2][idx_node],feo = melt_comp_calc[:,3][idx_node],cao = melt_comp_calc[:,4][idx_node],
 							na2o = melt_comp_calc[:,5][idx_node],k2o = melt_comp_calc[:,6][idx_node],tio2 = melt_comp_calc[:,7][idx_node],mno = melt_comp_calc[:,8][idx_node],p2o5 = melt_comp_calc[:,9][idx_node],
 							cr2o3 = melt_comp_calc[:,10][idx_node],h2o = melt_comp_calc[:,11][idx_node], method = 'index')
+							self.dens_melt_fluid_unchanged = self.dens_melt_fluid[idx_node].copy()
 			
 			#Adding co2 or sfd == True area.
 			if (np.mean(self.co2_melt) > 0.0) or (sfd == True):

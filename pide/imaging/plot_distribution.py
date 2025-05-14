@@ -6,9 +6,10 @@ def plot_posterior_distribution_two_params(data_param_1, data_param_2, save = Fa
 	param1_name = kwargs.pop('param1_name', 'Param 1')
 	param2_name = kwargs.pop('param2_name', 'Param 2')
 	num_bins = kwargs.pop('num_bins', 50)
-	figsize = kwargs.pop('figsize', (10,6))
+	fig_size = kwargs.pop('fig_size', (10,6))
 		
 	from scipy.stats import gaussian_kde
+	
 	kde_1 = gaussian_kde(data_param_1)
 	kde_2 = gaussian_kde(data_param_2)
 	x_vals_1 = np.linspace(min(data_param_1), max(data_param_1), 1000)
@@ -16,7 +17,7 @@ def plot_posterior_distribution_two_params(data_param_1, data_param_2, save = Fa
 	kde_vals_1 = kde_1(x_vals_1)
 	kde_vals_2 = kde_2(x_vals_2)
 	
-	fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+	fig, axs = plt.subplots(1, 2, figsize=fig_size)
 	counts1, bins1, _ = axs[0].hist(data_param_1, bins=num_bins, density=True,
 	alpha=0.75, color='#0c5934',edgecolor = 'k', linewidth = 0.2)
 	axs[0].plot(x_vals_1, kde_vals_1, color='k')
@@ -54,24 +55,22 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	param1_name = kwargs.pop('param1_name', 'Param 1')
 	param2_name = kwargs.pop('param2_name', 'Param 2')
 	colormap = kwargs.pop('colormap','viridis')
-
-	from matplotlib.colors import LogNorm
+	plot_mean_median = kwargs.pop('plot_mean_median', True)
+	plot_legend = kwargs.pop('plot_legend',True)
+	fig_size = kwargs.pop('figsize', (8,6))
 	
 	# Define the histogram bins
-	
 	bins_param1 = np.linspace(param_1_min, param_1_max, 150)
 	bins_param2 = np.linspace(param_2_min, param_2_max, 150)
 	
 	# Create a 2D histogram
 	heatmap, xedges, yedges = np.histogram2d(data_param_1, data_param_2, bins=(bins_param1, bins_param2))
-	# heatmap_masked = np.where(heatmap == 0, np.nan, heatmap)
-	heatmap[heatmap == 0] = np.min(heatmap[heatmap > 0]) * 0.1
-	# Plot the heatmap
-	plt.figure(figsize=(8, 6))
+	heatmap[heatmap == 0] = np.min(heatmap[heatmap > 0]) * 0.1 #assigning the zero values to a very small value.	
+	
+	#creating the plotting environment
+	plt.figure(figsize=fig_size)
 	vmin_ = 0.0
 	vmax_ = np.amax(heatmap) / 2.0
-	# vmin_ = np.percentile(heatmap, 1)
-	# vmax_ = np.percentile(heatmap, 99)
 	
 	im = plt.imshow(
 		heatmap.T, 
@@ -84,16 +83,22 @@ def plot_posterior_distribution_heatmap_two_params(data_param_1, data_param_2, s
 	)
 	cbar = plt.colorbar(im, label='Density')
 	im.set_clim([vmin_, vmax_])
-	plt.axvline(np.median(data_param_1),linestyle = "--",color = 'r',label = "Median")
-	plt.axvline(np.mean(data_param_1),linestyle = "-",color = 'r', label = "Mean")
-	plt.axhline(np.median(data_param_2),linestyle = "--",color = 'r')
-	plt.axhline(np.mean(data_param_2),linestyle = "-",color = 'r')
+	
+	if plot_mean_median == True:
+		plt.axvline(np.median(data_param_1),linestyle = "--",color = 'r',label = "Median")
+		plt.axvline(np.mean(data_param_1),linestyle = "-",color = 'r', label = "Mean")
+		plt.axhline(np.median(data_param_2),linestyle = "--",color = 'r')
+		plt.axhline(np.mean(data_param_2),linestyle = "-",color = 'r')
 	
 	plt.xlabel(param1_name)
 	plt.ylabel(param2_name)
-	plt.xlim(0,15)
-	plt.ylim(0,800)
+	plt.xlim(param_1_min,param_1_max)
+	plt.ylim(param_2_min,param_2_max)
 	plt.title('Sample Distribution Heatmap')
+	
+	if plot_legend == True:
+		plt.legend()
+		
 	plt.tight_layout()
 	if save == False:
 		plt.show()
