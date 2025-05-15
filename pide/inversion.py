@@ -23,13 +23,13 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 
 	"""Simple line-search solver to solve conductivities. This function should not be called directly.
 	"""
-
+	
 	if results_list is not None:
 		if len(results_list) == 0:
 			init_guess = None
 		else:
 			init_guess = results_list[-1]
-		
+	
 	param_search_array = np.arange(lowerlimit[index], upperlimit[index] , search_increment)
 
 	if len(param_search_array) == 1:
@@ -154,7 +154,8 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 						if (len(param_search_array) > 4) and (j>=3):
 
 							if search_increment <= (init_search_increment * 1e-2 * acceptence_threshold):
-								sol_param = lowerlimit[index]
+								#sol_param = lowerlimit[index]
+								sol_param = param_search_array[0]
 								restart = False
 								break
 							else:
@@ -164,7 +165,8 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 								break
 						else:
 							if search_increment <= (init_search_increment * 1e-2 * acceptence_threshold):
-								sol_param = lowerlimit[index]
+								sol_param = param_search_array[0]
+								#sol_param = lowerlimit[index]
 								restart = False
 								break
 							else:
@@ -265,6 +267,12 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 				comp_index = rock_list.index(param_name)
 			else:
 				raise NameError('The mineral/rock name you entered is not included as a parameter in pide.')
+				
+		else:
+			
+			comp_solv = False
+			comp_type = None
+			comp_index = None
 
 	if num_cpu > 1:
 
@@ -276,7 +284,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 
 		if num_cpu > max_num_cores:
 			raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
-
+	print(text_color.GREEN + 'Inversion process has started..' + text_color.END)
 	if num_cpu > 1:
 
 		manager = multiprocessing.Manager()
@@ -305,11 +313,12 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 				init_guess_ = c_list[idx-1]
 			else:
 				init_guess_ = None
+			
 			c = _solv_cond_(index = index_list[idx], cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 				lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list= None, init_guess = init_guess_, transition_zone = transition_zone,
 				water_solv=water_solv, comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold,
 				sfd = simplify_fluid_density)
-
+			
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]
 
@@ -757,12 +766,12 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 		misfits_all = []
 
 		for idx in range(0,len(index_list)):
-
+			
 			c = _solv_MCMC_two_param(index = index_list[idx], object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
 			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool, adaptive_alg = adaptive_alg, adaptive_check_length = adaptive_check_length,
 			step_size_limits = step_size_limits, ideal_acceptance_bounds = ideal_acceptance_bounds)
-
+			
 			sample_distr.append(c[0])
 			acceptance_rates.append(c[1])
 			misfits.append(c[2])

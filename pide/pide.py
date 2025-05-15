@@ -35,6 +35,7 @@ from .pide_src.cond_models.minerals.mica_odd import *
 from .pide_src.cond_models.minerals.garnet_odd import *
 from .pide_src.cond_models.minerals.ol_odd import *
 from .pide_src.cond_models.minerals.mixtures_odd import *
+from .pide_src.cond_models.minerals.perov_odd import *
 from .pide_src.cond_models.minerals.rwd_wds_odd import *
 from .pide_src.cond_models.minerals.other_odd import *
 #importing water-partitioning odd functions
