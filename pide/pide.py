@@ -559,19 +559,26 @@ class pide(object):
 				
 	def set_parameter(self, param_name, value):
 	
-		"""A method to set any kind of parameter with the given parameter name and automatically adjusts to the
-		length of the temperature. This parameter can be used by developers to try out their ideas, where
-		there is no such assigned parameter for pide yet. 
-		
-		Input:
-		str: param_name - name of the parameter
-		any: value - Any value corresponding to this parameter.
-		
-		Example:
-		set_parameter('ti_ol', 0.01)
-		
-		Organizes:
-		Given mineral.
+		"""
+		Set a custom parameter.
+		This method allows developers to define and test custom parameters not yet officially 
+		assigned in pide. It automatically adjusts the parameter to match the temperature length.
+	
+		Parameters
+		----------
+		param_name : str
+			Name of the parameter to set.
+		value : any
+			Value to assign to the parameter.
+	
+		Examples
+		--------
+		> set_parameter('ti_ol', 0.01)
+	
+		Notes
+		-----
+		The parameter is organized under the corresponding mineral.
+	
 		"""
 		
 		if self.temperature_default == True:
@@ -581,24 +588,46 @@ class pide(object):
 	
 	def set_composition_solid_mineral(self, reval = False, **kwargs):
 	
-		"""A method to set composition of the environment using mineral fractions. The total fraction has to make up to
-		value of 1.
-		
-		Input:
-		dict/float or 1-D array: mineral_name 
-		
-		Mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).
-		
-		Example:
-		set_composition_solid_mineral(ol = 0.6, opx = 0.4)
-		set_composition_solid_mineral(ol = [0.6,0.4], opx = [0.4,0.6])
-		
-		Organizes:
-		mineral fractions.
+		"""
+		Set the composition of the environment using mineral fractions.
+	
+		The total mineral fractions provided must sum to 1. Supports both scalar and 1-D array inputs 
+		for each mineral to represent either a single composition or a composition varying with temperature.
+	
+		Parameters
+		----------
+		reval : bool, optional
+			If True, re-evaluate the internal state after setting the composition. Default is False.
+		**kwargs : float or array-like
+			Keyword arguments where each key is a mineral name and the value is its fraction. 
+			Supported mineral names:
+			
+			- 'ol' : olivine  
+			- 'opx' : orthopyroxene  
+			- 'cpx' : clinopyroxene  
+			- 'garnet'  
+			- 'mica'  
+			- 'amp' : amphibole  
+			- 'quartz'  
+			- 'plag' : plagioclase  
+			- 'kfelds' : K-feldspar  
+			- 'sulphide'  
+			- 'graphite'  
+			- 'sp' : spinel  
+			- 'rwd_wds' : ringwoodite or wadsleyite  
+			- 'perov' : perovskite  
+			- 'mixture' : mineral mixtures  
+			- 'other' : other minerals  
+	
+		Examples
+		--------
+		> set_composition_solid_mineral(ol=0.6, opx=0.4)
+		> set_composition_solid_mineral(ol=[0.6, 0.4], opx=[0.4, 0.6])
+	
+		Notes
+		-----
+		The provided mineral fractions are organized and stored internally.
+	
 		"""
 			
 		if self.temperature_default == True:
@@ -677,21 +706,39 @@ class pide(object):
 			
 	def set_composition_solid_rock(self, reval = False, **kwargs):
 	
-		"""A method to set composition of the environment using rock fractions. The total fraction has to make up to
-		value of 1.
-		
-		Input:
-		dict/float or 1D-array: rock_name 
-		
-		Rock names:
-		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
-		
-		Example:
-		set_composition_solid_rock(granite = 0.6, granulite = 0.4)
-		set_composition_solid_rock(granite = [0.6,0.4], granulite = [0.4,0.6])
-		
-		Organizes:
-		rock fractions.
+		"""
+		Set the composition of the environment using rock fractions.
+	
+		The total rock fractions provided must sum to 1. Supports both scalar and 1-D array inputs 
+		for each rock type to represent either a single composition or one that varies with temperature.
+	
+		Parameters
+		----------
+		reval : bool, optional
+			If True, re-evaluate the internal state after setting the composition. Default is False.
+		**kwargs : float or array-like
+			Keyword arguments where each key is a rock name and the value is its fraction. 
+			Supported rock names:
+			
+			- 'granite'
+			- 'granulite'
+			- 'sandstone'
+			- 'gneiss'
+			- 'amphibolite'
+			- 'basalt'
+			- 'mud'
+			- 'gabbro'
+			- 'other_rock'
+	
+		Examples
+		--------
+		> set_composition_solid_rock(granite=0.6, granulite=0.4)
+		> set_composition_solid_rock(granite=[0.6, 0.4], granulite=[0.4, 0.6])
+	
+		Notes
+		-----
+		The provided rock fractions are organized and stored internally.
+	
 		"""
 		
 		if self.temperature_default == True:
@@ -741,16 +788,27 @@ class pide(object):
 			
 	def set_temperature(self,T,reval = False):
 	
-		"""A method to set temperature of the environment.
-		
-		Input:
-		float or 1-D array: T || in Kelvin
-		
-		Example:
-		set_temperature(temperature_array_list)
-		
-		Organizes:
-		Temperature array
+		"""
+		Set the temperature of the environment.
+	
+		Accepts a single temperature value or a 1-D array of temperatures, in Kelvin.
+	
+		Parameters
+		----------
+		T : float or array-like
+			Temperature(s) in Kelvin. Can be a scalar or a 1-D array.
+		reval : bool, optional
+			If True, re-evaluate the internal state after setting the temperature. Default is False.
+	
+		Examples
+		--------
+		> set_temperature(1300.0)
+		> set_temperature([1200.0, 1300.0, 1400.0])
+	
+		Notes
+		-----
+		The temperature array is stored and used for subsequent calculations.
+	
 		"""
 	
 		try: 
@@ -773,16 +831,27 @@ class pide(object):
 		
 	def set_pressure(self,P,reval = False):
 	
-		"""A method to set pressure of the environment.
-		
-		Input:
-		float or 1-D Array: P || in GPa
-		
-		Example:
-		set_pressure(pressure_array)
-		
-		Organizes.
-		Pressure array.
+		"""
+		Set the pressure of the environment.
+	
+		Accepts a single pressure value or a 1-D array of pressures, in gigapascals (GPa).
+	
+		Parameters
+		----------
+		P : float or array-like
+			Pressure(s) in GPa. Can be a scalar or a 1-D array.
+		reval : bool, optional
+			If True, re-evaluate the internal state after setting the pressure. Default is False.
+	
+		Examples
+		--------
+		> set_pressure(2.5)
+		> set_pressure([2.0, 2.5, 3.0])
+	
+		Notes
+		-----
+		The pressure array is stored and used for subsequent calculations.
+	
 		"""
 		
 		def _check_p_n_T():
@@ -816,19 +885,32 @@ class pide(object):
 	
 	def set_depth(self,depth,reval = False):
 	
-		"""A method to set depth of the environment.
-		
-		Input:
-		float or 1-D array: depth || in km
-		
-		Example:
-		set_depth(depth_array)
-		
+		#Make the depth 'auto part better later...
+		"""
+		Set the depth of the environment.
+	
+		Accepts a single depth value or a 1-D array of depths, in kilometers (km).
+	
+		Parameters
+		----------
+		depth : float or array-like
+			Depth(s) in kilometers. Can be a scalar or a 1-D array.
+		reval : bool, optional
+			If True, re-evaluate the internal state after setting the depth. Default is False.
+	
+		Examples
+		--------
+		> set_depth(50.0)
+		> set_depth([30.0, 50.0, 70.0])
+	
+		Notes
+		-----
+		The depth values are used in environmental modeling and may influence pressure or temperature
+		if coupled with those parameters.
 		"""
 	
 		if depth == 'auto':
 			self.depth = self.p * 33.0
-			
 		else:
 		
 			self.depth = array_modifier(input = depth, array = self.T, varname = 'depth')
@@ -840,23 +922,45 @@ class pide(object):
 		
 	def set_watercalib(self,**kwargs):
 	
-		"""A method to set water calibration corrections. This method will automatically calibrate all the functions that uses the relevant exchange
-		of water between the given minerals. For instance when the user changes the water calibration of olivine, it affects the electrical conductivity models and
-		water solubility models of olivine
-
-		Input:
-		dict/int: mineral_name
-
-		Available minerals and assoicated index values:
-		ol:  0-Withers2012, 1-Bell2003, 2-Paterson1980 or 3-Default'
-		px and garnet: 0-Bell1995 1-Paterson1980 or 2-Default.
-		feldspars: 1-Mosenfelder2015 or 2-Default.
-
-		Example:
-		set_watercalib(ol=0, px_gt = 0, feldspar = 1)
+		"""
+		Set water calibration corrections for specific minerals.
+	
+		This method calibrates all relevant functions that involve water exchange for the specified 
+		minerals. Changing the calibration for a mineral (e.g., olivine) will affect all associated 
+		models such as electrical conductivity and water solubility.
+	
+		Parameters
+		----------
 		
-		Organizes:
-		Water calibrations for the environment.
+		**kwargs : int
+			Keyword arguments where each key is a mineral name and the value is the index of the 
+			calibration model to apply.
+	
+			Available minerals and associated calibration index values:
+			
+			- 'ol' : 
+				0 - Withers (2012)  
+				1 - Bell (2003)  
+				2 - Paterson (1980)  
+				3 - Default  
+			
+			- 'px' and 'garnet' :  
+				0 - Bell (1995)  
+				1 - Paterson (1980)  
+				2 - Default  
+			
+			- 'feldspar' :  
+				1 - Mosenfelder (2015)  
+				2 - Default
+	
+		Examples
+		--------
+		> set_watercalib(ol=0, px_gt=0, feldspar=1)
+	
+		Notes
+		-----
+		The specified calibrations will be used across all internal models that depend on water content.
+	
 		"""
 	
 		pide.ol_calib = kwargs.pop('ol', 3)
@@ -874,22 +978,33 @@ class pide(object):
 		
 	def set_o2_buffer(self, o2_buffer = 0):
 
-		"""A method to set oxygen fugacity buffer of the environment.
-
-		Input:
-		int: o2_buffer = 0
-
-		Available buffer indexes:
-
-		0: FMQ:
-		1: IW: Hirsch (1991)
-		2: QIF:
-		3: NNO: Li et al. (1998)
-		4 MMO: Xu et al. (2000)
-		
-		Example:
-		set_o2_buffer(1) | setting it to Iron-Wustite (IW) buffer.
-		
+		"""
+		Set the oxygen fugacity (fO₂) buffer of the environment.
+	
+		Selects a predefined buffer model for oxygen fugacity, which can influence redox-sensitive 
+		processes in geochemical models.
+	
+		Parameters
+		----------
+		o2_buffer : int, optional
+			Index specifying the desired oxygen buffer. Default is 0.
+			
+			Available buffer indices:
+			
+			- 0 : FMQ (Fayalite-Magnetite-Quartz)
+			- 1 : IW (Iron-Wüstite), Hirsch (1991)
+			- 2 : QIF
+			- 3 : NNO (Nickel-Nickel Oxide), Li et al. (1998)
+			- 4 : MMO, Xu et al. (2000)
+	
+		Examples
+		--------
+		> set_o2_buffer(1)  # Sets to Iron-Wüstite (IW) buffer
+	
+		Notes
+		-----
+		The fo2 array is stored and used for subsequent calculations.
+	
 		"""
 		pide.o2_buffer = o2_buffer
 		
@@ -898,17 +1013,36 @@ class pide(object):
 			
 	def set_mantle_water_solubility(self,**kwargs):
 
-		"""A method to set mantle water solubility of the chosen mineral with index.
-
-		Input:
-		dict/int: mineral_name = int
-
-		Available mantle minerals for this calculation:
-		ol,opx,cpx,garnet,rwd_wds,perov
-		
-		Example:
-		
-		set_mantle_water_solubility(ol = 2, opx = 0, cpx = 1)
+		"""
+		Set mantle water solubility model indices for selected minerals.
+	
+		Assigns specific water solubility models to mantle minerals by index. These settings affect 
+		how water content is treated in calculations involving these minerals.
+	
+		Parameters
+		----------
+		**kwargs : int
+			Keyword arguments where each key is a mantle mineral name and the value is the index of 
+			the water solubility model to use.
+	
+			Supported mantle minerals:
+			
+			- 'ol' : olivine  
+			- 'opx' : orthopyroxene  
+			- 'cpx' : clinopyroxene  
+			- 'garnet'  
+			- 'rwd_wds' : ringwoodite or wadsleyite  
+			- 'perov' : perovskite
+	
+		Examples
+		--------
+		> set_mantle_water_solubility(ol=2, opx=0, cpx=1)
+	
+		Notes
+		-----
+		Each index corresponds to a specific solubility model; to see the list of models
+		use list_mantle_water_solubilities function for the relevant mineral.
+	
 		"""
 	
 		self.ol_sol_choice = kwargs.pop('ol', 0)
@@ -925,16 +1059,38 @@ class pide(object):
 			
 	def set_mantle_water_partitions(self,**kwargs):
 
-		"""A method to set upper mantle water partition coefficients against.
-
-		Input:
-		dict/int: partition_name = int
-
-		Available partition_names:
-		opx_ol,cpx_ol,garnet_ol,ol_melt,opx_melt,cpx_melt,garnet_melt
-		
-		Example:
-		set_mantle_water_partitions(opx_ol = 2, cpx_ol = 1, ol_melt = 0, cpx_melt = 2)
+		"""
+		Set upper mantle water partition coefficient models.
+	
+		Assigns partition coefficient model indices for water between minerals and melt or between 
+		different minerals. These settings influence how water is distributed in upper mantle phases.
+	
+		Parameters
+		----------
+		**kwargs : int
+			Keyword arguments where each key is a partition pair and the value is the index of the 
+			partition coefficient model to use.
+	
+			Available partition names:
+			
+			- 'opx_ol' : orthopyroxene / olivine  
+			- 'cpx_ol' : clinopyroxene / olivine  
+			- 'garnet_ol'  
+			- 'ol_melt' : olivine / melt  
+			- 'opx_melt' : orthopyroxene / melt  
+			- 'cpx_melt' : clinopyroxene / melt  
+			- 'garnet_melt'
+	
+		Examples
+		--------
+		> set_mantle_water_partitions(opx_ol=2, cpx_ol=1, ol_melt=0, cpx_melt=2)
+	
+		Notes
+		-----
+		The indices refer to predefined models for water partitioning. To get a list of the
+		relevant partitioning models, use 'list_mantle_water_partitions_solid' , list_mantle_water_partitions_melt
+		functions for relevant materials.
+	
 		"""
 	
 		self.d_water_opx_ol_choice = kwargs.pop('opx_ol', 0)
@@ -950,16 +1106,35 @@ class pide(object):
 		
 	def set_mantle_transition_zone_water_partitions(self, **kwargs):
 
-		"""A method to set mantle transition zone water partition coefficients against rwd_wds phase.
-
-		Input:
-		str: partition_name
-
-		Available partition_names:
-		garnet_rwd_wds,perov_rwd_wds,cpx_rwd_wds
-		
-		Example:
-		set_mantle_transition_zone_water_partitions(garnet_rwd_wds = 0, cpx_rwd_wds = 1)
+		"""
+		Set mantle transition zone water partition coefficient models against the ringwoodite/wadsleyite phase.
+	
+		Assigns partition coefficient model indices for water between specific mantle minerals and the
+		rwd_wds phase (ringwoodite or wadsleyite). These influence water distribution in the mantle 
+		transition zone.
+	
+		Parameters
+		----------
+		**kwargs : int
+			Keyword arguments where each key is a partition pair and the value is the index of the 
+			partition coefficient model to use.
+	
+			Available partition names:
+			
+			- 'garnet_rwd_wds'  
+			- 'perov_rwd_wds'  
+			- 'cpx_rwd_wds'
+	
+		Examples
+		--------
+		> set_mantle_transition_zone_water_partitions(garnet_rwd_wds=0, cpx_rwd_wds=1)
+	
+		Notes
+		-----
+		The indices correspond to specific partitioning models.  To get a list of the
+		relevant partitioning models, use 'list_transition_zone_water_partitions_solid' function 
+		for relevant materials.
+	
 		"""
 	
 		self.d_water_garnet_rwd_wds_choice = kwargs.pop('garnet_rwd_wds', 0)
@@ -1006,12 +1181,23 @@ class pide(object):
 	
 	def get_mineral_index(self, mineral_name):
 
-		"""A method to get the index of the mineral in
-		mineral lists used in conductivity calulcation
-		methods.
-		
-		Example:
-		get_mineral_index('ol')
+		"""
+		Get the index of a mineral in the mineral list used for conductivity calculations.
+	
+		Parameters
+		----------
+		mineral_name : str
+			Name of the mineral whose index is to be retrieved.
+	
+		Returns
+		-------
+		int
+			Index of the mineral in the internal mineral list.
+	
+		Examples
+		--------
+		> get_mineral_index('ol')
+	
 		"""
 	
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
@@ -1055,12 +1241,23 @@ class pide(object):
 		
 	def get_rock_index(self, rock_name):
 	
-		"""A method to get the index of the rock in
-		rock lists used in conductivity calculation
-		methods.
-		
-		Example:
-		get_rock_index('granulite')
+		"""
+		Get the index of a rock in the rock list used for conductivity calculations.
+	
+		Parameters
+		----------
+		rock_name : str
+			Name of the rock whose index is to be retrieved.
+	
+		Returns
+		-------
+		int
+			Index of the rock in the internal rock list.
+	
+		Examples
+		--------
+		> get_rock_index('granulite')
+	
 		"""
 	
 		if (rock_name == 'granite'):
@@ -1090,8 +1287,19 @@ class pide(object):
 		
 	def list_available_minerals(self):
 	
-		"""A method to list all available minerals in pide."""
+		"""
+		List all available minerals in PIDE.
 	
+		Returns
+		-------
+		list of str
+			A list containing the names of all minerals available in PIDE.
+	
+		Examples
+		--------
+		> list_available_minerals()
+		
+		"""
 		mineral_list = ['ol','opx','cpx','garnet','mica','amp','quartz','plag','kfelds','sulphide','graphite','sp','rwd_wds','perov','mixture','other']
 		
 		print(text_color.RED +'All available minerals:')
@@ -1102,7 +1310,19 @@ class pide(object):
 			
 	def list_available_rocks(self):
 	
-		"""A method to list all available rocks in pide."""
+		"""
+		List all available rocks in PIDE.
+	
+		Returns
+		-------
+		list of str
+			A list containing the names of all rocks available in PIDE.
+	
+		Examples
+		--------
+		> list_available_rocks()
+	
+		"""
 	
 		rock_list = ['granite','granulite','sandstone','gneiss','amphibolite','basalt','mud','gabbro','other_rock']
 		
@@ -1115,19 +1335,41 @@ class pide(object):
 	
 	def list_mineral_econd_models(self, mineral_name):
 
-		"""A method to list all possible electrical conductivity models for the chosen mineral.
-
-		Input:
-		str: mineral_name
-
-		mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).
 		
-		Example:
-		list_mineral_econd_models('ol')
+		"""
+		List all possible electrical conductivity models for the specified mineral.
+	
+		Parameters
+		----------
+		mineral_name : str
+			Name of the mineral. Supported minerals include:
+			
+			- 'ol' (olivine)
+			- 'opx' (orthopyroxene)
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+			- 'mica'
+			- 'amp' (amphibole)
+			- 'quartz'
+			- 'plag' (plagioclase)
+			- 'kfelds' (k-feldspar)
+			- 'sulphide'
+			- 'graphite'
+			- 'sp' (spinel)
+			- 'rwd_wds' (ringwoodite or wadsleyite)
+			- 'perov' (perovskite)
+			- 'mixture' (mineral mixtures)
+			- 'other' (other minerals)
+	
+		Returns
+		-------
+		list of str
+			A list of names or descriptions of available electrical conductivity models for the given mineral.
+	
+		Examples
+		--------
+		>list_mineral_econd_models('ol')
+	
 		"""
 		
 		if (mineral_name == 'ol') or (mineral_name == 'olivine'):
@@ -1179,16 +1421,33 @@ class pide(object):
 	
 	def list_rock_econd_models(self, rock_name):
 
-		"""A method to list all possible electrical conductivity models for the chosen rock.
-
-		Input:
-		str: rock_name
-
-		Rock_names: 
-		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
-		
-		Example:
-		list_rock_econd_models('granite')
+		"""
+		List all possible electrical conductivity models for the specified rock.
+	
+		Parameters
+		----------
+		rock_name : str
+			Name of the rock. Supported rocks include:
+			
+			- 'granite'
+			- 'granulite'
+			- 'sandstone'
+			- 'gneiss'
+			- 'amphibolite'
+			- 'basalt'
+			- 'mud'
+			- 'gabbro'
+			- 'other_rock'
+	
+		Returns
+		-------
+		list of str
+			A list of names or descriptions of available electrical conductivity models for the given rock.
+	
+		Examples
+		--------
+		> list_rock_econd_models('granite')
+	
 		"""
 		
 		if (rock_name == 'granite'):
@@ -1227,7 +1486,18 @@ class pide(object):
 	
 	def list_melt_econd_models(self):
 
-		"""A method to list all possible melt electrical conductivity models.		
+		"""
+		List all possible electrical conductivity models for melts.
+	
+		Returns
+		-------
+		list of str
+			A list of names or descriptions of available electrical conductivity models for melts.
+	
+		Examples
+		--------
+		> list_melt_econd_models()
+	
 		"""
 	
 		print(text_color.RED +'Conductivity models for melts:' + text_color.END)
@@ -1241,7 +1511,18 @@ class pide(object):
 	
 	def list_fluid_econd_models(self):
 
-		"""A method to list all possible fluid electrical conductivity models.		
+		"""
+		List all possible electrical conductivity models for fluids.
+	
+		Returns
+		-------
+		list of str
+			A list of names or descriptions of available electrical conductivity models for fluids.
+	
+		Examples
+		--------
+		> list_fluid_econd_models()
+	
 		"""
 		
 		print(text_color.BLUE +'Conductivity models for fluids:' + text_color.END)
@@ -1255,16 +1536,27 @@ class pide(object):
 	
 	def list_mantle_water_partitions_solid(self, mineral_name):
 
-		"""A method to list all possible upper mantle water partitioning between solid minerals
-
-		Input:
-		str: mineral_name
-
-		Mineral_names:
-		opx(orthopyroxene),cpx(clinopyroxene),garnet
-		
-		Example:
-		list_mantle_water_partitions_solid('opx')
+		"""
+		List all possible upper mantle water partitioning models between solid minerals and olivine.
+	
+		Parameters
+		----------
+		mineral_name : str
+			Name of the mineral. Supported minerals include:
+			
+			- 'opx' (orthopyroxene)
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+	
+		Returns
+		-------
+		list of str
+			A list of available water partitioning model names or descriptions for the specified mineral.
+	
+		Examples
+		--------
+		> list_mantle_water_partitions_solid('opx')
+	
 		"""
 	
 		if (mineral_name == 'opx') or (mineral_name == 'orthopyroxene'):
@@ -1296,16 +1588,27 @@ class pide(object):
 	
 	def list_transition_zone_water_partitions_solid(self, mineral_name):
 
-		"""A method to list all possible mantle transition zone water partitioning between solid minerals.
-
-		Input:
-		str: mineral_name
-
-		Mineral_names:
-		cpx(clinopyroxene),garnet,perov(perovskite)
-		
-		Example:
-		list_transition_zone_water_partitions_solid('cpx')
+		"""
+		List all possible mantle transition zone water partitioning models between solid minerals and olivine polymorphs (Ringwoodige-Wadsleyite).
+	
+		Parameters
+		----------
+		mineral_name : str
+			Name of the mineral. Supported minerals include:
+			
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+			- 'perov' (perovskite)
+	
+		Returns
+		-------
+		list of str
+			A list of available water partitioning model names or descriptions for the specified mineral.
+	
+		Examples
+		--------
+		> list_transition_zone_water_partitions_solid('cpx')
+	
 		"""
 	
 		if (mineral_name == 'cpx') or (mineral_name == 'clinopyroxene'):
@@ -1338,16 +1641,28 @@ class pide(object):
 	
 	def list_mantle_water_partitions_melt(self, mineral_name):
 
-		"""A method to list all possible upper mantle water partitioning between solid minerals and melt.
-
-		Input:
-		str: mineral_name
-
-		Mineral_names:
-		ol(olivine),opx(orthopyroxene),cpx(clinopyroxene),garnet
-		
-		Example:
-		list_mantle_water_partitions_melt('ol')
+		"""
+		List all possible upper mantle water partitioning models between solid minerals and melt.
+	
+		Parameters
+		----------
+		mineral_name : str
+			Name of the mineral. Supported minerals include:
+			
+			- 'ol' (olivine)
+			- 'opx' (orthopyroxene)
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+	
+		Returns
+		-------
+		list of str
+			A list of available water partitioning model names or descriptions for the specified mineral.
+	
+		Examples
+		--------
+		> list_mantle_water_partitions_melt('ol')
+	
 		"""
 		
 		print(text_color.RED + f'Mantle melt/NAMs water partition coefficients for the mineral:   {mineral_name}' + text_color.END)
@@ -1381,17 +1696,31 @@ class pide(object):
 	
 	def list_mantle_water_solubilities(self, mineral_name):
 
-		"""A method to list upper-mantle water solubility models of different minerals.
-		Not all mantle minerals have water solubility models associated in pide.
-		
-		Mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).	
-		
-		Example:
-		list_mantle_water_solubilites('ol')
+		"""
+		List upper mantle water solubility models for the specified mineral.
+	
+		Not all mantle minerals have associated water solubility models in PIDE.
+	
+		Parameters
+		----------
+		mineral_name : str
+			Name of the mineral. Supported minerals include:
+			
+			- 'ol' (olivine)
+			- 'opx' (orthopyroxene)
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+			- 'rwd_wds' (ringwoodite or wadsleyite)
+	
+		Returns
+		-------
+		list of str
+			A list of available water solubility model names or descriptions for the specified mineral.
+	
+		Examples
+		--------
+		> list_mantle_water_solubilities('ol')
+	
 		"""
 
 		print(f'Mantle NAM water solubility for:  {mineral_name}')
@@ -1421,16 +1750,32 @@ class pide(object):
 	
 	def set_melt_fluid_conductivity_choice(self,**kwargs):
 
-		"""A method to set melt/fluid electrical conductivity model choice.
-
-		Input:
-		dict/float: melt or fluid
-
-		Example:
-		set_melt_fluid_conductivity_choice(melt = 0)
-		set_melt_fluid_conductivity_choice(fluid = 2)
 		"""
+		Set the electrical conductivity model choice for melt or fluid.
 	
+		Parameters
+		----------
+		**kwargs : dict or float
+			Keyword arguments specifying the conductivity model choice.
+			Supported keys:
+			
+			- melt : int or float
+				Index or identifier for the melt conductivity model.
+			- fluid : int or float
+				Index or identifier for the fluid conductivity model.
+	
+		Examples
+		--------
+		> set_melt_fluid_conductivity_choice(melt=0)
+		> set_melt_fluid_conductivity_choice(fluid=2)
+		
+		Notes
+		-----
+		To get the list of all available conductivity choices of melt and fluids, try using
+		list_melt_econd_models and list_fluid_econd_models functions.
+	
+		"""
+		
 		pide.melt_cond_selection = kwargs.pop('melt', 0)
 		pide.fluid_cond_selection = kwargs.pop('fluid', 0)
 		
@@ -1444,26 +1789,47 @@ class pide(object):
 		
 	def set_mineral_conductivity_choice(self,**kwargs):
 
-		"""A method to set mineral electrical conductivity model choices.
+		"""
+		Set mineral electrical conductivity model choices.
+	
+		Parameters
+		----------
+		**kwargs : dict
+			Mineral names as keys and model identifiers as values.
+			The value can be either:
+			
+			- int: Selects the entire model by index, e.g., `ol=4`.
+			- str: Specifies the model and mechanism separated by a slash, e.g., `ol='4/proton'`.
+	
+			Supported mineral names:
+			
+			- 'ol' (olivine)
+			- 'opx' (orthopyroxene)
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+			- 'mica'
+			- 'amp' (amphibole)
+			- 'quartz'
+			- 'plag' (plagioclase)
+			- 'kfelds' (k-feldspar)
+			- 'sulphide'
+			- 'graphite'
+			- 'sp' (spinel)
+			- 'rwd_wds' (ringwoodite or wadsleyite)
+			- 'perov' (perovskite)
+			- 'mixture' (mineral mixtures)
+			- 'other' (other minerals)
+	
+		Examples
+		--------
+		> set_mineral_conductivity_choice(ol=4, opx=1, cpx=5, garnet=0)
+		> set_mineral_conductivity_choice(ol='4/proton')
 		
-		Input:
-		dict/int or str: mineral_name - Name id of the mineral
-		
-		The input can be an integer, which will take the whole model: ol = 4
-		or the input can be a string where the mechanisms of the chosen model can be specified
-			ol = '4/proton'
-
-		
-
-		Mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).
-
-		Example:
-		set_mineral_conductivity_choice(ol = 4,opx = 1,cpx = 5,garnet = 0)
-		set_mineral_conductivity_choice(ol = '4/proton')		
+		Notes
+		-----
+		To get the list of all available conductivity choices of melt and fluids, try using
+		'list_mineral_econd_models' function.
+	
 		"""
 	
 		pide.ol_cond_selection = kwargs.pop('ol', 0)
@@ -1523,6 +1889,8 @@ class pide(object):
 		self.seismic_setup = False
 		
 	def _mineral_conductivity_choice_check(self):
+	
+		"""An internal function that checks mineral conductivity choices is ok"""
 
 		mineral_idx = list(range(11,28))
 		mineral_names = ['qtz','plag','amp','kfelds','opx','cpx','mica','garnet','sulphide','graphite','ol','sp','rwd_wds','perov','mixture','other']
@@ -1547,16 +1915,35 @@ class pide(object):
 	
 	def set_rock_conductivity_choice(self,**kwargs):
 		
-		"""A method to set rock electrical conductivity model choices.
-
-		Input:
-		dict/float: rock_name - Name id of the mineral
-
-		Rock_names: 
-		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
-
-		Example:
-		set_rock_conductivity_choice(granite = 3, granulite = 2)			
+		"""
+		Set rock electrical conductivity model choices.
+	
+		Parameters
+		----------
+		**kwargs : dict
+			Rock names as keys and model indices (int or float) as values.
+	
+			Supported rock names include:
+			
+			- 'granite'
+			- 'granulite'
+			- 'sandstone'
+			- 'gneiss'
+			- 'amphibolite'
+			- 'basalt'
+			- 'mud'
+			- 'gabbro'
+			- 'other_rock'
+	
+		Examples
+		--------
+		> set_rock_conductivity_choice(granite=3, granulite=2)
+		
+		Notes
+		-----
+		To get the list of all available conductivity choices of melt and fluids, try using
+		'list_rock_econd_models' function.
+	
 		"""
 
 		pide.granite_cond_selection = kwargs.pop('granite', 0)
@@ -1579,6 +1966,8 @@ class pide(object):
 		self.seismic_setup = False
 		
 	def _rock_conductivity_choice_check(self):
+	
+		"""An internal function that checks rock conductivity choices are ok"""
 		
 		rock_idx = list(range(2,12))
 		rock_names = ['granite','granulite','sandstone','gneiss','amphibolite','basalt','mud','gabbro','other_rock']
@@ -1591,20 +1980,46 @@ class pide(object):
 				   
 	def set_mineral_water(self, reval = False, **kwargs):
 
-		"""A method to set mineral water contents independently.
-
-		Input:
-		dict/float or 1D array: mineral_name - Name id of the mineral || in ppm.
-
-		Mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).
-
-		Example:
-		set_mineral_water(ol = 20,opx = 100,cpx = 200,garnet = 15)
-		set_mineral_water(ol = [20,22],opx = [100,120],cpx = [200,240],garnet = [15,20])	
+		"""
+		Set mineral water contents independently.
+	
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to re-evaluate dependent calculations after setting water contents. Default is False.
+		**kwargs : dict of str to float or array-like
+			Mineral names as keys and water contents as values in parts per million (ppm).
+			Values can be a single float or a 1-D array.
+	
+			Supported mineral names include:
+	
+			- 'ol' (olivine)
+			- 'opx' (orthopyroxene)
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+			- 'mica'
+			- 'amp' (amphibole)
+			- 'quartz'
+			- 'plag' (plagioclase)
+			- 'kfelds' (k-feldspar)
+			- 'sulphide'
+			- 'graphite'
+			- 'sp' (spinel)
+			- 'rwd_wds' (ringwoodite or wadsleyite)
+			- 'perov' (perovskite)
+			- 'mixture' (mineral mixtures)
+			- 'other' (other minerals)
+	
+		Examples
+		--------
+		> set_mineral_water(ol=20, opx=100, cpx=200, garnet=15)
+		> set_mineral_water(ol=[20, 22], opx=[100, 120], cpx=[200, 240], garnet=[15, 20])
+		
+		Notes
+		-----
+		Not all mineral water contents are effective in petrophysical calculations. Try to be careful
+		of what conductivity model is chosen.
+	
 		"""
 	
 		if self.temperature_default == True:
@@ -1663,17 +2078,39 @@ class pide(object):
 				   
 	def set_rock_water(self, reval = False, **kwargs):
 
-		"""A method to set rock water contents independently.
-
-		Input:
-		dict/float or 1d array: rock_name - Name id of the mineral || in ppm.
-
-		Rock_names: 
-		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
-
-		Example:
-		set_rock_water(granite = 100, granulite = 500)	
-		set_rock_water(granite = [100,200], granulite = [500,550])		
+		"""
+		Set rock water contents independently.
+	
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to re-evaluate dependent calculations after setting water contents. Default is False.
+		**kwargs : dict of str to float or array-like
+			Rock names as keys and water contents as values in parts per million (ppm).
+			Values can be a single float or a 1-D array.
+	
+			Supported rock names include:
+	
+			- 'granite'
+			- 'granulite'
+			- 'sandstone'
+			- 'gneiss'
+			- 'amphibolite'
+			- 'basalt'
+			- 'mud'
+			- 'gabbro'
+			- 'other_rock'
+	
+		Examples
+		--------
+		> set_rock_water(granite=100, granulite=500)
+		> set_rock_water(granite=[100, 200], granulite=[500, 550])
+		
+		Notes
+		-----
+		Not all rock water contents are effective in petrophysical calculations. Try to be careful
+		of what conductivity model is chosen.
+	
 		"""
 	
 		if self.temperature_default == True:
@@ -1710,14 +2147,23 @@ class pide(object):
 			
 	def set_bulk_water(self,value, reval = False, index = None):
 	
-		"""A method to set bulk water content. This function will override the ones et in set_mineral_water.
-		
-		Input:
-		float or 1D array: value/array || in ppm.
-		
-		Example:
-		set_bulk_water(100)
-		set_bulk_water(water_content_array)
+		"""
+		Set bulk water content, overriding individual mineral water contents.
+	
+		Parameters
+		----------
+		value : float or array-like
+			Bulk water content value(s) in parts per million (ppm). Can be a single float or a 1-D array.
+		reval : bool, optional
+			Whether to re-evaluate dependent calculations after setting bulk water content. Default is False.
+		index : int or None, optional
+			Optional index to specify where to apply the bulk water content. Default is None.
+	
+		Examples
+		--------
+		> set_bulk_water(100)
+		> set_bulk_water([100,200,1000])
+	
 		"""
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
@@ -1736,20 +2182,41 @@ class pide(object):
 			
 	def set_xfe_mineral(self, reval = False, **kwargs):
 	
-		"""A method to set iron content of given mineral. Some of it might not have any effect, but still able to set for future directions in library. 
-		
-		Input:
-		dict/float or array: mineral_name = 0.1 || Range: 0 - 1
-				
-		Mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).
-		
-		Example:
-		set_xfe_mineral(ol = 0.1,opx = 0.09,cpx = 0.1, garnet = 0.2)
-		set_xfe_mineral(ol = [0.1,0.11], opx = [0.1,0.11], cpx = [0.1,0.11], garnet = [0.1,0.11])
+		"""
+		Set iron content (XFe) of given minerals.
+	
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to re-evaluate dependent calculations after setting iron content. Default is False.
+		**kwargs : dict of str to float or array-like
+			Mineral names as keys and iron content values (fraction between 0 and 1) as values.
+			Values can be a single float or a 1-D array.
+	
+			Supported mineral names include:
+	
+			- 'ol' (olivine)
+			- 'opx' (orthopyroxene)
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+			- 'mica'
+			- 'amp' (amphibole)
+			- 'quartz'
+			- 'plag' (plagioclase)
+			- 'kfelds' (k-feldspar)
+			- 'sulphide'
+			- 'graphite'
+			- 'sp' (spinel)
+			- 'rwd_wds' (ringwoodite or wadsleyite)
+			- 'perov' (perovskite)
+			- 'mixture' (mineral mixtures)
+			- 'other' (other minerals)
+	
+		Examples
+		--------
+		> set_xfe_mineral(ol=0.1, opx=0.09, cpx=0.1, garnet=0.2)
+		> set_xfe_mineral(ol=[0.1, 0.11], opx=[0.1, 0.11], cpx=[0.1, 0.11], garnet=[0.1, 0.11])
+	
 		"""
 	
 		if self.temperature_default == True:
@@ -1802,21 +2269,41 @@ class pide(object):
 			
 	def set_param1_mineral(self, reval = False, **kwargs):
 	
-		"""A method to set param1 value of a given mineral. Some of it might not have any effect, but still able to set for future directions in library. 
-		
-		Input:
-		dict/float or 1d array: mineral_name = value
-		
-		Mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).
-		
-		Example:
-		set_param1_mineral(ol = 0.1,opx = 0.2)
-		set_param1_mineral(ol = [0.1,0.11], opx = [0.2,0.22])
 		"""
+		Set param1 value for given minerals.
+		
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to revalue to adjust to the length of the temperature array. Default is False.
+		**kwargs : dict of str to float or array-like
+			Mineral names as keys and param1 values (float or 1-D array) as values.
+	
+			Supported mineral names include:
+	
+			- 'ol' (olivine)
+			- 'opx' (orthopyroxene)
+			- 'cpx' (clinopyroxene)
+			- 'garnet'
+			- 'mica'
+			- 'amp' (amphibole)
+			- 'quartz'
+			- 'plag' (plagioclase)
+			- 'kfelds' (k-feldspar)
+			- 'sulphide'
+			- 'graphite'
+			- 'sp' (spinel)
+			- 'rwd_wds' (ringwoodite or wadsleyite)
+			- 'perov' (perovskite)
+			- 'mixture' (mineral mixtures)
+			- 'other' (other minerals)
+	
+		Examples
+		--------
+		> set_param1_mineral(ol=0.1, opx=0.2)
+		> set_param1_mineral(ol=[0.1, 0.11], opx=[0.2, 0.22])
+
+	"""
 	
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
@@ -1864,17 +2351,32 @@ class pide(object):
 				   
 	def set_param1_rock(self, reval = False, **kwargs):
 	
-		"""A method to set param1 value of a given rock. Some of it might not have any effect, but still able to set for future directions in library. 
+		"""
+		Set param1 value for given rocks.
 		
-		Input:
-		dict/float or 1d array: mineral_name = value
-				
-		Rock names:
-		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
-		
-		Example:
-		set_param1_rock(granite = 0.1, granulite = 0.2)
-		set_param1_rock(granite = [0.1,0.11], granulite = [0.2,0.22])
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to revalue to adjust to the length of the temperature array. Default is False.
+		**kwargs : dict of str to float or array-like
+			Rock names as keys and param1 values (float or 1-D array) as values.
+	
+			Supported rock names include:
+			- 'granite'
+			- 'granulite'
+			- 'sandstone'
+			- 'gneiss'
+			- 'amphibolite'
+			- 'basalt'
+			- 'mud'
+			- 'gabbro'
+			- 'other_rock'
+	
+		Examples
+		--------
+		> set_param1_rock(granite=0.1, granulite=0.2)
+		> set_param1_rock(granite=[0.1, 0.11], granulite=[0.2, 0.22])
+	
 		"""
 	
 		if self.temperature_default == True:
@@ -1910,14 +2412,20 @@ class pide(object):
 						
 	def set_melt_fluid_frac(self, value, reval = False):
 	
-		"""A method to set mass melt/fluid fraction of the system.
-		
-		Input:
-		float or 1d array || in mass fraction.
-		
-		Example:
-		set_melt_fluid_frac(0.04)
-		set_melt_fluid_frac([0.04,0.01])
+		"""
+		Set mass melt/fluid mass fraction of the system.
+	
+		Parameters
+		----------
+		value : float or 1D array-like
+			Mass fraction of melt/fluid.
+		reval : bool, optional
+			Whether to revalue to adjust to the length of the temperature array. Default is False.
+	
+		Examples
+		--------
+		> set_melt_fluid_frac(0.04)
+		> set_melt_fluid_frac([0.04, 0.01])
 		"""
 	
 		if self.temperature_default == True:
@@ -1934,14 +2442,21 @@ class pide(object):
 		
 	def set_melt_or_fluid_mode(self,mode):
 	
-		"""A method to set whether melt/fluid mass fraction will be handled as melt or free fluid, since
-		these two cannot coexist in the same system.
-		
-		Input:
-		str: 'melt' or 'fluid'
-		
-		Example:
-		set_melt_or_fluid_mode('melt')
+		"""
+		Set whether melt/fluid mass fraction will be handled as melt or free fluid.
+	
+		Note
+		----
+		Melt and free fluid cannot coexist in the same system.
+	
+		Parameters
+		----------
+		mode : str
+			Mode choice, must be either 'melt' or 'fluid'.
+	
+		Examples
+		--------
+		> set_melt_or_fluid_mode('melt')
 		"""
 	
 		if mode == 'melt':
@@ -1953,14 +2468,21 @@ class pide(object):
 		
 	def set_solid_phase_method(self,mode):
 	
-		"""A method to set whether solid system will be handled as the solid assemblage
-		is made out of minerals or rocks.
-		
-		Input:
-		str: 'mineral' or 'rock'
-		
-		Example:
-		set_solid_phase_method('mineral')
+		"""
+		Set whether the solid system is composed of minerals or rocks.
+	
+		This method determines whether the solid phase in the system should be 
+		treated as an assemblage of individual minerals or bulk rock compositions.
+	
+		Parameters
+		----------
+		mode : str
+			Must be either 'mineral' or 'rock'.
+	
+		Examples
+		--------
+		> set_solid_phase_method('mineral')
+		> set_solid_phase_method('rock')
 		"""
 	
 		if mode == 'mineral':
@@ -1975,17 +2497,28 @@ class pide(object):
 			
 	def set_melt_properties(self, reval = False, **kwargs):
 	
-		"""A method to set some melt properties. These are: CO_2, water, Na2O and K2O contents.
-		
-		Input:
-		dict/float or 1darray : property_name = value
-				
-		Property names:
-		co2 (in ppm), water (in ppm), na2o(in wt%), k2o(in wt%)
-		
-		Example:
-		set_melt_properties(co2 = 1000, water = 2000)
-		set_melt_properties(co2 = [1000,3000], water = [2000,5000])
+		"""
+		Set properties of the melt phase such as volatile and alkali contents.
+	
+		This method allows specification of CO₂, H₂O, Na₂O, and K₂O contents in the melt.
+		These values can be either single floats or 1D arrays. 
+	
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to revalue to adjust to the length of the temperature array.
+			Default is False.
+		**kwargs : float or array-like
+			Melt properties to set. Supported property names:
+				- co2 : float or array-like, in ppm
+				- water : float or array-like, in ppm
+				- na2o : float or array-like, in wt%
+				- k2o : float or array-like, in wt%
+	
+		Examples
+		--------
+		> set_melt_properties(co2=1000, water=2000)
+		> set_melt_properties(co2=[1000, 3000], water=[2000, 5000])
 		"""
 	
 		if self.temperature_default == True:
@@ -2019,17 +2552,25 @@ class pide(object):
 				
 	def set_fluid_properties(self, reval = False, **kwargs):
 	
-		"""A method to set some fluid properties. These are: salinity
-		
-		Input:
-		dict: property_name = float or 1d array
-				
-		Property names:
-		salinity (wt%)
-		
-		Example:
-		set_fluid_properties(salinity = 0.1)
-		set_fluid_properties(salinity = [0.1,0.15])
+		"""
+		Set properties of the fluid phase.
+	
+		Currently supports setting salinity of the fluid. Values can be provided 
+		as floats or 1D arrays.
+	
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to revalue to adjust to the length of the temperature array.
+			Default is False.
+		**kwargs : float or array-like
+			Fluid property values to set. Supported property:
+				- salinity : float or array-like, in wt%
+	
+		Examples
+		--------
+		> set_fluid_properties(salinity=0.1)
+		> set_fluid_properties(salinity=[0.1, 0.15])
 		"""
 		
 		if self.temperature_default == True:
@@ -2049,14 +2590,20 @@ class pide(object):
 			
 	def set_alopx(self,value = 0):
 	
-		"""A method to set Al2O3 of Opx. This is specifically used for some water solubility limits.
-		
-		Input:
-		float or 1d array: value = 0.1 \\ in wt%
-		
-		Example:
-		set_alopx(0.3)
-		set_alopx([0.3,0.5])
+		"""
+		Set Al₂O₃ content in orthopyroxene (Opx).
+	
+		This parameter is specifically used for calculating certain water solubility limits.
+	
+		Parameters
+		----------
+		value : float or array-like
+			Al₂O₃ content in Opx, in weight percent (wt%).
+	
+		Examples
+		--------
+		> set_alopx(0.3)
+		> set_alopx([0.3, 0.5])
 		"""
 	
 		if self.temperature_default == True:
@@ -2066,18 +2613,23 @@ class pide(object):
 
 	def set_grain_boundary_water_partitioning(self, value = 0.1, reval = False):
 	
-		"""A method to set water partitioning ratio beween grain interiors and boundaries.
-		This is mainly used when the user wants to calculate electrical conductivities from
-		H-self diffusion measurements but also wants to include the effect of grain-boundary
-		diffusion. As of now, there are not good experimental constraints for this parameter.
-		Jones (2016) uses 0.1 value to form an argument.
-		
-		Input:
-		float or 1d array
-		
-		Example:
-		set_grain_boundary_water_partitioning(0.1)
-		set_grain_boundary_water_partitioning([0.1,0.2])
+		"""
+		Set the water partitioning ratio between grain interiors and grain boundaries.
+	
+		This parameter is primarily used when calculating electrical conductivities from 
+		H-self diffusion measurements while incorporating the effect of grain-boundary 
+		diffusion. Experimental constraints on this parameter are currently limited. 
+		Jones (2016) suggests a value of 0.1 as a reasonable estimate.
+	
+		Parameters
+		----------
+		value : float or array-like
+			The grain boundary partitioning ratio (unitless).
+	
+		Examples
+		--------
+		> set_grain_boundary_water_partitioning(0.1)
+		> set_grain_boundary_water_partitioning([0.1, 0.2])
 		"""
 		
 		if reval == False:
@@ -2090,15 +2642,23 @@ class pide(object):
 
 	def set_grain_boundary_H_Diffusion(self, value = False):
 	
-		"""A method to set whether grain-boundary H-diffusion will be included in the electrical conductivity
-		calculations done through diffusion measurements.
-		
-		Input:
-		bool: True or False		
-		
-		Default is False
 		"""
-
+		Enable or disable grain-boundary H-diffusion in electrical conductivity calculations.
+	
+		This flag determines whether grain-boundary hydrogen diffusion should be included 
+		when calculating electrical conductivities based on diffusion measurements.
+	
+		Parameters
+		----------
+		value : bool, optional
+			If True, grain-boundary diffusion is included. Default is False.
+	
+		Examples
+		--------
+		> set_grain_boundary_H_Diffusion(True)
+		> set_grain_boundary_H_Diffusion(False)
+		"""
+		
 		if type(value) != bool:
 			raise ValueError('The value entered for grain boundary H diffusion has to be True or False')
 		else:
@@ -2106,23 +2666,35 @@ class pide(object):
 		
 	def set_phase_interconnectivities(self,reval = False,**kwargs):
 	
-		"""A method to set cementation exponents of a given mineral that is used in only Generalised Archie's Law.
-		Input:
-		dict/float: mineral_name = 2 || Range: >1  
-		
-		Example:
-		set_phase_interconnectivities(ol = 1, opx = 2, garnet = 4)
-		
-		Mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).
-		Rock names:
-		granite,granulite,sandstone,gneiss,amphibolite,basalt,mud,gabbro,other_rock.
-		
-		Example:
-		set_phase_interconnectivities(ol = 1, opx = 2, cpx = 4, garnet = 5)
+		"""
+		Set cementation exponents for minerals or rocks, used only in the Generalised Archie's Law.
+	
+		Cementation exponent (interconnectivity factor) affects the calculation of bulk 
+		electrical conductivity based on phase connectivity. Must be greater than 1.
+	
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to revalue to adjust to the length of the temperature array. Default is False.
+		**kwargs : dict
+			Dictionary of mineral or rock names as keys and float or 1D array as values.
+			Each value represents the cementation exponent (must be >1).
+	
+		Valid mineral names
+		-------------------
+		ol (olivine), opx (orthopyroxene), cpx (clinopyroxene), garnet, mica, amp (amphibole),
+		quartz, plag (plagioclase), kfelds (k-feldspar), sulphide, graphite, sp (spinel),
+		rwd_wds (ringwoodite or wadsleyite), perov (perovskite), mixture (mineral mixtures),
+		other (other minerals)
+	
+		Valid rock names
+		----------------
+		granite, granulite, sandstone, gneiss, amphibolite, basalt, mud, gabbro, other_rock
+	
+		Examples
+		--------
+		> set_phase_interconnectivities(ol=1, opx=2, garnet=4)
+		> set_phase_interconnectivities(granite=2.5, basalt=3.1)
 		"""
 	
 		if self.temperature_default == True:
@@ -2208,15 +2780,24 @@ class pide(object):
 					
 	def set_melt_fluid_interconnectivity(self, value = None, reval = False):
 	
-		"""A method to set cementation exponent of the melt/fluid phase, which is used in Modified Archie's Law.
-		
-		Input:
-		float: value = 0.1 || Range: > 0.0
-		
-		Default: 8.0
-		
-		Example:
-		set_melt_fluid_interconnectivity(1.5)
+		"""
+		Set the cementation exponent of the melt/fluid phase for use in Modified Archie's Law.
+	
+		This exponent governs the connectivity of the melt or fluid phase in a two-phase system,
+		affecting the bulk electrical conductivity. A lower value implies better interconnectivity.
+	
+		Parameters
+		----------
+		value : float or 1D array, optional
+			Cementation exponent for the melt/fluid phase. Must be greater than 0.
+			If not specified, the default value is 8.0.
+		reval : bool, optional
+			Whether to revalue to match the length of the temperature array. Default is False.
+	
+		Examples
+		--------
+		> set_melt_fluid_interconnectivity(1.5)
+		> set_melt_fluid_interconnectivity([1.5, 2.0])
 		"""
 		
 		if value == None:
@@ -2245,21 +2826,27 @@ class pide(object):
 	
 	def set_solid_phs_mix_method(self, method):
 	
-		"""A method to set solid phase mixing function that will be used.
-		The values can be entered between 0 to 5. These correspond to:
-		
-		0. Generalised Archie's Law
-		1. Hashin-Shtrikman Lower-Bound
-		2. Hashin-Shtrikman Upper-Bound
-		3. Parallel Model
-		4. Perpendicular Model
-		5. Random Model
-		
-		Input:
-		int: method = 1 || Range: 0 to 5
-		
-		Example:
-		set_solid_phs_mix_method(method = 1)
+		"""
+		Set the solid phase mixing model to be used in conductivity calculations.
+	
+		The selected model determines how the electrical conductivities of different
+		solid components (minerals or rocks) are combined in the bulk medium.
+	
+		Parameters
+		----------
+		method : int
+			An integer between 0 and 5 indicating the mixing model:
+				0 : Generalised Archie's Law
+				1 : Hashin-Shtrikman Lower Bound
+				2 : Hashin-Shtrikman Upper Bound
+				3 : Parallel Model
+				4 : Perpendicular Model
+				5 : Random Model
+	
+		Examples
+		--------
+		> set_solid_phs_mix_method(method=1)
+		> set_solid_phs_mix_method(3)
 		"""
 	
 		pide.phs_mix_method = method
@@ -2270,21 +2857,27 @@ class pide(object):
 		
 	def set_solid_melt_fluid_mix_method(self, method):
 	
-		"""A method to set solid matrix-melt/fluid couple phase mixing function that will be used.
-		The values can be entered between 0 to 5. These correspond to:
-		
-		0. Modified Archie's Law
-		1. Tubes Model
-		2. Spheres Model
-		3. Modified Brick-layer Model
-		4. Hashin-Shtrikman Lower-Bound
-		5. Hashin-Shtrikman Upper-Bound
-				
-		Input:
-		int: method = 1 || Range: 0 to 5
-		
-		Example:
-		set_solid_melt_fluid_mix_method(method = 1)
+		"""
+		Set the mixing model for a coupled solid matrix and melt/fluid system.
+	
+		This determines how the electrical conductivities of the solid phase and 
+		melt/fluid phase are combined when they coexist in a geological medium.
+	
+		Parameters
+		----------
+		method : int
+			An integer between 0 and 5 indicating the mixing model:
+				0 : Modified Archie's Law
+				1 : Tubes Model
+				2 : Spheres Model
+				3 : Modified Brick-layer Model
+				4 : Hashin-Shtrikman Lower Bound
+				5 : Hashin-Shtrikman Upper Bound
+	
+		Examples
+		--------
+		> set_solid_melt_fluid_mix_method(method=1)
+		> set_solid_melt_fluid_mix_method(4)
 		"""
 	
 		pide.phs_melt_mix_method = method
@@ -2295,20 +2888,30 @@ class pide(object):
 				
 	def set_seismic_velocity_properties(self, **kwargs):
 
-		"""A function to set seismic velocity properties of a mineral. Default values
-		of these are encourged to use to match with electrical conductivity models chosen.
-		However, if the user only wants to calculate seismic velocities, they can choose
-		to what identifier is going to be chosen from the material libraries existin in
-		pide_src/materials.json. 
-		
-		Input: 
-		dict/str: ol = "fo"
-		
-		Example:
-		set_seismic_velocity_properties(ol = "fa") || This sets olivine for fayalite elastic
-		constants instead of default forsterite (fo).
-		
-		To see what constants are available to use, check pide_src/materials.json file.
+		"""
+		Set seismic velocity properties for specified minerals.
+	
+		These properties typically correspond to elastic constants used in seismic 
+		velocity calculations. It is recommended to use default values consistent 
+		with the chosen electrical conductivity models.
+	
+		However, users can specify alternative property identifiers from the 
+		material libraries defined in `pide_src/materials.json`.
+	
+		Parameters
+		----------
+		kwargs : dict
+			Mineral name as key (e.g., 'ol') and material identifier string as value 
+			(e.g., 'fo' for forsterite, 'fa' for fayalite).
+	
+		Examples
+		--------
+		> set_seismic_velocity_properties(ol="fa")
+		# Sets olivine elastic constants to those of fayalite instead of default forsterite ('fo')
+	
+		Notes
+		-----
+		To view available material identifiers, check the `pide_src/materials.json` file.
 		"""
 		if 'ol' in kwargs:
 			pide.ol_seis_selection = kwargs.pop('ol', "fo")
@@ -2364,27 +2967,46 @@ class pide(object):
 				   pide.graphite_seis_selection, pide.ol_seis_selection, pide.sp_seis_selection, pide.rwd_wds_seis_selection, pide.perov_seis_selection,
 				   pide.mixture_seis_selection, pide.other_seis_selection]
 				   
-	def set_melt_composition(self, comp, library_ref = False ,default = False):
+	def set_melt_composition(self, comp ,default = False):
 
-		"""A method to set melt composition used in melt velocity and density calculations.
-		With this format, h2o entry will be defaulted to zero. Please set melt wate content from other methods.
-		The sum of all entries should be equal to 100.0
+		"""
+		Set the melt composition used for melt velocity and density calculations.
+	
+		Note:
+		- The H2O content in the composition array is defaulted to zero.
+		  Use other methods to set melt water content.
+		- The sum of all oxide components should be strictly equal to 100.0 wt%.
+	
+		Parameters
+		----------
+		comp : list or 2D list (array-like)
+			Melt composition given as percentages by weight for the following oxides:
+			[SiO2, Al2O3, MgO, FeO, CaO, Na2O, K2O, TiO2, MnO, P2O5, Cr2O3, H2O].
+			For example:
+			[49.8, 19.52, 12.99, 0, 13, 3.47, 0, 1.15, 0.05, 0, 0.02, 0]
+	
+			If the input is a 2D list/array, it should match the length of the temperature array,
+			e.g., for temperature array of length 2:
+			[
+				[49.8, 19.52, 12.99, 0, 13, 3.47, 0, 1.15, 0.05, 0, 0.02, 0],
+				[74.64, 14.83, 0.18, 0.96, 0.74, 4.49, 3.97, 0.05, 0, 0.14, 0, 0]
+			]
 		
-		Input:
-		array: [sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3,h2o] || in %w.t.
-
-		Example:
-		set_melt_composition([49.8,19.52,12.99,0,13,3.47,0,1.15,0.05,0,0.02,0])
-		or enter an array that matches the length of temperature array:
-
-		for a T array with 2 length:
-		set_melt_composition([[49.8,19.52,12.99,0,13,3.47,0,1.15,0.05,0,0.02,0],
-							[74.64,14.83,0.18,0.96,0.74,4.49,3.97,0.05,0,0.14,0,0]])
+		default : bool, optional
+			Whether to use default melt composition that matches the chosen melt conductivity model. Default is False.
+	
+		Examples
+		--------
+		> set_melt_composition([49.8, 19.52, 12.99, 0, 13, 3.47, 0, 1.15, 0.05, 0, 0.02, 0])
+		> set_melt_composition([
+				[49.8, 19.52, 12.99, 0, 13, 3.47, 0, 1.15, 0.05, 0, 0.02, 0],
+				[74.64, 14.83, 0.18, 0.96, 0.74, 4.49, 3.97, 0.05, 0, 0.14, 0, 0]
+			])
 		"""
 
 		if default == False:
 			
-			 self.melt_composition_method = 'Manual'
+			self.melt_composition_method = 'Manual'
 		
 		if check_type(comp) == 'array':
 			if isinstance(comp, (list, tuple)) and all(isinstance(item, (list, tuple)) for item in comp):
@@ -2399,20 +3021,29 @@ class pide(object):
 
 	def set_grain_size(self,reval = False,**kwargs):
 	
-		"""A method to set grain size of minerals. This will be used in H-diffusion models if grain-boundary
-		diffusion is activated. Currently, there is no reason to do this other than olivine; however, the environment
-		is set to fit for future purposes.
-		
-		Input:
-		dict/float or 1d array: ol = 0.1 || in mm
-		
-		Mineral_names:
-		ol (olivine),opx (orthopyroxne),cpx (clinopyroxene),garnet,mica,amp (amphibole),quartz,
-		plag (plagioclase),kfelds (k-feldspar),sulphide,graphite,sp (spinel),
-		rwd_wds (ringwoodite or wadsleyite),perov (perovskite),mixture (mineral mixtures),
-		other (other minerals).
-		
-		set_grain_size(ol = 1)
+		"""
+		A method to set grain size of minerals. This is primarily used in H-diffusion models 
+		if grain-boundary diffusion is activated. Currently, it is mainly relevant for olivine, 
+		but the framework supports other minerals for future extensions.
+	
+		Parameters
+		----------
+		reval : bool, optional
+			Whether to revalue to adjust to the length of the temperature array. Default is False.
+	
+		**kwargs : dict of float or 1D array
+			Mineral names as keys and grain size values (in mm) as values.
+	
+		Mineral names:
+			ol (olivine), opx (orthopyroxene), cpx (clinopyroxene), garnet, mica, amp (amphibole),
+			quartz, plag (plagioclase), kfelds (k-feldspar), sulphide, graphite, sp (spinel),
+			rwd_wds (ringwoodite or wadsleyite), perov (perovskite), mixture (mineral mixtures),
+			other (other minerals).
+	
+		Examples
+		--------
+		> set_grain_size(ol=1)
+		> set_grain_size(ol=[1, 1.2], opx=0.5)
 		"""
 
 		if self.temperature_default == True:
@@ -2472,7 +3103,16 @@ class pide(object):
 	
 	def list_phs_mix_methods(self):
 	
-		"""A method that lists all available phase mixing methods for solid-state constituents.
+		"""
+		A method that lists all available phase mixing methods for solid-state constituents.
+	
+		Returns
+		-------
+			dict: A dictionary mapping method IDs (int) to method names (str).
+	
+		Examples
+		--------
+		> list_phs_mix_methods()
 		"""
 	
 		phs_mix_list = ["Generalized Archie's Law (Glover, 2010)","Hashin-Shtrikman Lower Bound (Berryman, 1995)",
@@ -2487,7 +3127,16 @@ class pide(object):
 	
 	def list_phs_melt_fluid_mix_methods(self):
 	
-		"""A method that lists all available solid-melt/fluid mixing methods.
+		"""
+		A method that lists all available solid-melt/fluid phase mixing methods.
+	
+		Returns
+		-------
+			dict: A dictionary mapping method IDs (int) to method names (str).
+	
+		Examples
+		--------
+		> list_phs_melt_fluid_mix_methods()
 		"""
 	
 		phs_melt_mix_list = ["Modified Archie's Law (Glover et al., 2000)","Tubes Model (ten Grotenhuis et al., 2005)",
@@ -2506,23 +3155,45 @@ class pide(object):
 		
 	def calculate_arrhenian_single(self, T, sigma, E, r, alpha, water):
 	
-		"""A method to calculate a given Arrhenian formalism in form:
-		
-		A Cw^r exp(-(E +  alpha*Cw)) / RT).
-		
-		Input:
-		float: T || in K
-		float: sigma || in (s/m)
-		float: E || in (J/mol)
-		float: r
-		float: alpha 
-		float: water || in ppm
-		
-		Output:
-		float: conductivity || in (S/m)
-		
-		Example:
-		calculate_arrhenian_single(T  = 1000,sigma = 1e4, E = 90e3,r = 1, alpha = 0.3, water = 100)
+		"""
+		Calculate electrical conductivity using an Arrhenian formalism.
+	
+		The formula used is:
+	
+			conductivity = A * Cw^r * exp(-(E + alpha * Cw) / (R * T))
+	
+		where:
+			A     : pre-exponential factor (sigma)
+			Cw    : water content (ppm)
+			E     : activation energy (J/mol)
+			r     : water content exponent (dimensionless)
+			alpha : water-dependent activation energy coefficient (dimensionless)
+			R     : universal gas constant (8.314 J/mol·K)
+			T     : temperature (K)
+	
+		Parameters
+		----------
+		T : float
+			Temperature in Kelvin.
+		sigma : float
+			Pre-exponential factor (S/m).
+		E : float
+			Activation energy in Joules per mole (J/mol).
+		r : float
+			Water content exponent (dimensionless).
+		alpha : float
+			Water-dependent activation energy coefficient (J/mol).
+		water : float
+			Water content in parts per million (ppm).
+	
+		Returns
+		-------
+		float
+			Electrical conductivity in Siemens per meter (S/m).
+	
+		Examples
+		--------
+		> calculate_arrhenian_single(T=1000, sigma=5e4, E=90000, r=1, alpha=900, water=100)
 		"""
 		
 		if (sigma == 0.0) and (E == 0.0):
@@ -2534,14 +3205,23 @@ class pide(object):
 	
 	def calculate_fluids_conductivity(self, method = 'array', sol_idx = None):
 	
-		"""A method to calculate fluids conductivity with the environment set up.
-		
-		Input
-		str: method - 'array' or 'index'|| Default - 'array
-		sol_idx: index parameter if method|index is chosen.
-		
-		Output:
-		float: conductivity || in (S/m)
+		"""
+		Calculate fluid conductivity based on the current environment setup.
+	
+		Parameters
+		----------
+		method : str, optional
+			Calculation method to use. Options are:
+			- 'array': calculate conductivity for the entire array (default).
+			- 'index': calculate conductivity at a specific index.
+		sol_idx : int or None, optional
+			Index to calculate conductivity if `method` is 'index'.
+			Default is None.
+	
+		Returns
+		-------
+		array
+			Calculated fluid conductivity in Siemens per meter (S/m).
 		"""
 
 		if method == 'array':
@@ -2588,14 +3268,23 @@ class pide(object):
 
 	def calculate_melt_conductivity(self, method = 'array', sol_idx = None):
 	
-		"""A method to calculate melt conductivity with the environment set up.
-		
-		Input:
-		str: method - 'array' or 'index'|| Default - 'array
-		sol_idx: index parameter if method|index is chosen.
-		
-		Output:
-		float: conductivity || in (S/m)
+		"""
+		Calculate melt conductivity based on the current environment setup.
+	
+		Parameters
+		----------
+		method : str, optional
+			Calculation method to use. Options are:
+			- 'array': calculate conductivity for the entire array (default).
+			- 'index': calculate conductivity at a specific index.
+		sol_idx : int or None, optional
+			Index to calculate conductivity if `method` is 'index'.
+			Default is None.
+	
+		Returns
+		-------
+		float
+			Calculated melt conductivity in Siemens per meter (S/m).
 		"""
 
 		if method == 'array':
@@ -2655,19 +3344,32 @@ class pide(object):
 
 	def calculate_rock_conductivity(self, rock_idx = None, method = 'array', **kwargs):
 	
-		"""A method to calculate rock conductivity with the environment set up.
-		
-		Input:
-		int: rock_idx - Index of the rock chosen.
-		
-		str: method - 'array' or 'index'|| Default - 'array
-		int: sol_idx: index parameter if method|index is chosen.
-		
-		Output:
-		float/array: conductivity || in (S/m)
-		
-		Example:
-		calculate_rock_conductivity(rock_idx = 'granite')
+		"""
+		Calculate rock conductivity based on the current environment setup.
+	
+		Parameters
+		----------
+		rock_idx : int or str, optional
+			Index or name of the rock type to calculate conductivity for.
+			Default is None (calculate for all or current setting).
+		method : str, optional
+			Calculation method to use. Options are:
+			- 'array': calculate conductivity for the entire array (default).
+			- 'index': calculate conductivity at a specific index.
+		sol_idx : int, optional
+			Index parameter to be used if method is 'index'.
+			This should be passed as a keyword argument in `**kwargs`.
+			
+		Returns
+		-------
+		float or ndarray
+			Conductivity value(s) in Siemens per meter (S/m).
+	
+		Examples
+		--------
+		Calculate conductivity for granite rock:
+	
+		> calculate_rock_conductivity(rock_idx='granite')
 		"""
 		if rock_idx is None:
 		
@@ -2746,19 +3448,32 @@ class pide(object):
 	
 	def calculate_mineral_conductivity(self, min_idx = None, method = 'array', **kwargs):
 	
-		"""A method to calculate mineral conductivity with the environment set up.
-		
-		Input:
-		int: min_idx - Name of the mineral or index of the mineral chosen.
-		
-		str: method - 'array' or 'index'|| Default - 'array
-		int: sol_idx: index parameter if method|index is chosen.
-		
-		Output:
-		float/array: conductivity || in (S/m)
-		
-		Example:
-		calculate_mineral_conductivity(min_idx = 'ol')
+		"""
+		Calculate mineral conductivity based on the current environment setup.
+	
+		Parameters
+		----------
+		min_idx : int or str, optional
+			Name or index of the mineral to calculate conductivity for.
+			Default is None (calculate for all or current setting).
+		method : str, optional
+			Calculation method to use. Options are:
+			- 'array': calculate conductivity for the entire array (default).
+			- 'index': calculate conductivity at a specific index.
+		sol_idx : int, optional
+			Index parameter to be used if method is 'index'.
+			Should be passed as a keyword argument in `**kwargs`.
+	
+		Returns
+		-------
+		float or ndarray
+			Conductivity value(s) in Siemens per meter (S/m).
+	
+		Examples
+		--------
+		Calculate conductivity for olivine mineral:
+	
+		> calculate_mineral_conductivity(min_idx='ol')
 		"""
 	
 		if min_idx is None:
@@ -2979,6 +3694,9 @@ class pide(object):
 			
 	def _get_melt_composition(self, type = 'Default'):
 	
+		"""An internal function get melt compositions associated with
+		electrical conducitvity models automatically."""
+	
 		#Getting the relevant melt composition index
 		idx_melt_comp, = np.where(self.melt_composition_names==pide.name[1][pide.melt_cond_selection])
 		idx_melt_comp = idx_melt_comp[0]
@@ -2997,18 +3715,29 @@ class pide(object):
 		
 	def _water_correction(self, min_idx = None, cond_sel_idx = None):
 	
-		""" function that corrects the water content to desired calibration.
-		Numbers are taken from Demouchy and Bolfan-Casanova (2016, Lithos) for olivine, pyroxene and garnet.
-		For feldspars, the correction number is taken from Mosenfelder et al. (2015, Am. Min.).
-		It is not encouraged for users to perform this method. It is tightly connected to set_
-		and calculate_conductivity functions.
-		
-		Input:
-		int: min_idx - Index of the mineral chosen.
-		
-		Output:
-		float: corr_factor - Correction factor for chosen mineral setting.
-		
+		"""
+		Correct the water content based on calibration factors from literature.
+	
+		This correction uses factors from Demouchy and Bolfan-Casanova (2016, Lithos) 
+		for olivine, pyroxene, and garnet. For feldspars, correction values are taken 
+		from Mosenfelder et al. (2015, Am. Min.). 
+	
+		Note
+		----
+		This method is intended for internal use and tightly connected to `set_` and 
+		`calculate_conductivity` functions. User modifications are not encouraged.
+	
+		Parameters
+		----------
+		min_idx : int, optional
+			Index of the mineral for which to apply the correction.
+		cond_sel_idx : int, optional
+			Index for conductivity selection (currently unused or internal use).
+	
+		Returns
+		-------
+		float
+			Correction factor for the specified mineral.
 		"""
 
 		#A function that corrects the water content to desired calibration. Numbers are taken from Demouchy and Bolfan-Casanova (2016, Lithos) for olivine, pyroxene and garnet.
@@ -3133,9 +3862,23 @@ class pide(object):
 	
 	def _phase_mixing_function(self, method = None, melt_method = None, indexing_method = None, sol_idx = None):
 	
-		"""A method to perform phase mixing functions for the set up environment.
-		It is not encouraged for users to perform this method. It is tightly
-		connected to set_ and calculate_conductivity functions.		
+		"""
+		Perform phase mixing calculations for the current environment setup and calculates the 
+		bulk conducitivity.
+	
+		This method is intended for internal use only and is closely integrated with
+		`set_` and `calculate_conductivity` functions. Direct use by users is not encouraged.
+	
+		Parameters
+		----------
+		method : optional
+			Method identifier for phase mixing.
+		melt_method : optional
+			Method identifier for melt/fluid mixing.
+		indexing_method : optional
+			Indexing approach used in calculations.
+		sol_idx : optional
+			Index parameter for solution selection.
 		"""
 
 		self.bulk_cond = np.zeros(len(self.T)) #setting up an empty bulk conductivity array for all methods
@@ -3681,13 +4424,19 @@ class pide(object):
 			
 	def calculate_conductivity(self, method = 'array',**kwargs):
 	
-		"""A method to calculate the electrical conductivity of the environment set up.
-		
-		Input:
-		str: method - calculation method || 'array' or 'index'
-		
-		Output:
-		Electrical Conductivity || in (S/m)
+		"""
+		Calculate the bulk electrical conductivity of the current environment setup.
+	
+		Parameters
+		----------
+		method : str, optional
+			Calculation method to use. Options are 'array' or 'index'.
+			Default is 'array'.
+	
+		Returns
+		-------
+		float or ndarray
+			Electrical conductivity in siemens per meter (S/m).
 		"""
 		
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -3867,9 +4616,13 @@ class pide(object):
 			
 	def _setup_seismic_calculation_(self):
 	
-		"""A method to setup seismic calculation environment.
-		It is not encouraged for users to perform this method. It is tightly
-		connected to calculate_seismic_velocity function.		
+		"""
+		Setup the seismic calculation environment.
+	
+		Notes
+		-----
+		This is an internal method and is not intended for direct use by users.
+		It is closely linked to the `calculate_seismic_velocity` function.
 		"""
 	
 		id_list_global = []
@@ -4107,13 +4860,24 @@ class pide(object):
 		
 	def calculate_seismic_velocities(self, mixing_method = 'HS', method = 'array', **kwargs):
 	
-		"""A method to calculate seismic velocities for the environment set up.
-		
-		Input:
-		str: method - Calculation method || 'array' or 'index || Default: 'array'
-		
-		Output:
-			v_bulk, v_p, v_s || in (km/s)
+		"""
+		Calculate seismic velocities for the configured environment.
+	
+		Parameters
+		----------
+		mixing_method : str, optional
+			Method used for mixing seismic velocities (default is 'HS').
+		method : {'array', 'index'}, optional
+			Calculation method to use (default is 'array').
+	
+		Returns
+		-------
+		v_bulk : float or ndarray
+			Bulk seismic velocity in km/s.
+		v_p : float or ndarray
+			P-wave seismic velocity in km/s.
+		v_s : float or ndarray
+			S-wave seismic velocity in km/s.
 		"""
 		
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -4201,13 +4965,18 @@ class pide(object):
 
 	def calculate_density_solid(self, min_idx = None):
 	
-		"""A method to calculate density of the solid matrix for the environment setup.
-		
-		Input:
-		int: min_idx - mineral index corresponding to the mineral chosen. || 
-		
-		Output:
-		float: density in (g/cm3)
+		"""
+		Calculate the density of the solid matrix for the environment setup.
+	
+		Parameters
+		----------
+		min_idx : int or None
+			Mineral index corresponding to the mineral chosen.
+	
+		Returns
+		-------
+		float or array
+			Density in g/cm³.
 		"""
 		
 		def linear_density(xfe_input, density_list):
@@ -4365,10 +5134,19 @@ class pide(object):
 					
 	def calculate_density_fluid(self, method = 'array', **kwargs):
 	
-		"""A method to calculate density of the melt/fluid for the environment setup.
-				
-		Output:
-		float: density in (g/cm3)"""
+		"""
+		Calculate the density of the melt/fluid for the environment setup.
+	
+		Parameters
+		----------
+		method : str, optional
+			Calculation method, by default 'array'.
+	
+		Returns
+		-------
+		float or array
+			Density in g/cm³.
+		"""
 			
 		sol_idx = kwargs.pop('sol_idx', 0)
 		
@@ -4516,20 +5294,24 @@ class pide(object):
 			
 	def calculate_o2_fugacity(self,mode):
 
-		"""A method to calculate the oxygen fugacity from provided buffers. 
-		
-		Input:
-		int: mode - Mode of oxygen fugacity buffer || The indexes are as follows: 
-		
-		0: FMQ:
-		1: IW: Hirsch (1991)
-		2: QIF:
-		3: NNO: Li et al. (1998)
-		4 MMO: Xu et al. (2000)
-		
-		Output:
-		Oxygen fugacity in bars
-		
+		"""
+		Calculate the oxygen fugacity from provided buffers.
+	
+		Parameters
+		----------
+		mode : int
+			Mode of oxygen fugacity buffer. Possible values are:
+			
+			- 0: FMQ
+			- 1: IW (Hirsch, 1991)
+			- 2: QIF
+			- 3: NNO (Li et al., 1998)
+			- 4: MMO (Xu et al., 2000)
+	
+		Returns
+		-------
+		float or array
+			Oxygen fugacity in bars.
 		"""
 
 		self.A_list = [-999,-27489.0,-999,-24930.0,-30650.0]
@@ -4593,11 +5375,15 @@ class pide(object):
 		
 	def calculate_water_fugacity(self):
 	
-		"""A method to calculate water fugacity for the setup environment.
-		The calculations are made with the pure-water EOS of Pitzer and Sterner (1994).
-		
-		Output:
-		water fugacity in MPa.		
+		"""
+		Calculate water fugacity for the setup environment.
+	
+		The calculation uses the pure-water equation of state (EOS) of Pitzer and Sterner (1994).
+	
+		Returns
+		-------
+		float
+			Water fugacity in MPa.
 		"""
 	
 		if self.water_fugacity_calculated == False:
@@ -4608,12 +5394,22 @@ class pide(object):
 		
 	def _load_mantle_water_partitions(self, method, **kwargs):
 	
-		"""A method to calculate the water partitioning effects. The user is not encouraged
-		to use this method. Associated set_mantle_water_partitions and calculate_water automatically
-		passes through this method.
-		
-		Output:
-		float: Water partitioning coefficients for given configuration.		
+		"""
+		Calculate water partitioning effects.
+	
+		This method is intended for internal use and is automatically called by
+		`set_mantle_water_partitions` and `calculate_water`. Users are not encouraged
+		to call this method directly.
+	
+		Parameters
+		----------
+		method : str
+			Method to use for water partitioning calculation.
+			
+		**kwargs
+			Additional keyword arguments, such as:
+			sol_idx : int, optional
+				Solution index (default is 0).
 		"""
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -4687,12 +5483,23 @@ class pide(object):
 		
 	def _load_mantle_transition_zone_water_partitions(self, method, **kwargs):
 	
-		"""A method to calculate the water partitioning effects at mantle transiton zone. The user is not encouraged
-		to use this method. Associated set_mantle_water_partitions and calculate_water automatically
-		passes through this method.
-		
-		Output:
-		float: Water partitioning coefficients for given configuration.		
+		"""
+		Calculate water partitioning effects at the mantle transition zone.
+	
+		This method is intended for internal use and is automatically called by
+		`set_mantle_water_partitions` and `calculate_water`. Users are not encouraged
+		to call this method directly.
+	
+		Parameters
+		----------
+		method : str
+			Method to use for water partitioning calculation.
+	
+		**kwargs
+			Additional keyword arguments, such as:
+			sol_idx : int, optional
+				Solution index (default is 0).
+	
 		"""
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -4730,11 +5537,21 @@ class pide(object):
 		
 	def mantle_water_distribute(self, method = 'array', **kwargs):
 	
-		"""A method to distribute entered bulk water content among common upper-mantle mineral
-		constituents using the set up environment.
-		
-		Organizes:
-		float: mineral_water_contents || in ppm.
+		"""
+		Distribute bulk water content among upper-mantle mineral constituents.
+	
+		Distributes the entered bulk water content among common upper-mantle minerals
+		based on the current environment setup.
+	
+		Parameters
+		----------
+		method : str, optional
+			Calculation method, e.g., 'array' (default is 'array').
+	
+		**kwargs
+			Additional keyword arguments, such as:
+			sol_idx : int, optional
+				Solution index (default is 0).
 		"""
 
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -4793,11 +5610,21 @@ class pide(object):
 		
 	def transition_zone_water_distribute(self, method = 'array', **kwargs):
 	
-		"""A method to distribute entered bulk water content among mantle transition zone mineral
-		constituents using the set up environment.
-		
-		Organizes:
-		float: mineral_water_contents || in ppm.
+		"""
+		Distribute bulk water content among mantle transition zone mineral constituents.
+	
+		Distributes the entered bulk water content among common mantle transition zone
+		minerals based on the current environment setup.
+	
+		Parameters
+		----------
+		method : str, optional
+			Calculation method, e.g., 'array' (default is 'array').
+			
+		**kwargs
+			Additional keyword arguments, such as:
+			sol_idx : int, optional
+				Solution index (default is 0).
 		"""
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -4830,17 +5657,26 @@ class pide(object):
 							
 	def _calculate_melt_water(self, h2o_bulk, melt_mass_frac, d_per_melt):
 	
-		"""A method to calculate melt water content with the given parameters.
-		The users are not encouraged to perform this method.
-		
-		Input:
-		float: h2o_bulk - bulk water content || in ppm
-		float: melt_mass_frac - mass fraction of melt
-		float: d_per_melt - solid/melt water partitioning coefficient.
-			
-		Output:
-		melt_water || in ppm
-		
+		"""
+		Calculate melt water content based on bulk water content and partitioning.
+	
+		This method calculates the water content in the melt phase given the bulk water content,
+		melt mass fraction, and solid/melt water partition coefficient. This method is intended
+		for internal use and not recommended for direct user calls.
+	
+		Parameters
+		----------
+		h2o_bulk : float or array
+			Bulk water content in ppm.
+		melt_mass_frac : float or array
+			Mass fraction of the melt (unitless).
+		d_per_melt : float or array
+			Solid/melt water partitioning coefficient (unitless).
+	
+		Returns
+		-------
+		float or array
+			Melt water content in ppm.
 		"""
 		
 		#Calculating the h2o content of melt that is in equilibrium with the entered solid-mixture, from Sifre et al. (2014)
@@ -4874,19 +5710,27 @@ class pide(object):
 			
 	def calculate_mineral_water_solubility(self, mineral_name, method = 'array',  **kwargs):
 	
-		"""A method to calculate individual mineral water solubility models for the environment set up.
-		Not all minerals have water solubility functions either due to their inability to hold water
-		in their usual environment or unavailability for experimental data exist in the library.
-		
-		Input:
-		str: mineral_name - name of the mineral 
-		str: method - 'array' or 'index'|| Default - 'array
+		"""
+		Calculate water solubility for a specified mineral based on the environment setup.
 	
-		Output:
-		Mineral water 
-		
-		Example:
-		max_water_ol = calculate_mineral_water_solubility('ol')
+		Not all minerals have water solubility models due to either their low water capacity 
+		or lack of experimental data in the library.
+	
+		Parameters
+		----------
+		mineral_name : str
+			Name of the mineral.
+		method : str, optional
+			Calculation method, either 'array' or 'index' (default is 'array').
+	
+		Returns
+		-------
+		float or array
+			Water solubility of the mineral (units depend on context).
+	
+		Examples
+		--------
+		> max_water_ol = calculate_mineral_water_solubility('ol')
 		"""
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
@@ -5062,6 +5906,8 @@ class pide(object):
 			return max_mineral_water
 		
 	def _rerun_sol(self, mineral, method):
+	
+		"""An internal function to rerun solubilties. Useres an not encouraged to run this command independently."""
 		
 		if mineral == 'ol':
 			water_calc = self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)
@@ -5080,16 +5926,22 @@ class pide(object):
 		
 	def calculate_bulk_mantle_water_solubility(self, method = 'array', **kwargs):
 	
-		"""A method to calculate upper mantle water solubility for the environment set up.
-		
-		Input:
-		str: method - 'array' or 'index'|| Default - 'array
+		"""
+		Calculate upper mantle bulk water solubility for the environment setup.
 	
-		Output:
-		float: mantle bulk water content || in ppm
-		
-		Example:
-		calculate_bulk_mantle_water_solubility()
+		Parameters
+		----------
+		method : str, optional
+			Calculation method, either 'array' or 'index' (default is 'array').
+	
+		Returns
+		-------
+		float
+			Mantle bulk water content in ppm.
+	
+		Examples
+		--------
+		> calculate_bulk_mantle_water_solubility()
 		"""
 	
 		self.max_ol_water = self.calculate_mineral_water_solubility(mineral_name = 'ol', method = method)
@@ -5103,19 +5955,24 @@ class pide(object):
 		
 	def calculate_transition_zone_water_solubility(self, method = 'array', **kwargs):
 	
-		"""A method to calculate mantle transition zone water solubility for the environment set up.
-		
-		Input:
-		str: method - 'array' or 'index'|| Default - 'array
-	
-		Output:
-		float: mantle transition zone bulk water content || in ppm
-		
-		Example:
-		calculate_transition_zone_water_solubility()
 		"""
+		Calculate mantle transition zone bulk water solubility for the environment setup.
 	
+		Parameters
+		----------
+		method : str, optional
+			Calculation method, either 'array' or 'index' (default is 'array').
 	
+		Returns
+		-------
+		float
+			Mantle transition zone bulk water content in ppm.
+	
+		Examples
+		--------
+		> calculate_transition_zone_water_solubility()
+		"""
+		
 		self.max_rwd_wds_water = self.calculate_mineral_water_solubility(mineral_name = 'rwd_wds', method = method)
 		self.max_cpx_water = self.calculate_mineral_water_solubility(mineral_name = 'cpx', method = method)
 		self.max_garnet_water = self.calculate_mineral_water_solubility(mineral_name = 'garnet', method = method)
@@ -5129,7 +5986,24 @@ class pide(object):
 	
 		raise KeyError('This function cannot be used yet.')
 		
-	def write_data(self,list_input,header = None):
+	def write_data(self,list_input,filename, header = None):
+	
+		"""
+		Write data into a CSV file format string.
+	
+		Parameters
+		----------
+		list_input : list of lists or arrays
+			Data to write. Each inner list or array represents a column.
+		filename: str
+			Output filename root
+		header : list of str, optional
+			Header row to write at the top of the file (default is None).
+			
+		Notes
+		-----
+		This method prepares CSV formatted lines as strings but does not handle file writing itself.
+		"""
 		
 		lines = []
 		
@@ -5139,6 +6013,10 @@ class pide(object):
 			if header is not None:
 				for item in header:
 					lines.insert(0,','.join(header))
+					
+			filesave = open(f'{filename}.csv','w')
+			filesave.writelines(lines)
+			filesave.close()
 			
 		except IndexError:
 		
@@ -5155,6 +6033,10 @@ class pide(object):
 			print(f'- {item}')
 			
 	def get_method_manual(self, method_name):
+	
+		"""
+		A function to list all the non-internal methods used in pide.py
+		"""
 	
 		# Accessing docstring exactly as it appears in source code
 		source_lines = eval(f'inspect.getsourcelines(self.{method_name})[0][1:]')

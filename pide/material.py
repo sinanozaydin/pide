@@ -6,91 +6,91 @@ from pide import pide
 class Material(object):
 
 	def __init__(self, name = "Unnamed", material_index = None, calculation_type = 'mineral', composition = None, melt_fluid_frac = 0.0,
-	interconnectivities = None, param1 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'Field', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
+	interconnectivities = None, param1 = None, el_cond_selections = None, melt_fluid_incorporation_method = 'field', melt_or_fluid = 'melt', melt_fluid_m = 8.0,
 	melt_properties = None, fluid_properties = None, melt_fluid_cond_selection = None, water_distr = False, water = None, xfe = None, solid_phase_mixing_idx = 0, melt_fluid_phase_mixing_idx = 0,
 	deformation_dict = None, top = None, bottom = None, **kwargs):
 	
 		"""
-		Material object: an python object to define properties of a certain material. 
-		
-		Input:
-		str: name - Name of the material
-		
-		int: material_index - Index of the material for calculations within a pide.Model object.
-		
-		str: calculation_type - Type of calculation for a solid phases || 'mineral' or 'rock'.
-		
-		dict: composition -  dictionary entered in mineral_name:fraction or rock_name:fraction fashion.
-											ol,opx,cpx... granite,granulite,sandstone...
-											
-		array: melt_fluid_frac - melt/fluid content array || in fraction.
-		
-		dict: interconnectivities - dictionary entered in mineral_name:cementation_exponent(m||float) fashion.
-		
-		dict: param1 - dictionary entered in mineral_name:param1 fashion.
-		
-		dict: el_cond_selections - electrical conductivirty model dictionary entered in mineral_name:el_cond_selection(int)
-														or rock_name:el_cond_selection(int) fashion.
-														
-		str: melt_or_fluid - liquid phase type for the given material. || 'melt' or 'fluid.
-		
-		float: melt_fluid_m - interconnectivity of liquid phase used in Archie-type mixing models.
-		
-		dict: melt_properties - properties of melt entered in property_name:value fashion. 
-											      'water','co2','na2o','k2o'
-											      
-		dict: fluid_properties - properties of fluid entered in property_name:value fashion.
-												   'salinity'
-											      
-		int: melt_fluid_cond_selection - electrical conductivity model chosen for melt/fluid phase.
-		
-		bool: water_distr - Boolean to automatically distribute water among the phases or not.
-		
-		dict: water - dictionary to enter water content of the solid phases or bulk water content in mineral_name:water_content
-																rock_name:water_content or bulk:water_content fashion.
-		
-		dict: xfe - dictionary to enter xFe value of the solid phases in mineral_name:xFe or rock_name:xFe fashion.
-		
-		int: solid_phase_mixing_idx - Solid phase mixing method selection.
-		
-		int: melt_fluid_phase_mixing_idx - solid/melt phase mixing method selection.
-		
-		dict: deformation_dict - dictionary to perform deform2cond function for the given material.
-												'function_method', 'conductivity_decay_factor', 
-												'conductivity_decay_factor_2' , 'strain_decay_factor'
-		
-		float: top - top of the material if geotherm calculation method will be used in pide.Model object. || in km.
-		
-		float: bottom - bottom of the material if geotherm calculation method will be used in pide.Model object. || in km.
-		
-		dict: mantle_water_part - mantle water partitioning dictionart entered in mineral_name:index fashion.
-		
-		float: resistivity_medium - resistivity of the material entered as a value instead of empirical calculation. || in ohm.m
-		
-		float: vp_medium - P-wave velocity value of the material entered as a value instead of empirical calculation. || in km/s
-		
-		float: vs_medium - S-wave velocity value of the material entered as a value instead of empirical calculation. || in km/s
-
-		dict: water_calib - dictionary to enter water calibration methods for water calculations entered in material:mode fashion.
-												'ol', 'px_gt', 'plag'
-		int: o2_buffer - selection of o2 buffer with denoted integer value.
-		
-		array: al_opx - Al in orthopyroxene in array form || in w.t.%
-		
-		float: magnetic_susceptibility - magnetic susceptibility of the material || in Am^-1
-		
-		
-		---------------------------------- -----------------------------------------
-		Methods                             Description
-		---------------------------------- -------------------------------------------
-		calculate_conductivity              method to calculate conductivity of pide.Material object.
-		
-		calculate_seismic_velocity          method to calculate seismic velocity of pide.Material object.
-		
-		set_parameter                       method to set extra parameters that are not defined in default parameters.
-		
-		copy_attributes                     method to copy attributes to another pide.Material object.
+		Initialize a Material object with physical, chemical, and geophysical properties.
 	
+		This class represents a material used in pide modeling. It supports specification of
+		mineral/rock composition, melt/fluid content, electrical and seismic properties, and
+		water distribution methods.
+	
+		Parameters
+		----------
+		name : str, optional
+			Name of the material (default is "Unnamed").
+		material_index : int, optional
+			Index identifier for the material in the model.
+		calculation_type : {'mineral', 'rock'}, optional
+			Type of solid phase calculation (default is 'mineral').
+		composition : dict, optional
+			Dictionary of mineral or rock fractions, e.g., {'ol': 0.5, 'opx': 0.5}.
+		melt_fluid_frac : float or array-like, optional
+			Melt/fluid fraction (default is 0.0).
+		interconnectivities : dict, optional
+			Dictionary of cementation exponents per mineral, e.g., {'ol': 1.3}.
+		param1 : dict, optional
+			Dictionary of parameter 1 per mineral. e.g., {'ol': 0.25, 'opx' : 1.5}
+		el_cond_selections : dict, optional
+			Electrical conductivity model selection per phase (mineral or rock). e.g., {'ol' : 1, 'opx' : 2} or {'granite': 3, 'granulite' : 1}
+		melt_fluid_incorporation_method : str, optional 'field' or 'value'.
+			If 'field' the model object's melt field will be automatically entered as melt
+			If 'value' the material object is assigned to a melt content.
+		melt_or_fluid : {'melt', 'fluid'}, optional
+			Type of liquid phase (default is 'melt').
+		melt_fluid_m : float, optional
+			Cementation exponent for melt/fluid in Archie-type models (default is 8.0).
+		melt_properties : dict, optional
+			Properties of melt (e.g., {'water': 0.01, 'na2o': 0.02}).
+		fluid_properties : dict, optional
+			Properties of fluid (e.g., {'salinity': 3.5}).
+		melt_fluid_cond_selection : int, optional
+			Model index for melt/fluid conductivity.
+		water_distr : bool, optional
+			If True, distributes water automatically (default is False).
+		water : dict, optional
+			Water content in ppm; per phase or bulk (e.g., {'ol': 1000}, {'bulk': 500}).
+		xfe : dict, optional
+			Fe/(Fe+Mg) ratio for minerals or rocks.
+		solid_phase_mixing_idx : int, optional
+			Index selecting solid phase mixing model (default is 0).
+		melt_fluid_phase_mixing_idx : int, optional
+			Index selecting melt-fluid mixing model (default is 0).
+		deformation_dict : dict, optional
+			Dictionary for deformation to conductivity parameters.
+		top : float, optional
+			Top depth of material layer (km).
+		bottom : float, optional
+			Bottom depth of material layer (km).
+		mantle_water_part : dict
+			Mantle water partitioning, e.g., {'ol': 1}.
+		resistivity_medium : float
+			Resistivity value of the material (Ω·m).
+		vp_medium : float
+			P-wave velocity (km/s).
+		vs_medium : float
+			S-wave velocity (km/s).
+		water_calib : dict
+			Calibration mode for water content, e.g., {'ol': 'mode1'}.
+		o2_buffer : int
+			Oxygen fugacity buffer mode.
+		al_opx : array-like
+			Al content in orthopyroxene (% wt).
+		magnetic_susceptibility : float
+			Magnetic susceptibility (Am⁻¹).
+	
+		Methods
+		-------
+		calculate_conductivity()
+			Calculate electrical conductivity for this material.
+		calculate_seismic_velocity()
+			Calculate seismic velocities (Vp, Vs).
+		set_parameter()
+			Set additional or user-defined parameters.
+		copy_attributes()
+			Copy attributes to another `Material` instance.
 		"""
 	
 		self.mineral_list = ['ol','opx','cpx','garnet','mica','amp','quartz','plag','kfelds','sulphide','graphite','mixture','sp','wds','rwd','perov','other','bulk']

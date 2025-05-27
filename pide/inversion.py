@@ -193,20 +193,53 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 	num_cpu = 1,**kwargs):
 
 	"""
-	A function to fit conductivity value with a single parameter with simple line-search algorithm.
+	Fit a single parameter to conductivity data using a simple line-search algorithm.
 
-	Input:
-	object: object - pide object that is going to be used for the inversion calculations.
-	array: cond_list - conductivity array list used for inversion || in S/m
-	str: param_name - parameter name to invert for. This can be any parameter that is included in pide.object.
-	array: upper_limit_list - upper limit value for the search space for the given parameter.
-	array: lower_limit_list - lower limit value for the search space for the given parameter.
-	float: search_start - initial search length used in the line search.
-	float: acceptance_threshold - acceptance value to stop inversion process.
-	array: cond_err - error floors to add to the inversion.
-	bool: transition_zone - boolean value to indicate transition zone water distribution functions are going to be used.
-	int: num_cpu - number of cpu to compute the inversion.
-	float: low_value_threshold - threshold value of parameter to revert to zero for the solution.
+	Parameters
+	----------
+	object : object
+		An instance of the pide object used for inversion calculations.
+	cond_list : array-like
+		List or array of observed conductivity values [S/m].
+	param_name : str
+		Name of the parameter to invert. Must be an attribute of the input object.
+	upper_limit_list : array-like
+		Upper bounds for the search space of the parameter.
+	lower_limit_list : array-like
+		Lower bounds for the search space of the parameter.
+	search_start : float
+		Initial step size for the line search.
+	acceptence_threshold : float
+		Convergence threshold in % of the value entered in cond_list; the search stops when improvement is below this value.
+	cond_err : array-like, optional
+		Error floors to apply to the conductivity values [S/m] (default is None).
+	transition_zone : bool, optional
+		Whether to use transition zone water distribution functions (default is False).
+	simplify_fluid_density : bool, optional
+		If True, simplify fluid density calculation (default is False).
+	num_cpu : int, optional
+		Number of CPU cores to use in the inversion (default is 1).
+	low_value_threshold : float, optional
+		Threshold below which parameter values are treated as zero (default is None).
+	melt_solv : bool, optional
+		If True, include melt solubility in the model (default is False).
+		
+	Returns:
+	-------
+	
+	c_list: array-like
+		solution to the inversion for the chosen parameter
+	residuals: array-like
+		residuals from the solution.
+		
+	Examples:
+	
+	Example for solving bulk water content:
+	
+	conductivity_solver_single_param(object=object, cond_list = [0.1,0.1], param_name = 'bulk_water',
+	upper_limit_list = [1000,1000], lower_limit_list = [0,0],
+	search_start = 30, acceptence_threshold = 1, cond_err = None, transition_zone = False, simplify_fluid_density = False,
+	num_cpu = 5, melt_solv = 0, low_value_threshold = 10)
 	"""
 
 	min_list = ['quartz_frac', 'plag_frac', 'amp_frac', 'kfelds_frac', 'opx_frac', 'cpx_frac',
@@ -350,7 +383,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 
 def _misfit(cond, cond_external):
 
-	#Internal function to calculate misfit in log10.
+	"""Internal function to calculate misfit in log10."""
 
 	#misfit at log scale
 	misf = np.log10(cond) - np.log10(cond_external)
@@ -358,7 +391,7 @@ def _misfit(cond, cond_external):
 
 def _likelihood(cond, cond_external, sigma):
 
-	#Internal function to calculate likelihood.
+	"An internal function to calculate likelihood"
 
 	misf = _misfit(cond, cond_external)
 	misf_2 = -misf**2 / (2 * sigma**2)
@@ -369,6 +402,11 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, continue_bool, adaptive_alg = True,
 	ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000, comp_index = [0,0], step_size_limits = None,
 	transition_zone = False):
+	
+	"""
+	MCMC external solver for the conductivity_metropolis_hastings_two_param function for parallelization purposes.
+	Users should not call this function directly.
+	"""
 
 	if continue_bool[index] == True:
 
@@ -581,23 +619,78 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 	lower_limits, sigma_cond,proposal_stds,n_iter, burning = 0, transition_zone = False, num_cpu = 1, **kwargs):
 
 	"""
-	A function to perform stochastic inversion for electrical conductivity with the given two parameters and predefined sets.
-	This function utilizes Metropolis-Hastings Markov-Chain Monte Carlo method to produce a posterior distribution of variables.
+	Perform Metropolis-Hastings MCMC inversion for electrical conductivity using two model parameters.
 
-	Input:
-	object: object - pide object that is going to be used for the inversion calculations.
-	array: cond_list - conductivity array list used for inversion || in S/m
-	str: param_name - parameter name to invert for. This can be any parameter that is included in pide.object.
-	array: upper_limit_list - upper limit value for the search space for the given parameter.
-	array: lower_limit_list - lower limit value for the search space for the given parameter.
-	float: search_start - initial search length used in the line search.
-	float: acceptance_threshold - acceptance value to stop inversion process.
-	array: cond_err - error floors to add to the inversion.
-	bool: transition_zone - boolean value to indicate transition zone water distribution functions are going to be used.
-	bool: adaptive_alg - boolean value to indicate whethere adaptive algorithm that changes step size dependent on acceptance rate.
-	int: adaptive_check_length - integer to indicate checking adaptive algorithm change.
-	array: step_size_limits - 
-	int: num_cpu - number of cpu to compute the inversion.
+	This function uses a stochastic sampling approach to estimate the posterior distribution of two 
+	input parameters based on observed conductivity data. It is useful for exploring uncertainty 
+	and trade-offs between parameters in conductivity models.
+
+	Parameters
+	----------
+	object : object
+		A pide model instance for calculating conductivity.
+	cond_list : array-like
+		Observed conductivity values to fit [S/m].
+	initial_params : list or array-like
+		Initial values for the two parameters to invert.
+	param_name_1 : str
+		Name of the first parameter to invert (must be an attribute of `object`).
+	param_name_2 : str
+		Name of the second parameter to invert (must be an attribute of `object`).
+	upper_limits : tuple of floats
+		Upper bounds for the parameter search space of first and second param.
+	lower_limits : tuple of floats
+		Lower bounds for the parameter search space of first and second param.
+	sigma_cond : float or array-like
+		Standard deviation or error for conductivity observations in logarithm of conductivity [S/m].
+		Do not enter this as a percentage error, you need to enter as absolute error in log-conductivity.
+	proposal_stds : list or array-like
+		Standard deviations for proposal distribution of the two parameters.
+		This acts as a initial step size in for the random search.
+	n_iter : int
+		Number of iterations for the MCMC chain.
+	burning : int, optional
+		Number of initial iterations to discard as burn-in (default is 0).
+	transition_zone : bool, optional
+		If True, use transition zone water distribution functions (default is False).
+	num_cpu : int, optional
+		Number of CPU cores to use for parallel computation (default is 1).
+	save_distr : bool, optional
+		If True, saves the MCMC samples to disk (default is False).
+	distr_file_names : str, optional
+		Base name for saved distribution files (default is 'distribution_solution').
+	adaptive_alg : bool, optional
+		If True, enables adaptive adjustment of proposal standard deviations based on acceptance rate.
+	ideal_acceptance_bounds : list of float, optional
+		Target acceptance rate bounds for adaptive algorithm (default is [0.2, 0.3]).
+	adaptive_check_length : int, optional
+		Number of iterations between check for adaptive algorithm (default is 1000).
+	step_size_limits : list of float, optional
+		Minimum and maximum bounds for the adaptive proposal step sizes.
+
+	Returns
+	-------
+	Sample distribution (accepted): array-like
+		Array of sampled accepted parameter values of shape (n_accepted_samples, 2).
+	acceptance_rate : array-like
+		Acceptenca rate record over the sampling.
+	misfits : array-like
+		misfits of the accepted distribution.
+	Sample distribution (all) : array-like
+		Array of sampled all parameter values of shape (n_iter - burning, 2).
+	misfits_all: array-like
+		
+	sample_distr, acceptance_rates, misfits, samples_all, misfits_all
+
+	Examples
+	--------
+	samples, acceptance_rates, misfits, samples_all, misfits_all = conductivity_metropolis_hastings_two_param(object = p_obj, cond_list = [0.1,0.1],
+	initial_params = [[200,0.25]],param_name_1 = 'bulk_water',
+	param_name_2= "melt_fluid_mass_frac", upper_limits = (2000,0.5),
+	lower_limits = (0,0), sigma_cond = [0.1,0.1],proposal_stds=[200,0.25]
+	,n_iter = 2e5, burning = 1e4, transition_zone = False,num_cpu = 1,adaptive_alg = True,
+	step_size_limits = [25000,0.5])
+	
 	"""
 
 	#Pre-checks for if
