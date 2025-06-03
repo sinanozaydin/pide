@@ -381,26 +381,30 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 
 	return c_list, residual_list
 
-def _misfit(cond, cond_external):
+def _misfit(val, val_external, norm = 'log'):
 
 	"""Internal function to calculate misfit in log10."""
 
-	#misfit at log scale
-	misf = np.log10(cond) - np.log10(cond_external)
+	if norm == 'log':
+		#misfit at log scale
+		misf = np.log10(val) - np.log10(val_external)
+	else:
+		misf = val - val_external
 	return misf
 
-def _likelihood(cond, cond_external, sigma):
+def _likelihood(val, val_external, sigma, norm = 'log'):
 
 	"An internal function to calculate likelihood"
 
-	misf = _misfit(cond, cond_external)
+	misf = _misfit(val, val_external, norm = norm)
 	misf_2 = -misf**2 / (2 * sigma**2)
 	like = np.exp(misf_2)
 	return like, misf_2
+	
 
 def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1, param_name_2, upper_limits,
-	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, continue_bool, adaptive_alg = True,
-	ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000, comp_index = [0,0], step_size_limits = None,
+	lower_limits, sigma_cond,proposal_stds,n_iter,burning,water_solv, comp_solv, continue_bool, vp_list = None, vs_list = None, sigma_vp = None, sigma_vs = None,
+	adaptive_alg = True, ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000, comp_index = [0,0], step_size_limits = None,
 	transition_zone = False):
 	
 	"""
@@ -494,12 +498,31 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 
 		#Calculating the initial conductivity
 		cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
-		current_likelihood, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+		if (vp_list is not None) or (vs_list is not None):
+			v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'index',sol_idx = index)
+			
+		current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+		
+		if vp_list is not None:
+			current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index])
+		else:
+			current_likelihood_vp = 1
+			
+		if vs_list is not None:
+			current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index])
+		else:
+			current_likelihood_vs = 1
+			
+		current_likelihood = current_likelihood_cond * current_likelihood_vp * current_likelihood_vs
 
 		#empty arrays to fill it up with samples
 		samples = []
-		misfits = []
-		misfits_all = []
+		misfits_cond = []
+		misfits_vp = []
+		misfits_vs = []
+		misfits_all_cond = []
+		misfits_all_vp = []
+		misfits_all_vs = []
 		samples_all = []
 		acceptance_rates = []
 		accepted = 0
@@ -563,9 +586,29 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 						object.transition_zone_water_distribute(method = 'index', sol_idx = index)
 
 				proposed_cond = object.calculate_conductivity(method = 'index',sol_idx = index)
-
-				proposed_likelihood, misf = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
-
+				if (vp_list is not None) or (vs_list is not None):
+					v_bulk, proposed_vp, proposed_vs = object.calculate_seismic_velocities(method = 'index',sol_idx = index)
+				
+				
+				proposed_likelihood_cond, misf_cond = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
+				
+				if vp_list is not None:
+					proposed_likelihood_vp, misf_vp = _likelihood(proposed_vp, vp_list[index], sigma_vp[index], norm = 'log')
+					print('####')
+					print(proposed_vp, proposed_likelihood_vp,proposal[0],proposal[1],misf_vp)
+					print(proposed_cond, proposed_likelihood_cond,proposal[0],proposal[1],misf_cond)
+				else:
+					proposed_likelihood_vp = 1
+					misf_vp = 0
+					
+				if vs_list is not None:
+					proposed_likelihood_vs, misf_vs = _likelihood(proposed_vs, vs_list[index], sigma_vs[index], norm = 'log')
+				else:
+					proposed_likelihood_vs = 1
+					misf_vs = 0
+				
+				proposed_likelihood = proposed_likelihood_cond * proposed_likelihood_vs * proposed_likelihood_vp
+				# print(proposed_likelihood_cond, proposed_vp, proposed_vs)
 				# Calculate acceptance probability
 				acceptance_ratio = proposed_likelihood / current_likelihood
 
@@ -576,13 +619,17 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 
 					if _ > burning:
 						samples.append(current_params)
-						misfits.append(misf)
+						misfits_cond.append(misf_cond)
+						misfits_vp.append(misf_vp)
+						misfits_vs.append(misf_vs)
 						accepted += 1
 
 				if _ > burning:
 					acceptance_rate = accepted / (_ - burning)
 					acceptance_rates.append(acceptance_rate)
-					misfits_all.append(misf)
+					misfits_all_cond.append(misf_cond)
+					misfits_all_vp.append(misf_vp)
+					misfits_all_vs.append(misf_vs)
 					samples_all.append(current_params)
 					if adaptive_alg == True:
 						if (_ + 1) % adaptive_check_length == 0:
@@ -612,11 +659,15 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		misfits_all = np.array([None])
 
 		print(f'The value of {index}th index is below the dry conductivity of composition entered, therefore no solution is required.')
-
+	
+	misfits = [misfits_cond,misfits_vp,misfits_vs]
+	misfits_all = [misfits_cond, misfits_vp, misfits_vs]
+	
 	return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
 
 def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params, param_name_1, param_name_2, upper_limits,
-	lower_limits, sigma_cond,proposal_stds,n_iter, burning = 0, transition_zone = False, num_cpu = 1, **kwargs):
+	lower_limits, sigma_cond, proposal_stds,n_iter, vp_list = None, vs_list = None, sigma_vs= None, sigma_vp = None, burning = 0, 
+	transition_zone = False, num_cpu = 1, **kwargs):
 
 	"""
 	Perform Metropolis-Hastings MCMC inversion for electrical conductivity using two model parameters.
@@ -838,7 +889,8 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 		with multiprocessing.Pool(processes=num_cpu) as pool:
 
 			process_item_partial = partial(_solv_MCMC_two_param, object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
-			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning, vp_list = vp_list, vs_list = vs_list,
+			sigma_vp = sigma_vp, sigma_vs = sigma_vs,
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool, adaptive_alg = adaptive_alg, adaptive_check_length = adaptive_check_length,
 			step_size_limits = step_size_limits, ideal_acceptance_bounds = ideal_acceptance_bounds)
 
@@ -861,7 +913,8 @@ def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params
 		for idx in range(0,len(index_list)):
 			
 			c = _solv_MCMC_two_param(index = index_list[idx], object = object, cond_list = cond_list, initial_params = initial_params, param_name_1 = param_name_1, param_name_2= param_name_2,
-			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond, proposal_stds = proposal_stds , n_iter= n_iter, burning = burning, vp_list = vp_list, vs_list = vs_list,
+			sigma_vp = sigma_vp, sigma_vs = sigma_vs,
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index, continue_bool = continue_bool, adaptive_alg = adaptive_alg, adaptive_check_length = adaptive_check_length,
 			step_size_limits = step_size_limits, ideal_acceptance_bounds = ideal_acceptance_bounds)
 			
