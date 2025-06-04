@@ -489,10 +489,10 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 				#to interpolation of fluid density so eos do not have to be solved at each iteration.
 				try:
 					water_index = [param_name_1,param_name_2].index('bulk_water')
-					water_end = upper_limits[water_index] + (upper_limits[water_index] * 1000)
+					water_end = upper_limits[water_index]
 					water_end = water_end[0]
 				except ValueError:
-					water_end = 1e6
+					water_end = 1e5
 
 				object.calculate_density_fluid(sol_idx = index, method = 'array', interp_for_iter = True, water_start = 0, water_end = water_end)
 
@@ -500,7 +500,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 		cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
 		if (vp_list is not None) or (vs_list is not None):
 			v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'index',sol_idx = index)
-			
+
 		current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
 		
 		if vp_list is not None:
@@ -589,26 +589,22 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 				if (vp_list is not None) or (vs_list is not None):
 					v_bulk, proposed_vp, proposed_vs = object.calculate_seismic_velocities(method = 'index',sol_idx = index)
 				
-				
 				proposed_likelihood_cond, misf_cond = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
 				
 				if vp_list is not None:
-					proposed_likelihood_vp, misf_vp = _likelihood(proposed_vp, vp_list[index], sigma_vp[index], norm = 'log')
-					print('####')
-					print(proposed_vp, proposed_likelihood_vp,proposal[0],proposal[1],misf_vp)
-					print(proposed_cond, proposed_likelihood_cond,proposal[0],proposal[1],misf_cond)
+					proposed_likelihood_vp, misf_vp = _likelihood(proposed_vp, vp_list[index], sigma_vp[index], norm = 'linear')
 				else:
 					proposed_likelihood_vp = 1
 					misf_vp = 0
 					
 				if vs_list is not None:
-					proposed_likelihood_vs, misf_vs = _likelihood(proposed_vs, vs_list[index], sigma_vs[index], norm = 'log')
+					proposed_likelihood_vs, misf_vs = _likelihood(proposed_vs, vs_list[index], sigma_vs[index], norm = 'linear')
 				else:
 					proposed_likelihood_vs = 1
 					misf_vs = 0
 				
 				proposed_likelihood = proposed_likelihood_cond * proposed_likelihood_vs * proposed_likelihood_vp
-				# print(proposed_likelihood_cond, proposed_vp, proposed_vs)
+				# print(proposed_vp,proposed_vs,proposed_cond,proposal[0],proposal[1])
 				# Calculate acceptance probability
 				acceptance_ratio = proposed_likelihood / current_likelihood
 

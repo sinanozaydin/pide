@@ -4622,7 +4622,7 @@ class pide(object):
 		Notes
 		-----
 		This is an internal method and is not intended for direct use by users.
-		It is closely linked to the `calculate_seismic_velocity` function.
+		It is closely linked to the `calculate_seismic_velocities` function.
 		"""
 	
 		id_list_global = []
@@ -4909,12 +4909,12 @@ class pide(object):
 				self.v_s[self.idx_unique[comp_idx]] = medium[2]
 				
 		elif method == 'index':
-		
+			
 			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
 			
 			medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
 				pressure = np.array([self.p[index]]), temperature=np.array([self.T[index]]), modulii_return = True)
-				
+			
 			self.v_bulk[index] = medium[0]
 			self.v_p[index] = medium[1]
 			self.v_s[index] = medium[2]
@@ -5236,7 +5236,7 @@ class pide(object):
 					al2o3 = melt_comp_calc[:,1],mgo = melt_comp_calc[:,2],feo = melt_comp_calc[:,3],cao = melt_comp_calc[:,4],
 					na2o = melt_comp_calc[:,5],k2o = melt_comp_calc[:,6],tio2 = melt_comp_calc[:,7],mno = melt_comp_calc[:,8],p2o5 = melt_comp_calc[:,9],
 					cr2o3 = melt_comp_calc[:,10],h2o = melt_comp_calc[:,11])
-
+					
 				else:
 
 					dens_melt_fluid, vp_melt_fluid, K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp, P = pres, sio2 = melt_comp_calc[:,0],
@@ -5245,6 +5245,12 @@ class pide(object):
 					cr2o3 = melt_comp_calc[:,10],h2o = melt_comp_calc[:,11])
 
 					self.interp_1d_dens_fluid = interp1d(h2o_melt_local,dens_melt_fluid)
+					self.interp_1d_vp_melt_fluid = interp1d(h2o_melt_local,vp_melt_fluid)
+					self.interp_1d_k_melt_fluid = interp1d(h2o_melt_local,K_melt_fluid)
+					
+					self.dens_melt_fluid = np.zeros(len(self.T))
+					self.vp_melt_fluid = np.zeros(len(self.T))
+					self.K_melt_fluid = np.zeros(len(self.T))
 				
 			elif method == 'index':
 				
@@ -5263,6 +5269,11 @@ class pide(object):
 					try:
 						self.dens_melt_fluid[idx_node] = self.interp_1d_dens_fluid(h2o_melt_local[idx_node])
 						self.dens_melt_fluid_unchanged = self.dens_melt_fluid[idx_node].copy()
+						self.vp_melt_fluid[idx_node] = self.interp_1d_vp_melt_fluid(h2o_melt_local[idx_node])
+						self.vp_melt_fluid_unchanged = self.vp_melt_fluid[idx_node].copy()
+						self.K_melt_fluid[idx_node] = self.interp_1d_k_melt_fluid(h2o_melt_local[idx_node])
+						self.K_melt_fluid_unchanged = self.K_melt_fluid[idx_node].copy()
+						
 					except:
 					
 						if sfd == False:
