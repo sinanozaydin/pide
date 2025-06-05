@@ -661,7 +661,7 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 	
 	return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
 
-def conductivity_metropolis_hastings_two_param(object, cond_list, initial_params, param_name_1, param_name_2, upper_limits,
+def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_1, param_name_2, upper_limits,
 	lower_limits, sigma_cond, proposal_stds,n_iter, vp_list = None, vs_list = None, sigma_vs= None, sigma_vp = None, burning = 0, 
 	transition_zone = False, num_cpu = 1, **kwargs):
 
