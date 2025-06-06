@@ -2529,12 +2529,13 @@ class pide(object):
 			self.h2o_melt = array_modifier(input = kwargs.pop('water', 0), array = self.T, varname = 'h2o_melt')  #in ppm
 			self.na2o_melt = array_modifier(input = kwargs.pop('na2o', 0), array = self.T, varname = 'na2o_melt')  #in wt
 			self.k2o_melt = array_modifier(input = kwargs.pop('k2o', 0), array = self.T, varname = 'k2o_melt')  #in wt
+			self.sio2_melt = array_modifier(input = kwargs.pop('sio2', 0), array = self.T, varname = 'sio2_melt')  #in wt
 		elif reval == True:
-		
 			self.co2_melt = array_modifier(input = self.co2_melt, array = self.T, varname = 'co2_melt')  #in ppm
 			self.h2o_melt = array_modifier(input = self.h2o_melt, array = self.T, varname = 'h2o_melt')  #in ppm
 			self.na2o_melt = array_modifier(input = self.na2o_melt, array = self.T, varname = 'na2o_melt')  #in wt
 			self.k2o_melt = array_modifier(input = self.k2o_melt, array = self.T, varname = 'k2o_melt')  #in wt
+			self.sio2_melt = array_modifier(input = self.sio2_melt, array = self.T, varname = 'sio2_melt')  #in wt
 		
 		overlookError = kwargs.pop('overlookError', False)
 		
@@ -3335,7 +3336,7 @@ class pide(object):
 				melt_odd_function = pide.name[1][pide.melt_cond_selection]
 			
 			cond_melt = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
-			'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], method = method)')
+			'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], Melt_SiO2 = self.sio2_melt[idx_node], method = method)')
 		
 		if method == 'array':
 			return cond_melt[0]

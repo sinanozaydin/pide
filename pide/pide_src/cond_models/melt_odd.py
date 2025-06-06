@@ -5,7 +5,7 @@ from pide.utils.utils import text_color
 
 R_const = 8.3144621
 
-def Sifre2014_Wet_Carbonated(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Sifre2014_Wet_Carbonated(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	Melt_CO2 = Melt_CO2 * 1e-4 #converting ppm to wt percent
 
@@ -20,25 +20,109 @@ def Sifre2014_Wet_Carbonated(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,metho
 
 	return cond
 
-def Pommier2008_WetBasalt_Na(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Pommier2011_SIGMELTS_WetSilicate_Melt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
-	P = P * 1e3 #converting GPa to MPa
+	"""
+	converted to python from webscraped javascript code hosted at SIGMELTS website: https://calcul-isto.cnrs-orleans.fr/apps/sigmelts/#
+	"""
 
-	G = (-2.107e11 * Melt_Na2O) + 1.297e12
-	phi = (2.439e-11 * Melt_Na2O) + 1.72e-10
+	if method == 'array':
+		T = T[0]
+		P = P[0]*1e3 #converting into MPa
+		Melt_H2O = Melt_H2O[0]
+		Melt_Na2O = Melt_Na2O[0]
+		Melt_SiO2 = Melt_SiO2[0]
+		cond = np.zeros(len(T))
+	else:
+		P = P * 1e3
+
+	def _get_params(sio2):
+		# Select model coefficients based on SiO2 content
+		if sio2 < 50.0:
+			c_intercept   =  28.1072140868
+			c_sio2        = -0.30953383
+			c_temperature =  0.0004035372
+			c_pressure    =  0.0016782775
+			c_ln_water    =  0.1189143906
+			c_na2o        = -1.0946261697
+			c_water       = -0.2161950362
+			c_q_rt        = -0.916865944
+		elif sio2 < 70.0:
+			c_intercept   =  17.85482826
+			c_sio2        = -0.052183931
+			c_temperature = -0.001171623
+			c_pressure    =  0.001009267
+			c_ln_water    =  0.08745967
+			c_na2o        = -0.707477243
+			c_water       = -0.433092118
+			c_q_rt        = -0.919252205
+		else:
+			c_intercept   = -19.08557442
+			c_sio2        =  0.489734869
+			c_temperature = -0.003553936
+			c_pressure    =  0.001306084
+			c_ln_water    =  0.290884415
+			c_na2o        =  0.0
+			c_water       = -0.512471336
+			c_q_rt        = -1.143904969
+
+		return c_intercept,c_sio2,c_temperature,c_pressure,c_pressure,c_ln_water,c_na2o,c_water,c_q_rt
+
+	# Activation energy for Pommier model
+	ea_pom = (
+		7.091674171904e-15 / (5.73165e-21 * Melt_Na2O + 4.042e-20)
+		- 1.08426212889391294371e3 * Melt_Na2O
+		+ 6.67436156229428138586e3
+		+ P * 20.70882392
+		- 1000.0 * Melt_H2O ** 2)
 	
-	Es = 4.0 * np.pi * G * 1.7e-10 * (1.02e-10 - 9.3e-11)**2.0 + (1e3 * Melt_H2O**2.0)
-	Eb = 0.23 * (1*8*(1.602e-19)**2) / (phi * (1.02e-10 - 1.4e-10))
+	# Activation energy for Gaillard model
 	
-	Ea = Eb + Es
+	ea_gai = -2925.0 * np.log(Melt_H2O) + 64132.0 + 20.0 * P
+	
+	# Natural log conductivity using Gaillard model
+	lns_gai = np.log(-78.9 * np.log(Melt_H2O) + 4000.0) - ea_gai / (R_const * T)
 
-	sigma_0 = np.exp((Ea + 9.9) / 12.5)
+	if method == 'index':
+		c_intercept,c_sio2,c_temperature,c_pressure,c_pressure,c_ln_water,c_na2o,c_water,c_q_rt = _get_params(sio2=Melt_SiO2)
+		lns_pom = (
+		c_intercept
+		+ c_sio2 * Melt_SiO2
+		+ c_temperature * T
+		+ c_pressure * P
+		+ c_ln_water * np.log(Melt_H2O)
+		+ c_na2o * Melt_Na2O
+		+ c_water * Melt_H2O
+		+ c_q_rt * ea_pom / (8.314472 * T))
+		# Return sigma based on comparison
+		if Melt_SiO2 > 6 and lns_pom > lns_gai:
+			cond =  np.exp(lns_gai)
+		else:
+			cond =  np.exp(lns_pom)
+	else:
+		
+		lns_pom = np.zeros(len(T))
+		for i in range(0,len(T)):
+			c_intercept,c_sio2,c_temperature,c_pressure,c_pressure,c_ln_water,c_na2o,c_water,c_q_rt = _get_params(sio2=Melt_SiO2[i])
 
-	cond = sigma_0 * np.exp((-Ea - (P * 20)) / (R_const*T))
+			lns_pom[i] = (
+				c_intercept
+				+ c_sio2 * Melt_SiO2[i]
+				+ c_temperature * T[i]
+				+ c_pressure * P[i]
+				+ c_ln_water * np.log(Melt_H2O[i])
+				+ c_na2o * Melt_Na2O[i]
+				+ c_water * Melt_H2O[i]
+				+ c_q_rt * ea_pom[i] / (8.314472 * T[i]))	
+
+			if Melt_SiO2[i] > 6 and lns_pom[i] > lns_gai[i]:
+				cond[i] =  np.exp(lns_gai[i])
+			else:
+				cond[i] =  np.exp(lns_pom[i])
 
 	return cond
 
-def Ni2011_WetBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Ni2011_WetBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 	
 	if method == 'array':
 		P = P[0]
@@ -62,7 +146,7 @@ def Ni2011_WetBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 	return cond
 
 
-def TyburczyWaff1983_DryTholeiite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def TyburczyWaff1983_DryTholeiite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	sigma_0_low = 1.12e5
 	E_low = 112000.0
@@ -94,7 +178,7 @@ def TyburczyWaff1983_DryTholeiite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,
 
 	return cond
 
-def TyburczyWaff1983_DryAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def TyburczyWaff1983_DryAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	sigma_0_low = 1.01e3
 	E_low = 78000.0
@@ -126,13 +210,13 @@ def TyburczyWaff1983_DryAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,m
 
 	return cond
 
-def Guo2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Guo2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	cond = 10**(5.23 - (0.56 * (Melt_H2O**0.6)) - ((8130.4 - (1462.7*(Melt_H2O**0.6)) + ((581.3 - (12.7*Melt_H2O**2)) * P)) / T))
 
 	return cond
 
-def Laumonier2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Laumonier2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	P = P * 1e5 #converting gpa to bars
 
@@ -153,7 +237,7 @@ def Laumonier2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,meth
 
 	return cond
 
-def Laumonier2015_WetDacite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Laumonier2015_WetDacite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	P = P * 1e5 #converting gpa to bars
 
@@ -174,7 +258,7 @@ def Laumonier2015_WetDacite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method
 
 	return cond
 
-def Gaillard2004_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Gaillard2004_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 	
 	if method == 'array':
 		if np.any(Melt_H2O) == 0:
@@ -192,14 +276,14 @@ def Gaillard2004_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,metho
 
 	return cond
 
-def Guo2016_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Guo2016_WetRhyolite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	cond = 10**(2.983 - (0.0732*Melt_H2O) -\
 		((3528 - (233.8*Melt_H2O) + ((763 - 7.5*Melt_H2O**2)*P)) / T))
 
 	return cond
 
-def Chen2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Chen2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	sigma_0 = 6.673 - (0.491*P)
 	Ea = 58987.0 - (2200 * np.log(Melt_H2O + 0.046))
@@ -209,7 +293,7 @@ def Chen2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 
 	return cond
 
-def Guo2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Guo2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 
 	cond = 10.0**(3.205 - (0.102 * Melt_H2O) -\
@@ -217,7 +301,7 @@ def Guo2018_WetGranite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
 		
 	return cond
 
-def Poe2008_Phonotephrite_Average(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,method):
+def Poe2008_Phonotephrite_Average(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
 	Ea = 116000.0
 	sigma_cond = 34700.0
