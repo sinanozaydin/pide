@@ -1,5 +1,6 @@
 import numpy as np
 import csv
+from scipy.optimize import minimize
 
 def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
 	
@@ -220,6 +221,53 @@ def _all_equal(arrays):
 	first = arrays[0]
 	return all(sub == first for sub in arrays)
 
+
+def _comp_adjust_melts(sio2,na2o,k2o,comp_dict_rest):
+	
+	# Assume wt% total must be 100
+	# SiO2 and Na2O are given, rest are variables
+	def objective(x):  # x = [Al2O3, FeO, MgO, CaO, K2O, TiO2]
+		total = sum(x) + sio2 + na2o + k2o
+		return abs(total - 100)
+
+	initial_guess = [comp_dict_rest['Al2O3'], comp_dict_rest['MgO'], comp_dict_rest['FeO'], comp_dict_rest['CaO'],
+					comp_dict_rest['TiO2'],comp_dict_rest['MnO'], comp_dict_rest['P2O5'], 
+					comp_dict_rest['Cr2O3']]  # make educated guess
+	bounds = [(0, 25)] * 6  # basic bounds
+
+	result = minimize(objective, initial_guess, bounds=bounds)
+
+	comp_adjusted = [sio2, result.x[0], result.x[1], result.x[2],
+				  result.x[3], na2o, k2o, result.x[4],result.x[5],
+				  result.x[6],result.x[7], 0.0]
+
+	return comp_adjusted
+
+def _estimate_composition_pyrolite(sio2, na2o, k2o):
+
+	from pyrolite.util.classification import TAS
+	from pyrolite.util.synthetic import normal_frame
+
+	df = (
+	normal_frame(
+		columns=["SiO2", "Na2O", "K2O"],
+		mean=[sio2, na2o, k2o],
+		size=100,
+		seed=49,
+	)
+	* 100
+	)
+
+	cm = TAS()
+	df["TAS"] = cm.predict(df)
+
+	df["TAS"] = cm.predict(df)
+	df["Rocknames"] = df.TAS.apply(lambda x: cm.fields.get(x, {"name": None})["name"])
+	df["Rocknames"].sample(10)  # randomly check 10 sample rocknames
+
+def _get_melt_composition_from_lib(lib_ref):
+
+	pass
 	
 class text_color:
    

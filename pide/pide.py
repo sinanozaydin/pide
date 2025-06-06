@@ -50,7 +50,7 @@ from .pide_src.eos.melt_eos import Holland_Green_Powell_2018_ds633_MeltEOS
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv, text_color, _comp_adjust_idx_based
+from .utils.utils import check_type, array_modifier, read_csv, text_color, _comp_adjust_idx_based, _estimate_composition_pyrolite, _get_melt_composition_from_lib
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -2968,7 +2968,7 @@ class pide(object):
 				   pide.graphite_seis_selection, pide.ol_seis_selection, pide.sp_seis_selection, pide.rwd_wds_seis_selection, pide.perov_seis_selection,
 				   pide.mixture_seis_selection, pide.other_seis_selection]
 				   
-	def set_melt_composition(self, comp ,default = False):
+	def set_melt_composition(self, comp ,from_lib = False,lib_composition = 'Basalt',default = False):
 
 		"""
 		Set the melt composition used for melt velocity and density calculations.
@@ -3007,7 +3007,11 @@ class pide(object):
 
 		if default == False:
 			
-			self.melt_composition_method = 'Manual'
+			self.melt_composition_method = 'Input'
+
+		if from_lib == True:
+
+			self.melt_comp = _get_melt_composition_from_lib(lib_composition)
 		
 		if check_type(comp) == 'array':
 			if isinstance(comp, (list, tuple)) and all(isinstance(item, (list, tuple)) for item in comp):
@@ -5197,19 +5201,16 @@ class pide(object):
 
 						melt_comp_calc = np.array([self.melt_comp[sol_idx].copy() for _ in range(len(temp))])
 						
-					if self.idx_melt_var is not None:
-						if 5 in self.idx_melt_var:
-							if np.mean(self.na2o_melt) == 0.0:
-								raise ValueError('You have to define Na2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(na2o = 5.3)')
-							else:
-								melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.na2o_melt, idx = 5,array = True)
+					
+					if np.mean(self.na2o_melt) == 0.0:
+						pass
+					else:
+						melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.na2o_melt, idx = 5,array = True)
 									
-					if self.idx_melt_var is not None:
-						if 6 in self.idx_melt_var:
-							if np.mean(self.k2o_melt) == 0.0:
-								raise ValueError('You have to define K2O of melt first to use the melt electrical conductivity with the chosen melt conductivity experiment. Use - e.g., set_melt_properties(k2o = 3.2)')
-							else:
-								melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.k2o_melt, idx = 6,array = True)
+					if np.mean(self.k2o_melt) == 0.0:
+						pass
+					else:
+						melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.k2o_melt, idx = 6,array = True)
 
 				elif self.melt_composition_method == 'Input':
 					if melt_comp_calc is None:
