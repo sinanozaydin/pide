@@ -309,3 +309,17 @@ def Poe2008_Phonotephrite_Average(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,
 	cond = sigma_cond * np.exp((-Ea) / (R_const*T))
 		
 	return cond
+	
+	
+def Poe2012_WetPanteleriteGlass(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
+	
+	if np.mean(Melt_H2O) == 0.0:
+		raise ValueError('The electrical conductivity model Poe2012_WetPanteleriteGlass does not support dry melt assemblages.')
+		
+	sigma_cond = 1260.0
+	E = 96485.3
+
+	cond = sigma_cond*(Melt_H2O^(1.25))*np.exp((-0.812*E)/(R_const*T))
+	
+	return cond
+	
