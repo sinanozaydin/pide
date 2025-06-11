@@ -138,6 +138,7 @@ class pide(object):
 		self.set_mantle_water_solubility()
 		self.set_grain_boundary_water_partitioning()
 		self.set_grain_boundary_H_Diffusion()
+		self.melt_comp = None
 		self.object_formed = True
 		
 		#Some check for temperature being the controlling array errors.
@@ -3055,6 +3056,7 @@ class pide(object):
 			self._suggestion_temp_array()
 
 		if reval == False:
+
 			pide.ol_grsz = array_modifier(input = kwargs.pop('ol', 1), array = self.T, varname = 'ol_grsz') 
 			pide.opx_grsz = array_modifier(input = kwargs.pop('opx', 1), array = self.T, varname = 'opx_grsz') 
 			pide.cpx_grsz = array_modifier(input = kwargs.pop('cpx', 1), array = self.T, varname = 'cpx_grsz') 
