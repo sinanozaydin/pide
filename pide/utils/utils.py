@@ -242,29 +242,7 @@ def _comp_adjust_melts(sio2,na2o,k2o,comp_dict_rest):
 				  result.x[6],result.x[7], 0.0]
 
 	return comp_adjusted
-
-def _estimate_composition_pyrolite(sio2, na2o, k2o):
-
-	from pyrolite.util.classification import TAS
-	from pyrolite.util.synthetic import normal_frame
-
-	df = (
-	normal_frame(
-		columns=["SiO2", "Na2O", "K2O"],
-		mean=[sio2, na2o, k2o],
-		size=100,
-		seed=49,
-	)
-	* 100
-	)
-
-	cm = TAS()
-	df["TAS"] = cm.predict(df)
-
-	df["TAS"] = cm.predict(df)
-	df["Rocknames"] = df.TAS.apply(lambda x: cm.fields.get(x, {"name": None})["name"])
-	df["Rocknames"].sample(10)  # randomly check 10 sample rocknames
-
+	
 def _get_melt_composition_from_lib(lib_ref):
 
 	pass

@@ -3707,7 +3707,16 @@ class pide(object):
 		#Getting the relevant melt composition index
 		idx_melt_comp, = np.where(self.melt_composition_names==pide.name[1][pide.melt_cond_selection])
 		idx_melt_comp = idx_melt_comp[0]
-		melt_comp = np.array(self.melt_composition_data[idx_melt_comp+1])[1:-1]
+		if self.melt_composition_data[idx_melt_comp+1][1] == 'Direct':
+			melt_comp = np.array(self.melt_composition_data[idx_melt_comp+1])[2:-1]
+		elif self.melt_composition_data[idx_melt_comp+1][1] == 'TAS':
+			try:
+				self.na2o_melt
+				self.sio2_melt
+				self.k2o_melt
+				comp_lib = _estimate_composition_pyrolite(sio2=self.sio2_melt, na2o=self.na2o_melt, k2o=self.k2o_melt)
+			except:
+				raise KeyError('The selected melt conductivity model requires you to enter Na2O, SiO2 and K2O content through set_melt_properties function.')
 		
 		#searching if variable is assigned other than water content
 		if 'Variable' in melt_comp:
