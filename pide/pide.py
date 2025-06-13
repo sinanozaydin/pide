@@ -50,7 +50,8 @@ from .pide_src.eos.melt_eos import Holland_Green_Powell_2018_ds633_MeltEOS
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv, text_color, _comp_adjust_idx_based, _estimate_composition_pyrolite, _get_melt_composition_from_lib
+from .utils.utils import check_type, array_modifier, read_csv, text_color, _comp_adjust_idx_based, modify_melt_composition
+from .utils.geochem import classify_tas_diagram
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -105,6 +106,7 @@ class pide(object):
 		self._read_mineral_water_solubility()
 		self._read_water_calib()
 		self._read_melt_composition_files()
+		self._read_average_melt_composition()
 		self.object_formed = False
 		#setting up default values for the pide object
 		self.set_temperature(np.ones(1) * 900.0) #in Kelvin
@@ -557,6 +559,12 @@ class pide(object):
 		self.melt_composition_data = read_csv(os.path.join(self.core_path, 'eos', 'melt_composition.csv'), delim = ',')
 		self.melt_composition_names = np.array(self.melt_composition_data)[:,0]
 		self.melt_composition_names = self.melt_composition_names[1:]
+		
+	def _read_average_melt_composition(self):
+	
+		self.average_melt_composition_data = read_csv(os.path.join(self.core_path, 'geochem', 'average_melt_compositions_GEOROC.csv'), delim = ',')
+		self.average_melt_composition_names = np.array(self.average_melt_composition_data)[:,1]
+		self.average_melt_composition_names = list(self.average_melt_composition_names[1:])
 				
 	def set_parameter(self, param_name, value):
 	
@@ -2515,6 +2523,7 @@ class pide(object):
 				- water : float or array-like, in ppm
 				- na2o : float or array-like, in wt%
 				- k2o : float or array-like, in wt%
+				- sio2: float or array-like, in wt%
 	
 		Examples
 		--------
@@ -3005,7 +3014,7 @@ class pide(object):
 				[74.64, 14.83, 0.18, 0.96, 0.74, 4.49, 3.97, 0.05, 0, 0.14, 0, 0]
 			])
 		"""
-
+		
 		if default == False:
 			
 			self.melt_composition_method = 'Input'
@@ -3015,7 +3024,7 @@ class pide(object):
 			self.melt_comp = _get_melt_composition_from_lib(lib_composition)
 		
 		if check_type(comp) == 'array':
-			if isinstance(comp, (list, tuple)) and all(isinstance(item, (list, tuple)) for item in comp):
+			if isinstance(comp, (list, tuple, np.ndarray)) and all(isinstance(item, (list, tuple, np.ndarray)) for item in comp):
 				if len(comp) != len(self.T):
 					raise ValueError('The entered melt composition is in a wrong format. It has to be [sio2,al2o3,mgo,feo,cao,na2o,k2o,tio2,mno,p2o5,cr2o3] x temperature array')
 				else:
@@ -3710,20 +3719,19 @@ class pide(object):
 		if self.melt_composition_data[idx_melt_comp+1][1] == 'Direct':
 			melt_comp = np.array(self.melt_composition_data[idx_melt_comp+1])[2:-1]
 		elif self.melt_composition_data[idx_melt_comp+1][1] == 'TAS':
+			#getting it from the TAS diagram.
 			try:
 				self.na2o_melt
 				self.sio2_melt
 				self.k2o_melt
-				comp_lib = _estimate_composition_pyrolite(sio2=self.sio2_melt, na2o=self.na2o_melt, k2o=self.k2o_melt)
+				comp_lib = classify_tas_diagram(sio2=self.sio2_melt, na2o=self.na2o_melt, k2o=self.k2o_melt)
+				self.tas_class = comp_lib['field_codes']
+				melt_comp = []
+				for i in range(len(self.tas_class)):
+					idx_tas = self.average_melt_composition_names.index(self.tas_class[i])
+					melt_comp.append(np.array(self.average_melt_composition_data[idx_tas+1][2:-1], dtype = float))
 			except:
 				raise KeyError('The selected melt conductivity model requires you to enter Na2O, SiO2 and K2O content through set_melt_properties function.')
-		
-		#searching if variable is assigned other than water content
-		if 'Variable' in melt_comp:
-			self.idx_melt_var, = np.where(melt_comp == 'Variable')
-			melt_comp[self.idx_melt_var] = 0
-		else:
-			self.idx_melt_var = None
 		
 		melt_comp = np.array(melt_comp, dtype = float)
 
@@ -5199,12 +5207,10 @@ class pide(object):
 			
 				if self.melt_composition_method == 'Default':
 					
-					try:
-						self.melt_comp
-					except:
+					if self.melt_comp is None:
 						self.melt_comp = self._get_melt_composition(type = 'Default')
 						self.set_melt_composition(self.melt_comp, default = True)
-
+		
 					if interp_for_iter == False:
 
 						melt_comp_calc = self.melt_comp.copy()
@@ -5212,17 +5218,18 @@ class pide(object):
 
 						melt_comp_calc = np.array([self.melt_comp[sol_idx].copy() for _ in range(len(temp))])
 						
+						
 					
-					if np.mean(self.na2o_melt) == 0.0:
-						pass
-					else:
+					
+					"""
+					if np.mean(self.na2o_melt) != 0.0:
 						melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.na2o_melt, idx = 5,array = True)
-									
-					if np.mean(self.k2o_melt) == 0.0:
-						pass
-					else:
+					print(melt_comp_calc)
+					if np.mean(self.k2o_melt) != 0.0:
 						melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.k2o_melt, idx = 6,array = True)
-
+					print(melt_comp_calc)
+					"""
+					
 				elif self.melt_composition_method == 'Input':
 					if melt_comp_calc is None:
 						raise KeyError('You have to define melt composition first with the method: set_melt_composition.')
@@ -5231,10 +5238,30 @@ class pide(object):
 
 				melt_comp_calc = self.melt_comp.copy()
 			
+			"""
 			if np.mean(h2o_melt_local) != 0.0:
 				if sfd == False:
 					melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = h2o_melt_local*1e-4, idx = 11, array = True)
+			"""
+			ind_change = []
+			zipped_list = []
+	
+			if np.mean(self.sio2_melt) != 0.0:
+				ind_change.append(0)
+				zipped_list.append(self.sio2_melt)
+			if np.mean(self.na2o_melt) != 0.0:
+				ind_change.append(5)
+				zipped_list.append(self.na2o_melt)
+			if np.mean(self.k2o_melt) != 0.0:
+				ind_change.append(6)
+				zipped_list.append(self.k2o_melt)
+			if np.mean(h2o_melt_local) != 0.0:
+				ind_change.append(11)
+				zipped_list.append(h2o_melt_local*1e-4)
 				
+			if len(ind_change) > 0:
+				melt_comp_calc = modify_melt_composition(arr = melt_comp_calc, indices=ind_change, new_values=[list(x) for x in zip(zipped_list)])
+
 			try:
 				self.dens_melt_fluid
 			except:
@@ -5269,7 +5296,7 @@ class pide(object):
 				
 				#to avoid redundant re-calculation with iterative inversion things.
 				if self.dens_melt_fluid[idx_node] == 0.0:
-				
+
 					self.dens_melt_fluid[idx_node], self.vp_melt_fluid[idx_node], self.K_melt_fluid[idx_node] = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp[idx_node], P = pres[idx_node], sio2 = melt_comp_calc[:,0][idx_node],
 					al2o3 = melt_comp_calc[:,1][idx_node],mgo = melt_comp_calc[:,2][idx_node],feo = melt_comp_calc[:,3][idx_node],cao = melt_comp_calc[:,4][idx_node],
 					na2o = melt_comp_calc[:,5][idx_node],k2o = melt_comp_calc[:,6][idx_node],tio2 = melt_comp_calc[:,7][idx_node],mno = melt_comp_calc[:,8][idx_node],p2o5 = melt_comp_calc[:,9][idx_node],

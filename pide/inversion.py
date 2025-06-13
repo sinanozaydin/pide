@@ -472,6 +472,10 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 					object.rock_frac_list[idx_t][index] = comp_list[idx_t]
 
 			water_solv = True
+			
+		elif sum(frac_bool) > 1:
+		
+			raise ValueError('The user cannot change more than 1 modal fraction value.')
 
 		#Executing the commands
 		exec(f'object.{param_name_1}[{str(index)}] = param_1_init')

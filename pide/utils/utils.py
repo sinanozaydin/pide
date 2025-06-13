@@ -243,9 +243,64 @@ def _comp_adjust_melts(sio2,na2o,k2o,comp_dict_rest):
 
 	return comp_adjusted
 	
-def _get_melt_composition_from_lib(lib_ref):
-
-	pass
+def modify_melt_composition(arr, indices, new_values):
+	"""
+	Modify specified indices of each sub-array with new values,
+	and scale remaining elements proportionally to maintain sum of 100.
+	
+	Parameters:
+	arr: list of lists - the input array of arrays
+	indices: list of int - indices to modify (0-based indexing)
+	new_values: list of lists OR list of float - new values to insert at those indices
+				If list of lists: each sub-list corresponds to new values for each sub-array
+				If list of float: same values applied to all sub-arrays
+	
+	Returns:
+	list of lists - modified array where each sub-array sums to 100
+	"""
+	result = []
+	
+	# Check if new_values is a list of lists or a single list
+	if isinstance(new_values[0], (list, tuple)):
+		# Different values for each sub-array
+		values_per_subarray = new_values
+	else:
+		# Same values for all sub-arrays
+		values_per_subarray = [new_values] * len(arr)
+	
+	for sub_array_idx, sub_array in enumerate(arr):
+		# Create a copy to avoid modifying original
+		modified_sub = sub_array.copy()
+		
+		# Get the new values for this specific sub-array
+		current_new_values = values_per_subarray[sub_array_idx]
+		
+		# Calculate current sum of elements that will remain unchanged
+		current_remaining_sum = sum(sub_array[i] for i in range(len(sub_array)) if i not in indices)
+		
+		# Calculate target sum for remaining elements
+		new_values_sum = sum(current_new_values)
+		target_remaining_sum = 100 - new_values_sum
+		
+		# Calculate scaling factor for remaining elements
+		if current_remaining_sum > 0:  # Avoid division by zero
+			scaling_factor = target_remaining_sum / current_remaining_sum
+		else:
+			scaling_factor = 1  # If all remaining elements are 0, no scaling needed
+		
+		# Apply changes
+		for i in range(len(modified_sub)):
+			if i in indices:
+				# Set new value
+				idx_position = indices.index(i)
+				modified_sub[i] = current_new_values[idx_position]
+			else:
+				# Scale existing value proportionally
+				modified_sub[i] *= scaling_factor
+		
+		result.append(modified_sub)
+	
+	return np.array(result)
 	
 class text_color:
    
