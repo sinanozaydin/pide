@@ -138,6 +138,7 @@ class pide(object):
 		self.set_mantle_water_partitions()
 		self.set_mantle_transition_zone_water_partitions()
 		self.set_mantle_water_solubility()
+		self.set_melt_solubility()
 		self.set_grain_boundary_water_partitioning()
 		self.set_grain_boundary_H_Diffusion()
 		self.melt_comp = None
@@ -172,6 +173,7 @@ class pide(object):
 		self.set_melt_fluid_frac(self.melt_fluid_mass_frac,reval = True)
 		self.set_melt_properties(reval = True)
 		self.set_fluid_properties(reval = True)
+		self.set_melt_solubility(reval = True)
 		
 		#arrays with mineral specific arrays
 		if pide.solid_phase_method == 2:
@@ -2475,6 +2477,39 @@ class pide(object):
 		else:
 			raise ValueError("You have to enter 'melt' or 'fluid' as strings.")
 		
+	def set_melt_solubility(self, reval = False,**kwargs):
+
+		"""
+		Set melt solubility parameters for H2O and CO2.
+
+		This method configures the solubility limits for water and carbon dioxide
+		in the silicate melt using keyword arguments. Default values are applied
+		if specific parameters are not provided.
+
+		Parameters
+		----------
+		**kwargs : dict
+			Keyword arguments for solubility parameters.
+			
+		h2o : float, optional
+			Water solubility in the melt in weight percent. Default is 30 wt%.
+			
+		co2 : float, optional
+			Carbon dioxide solubility in the melt in parts per million. 
+			Default is 30000 ppm (3e4).
+
+		Returns
+		-------
+		None
+			This method modifies instance attributes in-place.
+		"""
+		if reval == False:
+			self.h2o_melt_sol = array_modifier(input = kwargs.pop('h2o', 3e4), array = self.T, varname = 'h2o_melt_sol')
+			self.co2_melt_sol = array_modifier(input = kwargs.pop('co2', 3e4), array = self.T, varname = 'co2_melt_sol')
+		elif reval == True:
+			self.h2o_melt_sol = array_modifier(input = self.h2o_melt_sol, array = self.T, varname = 'h2o_melt_sol')
+			self.co2_melt_sol = array_modifier(input = self.co2_melt_sol, array = self.T, varname = 'co2_melt_sol')
+			
 	def set_solid_phase_method(self,mode):
 	
 		"""
@@ -2590,7 +2625,7 @@ class pide(object):
 		if reval == False:
 			self.salinity_fluid = array_modifier(input = kwargs.pop('salinity', 0), array = self.T, varname = 'salinity_fluid') 
 		elif reval == True:
-			self.salinity_fluid = array_modifier(input = kwargs.pop(self.salinity_fluid, 0), array = self.T, varname = 'salinity_fluid')
+			self.salinity_fluid = array_modifier(input = self.salinity_fluid, array = self.T, varname = 'salinity_fluid')
 		
 		if len(np.flatnonzero(self.salinity_fluid < 0)) != 0:
 		
@@ -5210,7 +5245,7 @@ class pide(object):
 					if self.melt_comp is None:
 						self.melt_comp = self._get_melt_composition(type = 'Default')
 						self.set_melt_composition(self.melt_comp, default = True)
-		
+
 					if interp_for_iter == False:
 
 						melt_comp_calc = self.melt_comp.copy()
@@ -5218,9 +5253,6 @@ class pide(object):
 
 						melt_comp_calc = np.array([self.melt_comp[sol_idx].copy() for _ in range(len(temp))])
 						
-						
-					
-					
 					"""
 					if np.mean(self.na2o_melt) != 0.0:
 						melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.na2o_melt, idx = 5,array = True)
@@ -5257,10 +5289,15 @@ class pide(object):
 				zipped_list.append(self.k2o_melt)
 			if np.mean(h2o_melt_local) != 0.0:
 				ind_change.append(11)
-				zipped_list.append(h2o_melt_local*1e-4)
-				
+				zipped_list.append(h2o_melt_local*1e-4)	
+
 			if len(ind_change) > 0:
-				melt_comp_calc = modify_melt_composition(arr = melt_comp_calc, indices=ind_change, new_values=[list(x) for x in zip(zipped_list)])
+				transposed_list = [list(row) for row in zip(*zipped_list)]
+				
+				if method == 'array':
+					melt_comp_calc = modify_melt_composition(composition = melt_comp_calc, indexes_to_change=ind_change, new_values=transposed_list)
+				else:
+					melt_comp_calc[idx_node] = modify_melt_composition(composition = melt_comp_calc[idx_node], indexes_to_change=ind_change, new_values=transposed_list[idx_node])
 
 			try:
 				self.dens_melt_fluid
@@ -5630,7 +5667,18 @@ class pide(object):
 					(self.garnet_frac_wt * self.d_melt_garnet)
 			
 			self.h2o_melt[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
-			
+
+			#checking melt solubility
+			if len(self.h2o_melt_sol) != len(self.T):
+				self.set_melt_solubility(reval = True)
+
+			#if anything above the melt solubility reduce it to melt water solubility
+			if sum(self.h2o_melt>self.h2o_melt_sol) > 0:
+				mask_m = self.h2o_melt>self.h2o_melt_sol
+				self.h2o_melt[mask_m] = self.h2o_melt_sol[mask_m]
+				self.bulk_water[mask_m] = self.h2o_melt[mask_m] *  (self.melt_fluid_mass_frac[mask_m] +\
+														 ((1.0 - self.melt_fluid_mass_frac[mask_m]) * self.d_per_melt[mask_m]))
+
 			#reassigning the zero mass frac melt layers using pre-mapped indexing array.
 			if idx_node == None:
 				self.h2o_melt[self.melt_fluid_mass_frac <= 0.0] = 0.0
@@ -6032,11 +6080,7 @@ class pide(object):
 		self.max_bulk_water = (self.max_rwd_wds_water * self.rwd_wds_frac_wt) +  (self.max_cpx_water * self.cpx_frac_wt) + (self.max_garnet_water * self.garnet_frac_wt) + (self.max_perov_water * self.perov_frac_wt)
 
 		return self.max_bulk_water
-		
-	def calculate_melt_solubilities(self):
-	
-		raise KeyError('This function cannot be used yet.')
-		
+				
 	def write_data(self,list_input,filename, header = None):
 	
 		"""

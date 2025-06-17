@@ -242,65 +242,107 @@ def _comp_adjust_melts(sio2,na2o,k2o,comp_dict_rest):
 				  result.x[6],result.x[7], 0.0]
 
 	return comp_adjusted
-	
-def modify_melt_composition(arr, indices, new_values):
+
+def modify_melt_composition(composition, indexes_to_change, new_values):
 	"""
-	Modify specified indices of each sub-array with new values,
-	and scale remaining elements proportionally to maintain sum of 100.
+	Adjust composition array(s) by changing specific values while maintaining sum = 100.
 	
 	Parameters:
-	arr: list of lists - the input array of arrays
-	indices: list of int - indices to modify (0-based indexing)
-	new_values: list of lists OR list of float - new values to insert at those indices
-				If list of lists: each sub-list corresponds to new values for each sub-array
-				If list of float: same values applied to all sub-arrays
+	composition: Can be either:
+		- Single composition: list/array of numbers
+		- Multiple compositions: list/array of lists/arrays
+	indexes_to_change: list of int - indexes of values to change (same for all compositions)
+	new_values: Can be either:
+		- For single composition: list of numbers
+		- For multiple compositions: list of lists (one per composition)
 	
 	Returns:
-	list of lists - modified array where each sub-array sums to 100
+	- For single composition: numpy array
+	- For multiple compositions: list of numpy arrays
 	"""
-	result = []
-	
-	# Check if new_values is a list of lists or a single list
-	if isinstance(new_values[0], (list, tuple)):
-		# Different values for each sub-array
-		values_per_subarray = new_values
+	# Detect if we have multiple compositions
+	if isinstance(composition[0], (list, np.ndarray)):
+		# Multiple compositions case
+		return adjust_composition_batch(composition, indexes_to_change, new_values)
 	else:
-		# Same values for all sub-arrays
-		values_per_subarray = [new_values] * len(arr)
+		# Single composition case
+		return adjust_single_composition(composition, indexes_to_change, new_values)
+
+def adjust_single_composition(composition, indexes_to_change, new_values):
+	"""
+	Adjust a single composition array by changing specific values while maintaining sum = 100.
 	
-	for sub_array_idx, sub_array in enumerate(arr):
-		# Create a copy to avoid modifying original
-		modified_sub = sub_array.copy()
-		
-		# Get the new values for this specific sub-array
-		current_new_values = values_per_subarray[sub_array_idx]
-		
-		# Calculate current sum of elements that will remain unchanged
-		current_remaining_sum = sum(sub_array[i] for i in range(len(sub_array)) if i not in indices)
-		
-		# Calculate target sum for remaining elements
-		new_values_sum = sum(current_new_values)
-		target_remaining_sum = 100 - new_values_sum
-		
-		# Calculate scaling factor for remaining elements
-		if current_remaining_sum > 0:  # Avoid division by zero
-			scaling_factor = target_remaining_sum / current_remaining_sum
-		else:
-			scaling_factor = 1  # If all remaining elements are 0, no scaling needed
-		
-		# Apply changes
-		for i in range(len(modified_sub)):
-			if i in indices:
-				# Set new value
-				idx_position = indices.index(i)
-				modified_sub[i] = current_new_values[idx_position]
-			else:
-				# Scale existing value proportionally
-				modified_sub[i] *= scaling_factor
-		
-		result.append(modified_sub)
+	Parameters:
+	composition: list or numpy array - the original composition (should sum to ~100)
+	indexes_to_change: list of int - indexes of values to change
+	new_values: list of float - new values for the specified indexes
 	
-	return np.array(result)
+	Returns:
+	numpy array - adjusted composition that sums to 100
+	"""
+	# Convert to numpy array for easier manipulation
+	comp = np.array(composition, dtype=float)
+	
+	# Validate inputs
+	if len(indexes_to_change) != len(new_values):
+		raise ValueError("Number of indexes must match number of new values")
+	
+	if any(idx >= len(comp) for idx in indexes_to_change):
+		raise ValueError("Index out of range")
+	
+	# Calculate sum of new fixed values
+	sum_new_fixed = sum(new_values)
+	
+	if sum_new_fixed >= 100:
+		raise ValueError("Sum of new fixed values must be less than 100")
+	
+	# Create a mask for values that will NOT be changed
+	mask = np.ones(len(comp), dtype=bool)
+	mask[indexes_to_change] = False
+	
+	# Get current sum of values that will remain flexible
+	current_flexible_sum = comp[mask].sum()
+	
+	# Calculate target sum for flexible values
+	target_flexible_sum = 100 - sum_new_fixed
+	
+	# Handle edge case where no flexible values remain
+	if current_flexible_sum == 0:
+		if target_flexible_sum > 0:
+			raise ValueError("Cannot redistribute to zero-sum flexible values")
+	else:
+		# Calculate scaling factor for flexible values
+		scaling_factor = target_flexible_sum / current_flexible_sum
+		
+		# Apply scaling to flexible values
+		comp[mask] *= scaling_factor
+	
+	# Set the new fixed values
+	for idx, new_val in zip(indexes_to_change, new_values):
+		comp[idx] = new_val
+	
+	return comp
+
+def adjust_composition_batch(compositions, indexes_to_change, new_values_per_composition):
+	"""
+	Adjust multiple composition arrays.
+	
+	Parameters:
+	compositions: list of lists/arrays - multiple compositions
+	indexes_to_change: list of int - indexes to change (same for all compositions)
+	new_values_per_composition: list of lists - new values for each composition
+	
+	Returns:
+	list of numpy arrays - adjusted compositions
+	"""
+	if len(compositions) != len(new_values_per_composition):
+		raise ValueError("Number of compositions must match number of new value arrays")
+	
+	results = []
+	for i, comp in enumerate(compositions):
+		adjusted = adjust_single_composition(comp, indexes_to_change, new_values_per_composition[i])
+		results.append(adjusted)
+	return results
 	
 class text_color:
    
