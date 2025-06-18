@@ -3281,10 +3281,17 @@ class pide(object):
 			idx_node = sol_idx
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
+			
+		try:
+			cond_fluids
+			if len(cond_fluids) != len(self.T):
+				cond_fluids = np.zeros(len(self.T))
+		except:
+			cond_fluids = np.zeros(len(self.T))
 
 		if pide.type[0][pide.fluid_cond_selection] == '0':
 
-			cond_fluids = self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_fluids[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[0][pide.fluid_cond_selection],
 								   E = self.h_i[0][pide.fluid_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[0][pide.fluid_cond_selection],
@@ -3292,7 +3299,7 @@ class pide(object):
 			
 		elif pide.type[0][pide.fluid_cond_selection] == '1':
 
-			cond_fluids =  self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_fluids[idx_node] =  self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[0][pide.fluid_cond_selection],
 								   E = self.h_i[0][pide.fluid_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[0][pide.fluid_cond_selection],
@@ -3310,12 +3317,9 @@ class pide(object):
 
 				fluids_odd_function = pide.name[0][pide.fluid_cond_selection]
 
-			cond_fluids = eval(fluids_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], salinity = self.salinity_fluid[idx_node], method = method)')
+			cond_fluids[idx_node] = eval(fluids_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], salinity = self.salinity_fluid[idx_node], method = method)')
 	
-		if method == 'array':
-			return cond_fluids[0]
-		else:
-			return cond_fluids
+		return cond_fluids
 
 	def calculate_melt_conductivity(self, method = 'array', sol_idx = None):
 	
@@ -3355,10 +3359,17 @@ class pide(object):
 		else:
 			
 			water_corr_factor = 1.0
+			
+		try:
+			cond_melt
+			if len(cond_melt) != len(self.T):
+				cond_melt = np.zeros(len(self.T))
+		except:
+			cond_melt = np.zeros(len(self.T))
 
 		if pide.type[1][pide.melt_cond_selection] == '0':
 
-			cond_melt = self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_melt[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[1][pide.melt_cond_selection],
 								   E = self.h_i[1][pide.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][pide.melt_cond_selection],
@@ -3366,7 +3377,7 @@ class pide(object):
 			
 		elif pide.type[1][pide.melt_cond_selection] == '1':
 
-			cond_melt = self.calculate_arrhenian_single(T = self.T[idx_node],
+			cond_melt[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_i[1][pide.melt_cond_selection],
 								   E = self.h_i[1][pide.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][pide.melt_cond_selection],
@@ -3385,13 +3396,10 @@ class pide(object):
 
 				melt_odd_function = pide.name[1][pide.melt_cond_selection]
 			
-			cond_melt = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
+			cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
 			'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], Melt_SiO2 = self.sio2_melt[idx_node], method = method)')
 		
-		if method == 'array':
-			return cond_melt[0]
-		else:
-			return cond_melt
+		return cond_melt
 
 	def calculate_rock_conductivity(self, rock_idx = None, method = 'array', **kwargs):
 	

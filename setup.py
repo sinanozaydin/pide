@@ -15,7 +15,8 @@ setup(
             'pide_src/cond_models/*csv',
             'pide_src/cond_models/minerals/*csv',
             'pide_src/cond_models/rocks/*csv',
-            'pide_src/eos/*csv'
+            'pide_src/eos/*csv',
+            'pide_src/geochem/*csv'
         ],
     },
     description='A library for petrophysical interpretations of geophysical models.',
@@ -36,7 +37,7 @@ setup(
         'netCDF4',
         'psutil',
         'burnman',
-        'CoolProp'
+        'CoolProp',
     ],
     keywords = ['petrophysics', 'geodynamic modelling', 'magnetotelluric', 'electrical conductivity', 'seismic velocity']
 )

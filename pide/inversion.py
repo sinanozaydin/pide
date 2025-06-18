@@ -362,7 +362,8 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]
-
+			
+	print(text_color.CYAN + 'Inversion process has ended..' + text_color.END)
 	#Block to assign the values
 	if comp_solv == True:
 

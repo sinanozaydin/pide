@@ -134,6 +134,7 @@ def Ni2011_WetBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, m
 		for i in range(len(T)):
 			if T[i] > 1146.8:
 				cond[i] = 10**(2.172 - ((860.82 - (204.46*np.sqrt(Melt_H2O[i]))) / (T[i] - 1146.8)))
+
 			else:
 				cond[i] = np.nan
 	else:
@@ -142,7 +143,8 @@ def Ni2011_WetBasalt(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, m
 			cond = 10**(2.172 - ((860.82 - (204.46*np.sqrt(Melt_H2O))) / (T - 1146.8)))
 		else:
 			cond = np.nan
-
+	# import ipdb
+	# ipdb.set_trace()
 	return cond
 
 
@@ -310,7 +312,6 @@ def Poe2008_Phonotephrite_Average(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O,
 		
 	return cond
 	
-	
 def Poe2012_WetPanteleriteGlass(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 	
 	if np.mean(Melt_H2O) == 0.0:
@@ -319,7 +320,7 @@ def Poe2012_WetPanteleriteGlass(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, M
 	sigma_cond = 1260.0
 	E = 96485.3
 
-	cond = sigma_cond*(Melt_H2O^(1.25))*np.exp((-0.812*E)/(R_const*T))
+	cond = sigma_cond*(Melt_H2O**(1.25))*np.exp((-0.812*E)/(R_const*T))
 	
 	return cond
 	

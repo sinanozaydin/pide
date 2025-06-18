@@ -75,7 +75,7 @@ def Bannard_1975_NaCl_H2O(T,salinity,P = None, method = None):
 	delta_5 = (phi_51*salinity**3) + (phi_52*salinity**2) + (phi_53*salinity) + phi_54
 	
 	cond = (delta_1 * T**4) + (delta_2 * T**3) + (delta_3 * T**2) + (delta_4 * T) + delta_5
-	
+
 	return cond
 	
 def Sinmyo2017(T, P, salinity, method):
@@ -154,7 +154,6 @@ def Sinmyo2017(T, P, salinity, method):
 			else:
 				raise ValueError('The salinity value cannot be less than 0.0')
 				
-
 	return cond
 
 def Guo2019(T, P, salinity, method):
@@ -217,7 +216,6 @@ def Guo2019(T, P, salinity, method):
 		else:
 			cond = 10**(A + (B/T) + (D * (np.log10(rho_water))) + np.log10(lambda_0))
 		
-	
 	return cond
 
 def Manthilake2021_Aqueous(T, P, salinity, method):
