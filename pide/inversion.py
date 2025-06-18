@@ -19,17 +19,21 @@ def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 
 def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, results_list = None,
 	init_guess = None, transition_zone = False, water_solv=False, comp_solv=False, melt_solv=False, comp_type = None, comp_index = None, low_value_threshold = None,
-	sfd = False):
+	sfd = False,init_guess_preiter = True):
 
 	"""Simple line-search solver to solve conductivities. This function should not be called directly.
 	"""
 	
-	if results_list is not None:
-		if len(results_list) == 0:
-			init_guess = None
-		else:
-			init_guess = results_list[-1]
-	
+	if init_guess_preiter == True:
+		if results_list is not None:
+			if len(results_list) == 0:
+				init_guess = None
+			else:
+				init_guess = results_list[-1]
+				
+	else:
+		init_guess = None
+
 	param_search_array = np.arange(lowerlimit[index], upperlimit[index] , search_increment)
 
 	if len(param_search_array) == 1:
@@ -253,6 +257,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 
 	low_value_threshold = kwargs.pop('low_value_threshold', None)
 	melt_solv = kwargs.pop('melt_solv', False)
+	init_guess_preiter = kwargs.pop('init_guess_preiter', True)
 
 	object.revalue_arrays()
 	
@@ -328,7 +333,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 			process_item_partial = partial(_solv_cond_, cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list = shared_results, init_guess = None,
 			transition_zone = transition_zone, water_solv=water_solv,comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index,
-			low_value_threshold = low_value_threshold,sfd = simplify_fluid_density)
+			low_value_threshold = low_value_threshold,sfd = simplify_fluid_density,init_guess_preiter = init_guess_preiter)
 
 			c = pool.map(process_item_partial, index_list)
 
@@ -343,14 +348,17 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 		for idx in range(0,len(index_list)):
 
 			if idx > 0:
-				init_guess_ = c_list[idx-1]
+				if init_guess_preiter == False:
+					init_guess_ = None
+				else:
+					init_guess_ = c_list[idx-1]
 			else:
 				init_guess_ = None
-			
+
 			c = _solv_cond_(index = index_list[idx], cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
 				lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list= None, init_guess = init_guess_, transition_zone = transition_zone,
 				water_solv=water_solv, comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold,
-				sfd = simplify_fluid_density)
+				sfd = simplify_fluid_density, init_guess_preiter = init_guess_preiter)
 			
 			c_list[idx] = c[0]
 			residual_list[idx] = c[1]

@@ -5253,14 +5253,6 @@ class pide(object):
 
 						melt_comp_calc = np.array([self.melt_comp[sol_idx].copy() for _ in range(len(temp))])
 						
-					"""
-					if np.mean(self.na2o_melt) != 0.0:
-						melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.na2o_melt, idx = 5,array = True)
-					print(melt_comp_calc)
-					if np.mean(self.k2o_melt) != 0.0:
-						melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = self.k2o_melt, idx = 6,array = True)
-					print(melt_comp_calc)
-					"""
 					
 				elif self.melt_composition_method == 'Input':
 					if melt_comp_calc is None:
@@ -5270,14 +5262,9 @@ class pide(object):
 
 				melt_comp_calc = self.melt_comp.copy()
 			
-			"""
-			if np.mean(h2o_melt_local) != 0.0:
-				if sfd == False:
-					melt_comp_calc = _comp_adjust_idx_based(_comp_list = melt_comp_calc, comp_alien = h2o_melt_local*1e-4, idx = 11, array = True)
-			"""
 			ind_change = []
 			zipped_list = []
-	
+			
 			if np.mean(self.sio2_melt) != 0.0:
 				ind_change.append(0)
 				zipped_list.append(self.sio2_melt)
@@ -5309,6 +5296,7 @@ class pide(object):
 			if method == 'array':
 				
 				if interp_for_iter == False:
+					
 					self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp, P = pres, sio2 = melt_comp_calc[:,0],
 					al2o3 = melt_comp_calc[:,1],mgo = melt_comp_calc[:,2],feo = melt_comp_calc[:,3],cao = melt_comp_calc[:,4],
 					na2o = melt_comp_calc[:,5],k2o = melt_comp_calc[:,6],tio2 = melt_comp_calc[:,7],mno = melt_comp_calc[:,8],p2o5 = melt_comp_calc[:,9],
@@ -5350,7 +5338,7 @@ class pide(object):
 						self.vp_melt_fluid_unchanged = self.vp_melt_fluid[idx_node].copy()
 						self.K_melt_fluid[idx_node] = self.interp_1d_k_melt_fluid(h2o_melt_local[idx_node])
 						self.K_melt_fluid_unchanged = self.K_melt_fluid[idx_node].copy()
-						
+
 					except:
 					
 						if sfd == False:
@@ -5667,18 +5655,7 @@ class pide(object):
 					(self.garnet_frac_wt * self.d_melt_garnet)
 			
 			self.h2o_melt[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
-
-			#checking melt solubility
-			if len(self.h2o_melt_sol) != len(self.T):
-				self.set_melt_solubility(reval = True)
-
-			#if anything above the melt solubility reduce it to melt water solubility
-			if sum(self.h2o_melt>self.h2o_melt_sol) > 0:
-				mask_m = self.h2o_melt>self.h2o_melt_sol
-				self.h2o_melt[mask_m] = self.h2o_melt_sol[mask_m]
-				self.bulk_water[mask_m] = self.h2o_melt[mask_m] *  (self.melt_fluid_mass_frac[mask_m] +\
-														 ((1.0 - self.melt_fluid_mass_frac[mask_m]) * self.d_per_melt[mask_m]))
-
+			
 			#reassigning the zero mass frac melt layers using pre-mapped indexing array.
 			if idx_node == None:
 				self.h2o_melt[self.melt_fluid_mass_frac <= 0.0] = 0.0
