@@ -48,10 +48,9 @@ class test_model_functions(unittest.TestCase):
 		
 		material_object_list = [mantleLithosphere]
 		material_skip_list = [None]
-		
 		model_object = Model(material_list = material_object_list, material_array = material_array, T = temp_array, P = pressure_array, model_type = 'underworld_3d', melt = melt_array,
 		material_node_skip_rate_list = material_skip_list)
-		cond_model = model_object.calculate_model(type = "conductivity",num_cpu=2)
+		cond_model = model_object.calculate_model(type = "conductivity",num_cpu=1)
 		
 		assert np.allclose(cond_model,np.array(self.check_model_cond),atol = self.atol)
 		

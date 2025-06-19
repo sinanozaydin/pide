@@ -23,7 +23,7 @@ class test_viscosity(unittest.TestCase):
 	def test_viscosity_functions(self):
 		
 		rheol_obj = olivine_rheology(T = self.temp,P = self.pres,water = self.ol_water, xFe = 0.1)
-		stress_input = rheol_obj.Stress_from_grainSize_vanderWAL1977(grain_size = 1) 
+		stress_input = rheol_obj.Stress_from_grainSize_vanderWAL1993(grain_size = 1) 
 		
 		diff_strain = rheol_obj.Hirth_Kohlstedt_2003_diff_fugacity(gr_sz = 1,stress = stress_input, melt = 0.0, fugacity_model= 'Zhao2004', calibration_model="Withers2012")
 		disl_strain = rheol_obj.Hirth_Kohlstedt_2003_dislocation_fugacity(stress = stress_input, melt = 0.0, fugacity_model= 'Zhao2004', calibration_model="Withers2012")

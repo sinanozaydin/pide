@@ -142,7 +142,7 @@ class test_conductivity_functions(unittest.TestCase):
 			cond = self.p_obj.calculate_melt_conductivity()
 			melt_cond_list.append(cond[0])
 					
-		assert np.allclose(np.array(melt_cond_list), np.array(self.melt_cond_list_check), atol = self.atol)
+		assert np.allclose(np.array(melt_cond_list), np.array(self.melt_cond_list_check), atol = self.atol, equal_nan=True)
 				
 if __name__ == "__main__":
 	

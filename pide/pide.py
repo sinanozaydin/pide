@@ -81,7 +81,14 @@ class pide(object):
 	def __init__(self, core_path = core_path_ext):
 	
 		self.core_path = core_path
-				
+		
+		self._read_cond_models()
+		self._read_params()
+		self._read_water_part()
+		self._read_mineral_water_solubility()
+		self._read_water_calib()
+		self._read_melt_composition_files()
+		self._read_average_melt_composition()
 		self._form_object()
 		
 	def _form_object(self):
@@ -100,13 +107,6 @@ class pide(object):
 		self.melt_composition_method = 'Default'
 		self.melt_comp_manual = False
 		
-		self._read_cond_models()
-		self._read_params()
-		self._read_water_part()
-		self._read_mineral_water_solubility()
-		self._read_water_calib()
-		self._read_melt_composition_files()
-		self._read_average_melt_composition()
 		self.object_formed = False
 		#setting up default values for the pide object
 		self.set_temperature(np.ones(1) * 900.0) #in Kelvin
@@ -683,6 +683,7 @@ class pide(object):
 		#Calculation of equilibrium of water with other minerals are not constrained.
 		wt_all = (self.ol_frac + self.opx_frac + self.cpx_frac + self.garnet_frac + self.plag_frac +\
 		self.kfelds_frac + self.rwd_wds_frac + self.perov_frac)
+
 		self.ol_frac_wt = self.ol_frac / wt_all
 		self.opx_frac_wt = self.opx_frac / wt_all
 		self.cpx_frac_wt = self.cpx_frac / wt_all
@@ -3398,7 +3399,7 @@ class pide(object):
 			
 			cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
 			'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], Melt_SiO2 = self.sio2_melt[idx_node], method = method)')
-		
+
 		return cond_melt
 
 	def calculate_rock_conductivity(self, rock_idx = None, method = 'array', **kwargs):
@@ -4517,26 +4518,15 @@ class pide(object):
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
 			
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
-		
-			try:
-				self.melt_fluid_cond
-			except:
-				self.melt_fluid_cond = np.zeros(len(self.T))
-			
+					
 			self.calculate_density_solid()
 			self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
 			
 			if pide.fluid_or_melt_method == 0:
-				if method == 'index':
-					self.melt_fluid_cond[index] = self.calculate_fluids_conductivity(method = method, sol_idx = index)
-				else:
-					self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
+				self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
 			elif pide.fluid_or_melt_method == 1:
-				if method == 'index':
-					self.melt_fluid_cond[index] = self.calculate_melt_conductivity(method = method, sol_idx = index)
-				else:
-					self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
-				
+				self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
+		
 		else:
 		
 			self.melt_fluid_cond = np.zeros(len(self.T))

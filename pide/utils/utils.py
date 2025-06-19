@@ -294,8 +294,8 @@ def adjust_single_composition(composition, indexes_to_change, new_values):
 	sum_new_fixed = sum(new_values)
 	
 	if sum_new_fixed >= 100:
-		raise ValueError("Components of the melt composition makes up more than 100 percent. This is usually happens"+\
-		"when user defines melt water content more than 1e5 ppm (100%wt.). Try to set a lower bound for these values.")
+		raise ValueError("Components of the melt composition makes up more than 100 percent. This usually occurs"+\
+		"when a user accidentally sets the melt water content more than 1e5 ppm (100%wt.). Try to set a lower bound for bulk water content in your inversion.")
 	
 	# Create a mask for values that will NOT be changed
 	mask = np.ones(len(comp), dtype=bool)

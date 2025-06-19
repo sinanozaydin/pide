@@ -74,7 +74,7 @@ def run_model(index_list, material, pide_object, t_array, p_array, melt_array, t
 
 	#adjusting material parameters for the pide_object
 	if material.calculation_type == 'mineral':
-	
+		
 		pide_object.set_composition_solid_mineral(ol = material.composition['ol'],
 		opx = material.composition['opx'],
 		cpx = material.composition['cpx'],

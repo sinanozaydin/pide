@@ -96,7 +96,6 @@ class test_inversion_and_geotherm(unittest.TestCase):
 		30.9375, 30.46875, 29.53125, 28.59375, 28.125, 27.1875, 26.25, 25.78125, 24.84375, 24.375,
 		23.4375, 22.96875, 22.5, 21.5625]
 
-	
 	def test_1_geotherm(self):
 	
 		from pide.geodyn.geotherm import calculate_hasterok2011_geotherm
