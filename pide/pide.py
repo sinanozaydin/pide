@@ -3009,11 +3009,6 @@ class pide(object):
 			pide.other_seis_selection = kwargs.pop('other', "fo")
 			self.seis_property_overwrite[15] = True
 
-		pide.minerals_seis_selections = [pide.quartz_seis_selection, pide.plag_seis_selection, pide.amp_seis_selection, pide.kfelds_seis_selection, pide.opx_seis_selection,
-				   pide.cpx_seis_selection, pide.mica_seis_selection, pide.garnet_seis_selection, pide.sulphide_seis_selection,
-				   pide.graphite_seis_selection, pide.ol_seis_selection, pide.sp_seis_selection, pide.rwd_wds_seis_selection, pide.perov_seis_selection,
-				   pide.mixture_seis_selection, pide.other_seis_selection]
-				   
 	def set_melt_composition(self, comp ,from_lib = False,lib_composition = 'Basalt',default = False):
 
 		"""
