@@ -33,8 +33,8 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, accepte
 				
 	else:
 		init_guess = None
-
-	search_increment = (upperlimit[index] - lowerlimit[index]) / 4.0
+	
+	search_increment = (upperlimit[index] - lowerlimit[index]) / 8.0
 	param_search_array = np.arange(lowerlimit[index], upperlimit[index] , search_increment)
 		
 	restart = True
