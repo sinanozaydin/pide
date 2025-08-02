@@ -381,8 +381,11 @@ def create_ModEM_fwd_file(file_out, input_rho, station_location_arrays = None, i
 		
 	file_name = Path(input_rho).name[:-4]
 	
-	rho, mesh_centers_x_array, mesh_centers_y_array, z_mesh_center = read_ModEM_rho(rho_file_path=input_rho)
-	
+	rho, rho_dict = read_ModEM_rho(rho_file_path=input_rho)
+
+	mesh_centers_x_array = rho_dict['mesh_centers_x_array']
+	mesh_centers_y_array = rho_dict['mesh_centers_y_array']
+
 	#finding the unique grid locations
 	mesh_x_uniq = np.unique(mesh_centers_x_array)
 	mesh_y_uniq = np.unique(mesh_centers_y_array)
@@ -542,8 +545,21 @@ def get_station_elevation_ModEM_rho(input_rho, station_location_arrays = None, a
 		depth_sol.append(z_depth[idx_z])
 			
 	return (station_location_arrays[0]*1e-3,station_location_arrays[1]*1e-3,np.array(depth_sol)*1e-3)
+
+def _add_gausian_noise(data, noise_percentage):
+	
+	"""
+	Add Gaussian noise proportional to each data point's value
+	
+	Args:
+		data: array of data values
+		noise_percentage: percentage of noise (e.g., 5 for 5%)
+	"""
+	noise_std = np.abs(data) * (noise_percentage / 100)
+	noise = np.random.normal(0, noise_std)
+	return data + noise
 		
-def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_skip = None, station_offset = None, station_selection_list = None):
+def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_skip = None, station_offset = None, gaussian_noise_error = None, station_selection_list = None):
 
 	from pide.utils.utils import read_csv
 	
@@ -605,61 +621,125 @@ def reArrangeModEMdatfile(file_out, input_dat, err_function ,err_array, station_
 						
 						if err_function == "off-diagonal":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j+1][8]) + float(dat_data[j+1][9])*1j) * (float(dat_data[j+2][8]) + float(dat_data[j+2][9])*1j)) * err_array[0] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "diagonal":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * (float(dat_data[j+3][8]) + float(dat_data[j+3][9])*1j)) * err_array[0] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "independent":
 							err = '% .5E' %  ((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * err_array[0] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "X-based":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * (float(dat_data[j+1][8]) + float(dat_data[j+1][9])*1j)) * err_array[0] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 							
 					elif dat_data[j][7] == "ZXY":
 						
 						if err_function == "off-diagonal":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * (float(dat_data[j+1][8]) + float(dat_data[j+1][9])*1j)) * err_array[1] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "diagonal":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j) * (float(dat_data[j+2][8]) + float(dat_data[j+2][9])*1j)) * err_array[1] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "independent":
 							err = '% .5E' %  ((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * err_array[1] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "X-based":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j) * (float(dat_data[j][8]) + float(dat_data[j][9])*1j)) * err_array[1] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 							
 					elif dat_data[j][7] == "ZYX":
 						
 						if err_function == "off-diagonal":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j) * (float(dat_data[j][8]) + float(dat_data[j][9])*1j)) * err_array[2] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "diagonal":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j-2][8]) + float(dat_data[j-2][9])*1j) * (float(dat_data[j+1][8]) + float(dat_data[j+1][9])*1j)) * err_array[2] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "independent":
 							err = '% .5E' %  ((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * err_array[2] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "X-based":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j-2][8]) + float(dat_data[j-2][9])*1j) * (float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j)) * err_array[2] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 							
 					elif dat_data[j][7] == "ZYY":
 						
 						if err_function == "off-diagonal":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j-2][8]) + float(dat_data[j-2][9])*1j) * (float(dat_data[j-1][8]) + float(dat_data[j-1][9])*1j)) * err_array[3] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "diagonal":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j-3][8]) + float(dat_data[j-3][9])*1j) * (float(dat_data[j][8]) + float(dat_data[j][9])*1j)) * err_array[3] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "independent":
 							err = '% .5E' %  ((float(dat_data[j][8]) + float(dat_data[j][9])*1j) * err_array[3] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 						elif err_function == "X-based":
 							err = '% .5E' %  (np.sqrt((float(dat_data[j-3][8]) + float(dat_data[j-3][9])*1j) * (float(dat_data[j-2][8]) + float(dat_data[j-2][9])*1j)) * err_array[3] * 1e-2)
-							lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							if gaussian_noise_error is None:
+								lines.append('  '.join(dat_data[j][:10]) + "  " + err + '\n')
+							else:
+								data_noise = _add_gausian_noise([float(dat_data[j][8]),float(dat_data[j][9])],gaussian_noise_error)
+								lines.append('  '.join(dat_data[j][:8]) + "  " + '% .5E' % data_noise[0] + "  " + '% .5E' % data_noise[1] + err + '\n')
 			except IndexError:
 				pass
 		
