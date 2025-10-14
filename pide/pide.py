@@ -126,7 +126,7 @@ class pide(object):
 		self.set_param1_rock()
 		self.set_melt_or_fluid_mode(mode = 'melt') #default choice is melt - 1
 		self.set_solid_phase_method(mode = 'mineral') #default choice is mineral - 2
-		self.set_solid_phs_mix_method(method = 0)
+		self.set_solid_phs_mix_method(method = 1) #default choice H-S lower bounds
 		self.set_solid_melt_fluid_mix_method(method = 0)
 		self.set_melt_fluid_conductivity_choice()
 		self.set_melt_fluid_frac(0)
@@ -3009,7 +3009,7 @@ class pide(object):
 			pide.other_seis_selection = kwargs.pop('other', "fo")
 			self.seis_property_overwrite[15] = True
 
-	def set_melt_composition(self, comp ,from_lib = False,lib_composition = 'Basalt',default = False):
+	def set_melt_composition(self, comp ,default = False):
 
 		"""
 		Set the melt composition used for melt velocity and density calculations.
@@ -3049,10 +3049,6 @@ class pide(object):
 		if default == False:
 			
 			self.melt_composition_method = 'Input'
-
-		if from_lib == True:
-
-			self.melt_comp = _get_melt_composition_from_lib(lib_composition)
 		
 		if check_type(comp) == 'array':
 			if isinstance(comp, (list, tuple, np.ndarray)) and all(isinstance(item, (list, tuple, np.ndarray)) for item in comp):

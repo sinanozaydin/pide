@@ -196,6 +196,9 @@ class Material(object):
 				
 		self._mantle_water_part = None
 		self.mantle_water_part = kwargs.pop('mantle_water_part', {'opx_ol':0,'cpx_ol':0,'garnet_ol':0, 'ol_melt':0, 'opx_melt':0, 'cpx_melt':0,'garnet_melt':0})
+		
+		self._mantle_water_solubility = None
+		self.mantle_water_solubility = kwargs.pop('mantle_water_solubility', {'ol':4, 'opx':3, 'cpx':1, 'garnet':0})
 				
 		self.resistivity_medium = kwargs.pop('resistivity_medium', None)
 		self.vp_medium = kwargs.pop('vp_medium', None)
