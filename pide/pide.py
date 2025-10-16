@@ -5014,11 +5014,103 @@ class pide(object):
 				self.v_p[index] = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
 				self.v_s[index] = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
 				
+		if self.seismic_anelasticity == False:
+			v_anelasticity = 1
+			
+		else:
+			v_anelasticity = calculate_seismic_anelasticity(P,T,Qmode='Q4')
+			
 		if method == 'array':
-			return self.v_bulk, self.v_p, self.v_s
+			return self.v_bulk * v_anelasticity, self.v_p * v_anelasticity, self.v_s * v_anelasticity
 			
 		elif method == 'index':
 			return self.v_bulk[index], self.v_p[index], self.v_s[index]
+
+	def calculate_seismic_anelasticity(self, P, T, Qmode = 'Q4'):
+	
+		"""
+		Calculate the seismic anelasticity due to attenuation.
+	
+		Parameters
+		----------
+		method : 'Q4'
+			Mineral index corresponding to the mineral chosen.
+	
+		Returns
+		-------
+		float or array
+			v_anelasticity
+		"""
+		if Qmode = 'Q4':
+			A = 0.148
+			f = 0.02
+			omega = 2.*np.pi*f
+			a = 0.15
+			H = 500000.
+			V = 0.000020
+			#universal gas constant
+			R = 8.31446
+			E = H + P*V
+			Q = A*(omega**a)*np.exp((a*E)/R/T)
+			v_anelasticity = 1. - 2./Q/np.tan(a*np.pi/2.)
+		elif Qmode = 'R2020':
+			Ab=0.664
+			alpha=0.38
+			tauP=6.e-5
+			Teta=0.94
+			beta=0.
+			delphi=0.
+			gamma=5.
+			lambdaphi=0
+			TKr=1473.
+			Pr=1.5e9
+
+			mu0 = m[0]
+			dmudT = m[1]
+			dmudP = m[2]
+			eta0 = 10**m[3]
+			E = m[4]
+			Va = m[5]
+			dTdz = m[6]
+			sol50 = solidus_50km
+			# Might have some issue with the P unit(to check)
+			dep = P * 30
+			#Pg=(dep/30.)
+			#P=Pg*1.e9
+			TK=T+273.
+			Tsol=sol50+(dTdz*(dep-50.))
+			Tn=TK/(Tsol+273.)
+			# Initialise parameters for raw Vs
+			if Tn < Teta:
+				Aeta=1.
+			elif Tn >= Teta and Tn<1.:
+				Aeta=np.exp((-1.*((Tn-Teta)/(Tn-(Tn*Teta))))*np.log(gamma))
+			else:
+				Aeta=(1./gamma)*np.exp(-delphi)
+			eta=((eta0*np.exp((E/R)*(1./TK-1./TKr))*np.exp((Va/R)*(P/TK-Pr/TKr)))*Aeta)
+			Ju=1./(1.e9*(mu0+(dmudP*Pg)+(dmudT*T)))
+			
+			tauM=eta*Ju
+			tau=(3.*dep)/4.2
+			tauS=tau/(2*np.pi*tauM)
+			if Tn < 0.91:
+				Ap=0.01
+			elif Tn>=0.91 and Tn<0.96:
+				Ap=0.01+(0.4*(Tn-0.91))
+			elif Tn>=0.96 and Tn<1.:
+				Ap=0.03
+			else:
+				Ap=0.03+beta
+			if Tn < 0.92:
+				sigmap=4.
+			elif Tn>=0.92 and Tn<1.:
+				sigmap=4.+(37.5*(Tn-0.92))
+			else:
+				sigmap=7.
+			v_anelasticity = (1.+((Ab*(tauS**alpha))/alpha)+((np.sqrt(2.*np.pi)/2.)*Ap*sigmap*(1.-erf((np.log(tauP/tauS))/(np.sqrt(2.)*sigmap)))))
+		elif Qmode = 'none':
+			v_anelasticity = 1
+		return v_anelasticity
 
 	def calculate_density_solid(self, min_idx = None):
 	
