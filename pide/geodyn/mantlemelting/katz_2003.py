@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import root
 import warnings
 
-#This code is directly copied from the following repository:
+#This code is modified after the following repository:
 #https://github.com/brmather/melt
 #By Ben Mather
 
@@ -86,7 +86,7 @@ def X_sat(P):
 	"""
 	return 12.0*P**0.6 + 1.0*P
 
-def X_H2O(X, F):
+def X_H2O(X, F, d_per_melt):
 	"""
 	Concentration of water in melt
 
@@ -102,7 +102,8 @@ def X_H2O(X, F):
 	X : float, ndarray
 		concentration of water in melt, wt %
 	"""
-	return X/(0.01 + F*(1.0 - 0.01))
+	return X / (F + ((1.0 - F) * d_per_melt))
+	# return X/(0.01 + F*(1.0 - 0.01))
 
 def delta_T(X):
 	"""
@@ -160,10 +161,12 @@ def F_dry(P,T,M=0.15):
 		F_cpx = ((T - T_s)/(T_lh - T_s))**1.5
 
 	F = np.copy(F_cpx)
+	
 	F[F > F_cpx_out] = F_opx[F > F_cpx_out]
+	
 	return F
 
-def F_wet(P,T,X,M=0.15):
+def F_wet(P,T,X,D,M=0.15):
 	"""
 	Wet melt fraction
 
@@ -199,14 +202,14 @@ def F_wet(P,T,X,M=0.15):
 	R = R_cpx(P)
 	F_cpx_out = M/R
 	F_opx = F_dry(P, T, M)
-
+	
 	X_s = X_sat(P)
 	delT_sat = delta_T(X_s)
 
 	def F_iter(F):
 
 		F[np.isnan(F)] = 0.0
-		Xi = X_H2O(X, F)
+		Xi = X_H2O(X, F, d_per_melt=D)
 
 		delT = delta_T(Xi)
 		delT = np.minimum(delT, delT_sat)
@@ -223,7 +226,7 @@ def F_wet(P,T,X,M=0.15):
 	sol = root(F_iter, x0=F_opx, method='anderson')
 	F = sol.x
 
-	Xi = X_H2O(X, F)
+	Xi = X_H2O(X, F, D)
 
 	delT = delta_T(Xi)
 	delT = np.minimum(delT, delT_sat)
@@ -240,4 +243,5 @@ def F_wet(P,T,X,M=0.15):
 		F_opx = F_cpx_out + (1.0 - F_cpx_out)*((T - T_cpx_out)/(T_l - T_cpx_out))**1.5
 
 	F[F > F_cpx_out] = F_opx[F > F_cpx_out]
+	F[F>1.0] = 1.0
 	return F
