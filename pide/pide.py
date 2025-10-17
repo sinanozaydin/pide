@@ -7,6 +7,7 @@ core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_
 import sys, re, warnings, json, inspect
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.special import erf
 from santex.isotropy import Isotropy
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -125,6 +126,7 @@ class pide(object):
 		self.set_param1_mineral()
 		self.set_param1_rock()
 		self.set_melt_or_fluid_mode(mode = 'melt') #default choice is melt - 1
+		self.set_seismic_attenuation(mode = 'JF2010') #default choice is JF2010
 		self.set_solid_phase_method(mode = 'mineral') #default choice is mineral - 2
 		self.set_solid_phs_mix_method(method = 1) #default choice H-S lower bounds
 		self.set_solid_melt_fluid_mix_method(method = 0)
@@ -931,6 +933,19 @@ class pide(object):
 			self.density_loaded = False
 			self.density_fluid_loaded = False
 			self.seismic_setup = False
+		
+	def set_seismic_attenuation(self,mode):
+	
+		"""A method to set seismic attenuation.
+		
+		Input:
+		string 'none','Q1','Q2','JF2010','YT2016'
+		
+		Example:
+		set_seismic_attenuation('JF2010')
+		
+		"""
+		self.seismic_attenuation = mode
 		
 	def set_watercalib(self,**kwargs):
 	
@@ -4902,6 +4917,10 @@ class pide(object):
 		self.v_s_lower = np.zeros(len(self.T))
 		self.v_p_lower = np.zeros(len(self.T))
 		
+		self.v_anelasticity_bulk = np.zeros(len(self.T))
+		self.v_anelasticity_p = np.zeros(len(self.T))
+		self.v_anelasticity_s = np.zeros(len(self.T))
+		
 		self.seismic_setup = True
 			
 		return unique_compositions, fraction_list, idx_unique, id_list_global
@@ -4956,6 +4975,10 @@ class pide(object):
 				self.v_p[self.idx_unique[comp_idx]] = medium[1]
 				self.v_s[self.idx_unique[comp_idx]] = medium[2]
 				
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p[self.idx_unique[comp_idx]],self.T[self.idx_unique[comp_idx]],self.seismic_attenuation)
+				self.v_anelasticity_bulk[self.idx_unique[comp_idx]] = v_anelasticity[0]
+				self.v_anelasticity_p[self.idx_unique[comp_idx]] = v_anelasticity[1]
+				self.v_anelasticity_s[self.idx_unique[comp_idx]] = v_anelasticity[2]
 		elif method == 'index':
 			
 			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
@@ -4966,6 +4989,11 @@ class pide(object):
 			self.v_bulk[index] = medium[0]
 			self.v_p[index] = medium[1]
 			self.v_s[index] = medium[2]
+			
+			v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation)
+			self.v_anelasticity_bulk[index] = v_anelasticity[0]
+			self.v_anelasticity_p[index] = v_anelasticity[1]
+			self.v_anelasticity_s[index] = v_anelasticity[2]
 			
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
 			
@@ -5006,11 +5034,150 @@ class pide(object):
 				self.v_s[index] = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
 				
 		if method == 'array':
-			return self.v_bulk, self.v_p, self.v_s
+			return self.v_bulk*self.v_anelasticity_bulk, self.v_p*self.v_anelasticity_p, self.v_s*self.v_anelasticity_s
 			
 		elif method == 'index':
-			return self.v_bulk[index], self.v_p[index], self.v_s[index]
-
+			return self.v_bulk[index]*self.v_anelasticity_bulk[index], self.v_p[index]*self.v_anelasticity_p[index], self.v_s[index]*self.v_anelasticity_s[index]
+				
+	def calculate_seismic_anelasticity(self, P, T, Qmode):
+	
+		"""
+		Calculate the seismic anelasticity due to attenuation.
+		The v_anelasticity_bulk is set same with v_anelasticity_p
+	
+		Parameters
+		----------
+		Qmode : 'Q1'
+			Attenuation model.
+	
+		Returns
+		-------
+		float or array
+			v_anelasticity
+		"""
+		if Qmode == 'Q1':
+			#Attenuation model from Sobolev et al. (1996)
+			A = 0.148
+			f = 0.02
+			omega = 2.*np.pi*f
+			a = 0.15
+			H = 500000.
+			V = 0.000020
+			#universal gas constant
+			R = 8.31446
+			E = H + P*1e9*V # Gpa to Pa
+			Q = A*(omega**a)*np.exp((a*E)/R/T)
+			v_anelasticity_b = 1. - 2./Q/np.tan(a*np.pi/2.)/9
+			v_anelasticity_p = 1. - 2./Q/np.tan(a*np.pi/2.)/9
+			v_anelasticity_s = 1. - 1./Q/np.tan(a*np.pi/2.)/2
+		elif Qmode == 'Q2':
+			#Attenuation model from Berckhemer et al. (1982)
+			A = 0.0002
+			f = 0.02
+			omega = 2.*np.pi*f
+			a = 0.25
+			H = 584000.
+			V = 0.000021
+			#universal gas constant
+			R = 8.31446
+			E = H + P*1e9*V # Gpa to Pa
+			Q = A*(omega**a)*np.exp((a*E)/R/T)
+			v_anelasticity_b = 1. - 2./Q/np.tan(a*np.pi/2.)/9
+			v_anelasticity_p = 1. - 2./Q/np.tan(a*np.pi/2.)/9
+			v_anelasticity_s = 1. - 1./Q/np.tan(a*np.pi/2.)/2
+		elif Qmode == 'JF2010':
+			#Attenuation model from Jackson & Faul, 2010
+			A = 816
+			t = 75 # time period (seconds)
+			grain_size = 10 # grain size (mm)
+			a = 0.36
+			E = 293e3 # Activation energy
+			V = 1.2e-5 # Activation volumn
+			#universal gas constant
+			R = 8.314472
+			H = E + P*1e9*V # Gpa to Pa
+			Qs_inv = A*(t/grain_size/1e3*np.exp(-H/R/T))**a
+			Qp_inv = Qs_inv * 4/9
+			v_anelasticity_b = 1. - Qp_inv/np.tan(a*np.pi/2.)/2.
+			v_anelasticity_p = 1. - Qp_inv/np.tan(a*np.pi/2.)/2.
+			v_anelasticity_s = 1. - Qs_inv/np.tan(a*np.pi/2.)/2.
+		elif Qmode == 'YT2016':
+			#Attenuation model from Yamauchi & Takei, 2016
+			R=8.3145
+			Ab=0.664
+			alpha=0.38
+			tauP=6.e-5
+			Teta=0.94
+			beta=0.
+			delphi=0.
+			gamma=5.
+			lambdaphi=0
+			TKr=1473.
+			Pr=1.5e9
+			
+			mu0 = 72.45
+			dmudT = -0.01094
+			dmudP = 1.987
+			eta0 = 6.22*10**21
+			E = 462.5e3
+			Va = 7.913e-6
+			dTdz = 2.25
+			sol50 = 1326 # That might change due to composition
+			dep = P * 33
+			Pg=(dep/33.)
+			P=Pg*1.e9 # Gpa to P
+			TK = T # T in K
+			Tsol = sol50 + (dTdz * (dep - 50.0))
+			Tn = TK / (Tsol + 273.0)
+			# ---- Aeta ----
+			Aeta = np.where(
+				Tn < Teta,
+				1.0,
+				np.where(
+					Tn < 1.0,
+					np.exp((-1.0 * ((Tn - Teta) / (Tn - (Tn * Teta)))) * np.log(gamma)),
+					(1.0 / gamma) * np.exp(-delphi),
+				),
+			)
+			# ---- Viscosity ----
+			eta = (
+				eta0
+				* np.exp((E / R) * (1.0 / TK - 1.0 / TKr))
+				* np.exp((Va / R) * (P / TK - Pr / TKr))
+				* Aeta
+			)
+			# ---- Unrelaxed compliance ----
+			Ju = 1.0 / (1.0e9 * (mu0 + (dmudP * Pg) + (dmudT * T)))
+			# ---- Maxwell time and scaled period ----
+			tauM = eta * Ju
+			tau = (3.0 * dep) / 4.2
+			tauS = tau / (2.0 * np.pi * tauM)
+			# ---- Anelastic amplitude (Ap) ----
+			Ap = np.where(
+				Tn < 0.91,
+				0.01,
+				np.where(
+					Tn < 0.96,
+					0.01 + (0.4 * (Tn - 0.91)),
+					np.where(Tn < 1.0, 0.03, 0.03 + beta),
+				),
+			)
+			# ---- Stress parameter (sigmap) ----
+			sigmap = np.where(
+				Tn < 0.92,
+				4.0,
+				np.where(Tn < 1.0, 4.0 + (37.5 * (Tn - 0.92)), 7.0),
+			)
+			factor = (1.+((Ab*(tauS**alpha))/alpha)+((np.sqrt(2.*np.pi)/2.)*Ap*sigmap*(1.-erf((np.log(tauP/tauS))/(np.sqrt(2.)*sigmap)))))
+			v_anelasticity_b = 5/9+4/np.sqrt(factor)/9
+			v_anelasticity_p = 5/9+4/np.sqrt(factor)/9
+			v_anelasticity_s = 1/np.sqrt(factor)
+		elif Qmode == 'none':
+			v_anelasticity_b = 1
+			v_anelasticity_p = 1
+			v_anelasticity_s = 1
+		return [v_anelasticity_b,v_anelasticity_p,v_anelasticity_s]
+		
 	def calculate_density_solid(self, min_idx = None):
 	
 		"""
