@@ -4719,6 +4719,9 @@ class pide(object):
 			fraction_list = np.array(fraction_list)
 			
 		elif pide.solid_phase_method == 2:
+
+			if len(self.ol_xfe) != len(self.T):
+				self.revalue_arrays()
 				
 			if np.mean(self.quartz_frac) != 0.0:
 				if self.seis_property_overwrite[0] == False:
@@ -4769,24 +4772,36 @@ class pide(object):
 				fraction_list.append(self.kfelds_frac)
 
 			if np.mean(self.opx_frac) != 0.0:
-				
+				"""
 				if self.seis_property_overwrite[4] == False:
 					opx_id_list = np.array([self.mat_ref[15][pide.minerals_cond_selections[4]]] * len(self.T))
 				else:
 					opx_id_list = np.array([self.opx_seis_selection] * len(self.T))
-				
+				"""
+				opx_id_list = ['en'] * len(self.T)
+				opx_id_list_2 = ['fs'] * len(self.T)
+
 				id_list_global.append(opx_id_list)
-				fraction_list.append(self.opx_frac)
+				id_list_global.append(opx_id_list_2)
+				fraction_list.append(self.opx_frac*(1-self.opx_xfe))
+				fraction_list.append(self.opx_frac*(self.opx_xfe))
 
 			if np.mean(self.cpx_frac) != 0.0:
 				
+				"""
 				if self.seis_property_overwrite[5] == False:
 					cpx_id_list = np.array([self.mat_ref[16][pide.minerals_cond_selections[5]]] * len(self.T))
 				else:
 					cpx_id_list = np.array([self.cpx_seis_selection] * len(self.T))
+				"""
 				
+				cpx_id_list = ['di'] * len(self.T)
+				cpx_id_list_2 = ['hed'] * len(self.T)
+
 				id_list_global.append(cpx_id_list)
-				fraction_list.append(self.cpx_frac)
+				id_list_global.append(cpx_id_list_2)
+				fraction_list.append(self.cpx_frac*(1-self.cpx_xfe))
+				fraction_list.append(self.cpx_frac*(self.cpx_xfe))
 
 			if np.mean(self.mica_frac) != 0.0:
 				
@@ -4800,13 +4815,20 @@ class pide(object):
 
 			if np.mean(self.garnet_frac) != 0.0:
 				
+				"""
 				if self.seis_property_overwrite[7] == False:
 					garnet_id_list = np.array([self.mat_ref[18][pide.minerals_cond_selections[7]]] * len(self.T))
 				else:
 					garnet_id_list = np.array([self.garnet_seis_selection] * len(self.T))
-				
+				"""
+					
+				garnet_id_list = ['py'] * len(self.T)
+				garnet_id_list_2 = ['alm'] * len(self.T)
+
 				id_list_global.append(garnet_id_list)
-				fraction_list.append(self.garnet_frac)
+				id_list_global.append(garnet_id_list_2)
+				fraction_list.append(self.garnet_frac*(1-self.garnet_xfe))
+				fraction_list.append(self.garnet_frac*(self.garnet_xfe))
 
 			if np.mean(self.sulphide_frac) != 0.0:
 				
@@ -4835,8 +4857,13 @@ class pide(object):
 				else:
 					ol_id_list = np.array([self.ol_seis_selection] * len(self.T))
 				
+				ol_id_list = ['fo'] * len(self.T)
+				ol_id_list_2 = ['fa'] * len(self.T)
+
 				id_list_global.append(ol_id_list)
-				fraction_list.append(self.ol_frac)
+				id_list_global.append(ol_id_list_2)
+				fraction_list.append(self.ol_frac*(1-self.ol_xfe))
+				fraction_list.append(self.ol_frac*(self.ol_xfe))
 
 			if np.mean(self.sp_frac) != 0.0:
 				
@@ -4898,7 +4925,7 @@ class pide(object):
 		unique_compositions = np.unique(id_list_global, axis = 0)
 		
 		idx_unique = []
-		
+
 		for ii in range(0,len(unique_compositions)):
 		
 			cmp = np.all(id_list_global == unique_compositions[ii], axis = 1)
