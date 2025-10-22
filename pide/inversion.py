@@ -577,7 +577,6 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 					misf_vs = 0
 				
 				proposed_likelihood = proposed_likelihood_cond * proposed_likelihood_vs * proposed_likelihood_vp
-				# print(proposed_vp,proposed_vs,proposed_cond,proposal[0],proposal[1])
 				# Calculate acceptance probability
 				acceptance_ratio = proposed_likelihood / current_likelihood
 

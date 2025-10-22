@@ -6,14 +6,25 @@ from pide.inversion import conductivity_solver_single_param
 import multiprocessing
 import os
 from functools import partial
+	
+def _katz2003_wet_parallel(index, max_water, d_per_melt, cpx_frac , P, T, f_dummy):
+	
+	"A function calling katz2003 peridotite melting scheme for detecting if melt can exist in the given node [index] in a parallel manner."
 
-def _crit_1(cond_difference, T, P):
+	bw_list = (max_water[index] * (f_dummy + ((1-f_dummy) * d_per_melt[index]))) / d_per_melt[index] #creating a bulk water list from maximum solubility of peridotite and varying melt content
 	
-	perid_class = True
-	
-	return perid_class
+	for j in range(len(bw_list)):
+		F_calced = katz_2003.F_wet(P = P[index], T = T[index]-273.15, X = bw_list[j]/1e4, D=d_per_melt[index], M = cpx_frac[index]) #calculating if melt exist with the given P,T,bulk water
+		if np.mean(F_calced) > 0.0:
+			break
+		else:
+			pass
+	return np.mean(F_calced) > 0.0
 
 def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_cpu = 1,**kwargs):
+
+	import ipdb
+	import time
 	
 	print('ENTERED')
 	if material is None:
@@ -64,9 +75,11 @@ def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_
 	
 	#Step 1: 
 	print("STEP 1 Started")
+	
 	#Checking if is there any melting without any addition of volatiles after Katz et al. (2003)
 	dry_melt_frac = katz_2003.F_dry(P=P, T=T-273.15, M=p_obj.cpx_frac)
 	melt_bool_dry = ~np.isnan(dry_melt_frac)
+	
 	
 	#calculating max water content to check whether it will depress the solidus enough to enter the melting domain
 	max_water = p_obj.calculate_bulk_mantle_water_solubility()
@@ -75,15 +88,30 @@ def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_
 					(p_obj.cpx_frac * p_obj.d_melt_cpx) +\
 					(p_obj.garnet_frac * p_obj.d_melt_garnet)
 	
-	#creating melt fraction form 0 to 0.5, to calculate dummy 
-	f_dummy = np.arange(0,0.5,0.05)
-	for i in range(0,len(max_water)):
-	# with multiprocessing.Pool(processes=num_cpu) as pool:
-		print(i/len(max_water) * 1e2)
-		bw_list = (max_water[i] * (f_dummy + ((1-f_dummy) * d_per_melt[i]))) / d_per_melt[i] #creating a bulk water list from maximum solubility of peridotite and varying melt content
-		F_calced = katz_2003.F_wet(P = P[i], T = T[i]-273.15, X = bw_list/1e4, D=d_per_melt[i], M = p_obj.cpx_frac[i]) #calculating if melt exist with the given P,T,bulk water
-		if np.mean(F_calced) > 0.0:
-			melt_bool_wet[i] = True
+	#creating melt fraction form 0.5 to 0, to calculate dummy. Reverse direction to save time in processing.
+	f_dummy = np.arange(0.5,0,-0.01)
+
+	#Calling katz2003 for peridotite melting detection.
+	if num_cpu == 1:
+		for i in range(0,len(max_water)):
+			bw_list = (max_water[i] * (f_dummy + ((1-f_dummy) * d_per_melt[i]))) / d_per_melt[i] #creating a bulk water list from maximum solubility of peridotite and varying melt content
+			for j in range(len(bw_list)):
+				F_calced = katz_2003.F_wet(P = P[i], T = T[i]-273.15, X = bw_list[j]/1e4, D=d_per_melt[i], M = p_obj.cpx_frac[i]) #calculating if melt exist with the given P,T,bulk water
+				if np.mean(F_calced) > 0.0:
+					melt_bool_wet[i] = True
+					break
+				else:
+					pass
+	else:
+		index_list = np.array(list(range(0,len(max_water))))
+		with multiprocessing.Pool(processes=num_cpu) as pool:
+			process_item_partial = partial(_katz2003_wet_parallel, max_water = max_water, 
+			d_per_melt = d_per_melt, cpx_frac = p_obj.cpx_frac , P = P, T = T, f_dummy = f_dummy)
+			
+			c_sol = pool.map(process_item_partial, index_list)
+		melt_bool_wet = np.array(c_sol)
+	
+
 	
 	#assigning all possible melting areas from temperature only.
 	melt_bool = melt_bool_dry + melt_bool_wet
