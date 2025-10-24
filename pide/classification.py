@@ -6,6 +6,7 @@ from pide.inversion import conductivity_solver_single_param
 import multiprocessing
 import os
 from functools import partial
+from .utils.utils import text_color, check_type
 	
 def _katz2003_wet_parallel(index, max_water, d_per_melt, cpx_frac , P, T, f_dummy):
 	
@@ -25,6 +26,7 @@ def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_
 
 	import ipdb
 	import time
+	import matplotlib.pyplot as plt
 	
 	print('ENTERED')
 	if material is None:
@@ -74,7 +76,7 @@ def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_
 	melt_bool_wet = np.array([False] * len(T))
 	
 	#Step 1: 
-	print("STEP 1 Started")
+	print(text_color.YELLOW + "STEP 1: Mantle Melting Potential Estimation Started..." + text_color.END)
 	
 	#Checking if is there any melting without any addition of volatiles after Katz et al. (2003)
 	dry_melt_frac = katz_2003.F_dry(P=P, T=T-273.15, M=p_obj.cpx_frac)
@@ -111,13 +113,10 @@ def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_
 			c_sol = pool.map(process_item_partial, index_list)
 		melt_bool_wet = np.array(c_sol)
 	
-
-	
 	#assigning all possible melting areas from temperature only.
 	melt_bool = melt_bool_dry + melt_bool_wet
-	print('STEP 1 Finished...')
-	#Step 2:
-	#Binning every bit where observed conductivity is below the conductivity of the depleted mantle.
+	print(text_color.GREEN + 'STEP 1 Finished...' + text_color.END)
+	print(text_color.YELLOW + 'STEP 2: Negative misfit in conductivities are being binned to depleted lithosphere...' + text_color.END)
 	cond_dry_mantle = p_obj.calculate_conductivity()
 	diff_mantle = cond - cond_dry_mantle
 
@@ -126,10 +125,12 @@ def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_
 	#assigning to class 1 - Dry/Depleted Peridotite
 	mantle_class[crit_0] = 1
 	mask_unclassified[mantle_class != 0] = False
-	print("STEP 2 Finished...")
 	#looking from the difference, removing mantle class = 1 from the possbiel melt search areas:
 	melt_bool[mantle_class == 1] = False
 	
+	print(text_color.GREEN + "STEP 2 Finished..." + text_color.END)
+		
+	ipdb.set_trace()
 	#STEP 3:
 	#Performing possible existence of melt
 	pass
