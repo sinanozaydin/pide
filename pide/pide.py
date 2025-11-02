@@ -5229,7 +5229,7 @@ class pide(object):
 								if 'xFe' in self.name[mineral][min_sel_list[mineral-11]]:
 								
 									ref_dens = linear_density(xfe_input=pide.xfe_mineral_list[mineral-11], density_list = [ref_0, ref_1])
-								
+									
 									density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 									temperature = self.T, pressure = self.p, ref_density = ref_dens, return_vp_vs_vbulk=False, return_aktout=False)
 								
