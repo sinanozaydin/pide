@@ -2199,7 +2199,10 @@ class pide(object):
 		self.bulk_water = array_modifier(input = value, array = self.T, varname = 'bulk_water')
 		self.solid_water = array_modifier(input = 0, array = self.T, varname = 'solid_water')
 		
-		self.set_mineral_water() #Running an empty run of this to equate the length of mineral water arrays with the defined T
+		if reval == False:
+			self.set_mineral_water() #Running an empty run of this to equate the length of mineral water arrays with the defined T
+		else:
+			self.set_mineral_water(reval=True)
 		
 		if len(np.flatnonzero(self.bulk_water < 0)) != 0:
 				
