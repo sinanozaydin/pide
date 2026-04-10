@@ -3406,9 +3406,8 @@ class pide(object):
 			else:
 
 				melt_odd_function = pide.name[1][pide.melt_cond_selection]
-			
-			cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
-			'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], Melt_SiO2 = self.sio2_melt[idx_node], method = method)')
+				cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
+				'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], Melt_SiO2 = self.sio2_melt[idx_node], method = method)')
 
 		return cond_melt
 
