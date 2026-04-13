@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 from scipy.optimize import minimize
+import xarray as xr
 
 def _associate_coordinates_(index, x_target, y_target, x_sample, y_sample):
 	
@@ -195,6 +196,173 @@ def save_h5_files(array_list, array_names, file_name = "Data.h5"):
 			f.create_dataset(array_names[i], data = array_list[i])
 
 	print(f'Results are saved at: {file_name}')
+
+def save_mcmc_results_nc(filename, lon, lat, sample_distr, acceptance_rates, misfits_all,
+	param_names, depth=None, extra_data=None, title='MCMC petrophysical inversion results'):
+	"""
+	Save MCMC inversion results to a netCDF file using xarray.
+ 
+	Parameters
+	----------
+	filename : str
+		Output filename (e.g., 'mcmc_results.nc').
+	lon : array-like
+		Longitude coordinates for each point. Shape (n_points,).
+	lat : array-like
+		Latitude coordinates for each point. Shape (n_points,).
+	sample_distr : list of arrays
+		Accepted parameter samples for each point from MCMC.
+		Each element is shape (n_accepted, n_params) or None.
+	acceptance_rates : list of arrays
+		Acceptance rate record for each point.
+	misfits_all : list
+		All misfits [cond, vp, vs] for each point.
+	param_names : list of str
+		Names of the inverted parameters (e.g., ['bulk_water', 'melt_fluid_mass_frac', 'T']).
+	depth : float, optional
+		Depth of the inversion slice in km.
+	extra_data : dict, optional
+		Additional data arrays to include, keyed by variable name.
+		Each value should be shape (n_points,) with optional 'units' and 'long_name' as a tuple:
+		e.g., {'conductivity_obs': (data_array, 'S/m', 'Observed conductivity')}
+	title : str, optional
+		Title attribute for the dataset.
+ 
+	Returns
+	-------
+	None
+		Writes the netCDF file to disk.
+	"""
+ 
+	n_points = len(lon)
+	n_params = len(param_names)
+ 
+	# Calculate statistics from sample distributions
+	mean_params = np.full((n_points, n_params), np.nan)
+	std_params = np.full((n_points, n_params), np.nan)
+	median_params = np.full((n_points, n_params), np.nan)
+	p05_params = np.full((n_points, n_params), np.nan)
+	p95_params = np.full((n_points, n_params), np.nan)
+	final_acceptance = np.full(n_points, np.nan)
+	mean_misfit_cond = np.full(n_points, np.nan)
+	mean_misfit_vp = np.full(n_points, np.nan)
+	mean_misfit_vs = np.full(n_points, np.nan)
+ 
+	for i in range(n_points):
+		import ipdb
+		ipdb.set_trace()
+		if sample_distr[i] is not None and len(sample_distr[i]) > 0:
+			if sample_distr[i][0] is not None:
+				samples = np.array(sample_distr[i])
+				if samples.ndim == 2 and samples.shape[0] > 1:
+					mean_params[i, :] = np.mean(samples, axis=0)
+					std_params[i, :] = np.std(samples, axis=0)
+					median_params[i, :] = np.median(samples, axis=0)
+					p05_params[i, :] = np.percentile(samples, 5, axis=0)
+					p95_params[i, :] = np.percentile(samples, 95, axis=0)
+ 
+		if acceptance_rates[i] is not None and len(acceptance_rates[i]) > 0:
+			if acceptance_rates[i][-1] is not None:
+				final_acceptance[i] = acceptance_rates[i][-1]
+ 
+		if misfits_all[i] is not None:
+			try:
+				if misfits_all[i][0] is not None and len(misfits_all[i][0]) > 0:
+					mean_misfit_cond[i] = np.mean(misfits_all[i][0])
+				if misfits_all[i][1] is not None and len(misfits_all[i][1]) > 0:
+					mean_misfit_vp[i] = np.mean(misfits_all[i][1])
+				if misfits_all[i][2] is not None and len(misfits_all[i][2]) > 0:
+					mean_misfit_vs[i] = np.mean(misfits_all[i][2])
+			except (TypeError, IndexError):
+				pass
+ 
+	# Build the dataset
+	data_vars = {}
+ 
+	# Add parameter statistics
+	for j in range(n_params):
+		name = param_names[j]
+		data_vars[f'{name}_mean'] = (['point'], mean_params[:, j])
+		data_vars[f'{name}_std'] = (['point'], std_params[:, j])
+		data_vars[f'{name}_median'] = (['point'], median_params[:, j])
+		data_vars[f'{name}_p05'] = (['point'], p05_params[:, j])
+		data_vars[f'{name}_p95'] = (['point'], p95_params[:, j])
+ 
+	# Add diagnostics
+	data_vars['acceptance_rate'] = (['point'], final_acceptance)
+	data_vars['mean_misfit_cond'] = (['point'], mean_misfit_cond)
+	data_vars['mean_misfit_vp'] = (['point'], mean_misfit_vp)
+	data_vars['mean_misfit_vs'] = (['point'], mean_misfit_vs)
+ 
+	# Add extra data if provided
+	if extra_data is not None:
+		for key, value in extra_data.items():
+			if isinstance(value, tuple):
+				data_vars[key] = (['point'], value[0])
+			else:
+				data_vars[key] = (['point'], value)
+ 
+	# Create dataset
+	dataset = xr.Dataset(
+		data_vars,
+		coords={
+			'lon': (['point'], np.array(lon)),
+			'lat': (['point'], np.array(lat)),
+		}
+	)
+ 
+	# Add depth as attribute if provided
+	if depth is not None:
+		dataset.attrs['depth_km'] = depth
+ 
+	dataset.attrs['title'] = title
+	dataset.attrs['param_names'] = str(param_names)
+ 
+	# Add coordinate attributes
+	dataset['lon'].attrs = {'units': 'degrees_east', 'long_name': 'Longitude'}
+	dataset['lat'].attrs = {'units': 'degrees_north', 'long_name': 'Latitude'}
+ 
+	# Add parameter attributes
+	param_units = {
+		'bulk_water': 'ppm',
+		'melt_fluid_mass_frac': 'fraction',
+		'T': 'C',
+		'ol_frac': 'fraction',
+		'opx_frac': 'fraction',
+		'cpx_frac': 'fraction',
+		'garnet_frac': 'fraction',
+	}
+ 
+	for j in range(n_params):
+		name = param_names[j]
+		units = param_units.get(name, '')
+		for suffix in ['_mean', '_std', '_median', '_p05', '_p95']:
+			if f'{name}{suffix}' in dataset:
+				dataset[f'{name}{suffix}'].attrs = {'units': units, 'long_name': f'{name} {suffix[1:]}'}
+ 
+	dataset['acceptance_rate'].attrs = {'units': '', 'long_name': 'Final MCMC acceptance rate'}
+	dataset['mean_misfit_cond'].attrs = {'units': 'log10(S/m)', 'long_name': 'Mean conductivity misfit'}
+	dataset['mean_misfit_vp'].attrs = {'units': 'km/s', 'long_name': 'Mean Vp misfit'}
+	dataset['mean_misfit_vs'].attrs = {'units': 'km/s', 'long_name': 'Mean Vs misfit'}
+ 
+	# Add extra data attributes
+	if extra_data is not None:
+		for key, value in extra_data.items():
+			if isinstance(value, tuple) and len(value) >= 2:
+				attrs = {'units': value[1]}
+				if len(value) >= 3:
+					attrs['long_name'] = value[2]
+				dataset[key].attrs = attrs
+ 
+	# Write to file
+	dataset.to_netcdf(filename)
+	print(f'Saved MCMC results to {filename}')
+	print(f'  {n_points} points, {n_params} parameters: {param_names}')
+	print(f'  Variables: {list(dataset.data_vars)}')
+ 
+	return dataset
+
+
 	
 def _comp_adjust_idx_based(_comp_list, comp_alien, idx, array = False):
 
