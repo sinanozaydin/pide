@@ -249,8 +249,7 @@ def save_mcmc_results_nc(filename, lon, lat, sample_distr, acceptance_rates, mis
 	mean_misfit_vs = np.full(n_points, np.nan)
  
 	for i in range(n_points):
-		import ipdb
-		ipdb.set_trace()
+
 		if sample_distr[i] is not None and len(sample_distr[i]) > 0:
 			if sample_distr[i][0] is not None:
 				samples = np.array(sample_distr[i])

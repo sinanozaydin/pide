@@ -917,7 +917,9 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	MCMC external solver for the metropolis_hastings_n_param function for parallelization purposes.
 	Users should not call this function directly.
 	"""
- 
+
+	proposal_stds = list(proposal_stds)
+
 	if continue_bool[index] == True:
  
 		n_params = len(param_names)
@@ -1001,7 +1003,6 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 			current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index])
 		else:
 			current_likelihood_vp = 1
-			
 		if vs_list is not None:
 			current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index])
 		else:
@@ -1113,7 +1114,7 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
  
 				# Calculate acceptance probability
 				acceptance_ratio = proposed_likelihood / current_likelihood
- 
+				
 				if np.random.rand() < acceptance_ratio:
  
 					current_params = proposal
