@@ -911,13 +911,15 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, continue_bool,
 	vp_list = None, vs_list = None, sigma_vp = None, sigma_vs = None,
 	adaptive_alg = True, ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000,
-	comp_index = [0,0], step_size_limits = None, transition_zone = False, param_priors = None):
+	comp_index = [0,0], step_size_limits = None, transition_zone = False, param_priors = None,
+	max_widen_attempts = 3):
 	
 	"""
 	MCMC external solver for the metropolis_hastings_n_param function for parallelization purposes.
 	Users should not call this function directly.
 	"""
-
+	
+	widen_count = 0
 	proposal_stds = list(proposal_stds)
 
 	if continue_bool[index] == True:
@@ -1134,6 +1136,19 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 					misfits_all_vp.append(misf_vp)
 					misfits_all_vs.append(misf_vs)
 					samples_all.append(current_params.copy())
+					
+					# Check if stuck after enough post-burn-in samples
+					if (_ - burning) == 5000 and accepted == 0:
+						print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
+						if widen_count < max_widen_attempts:
+							widen_count += 1
+							# Widen priors for parameters that have them
+							if param_priors is not None:
+								for ii in range(n_params):
+									if param_priors[ii] is not None:
+										param_priors[ii][1][index] = param_priors[ii][1][index] * 1.25
+										print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} to sigma={param_priors[ii][1][index]:.1f}, attempt {widen_count}' + text_color.END)
+					
 					if adaptive_alg == True:
 						if (_ + 1) % adaptive_check_length == 0:
 							if acceptance_rate <= ideal_acceptance_bounds[0]:
