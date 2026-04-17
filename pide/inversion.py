@@ -908,7 +908,7 @@ def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_
 	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
 	
 def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, upper_limits,
-	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, continue_bool,
+	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv,
 	vp_list = None, vs_list = None, sigma_vp = None, sigma_vs = None,
 	adaptive_alg = True, ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000,
 	comp_index = [0,0], step_size_limits = None, transition_zone = False, param_priors = None,
@@ -922,271 +922,256 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	widen_count = 0
 	proposal_stds = list(proposal_stds)
 
-	if continue_bool[index] == True:
- 
-		n_params = len(param_names)
- 
-		#Using Metropolis-Hastings algorithm
- 
-		frac_bool = [False] * n_params
-		comp_index_sub = None
- 
-		for ii in range(n_params):
-			if 'frac' in param_names[ii]:
-				if param_names[ii] != 'melt_fluid_mass_frac':
-					frac_bool[ii] = True
-					comp_index_sub = ii
- 
-		if sum(frac_bool) > 1:
-			raise KeyError('Currently only one of the parameters chosen can be modal compositional parameter.')
-			
-		melt_solv = 'melt_fluid_mass_frac' in param_names
- 
-		current_params = np.array(initial_params[index])
- 
-		#Extracting per-index limits
-		param_mins = np.array([lower_limits[i][index] for i in range(n_params)])
-		param_maxs = np.array([upper_limits[i][index] for i in range(n_params)])
- 
-		#Initial setting of the parameters.
-		if sum(frac_bool) == 1:
- 
-			if object.solid_phase_method == 2: #if mineral
-				_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
-					object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
-					object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
-			else: #if rock
-				_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
-					object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
- 
-			comp_old = _comp_list[comp_index[comp_index_sub]]
- 
-			comp_list = _comp_adjust_(np.array(_comp_list), current_params[comp_index_sub], comp_old)
- 
-			for idx_t in range(len(_comp_list)):
-				if object.solid_phase_method == 2:
-					object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
-				else:
-					object.rock_frac_list[idx_t][index] = comp_list[idx_t]
- 
-			water_solv = True
- 
-		#Executing the commands - setting initial parameters
-		for ii in range(n_params):
-			getattr(object, param_names[ii])[index] = current_params[ii]
- 
-		if water_solv == True:
- 
-			if transition_zone == False:
-				object.mantle_water_distribute(method = 'index', sol_idx = index)
-			else:
-				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
-				
-			if melt_solv == True:
-				
-				#to interpolation of fluid density so eos do not have to be solved at each iteration.
-				try:
-					water_index = param_names.index('bulk_water')
-					water_end = upper_limits[water_index]
-					water_end = water_end[0]
-				except ValueError:
-					water_end = 1e5
- 
-				object.calculate_density_fluid(sol_idx = index, method = 'array', interp_for_iter = True, water_start = 0, water_end = water_end)
- 
-		#Calculating the initial conductivity
-		cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
-		if (vp_list is not None) or (vs_list is not None):
-			v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'index', sol_idx = index)
- 
-		current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
-		
-		if vp_list is not None:
-			current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index])
-		else:
-			current_likelihood_vp = 1
-		if vs_list is not None:
-			current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index])
-		else:
-			current_likelihood_vs = 1
- 
-		#Calculate initial prior likelihood
-		current_prior = 1.0
-		if param_priors is not None:
-			for ii in range(n_params):
-				if param_priors[ii] is not None:
-					prior_mean = param_priors[ii][0][index]
-					prior_sigma = param_priors[ii][1][index]
-					current_prior *= np.exp(-0.5 * ((current_params[ii] - prior_mean) / prior_sigma)**2)
- 
-		current_likelihood = current_likelihood_cond * current_likelihood_vp * current_likelihood_vs * current_prior
- 
-		#empty arrays to fill it up with samples
-		samples = []
-		misfits_cond = []
-		misfits_vp = []
-		misfits_vs = []
-		misfits_all_cond = []
-		misfits_all_vp = []
-		misfits_all_vs = []
-		samples_all = []
-		acceptance_rates = []
-		accepted = 0
-		print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
-		print(text_color.YELLOW + f'{n_iter} total samples.' + text_color.END)
-		print(text_color.RED + f'{burning} burning samples.' + text_color.END)
- 
-		#loop for monte-carlo
-		for _ in range(n_iter):
-			
-			#proposing the new parameters
-			proposal = np.array(current_params)
-			rand_node = np.random.randint(n_params) #random node generation 0 to n_params-1
-			randomgen = np.random.normal(0, proposal_stds[rand_node], size=1)[0] #proposal for randomwalk step
-			proposal[rand_node] = current_params[rand_node] + randomgen
-			
-			continue_bounds = np.all((proposal > param_mins) & (proposal < param_maxs))
-			
-			if continue_bounds == False:
-				proposal = current_params #if out of bounds go back to the previous parameters
- 
-			if continue_bounds == True:
-				#adjusting for composition if needed...
-				if comp_solv == True:
- 
-					if sum(frac_bool) == 1:
- 
-						if object.solid_phase_method == 2: #if mineral
-							_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
-								object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
-								object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
-						else: #if rock
-							_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
-								object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
- 
-						comp_old = _comp_list[comp_index[comp_index_sub]]
- 
-						comp_list = _comp_adjust_(np.array(_comp_list), proposal[comp_index_sub], comp_old)
- 
-						for idx_t in range(len(_comp_list)):
-							if object.solid_phase_method == 2:
-								object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
-							else:
-								object.rock_frac_list[idx_t][index] = comp_list[idx_t]
- 
-				#setting up the proposed parameters
-				for ii in range(n_params):
-					getattr(object, param_names[ii])[index] = proposal[ii]
- 
-				#distribute water if needed
-				if water_solv == True:
-					if transition_zone == False:
-						object.mantle_water_distribute(method = 'index', sol_idx = index)
-					else:
-						object.transition_zone_water_distribute(method = 'index', sol_idx = index)
- 
-				proposed_cond = object.calculate_conductivity(method = 'index', sol_idx = index)
-				if (vp_list is not None) or (vs_list is not None):
-					v_bulk, proposed_vp, proposed_vs = object.calculate_seismic_velocities(method = 'index', sol_idx = index)
-				
-				proposed_likelihood_cond, misf_cond = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
-				
-				if vp_list is not None:
-					proposed_likelihood_vp, misf_vp = _likelihood(proposed_vp, vp_list[index], sigma_vp[index], norm = 'linear')
-				else:
-					proposed_likelihood_vp = 1
-					misf_vp = 0
-					
-				if vs_list is not None:
-					proposed_likelihood_vs, misf_vs = _likelihood(proposed_vs, vs_list[index], sigma_vs[index], norm = 'linear')
-				else:
-					proposed_likelihood_vs = 1
-					misf_vs = 0
- 
-				#Calculate prior likelihood for proposed parameters
-				proposed_prior = 1.0
-				if param_priors is not None:
-					for ii in range(n_params):
-						if param_priors[ii] is not None:
-							prior_mean = param_priors[ii][0][index]
-							prior_sigma = param_priors[ii][1][index]
-							proposed_prior *= np.exp(-0.5 * ((proposal[ii] - prior_mean) / prior_sigma)**2)
- 
-				proposed_likelihood = proposed_likelihood_cond * proposed_likelihood_vs * proposed_likelihood_vp * proposed_prior
- 
-				# Calculate acceptance probability
-				acceptance_ratio = proposed_likelihood / current_likelihood
-				
-				if np.random.rand() < acceptance_ratio:
- 
-					current_params = proposal
-					current_likelihood = proposed_likelihood
- 
-					if _ > burning:
-						samples.append(current_params.copy())
-						misfits_cond.append(misf_cond)
-						misfits_vp.append(misf_vp)
-						misfits_vs.append(misf_vs)
-						accepted += 1
- 
-				if _ > burning:
-					acceptance_rate = accepted / (_ - burning)
-					acceptance_rates.append(acceptance_rate)
-					misfits_all_cond.append(misf_cond)
-					misfits_all_vp.append(misf_vp)
-					misfits_all_vs.append(misf_vs)
-					samples_all.append(current_params.copy())
-					
-					# Check if stuck after enough post-burn-in samples
-					if (_ - burning) == 5000 and accepted == 0:
-						print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
-						if widen_count < max_widen_attempts:
-							widen_count += 1
-							# Widen priors for parameters that have them
-							if param_priors is not None:
-								for ii in range(n_params):
-									if param_priors[ii] is not None:
-										param_priors[ii][1][index] = param_priors[ii][1][index] * 1.25
-										print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} to sigma={param_priors[ii][1][index]:.1f}, attempt {widen_count}' + text_color.END)
-					
-					if adaptive_alg == True:
-						if (_ + 1) % adaptive_check_length == 0:
-							if acceptance_rate <= ideal_acceptance_bounds[0]:
-								proposal_stds[rand_node] = proposal_stds[rand_node] * 0.95
-								if step_size_limits is not None:
-									if proposal_stds[rand_node] > step_size_limits[rand_node]:
-										proposal_stds[rand_node] = step_size_limits[rand_node]
-								print(text_color.YELLOW + f'Step size (std) for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}- Completed :% {round((_/n_iter)*1e2)}' + text_color.END)
-							elif acceptance_rate >= ideal_acceptance_bounds[1]:
-								proposal_stds[rand_node] = proposal_stds[rand_node] * 1.05
-								if step_size_limits is not None:
-									if proposal_stds[rand_node] > step_size_limits[rand_node]:
-										proposal_stds[rand_node] = step_size_limits[rand_node]
-								print(text_color.RED + f'Step size (std) for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)} - Completed :% {(_/n_iter)*1e2}' + text_color.END)
-							else:
-								print(text_color.GREEN + f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)} - Completed :% {round((_/n_iter)*1e2)}' + text_color.END)
-					else:
-						if (_ + 1) % adaptive_check_length == 0:
-							print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
-	else:
- 
-		samples = np.array([None])
-		acceptance_rates = np.array([None])
-		misfits_cond = np.array([None])
-		misfits_vp = np.array([None])
-		misfits_vs = np.array([None])
-		samples_all = np.array([None])
-		misfits_all_cond = np.array([None])
-		misfits_all_vp = np.array([None])
-		misfits_all_vs = np.array([None])
- 
-		print(f'The value of {index}th index is below the dry conductivity of composition entered, therefore no solution is required.')
 	
+	n_params = len(param_names)
+
+	#Using Metropolis-Hastings algorithm
+
+	frac_bool = [False] * n_params
+	comp_index_sub = None
+
+	for ii in range(n_params):
+		if 'frac' in param_names[ii]:
+			if param_names[ii] != 'melt_fluid_mass_frac':
+				frac_bool[ii] = True
+				comp_index_sub = ii
+
+	if sum(frac_bool) > 1:
+		raise KeyError('Currently only one of the parameters chosen can be modal compositional parameter.')
+		
+	melt_solv = 'melt_fluid_mass_frac' in param_names
+
+	current_params = np.array(initial_params[index])
+
+	#Extracting per-index limits
+	param_mins = np.array([lower_limits[i][index] for i in range(n_params)])
+	param_maxs = np.array([upper_limits[i][index] for i in range(n_params)])
+
+	#Initial setting of the parameters.
+	if sum(frac_bool) == 1:
+
+		if object.solid_phase_method == 2: #if mineral
+			_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
+				object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
+				object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
+		else: #if rock
+			_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
+				object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
+
+		comp_old = _comp_list[comp_index[comp_index_sub]]
+
+		comp_list = _comp_adjust_(np.array(_comp_list), current_params[comp_index_sub], comp_old)
+
+		for idx_t in range(len(_comp_list)):
+			if object.solid_phase_method == 2:
+				object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
+			else:
+				object.rock_frac_list[idx_t][index] = comp_list[idx_t]
+
+		water_solv = True
+
+	#Executing the commands - setting initial parameters
+	for ii in range(n_params):
+		getattr(object, param_names[ii])[index] = current_params[ii]
+
+	if water_solv == True:
+
+		if transition_zone == False:
+			object.mantle_water_distribute(method = 'index', sol_idx = index)
+		else:
+			object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+			
+		if melt_solv == True:
+			
+			#to interpolation of fluid density so eos do not have to be solved at each iteration.
+			try:
+				water_index = param_names.index('bulk_water')
+				water_end = upper_limits[water_index]
+				water_end = water_end[0]
+			except ValueError:
+				water_end = 1e5
+
+			object.calculate_density_fluid(sol_idx = index, method = 'array', interp_for_iter = True, water_start = 0, water_end = water_end)
+
+	#Calculating the initial conductivity
+	cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
+	if (vp_list is not None) or (vs_list is not None):
+		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'index', sol_idx = index)
+
+	current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+	
+	if vp_list is not None:
+		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index])
+	else:
+		current_likelihood_vp = 1
+	if vs_list is not None:
+		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index])
+	else:
+		current_likelihood_vs = 1
+
+	#Calculate initial prior likelihood
+	current_prior = 1.0
+	if param_priors is not None:
+		for ii in range(n_params):
+			if param_priors[ii] is not None:
+				prior_mean = param_priors[ii][0][index]
+				prior_sigma = param_priors[ii][1][index]
+				current_prior *= np.exp(-0.5 * ((current_params[ii] - prior_mean) / prior_sigma)**2)
+
+	current_likelihood = current_likelihood_cond * current_likelihood_vp * current_likelihood_vs * current_prior
+
+	#empty arrays to fill it up with samples
+	samples = []
+	misfits_cond = []
+	misfits_vp = []
+	misfits_vs = []
+	misfits_all_cond = []
+	misfits_all_vp = []
+	misfits_all_vs = []
+	samples_all = []
+	acceptance_rates = []
+	accepted = 0
+	print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
+	print(text_color.YELLOW + f'{n_iter} total samples.' + text_color.END)
+	print(text_color.RED + f'{burning} burning samples.' + text_color.END)
+
+	#loop for monte-carlo
+	for _ in range(n_iter):
+		
+		#proposing the new parameters
+		proposal = np.array(current_params)
+		rand_node = np.random.randint(n_params) #random node generation 0 to n_params-1
+		randomgen = np.random.normal(0, proposal_stds[rand_node], size=1)[0] #proposal for randomwalk step
+		proposal[rand_node] = current_params[rand_node] + randomgen
+		
+		continue_bounds = np.all((proposal > param_mins) & (proposal < param_maxs))
+		
+		if continue_bounds == False:
+			proposal = current_params #if out of bounds go back to the previous parameters
+
+		if continue_bounds == True:
+			#adjusting for composition if needed...
+			if comp_solv == True:
+
+				if sum(frac_bool) == 1:
+
+					if object.solid_phase_method == 2: #if mineral
+						_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
+							object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
+							object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
+					else: #if rock
+						_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
+							object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
+
+					comp_old = _comp_list[comp_index[comp_index_sub]]
+
+					comp_list = _comp_adjust_(np.array(_comp_list), proposal[comp_index_sub], comp_old)
+
+					for idx_t in range(len(_comp_list)):
+						if object.solid_phase_method == 2:
+							object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
+						else:
+							object.rock_frac_list[idx_t][index] = comp_list[idx_t]
+
+			#setting up the proposed parameters
+			for ii in range(n_params):
+				getattr(object, param_names[ii])[index] = proposal[ii]
+
+			#distribute water if needed
+			if water_solv == True:
+				if transition_zone == False:
+					object.mantle_water_distribute(method = 'index', sol_idx = index)
+				else:
+					object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+
+			proposed_cond = object.calculate_conductivity(method = 'index', sol_idx = index)
+			if (vp_list is not None) or (vs_list is not None):
+				v_bulk, proposed_vp, proposed_vs = object.calculate_seismic_velocities(method = 'index', sol_idx = index)
+			
+			proposed_likelihood_cond, misf_cond = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
+			
+			if vp_list is not None:
+				proposed_likelihood_vp, misf_vp = _likelihood(proposed_vp, vp_list[index], sigma_vp[index], norm = 'linear')
+			else:
+				proposed_likelihood_vp = 1
+				misf_vp = 0
+				
+			if vs_list is not None:
+				proposed_likelihood_vs, misf_vs = _likelihood(proposed_vs, vs_list[index], sigma_vs[index], norm = 'linear')
+			else:
+				proposed_likelihood_vs = 1
+				misf_vs = 0
+
+			#Calculate prior likelihood for proposed parameters
+			proposed_prior = 1.0
+			if param_priors is not None:
+				for ii in range(n_params):
+					if param_priors[ii] is not None:
+						prior_mean = param_priors[ii][0][index]
+						prior_sigma = param_priors[ii][1][index]
+						proposed_prior *= np.exp(-0.5 * ((proposal[ii] - prior_mean) / prior_sigma)**2)
+
+			proposed_likelihood = proposed_likelihood_cond * proposed_likelihood_vs * proposed_likelihood_vp * proposed_prior
+
+			# Calculate acceptance probability
+			acceptance_ratio = proposed_likelihood / current_likelihood
+			
+			if np.random.rand() < acceptance_ratio:
+
+				current_params = proposal
+				current_likelihood = proposed_likelihood
+
+				if _ > burning:
+					samples.append(current_params.copy())
+					misfits_cond.append(misf_cond)
+					misfits_vp.append(misf_vp)
+					misfits_vs.append(misf_vs)
+					accepted += 1
+
+			if _ > burning:
+				acceptance_rate = accepted / (_ - burning)
+				acceptance_rates.append(acceptance_rate)
+				misfits_all_cond.append(misf_cond)
+				misfits_all_vp.append(misf_vp)
+				misfits_all_vs.append(misf_vs)
+				samples_all.append(current_params.copy())
+				
+				# Check if stuck after enough post-burn-in samples
+				if (_ - burning) == 5000 and accepted == 0:
+					print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
+					if widen_count < max_widen_attempts:
+						widen_count += 1
+						# Widen priors for parameters that have them
+						if param_priors is not None:
+							for ii in range(n_params):
+								if param_priors[ii] is not None:
+									param_priors[ii][1][index] = param_priors[ii][1][index] * 1.25
+									print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} to sigma={param_priors[ii][1][index]:.1f}, attempt {widen_count}' + text_color.END)
+				
+				if adaptive_alg == True:
+					if (_ + 1) % adaptive_check_length == 0:
+						if acceptance_rate <= ideal_acceptance_bounds[0]:
+							proposal_stds[rand_node] = proposal_stds[rand_node] * 0.95
+							if step_size_limits is not None:
+								if proposal_stds[rand_node] > step_size_limits[rand_node]:
+									proposal_stds[rand_node] = step_size_limits[rand_node]
+							print(text_color.YELLOW + f'Step size (std) for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}- Completed :% {round((_/n_iter)*1e2)}' + text_color.END)
+						elif acceptance_rate >= ideal_acceptance_bounds[1]:
+							proposal_stds[rand_node] = proposal_stds[rand_node] * 1.05
+							if step_size_limits is not None:
+								if proposal_stds[rand_node] > step_size_limits[rand_node]:
+									proposal_stds[rand_node] = step_size_limits[rand_node]
+							print(text_color.RED + f'Step size (std) for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)} - Completed :% {(_/n_iter)*1e2}' + text_color.END)
+						else:
+							print(text_color.GREEN + f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)} - Completed :% {round((_/n_iter)*1e2)}' + text_color.END)
+				else:
+					if (_ + 1) % adaptive_check_length == 0:
+						print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+
 	misfits = [misfits_cond, misfits_vp, misfits_vs]
 	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs]
 	
 	return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
- 
  
 def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, upper_limits,
 	lower_limits, sigma_cond, proposal_stds, n_iter, vp_list = None, vs_list = None, sigma_vs = None, sigma_vp = None,
@@ -1311,11 +1296,7 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			getattr(object, name)
 		except AttributeError:
 			raise AttributeError(f'There is no such parameter name {name} for the pide object.')
- 
-	continue_bool = []
-	for i in range(len(cond_list)):
-		continue_bool.append(cond_list[i] > cond_check[i])
- 
+  
 	if burning >= n_iter:
 		raise ValueError('Burning samples cannot be larger than the total iteration number (n_iter).')
  
@@ -1422,7 +1403,7 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			proposal_stds = proposal_stds, n_iter = n_iter, burning = burning,
 			vp_list = vp_list, vs_list = vs_list, sigma_vp = sigma_vp, sigma_vs = sigma_vs,
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index,
-			continue_bool = continue_bool, adaptive_alg = adaptive_alg,
+			adaptive_alg = adaptive_alg,
 			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
 			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors)
  
@@ -1450,7 +1431,7 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			proposal_stds = proposal_stds, n_iter = n_iter, burning = burning,
 			vp_list = vp_list, vs_list = vs_list, sigma_vp = sigma_vp, sigma_vs = sigma_vs,
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index,
-			continue_bool = continue_bool, adaptive_alg = adaptive_alg,
+			adaptive_alg = adaptive_alg,
 			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
 			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors)
 
