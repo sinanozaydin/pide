@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
 from .utils.utils import text_color, check_type
 
 def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
@@ -908,11 +909,11 @@ def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_
 	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
 	
 def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, upper_limits,
-	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv,
+	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, melt_thermodyn, pres_interp,
 	vp_list = None, vs_list = None, sigma_vp = None, sigma_vs = None,
 	adaptive_alg = True, ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000,
 	comp_index = [0,0], step_size_limits = None, transition_zone = False, param_priors = None,
-	max_widen_attempts = 3):
+	max_widen_attempts = 3, melt_thermodyn_interp = None):
 	
 	"""
 	MCMC external solver for the metropolis_hastings_n_param function for parallelization purposes.
@@ -922,7 +923,18 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	widen_count = 0
 	proposal_stds = list(proposal_stds)
 
-	
+	if melt_thermodyn == True:
+		
+		if 'T' in param_names:
+			idx_T = param_names.index('T')
+		else:
+			idx_T = None
+		
+		if 'bulk_water' in param_names:
+			idx_B = param_names.index('bulk_water')
+		else:
+			idx_B = None
+
 	n_params = len(param_names)
 
 	#Using Metropolis-Hastings algorithm
@@ -1076,6 +1088,24 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 			#setting up the proposed parameters
 			for ii in range(n_params):
 				getattr(object, param_names[ii])[index] = proposal[ii]
+			
+			if melt_thermodyn == True:
+
+				if idx_T is not None:
+					temp_ = proposal[idx_T] - 273.15
+				else:
+					temp_ = object.T[index] - 273.15
+				if idx_B is not None:
+					bw_ = proposal[idx_B] * 1e-4
+				else:
+					bw_ = object.bulk_water[index] * 1e-4
+
+				if pres_interp == False:
+					melt_frac = melt_thermodyn_interp([temp_,bw_])
+				else:
+					melt_frac = melt_thermodyn_interp([temp_,bw_, object.p[index]])
+
+				getattr(object, 'melt_fluid_mass_frac')[index] = melt_frac
 
 			#distribute water if needed
 			if water_solv == True:
@@ -1137,7 +1167,7 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 				samples_all.append(current_params.copy())
 				
 				# Check if stuck after enough post-burn-in samples
-				if (_ - burning) == 5000 and accepted == 0:
+				if ((_ - burning) % 5000 == 0) and accepted == 0:
 					print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
 					if widen_count < max_widen_attempts:
 						widen_count += 1
@@ -1234,6 +1264,8 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 		Number of iterations between check for adaptive algorithm (default is 1000).
 	step_size_limits : list of float, optional
 		Bounds for the adaptive proposal step sizes. Length n_params.
+	melt_thermodyn : bool, optional
+		Method for determining melt from thermodynamic equations
  
 	Returns
 	-------
@@ -1281,6 +1313,8 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 	ideal_acceptance_bounds = kwargs.pop('ideal_acceptance_bounds', [0.2, 0.3])
 	adaptive_check_length = kwargs.pop('adaptive_check_length', 1000)
 	step_size_limits = kwargs.pop('step_size_limits', None)
+	melt_thermodyn = kwargs.pop('melt_thermodyn', False)
+	melt_interp_object = kwargs.pop('melt_interp_object', None)
  
 	#Pre checks for the input parameters.
 	if type(ideal_acceptance_bounds) == list:
@@ -1337,14 +1371,87 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 				object.set_bulk_water(0.0)
 		else:
 			raise ValueError('You cannot change just a single phase water content. If you are after fitting for a single phase, try bulk_water as the parameter.')
- 
+	
+	
 	if any('melt' in xx for xx in param_names) == True:
-		water_solv = True
-		for ii in range(n_params):
-			if len(getattr(object, param_names[ii])) != len(object.T):
-				object.set_parameter(param_names[ii], 0.0)
+		if melt_thermodyn == False:
+			water_solv = True
+			for ii in range(n_params):
+				if len(getattr(object, param_names[ii])) != len(object.T):
+					object.set_parameter(param_names[ii], 0.0)
+		else:
+			raise KeyError('While melt_thermodyn is set to True, the user cannot choose melt fraction as a independent parameter. Melt fraction is estimated from thermodynamic equations.')
+		
+	if melt_thermodyn == True:
+		if melt_interp_object is None:
+			print('Establishing grid interpolator for thermodynamic melt modelling...')
+			object.set_bulk_water(0.0)
+			object.mantle_water_distribute()
+			if np.all(object.p == object.p[0]):
+				pres_interp = False
+			else:
+				pres_interp = True
+
+			d_per_melt = (object.ol_frac * object.d_melt_ol) +\
+					(object.opx_frac_wt * object.d_melt_opx) +\
+					(object.cpx_frac_wt * object.d_melt_cpx) +\
+					(object.garnet_frac_wt * object.d_melt_garnet)
+			
+			d_per_melt_avg = np.average(d_per_melt)
+
+			if 'T' in param_names:
+				idx_T = param_names.index('T')
+				upper_lim_T = np.amax(upper_limits[idx_T]) - 273.15
+				low_lim_T = np.amin(lower_limits[idx_T]) - 273.15
+			else:
+				upper_lim_T = np.amax(object.T) + 100.0 - 273.15
+				low_lim_T = np.amin(object.T) - 273.15
+
+			low_lim_X = 0
+			up_lim_X = 5.0
+			
+			from pide.geodyn.mantlemelting.katz_2003 import F_wet
+			
+			T_grid = np.arange(low_lim_T, upper_lim_T, 25)
+			
+			if pres_interp == False:
+				X_grid = np.linspace(low_lim_X, up_lim_X, 200)  # wt% water
+				F_table = np.zeros((len(T_grid), len(X_grid)))
+				for i, t in enumerate(T_grid):
+					for j, x in enumerate(X_grid):
+						F_table[i, j] = F_wet(T=t, P=object.p[0], X=x, D=d_per_melt_avg)
+				F_table[F_table < 0] = 0.0
+
+				melt_interp = RegularGridInterpolator((T_grid, X_grid), F_table, 
+												bounds_error=False, fill_value=0.0)
+				
+			elif pres_interp == True:
+				print('Startin thermodynamic pre-interpolator for melt. If this is taking more than 5 minutes restart.')
+				low_lim_P = np.amin(object.p) - 0.1
+				upper_lim_P = np.amax(object.p) + 0.1
+				X_grid = np.linspace(low_lim_X, up_lim_X, 50)  # wt% water
+				P_grid = np.linspace(low_lim_P,upper_lim_P,50)
+				F_table = np.zeros((len(T_grid), len(X_grid), len(P_grid)))
+				for i, t in enumerate(T_grid):
+					for j, x in enumerate(X_grid):
+						for k, pr in enumerate(P_grid):
+							F_table[i, j, k] = F_wet(T=t, P=pr, X=x, D=d_per_melt_avg)
+
+				F_table[F_table < 0] = 0.0
+				print('F table finished')
+				print('Interpolating')
+				melt_interp = RegularGridInterpolator((T_grid, X_grid, P_grid), F_table, 
+												bounds_error=False, fill_value=0.0)
+				print('Interpolation table finished.')
+		else:
+
+			melt_interp = melt_interp_object	
+	else:
+
+		melt_interp = None
  
 	if any('frac' in xx for xx in param_names) == True:
+
 		comp_solv = True
 		water_solv = True
  
@@ -1405,7 +1512,8 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index,
 			adaptive_alg = adaptive_alg,
 			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
-			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors)
+			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors,
+			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp)
  
 			c = pool.map(process_item_partial, index_list)
  
@@ -1433,7 +1541,8 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index,
 			adaptive_alg = adaptive_alg,
 			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
-			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors)
+			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors,
+			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp)
 
 			sample_distr.append(c[0])
 			acceptance_rates.append(c[1])

@@ -2249,7 +2249,7 @@ class pide(object):
 		> set_xfe_mineral(ol=[0.1, 0.11], opx=[0.1, 0.11], cpx=[0.1, 0.11], garnet=[0.1, 0.11])
 	
 		"""
-	
+
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
 		
@@ -2294,7 +2294,9 @@ class pide(object):
 		pide.xfe_mineral_list = [pide.quartz_xfe, pide.plag_xfe, pide.amp_xfe, pide.kfelds_xfe,
 			 pide.opx_xfe, pide.cpx_xfe, pide.mica_xfe, pide.garnet_xfe, pide.sulphide_xfe,
 				   pide.graphite_xfe, pide.ol_xfe, pide.sp_xfe, pide.rwd_wds_xfe, pide.perov_xfe, pide.mixture_xfe, pide.other_xfe]
-				   
+		
+		self.bulk_xfe  = np.sum([xfe * frac for xfe, frac in zip(self.xfe_mineral_list, self.mineral_frac_list)], axis=0) / np.sum(self.mineral_frac_list, axis=0)
+
 		self.density_loaded = False
 		self.seismic_setup = False
 			
@@ -5009,6 +5011,7 @@ class pide(object):
 				self.v_anelasticity_bulk[self.idx_unique[comp_idx]] = v_anelasticity[0]
 				self.v_anelasticity_p[self.idx_unique[comp_idx]] = v_anelasticity[1]
 				self.v_anelasticity_s[self.idx_unique[comp_idx]] = v_anelasticity[2]
+				
 		elif method == 'index':
 			
 			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
