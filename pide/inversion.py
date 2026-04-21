@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from .utils.utils import text_color, check_type
+import copy
 
 def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 
@@ -922,6 +923,9 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	
 	widen_count = 0
 	proposal_stds = list(proposal_stds)
+	
+	if param_priors is not None:
+		param_priors = copy.deepcopy(param_priors)
 
 	if melt_thermodyn == True:
 		
@@ -936,7 +940,6 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 			idx_B = None
 
 	n_params = len(param_names)
-
 	#Using Metropolis-Hastings algorithm
 
 	frac_bool = [False] * n_params
@@ -985,6 +988,27 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	#Executing the commands - setting initial parameters
 	for ii in range(n_params):
 		getattr(object, param_names[ii])[index] = current_params[ii]
+		
+	if melt_thermodyn == True:
+
+		if idx_T is not None:
+			temp_ = current_params[idx_T] - 273.15
+		else:
+			temp_ = object.T[index] - 273.15
+		if idx_B is not None:
+			bw_ = current_params[idx_B] * 1e-4
+		else:
+			bw_ = object.bulk_water[index] * 1e-4
+
+		if pres_interp == False:
+			melt_frac = melt_thermodyn_interp([temp_,bw_])
+		else:
+			melt_frac = melt_thermodyn_interp([temp_,bw_, object.p[index]])
+			
+		if melt_frac < 0.0001:
+			melt_frac == 0.0
+
+		getattr(object, 'melt_fluid_mass_frac')[index] = melt_frac
 
 	if water_solv == True:
 
@@ -993,7 +1017,7 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 		else:
 			object.transition_zone_water_distribute(method = 'index', sol_idx = index)
 			
-		if melt_solv == True:
+		if (melt_solv == True) or (melt_thermodyn == True):
 			
 			#to interpolation of fluid density so eos do not have to be solved at each iteration.
 			try:
@@ -1042,6 +1066,8 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	misfits_all_vs = []
 	samples_all = []
 	acceptance_rates = []
+	melt_samples = []
+	melt_samples_all = []
 	accepted = 0
 	print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
 	print(text_color.YELLOW + f'{n_iter} total samples.' + text_color.END)
@@ -1156,6 +1182,8 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 					misfits_cond.append(misf_cond)
 					misfits_vp.append(misf_vp)
 					misfits_vs.append(misf_vs)
+					if melt_thermodyn == True:
+						melt_samples.append(melt_frac.copy())
 					accepted += 1
 
 			if _ > burning:
@@ -1165,6 +1193,8 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 				misfits_all_vp.append(misf_vp)
 				misfits_all_vs.append(misf_vs)
 				samples_all.append(current_params.copy())
+				if melt_thermodyn == True:
+					melt_samples_all.append(melt_frac.copy())
 				
 				# Check if stuck after enough post-burn-in samples
 				if ((_ - burning) % 5000 == 0) and accepted == 0:
@@ -1180,20 +1210,31 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 				
 				if adaptive_alg == True:
 					if (_ + 1) % adaptive_check_length == 0:
-						if acceptance_rate <= ideal_acceptance_bounds[0]:
-							proposal_stds[rand_node] = proposal_stds[rand_node] * 0.95
-							if step_size_limits is not None:
-								if proposal_stds[rand_node] > step_size_limits[rand_node]:
-									proposal_stds[rand_node] = step_size_limits[rand_node]
-							print(text_color.YELLOW + f'Step size (std) for random walk are decreased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)}- Completed :% {round((_/n_iter)*1e2)}' + text_color.END)
-						elif acceptance_rate >= ideal_acceptance_bounds[1]:
-							proposal_stds[rand_node] = proposal_stds[rand_node] * 1.05
-							if step_size_limits is not None:
-								if proposal_stds[rand_node] > step_size_limits[rand_node]:
-									proposal_stds[rand_node] = step_size_limits[rand_node]
-							print(text_color.RED + f'Step size (std) for random walk increased to {proposal_stds} - Acceptance Rate: {round(acceptance_rate,3)} - Completed :% {(_/n_iter)*1e2}' + text_color.END)
+						if acceptance_rate < 0.1:
+							proposal_stds[rand_node] *= 0.8
+							status = 'very low'
+							color = text_color.RED
+						elif acceptance_rate < ideal_acceptance_bounds[0]:
+							proposal_stds[rand_node] *= 0.95
+							status = 'low'
+							color = text_color.YELLOW
+						elif acceptance_rate > 0.5:
+							proposal_stds[rand_node] *= 1.2
+							status = 'very high'
+							color = text_color.RED
+						elif acceptance_rate > ideal_acceptance_bounds[1]:
+							proposal_stds[rand_node] *= 1.05
+							status = 'high'
+							color = text_color.YELLOW
 						else:
-							print(text_color.GREEN + f'Acceptence rate is good size: - Acceptance Rate: {round(acceptance_rate,3)} - Completed :% {round((_/n_iter)*1e2)}' + text_color.END)
+							status = 'good'
+							color = text_color.GREEN
+					
+						# Enforce step size limits (both min and max)
+						if step_size_limits is not None:
+							if proposal_stds[rand_node] > step_size_limits[rand_node]:
+								proposal_stds[rand_node] = step_size_limits[rand_node]
+						print(color + f'Acceptance {status}: {acceptance_rate:.3f} | Steps: {[round(s,4) for s in proposal_stds]} | {(_/n_iter)*100:.1f}% done' + text_color.END)
 				else:
 					if (_ + 1) % adaptive_check_length == 0:
 						print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
@@ -1201,7 +1242,10 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	misfits = [misfits_cond, misfits_vp, misfits_vs]
 	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs]
 	
-	return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
+	if melt_thermodyn == False:
+		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
+	else:
+		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all), np.array(melt_samples), np.array(melt_samples_all)
  
 def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, upper_limits,
 	lower_limits, sigma_cond, proposal_stds, n_iter, vp_list = None, vs_list = None, sigma_vs = None, sigma_vp = None,
@@ -1383,6 +1427,7 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			raise KeyError('While melt_thermodyn is set to True, the user cannot choose melt fraction as a independent parameter. Melt fraction is estimated from thermodynamic equations.')
 		
 	if melt_thermodyn == True:
+		water_solv = True
 		if melt_interp_object is None:
 			print('Establishing grid interpolator for thermodynamic melt modelling...')
 			object.set_bulk_water(0.0)
@@ -1445,10 +1490,11 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 				print('Interpolation table finished.')
 		else:
 
-			melt_interp = melt_interp_object	
+			melt_interp = melt_interp_object
 	else:
 
 		melt_interp = None
+		pres_interp = False
  
 	if any('frac' in xx for xx in param_names) == True:
 
@@ -1522,6 +1568,10 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 		misfits = [x[2] for x in c]
 		samples_all = [x[3] for x in c]
 		misfits_all = [x[4] for x in c]
+		if melt_thermodyn == True:
+			melt_samples = [x[5] for x in c]
+			melt_samples_all = [x[6] for x in c]
+			
  
 	else:
  
@@ -1530,6 +1580,8 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 		misfits = []
 		samples_all = []
 		misfits_all = []
+		melt_samples = []
+		melt_samples_all = []
  
 		for idx in range(0, len(index_list)):
 			
@@ -1549,6 +1601,9 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			misfits.append(c[2])
 			samples_all.append(c[3])
 			misfits_all.append(c[4])
+			if melt_thermodyn == True:
+				melt_samples.append(c[5])
+				melt_samples_all.append(c[6])
  
 	if save_distr == True:
  
@@ -1562,5 +1617,9 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 		save_h5_files(array_list=misfits, array_names=array_names_idx, file_name=distr_file_names + '_misfit.h5')
 		save_h5_files(array_list=samples_all, array_names=array_names_idx, file_name=distr_file_names + '_distr_all.h5')
 		save_h5_files(array_list=misfits_all, array_names=array_names_idx, file_name=distr_file_names + '_misfit_all.h5')
- 
-	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
+	
+	if melt_thermodyn == False:
+		return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
+	else:
+		return sample_distr, acceptance_rates, misfits, samples_all, misfits_all, melt_samples, melt_samples_all
+	
