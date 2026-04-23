@@ -7,6 +7,7 @@ core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_
 import sys, re, warnings, json, inspect
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.optimize import brentq
 from santex.isotropy import Isotropy
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -2299,6 +2300,34 @@ class pide(object):
 
 		self.density_loaded = False
 		self.seismic_setup = False
+
+	def set_bulk_xfe(self,value, reval = False, index = None):
+	
+		"""
+		Set bulk water content, overriding individual mineral water contents.
+	
+		Parameters
+		----------
+		value : float or array-like
+			Bulk xfe content value(s). Can be a single float or a 1-D array.
+		reval : bool, optional
+			Whether to re-evaluate dependent calculations after setting bulk xFe. Default is False.
+		index : int or None, optional
+			Optional index to specify where to apply the bulk water content. Default is None.
+	
+		Examples
+		--------
+		> set_bulk_xfe(0.1)
+		> set_bulk_xfe([100,200,1000])
+	
+		"""
+		if self.temperature_default == True:
+			self._suggestion_temp_array()
+			
+		if reval == False:
+			self.bulk_xfe = array_modifier(input = value, array = self.T, varname = 'bulk_xfe')
+		else:
+			self.bulk_xfe = array_modifier(input = self.bulk_xfe, array = self.T, varname = 'bulk_xfe')
 			
 	def set_param1_mineral(self, reval = False, **kwargs):
 	
@@ -5761,7 +5790,151 @@ class pide(object):
 		#calculating garnet water content
 		pide.garnet_water[idx_node] = pide.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		pide.garnet_water[self.garnet_frac == 0] = 0.0
+
+	def mantle_xfe_distribute(self, KD_opx_ol=1.0, KD_cpx_ol=0.85,
+		X_Ca_garnet=0.05, method='array', **kwargs):
+		"""
+		Distribute bulk xFe (Fe/(Fe+Mg)) to individual mantle minerals using
+		Fe-Mg exchange partition coefficients.
+
+		KD is defined as: KD_mineral/ol = (Fe/Mg)_mineral / (Fe/Mg)_olivine
+
+		Garnet KD is temperature-dependent following O'Neill & Wood (1979):
+			ln(KD_gt/ol) = A/T + B + C * X_Ca_garnet
+		where T is in Kelvin.
+
+		Parameters
+		----------
+		bulk_xfe : float or array
+			Bulk rock xFe = Fe/(Fe+Mg), e.g., 0.10 for Mg# = 90
+		KD_opx_ol : float
+			Fe-Mg exchange coefficient between opx and olivine.
+			Default = 1.0 (von Seckendorff & O'Neill, 1993)
+		KD_cpx_ol : float
+			Fe-Mg exchange coefficient between cpx and olivine.
+			Default = 0.85
+		X_Ca_garnet : float
+			Mole fraction of Ca in garnet (grossular component).
+			Default = 0.05 for typical mantle pyrope.
+		method : str
+			'array' to process all points, 'index' to process a single point
+		sol_idx : int, optional
+			Index of the point to solve when method='index'
+
+
+		References
+		----------
+		O'Neill & Wood (1979) Contrib Mineral Petrol 70:59-70
+			- Garnet-olivine Fe-Mg exchange, T-dependent KD
+		von Seckendorff & O'Neill (1993) Contrib Mineral Petrol 113:196-207
+			- Olivine-orthopyroxene Fe-Mg exchange
+		Krogh (1988) Contrib Mineral Petrol 99:44-48
+			- Garnet-clinopyroxene Fe-Mg exchange
+		"""
+
+		sol_idx = kwargs.pop('sol_idx', 0)
+
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+
+		def _KD_garnet_olivine(T_K, X_Ca=0.05):
+			"""
+			Temperature-dependent KD for garnet/olivine Fe-Mg exchange.
+			From O'Neill & Wood (1979), simplified for mantle peridotite compositions.
+
+			KD = (Fe/Mg)_garnet / (Fe/Mg)_olivine
+
+			ln(KD) = 3740/T - 1.50 + 1.5 * X_Ca_garnet
+
+			At 1273 K (1000°C): KD ≈ 2.1 (for X_Ca = 0.05)
+			At 1573 K (1300°C): KD ≈ 1.7
+			At 1073 K (800°C):  KD ≈ 2.6
+			"""
+			ln_KD = 3740.0 / T_K - 1.50 + 1.5 * X_Ca
+			return np.exp(ln_KD)
+
+		def _xfe_from_FeMg(FeMg_ratio):
+			"""Convert Fe/Mg ratio to xFe = Fe/(Fe+Mg)"""
+			return FeMg_ratio / (1.0 + FeMg_ratio)
+
+		def _FeMg_from_xfe(xfe):
+			"""Convert xFe = Fe/(Fe+Mg) to Fe/Mg ratio"""
+			return xfe / (1.0 - xfe)
+
+		def _solve_single(bulk_xfe_i, ol_frac_i, opx_frac_i, cpx_frac_i, garnet_frac_i,
+			KD_gt_ol_i, KD_opx_ol_i, KD_cpx_ol_i):
+			"""
+			Solve for olivine xFe given bulk xFe and partition coefficients.
+
+			Mass balance: bulk_xfe = sum(mineral_xfe_i * frac_i) / sum(frac_i)
+
+			Given KD values, each mineral's xFe is a function of olivine's xFe:
+				(Fe/Mg)_mineral = KD * (Fe/Mg)_olivine
+				xfe_mineral = KD * FeMg_ol / (1 + KD * FeMg_ol)
+			"""
+
+			total_frac = ol_frac_i + opx_frac_i + cpx_frac_i + garnet_frac_i
+
+			if total_frac == 0:
+				return bulk_xfe_i, bulk_xfe_i, bulk_xfe_i, bulk_xfe_i
+
+			def mass_balance_residual(ol_xfe_guess):
+
+				if ol_xfe_guess <= 0 or ol_xfe_guess >= 1:
+					return 1e10
+
+				FeMg_ol = _FeMg_from_xfe(ol_xfe_guess)
+
+				# Calculate each mineral's xFe from KD and olivine Fe/Mg
+				FeMg_opx = KD_opx_ol_i * FeMg_ol
+				FeMg_cpx = KD_cpx_ol_i * FeMg_ol
+				FeMg_gt = KD_gt_ol_i * FeMg_ol
+
+				opx_xfe_i = _xfe_from_FeMg(FeMg_opx)
+				cpx_xfe_i = _xfe_from_FeMg(FeMg_cpx)
+				gt_xfe_i = _xfe_from_FeMg(FeMg_gt)
+
+				# Mass balance
+				calculated_bulk = (ol_xfe_guess * ol_frac_i +
+					opx_xfe_i * opx_frac_i +
+					cpx_xfe_i * cpx_frac_i +
+					gt_xfe_i * garnet_frac_i) / total_frac
+
+				return calculated_bulk - bulk_xfe_i
+
+			# Solve for olivine xFe using Brent's method
+			try:
+				ol_xfe_sol = brentq(mass_balance_residual, 1e-6, 1.0 - 1e-6)
+			except ValueError:
+				# If brentq fails, return bulk_xfe for all minerals
+				return bulk_xfe_i, bulk_xfe_i, bulk_xfe_i, bulk_xfe_i
+
+			# Calculate other mineral xFe from solution
+			FeMg_ol = _FeMg_from_xfe(ol_xfe_sol)
+			opx_xfe_sol = _xfe_from_FeMg(KD_opx_ol_i * FeMg_ol)
+			cpx_xfe_sol = _xfe_from_FeMg(KD_cpx_ol_i * FeMg_ol)
+			gt_xfe_sol = _xfe_from_FeMg(KD_gt_ol_i * FeMg_ol)
+
+			return ol_xfe_sol, opx_xfe_sol, cpx_xfe_sol, gt_xfe_sol
+
+		n = len(self.bulk_xfe)
 		
+		if len(self.ol_xfe) != n:
+			self.set_xfe_mineral(reval = True)
+
+		if method == 'index':
+			KD_gt_ol = _KD_garnet_olivine(self.T[idx_node], X_Ca_garnet)
+			self.ol_xfe[idx_node], self.opx_xfe[idx_node], self.cpx_xfe[idx_node], self.garnet_xfe[idx_node] = _solve_single(
+				self.bulk_xfe[idx_node], self.ol_frac[idx_node], self.opx_frac[idx_node], self.cpx_frac[idx_node], self.garnet_frac[idx_node],
+				KD_gt_ol, KD_opx_ol, KD_cpx_ol)
+		else:
+			for idx_xfe in range(n):
+				KD_gt_ol = _KD_garnet_olivine(self.T[idx_xfe], X_Ca_garnet)
+				self.ol_xfe[idx_xfe], self.opx_xfe[idx_xfe], self.cpx_xfe[idx_xfe], self.garnet_xfe[idx_xfe] = _solve_single(
+					self.bulk_xfe[idx_xfe], self.ol_frac[idx_xfe], self.opx_frac[idx_xfe], self.cpx_frac[idx_xfe], self.garnet_frac[idx_xfe],
+					KD_gt_ol, KD_opx_ol, KD_cpx_ol)		
 		
 	def transition_zone_water_distribute(self, method = 'array', **kwargs):
 	

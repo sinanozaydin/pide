@@ -1029,6 +1029,10 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 
 			object.calculate_density_fluid(sol_idx = index, method = 'array', interp_for_iter = True, water_start = 0, water_end = water_end)
 
+	if 'bulk_xfe' in param_names:
+
+		object.mantle_xfe_distribute(method = 'index', sol_idx = index)
+
 	#Calculating the initial conductivity
 	cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
 	if (vp_list is not None) or (vs_list is not None):
@@ -1139,6 +1143,10 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 					object.mantle_water_distribute(method = 'index', sol_idx = index)
 				else:
 					object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+			
+			if 'bulk_xfe' in param_names:
+		
+				object.mantle_xfe_distribute(method = 'index', sol_idx = index)
 
 			proposed_cond = object.calculate_conductivity(method = 'index', sol_idx = index)
 			if (vp_list is not None) or (vs_list is not None):
