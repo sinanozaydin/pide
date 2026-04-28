@@ -1004,10 +1004,10 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 			melt_frac = melt_thermodyn_interp([temp_,bw_])
 		else:
 			melt_frac = melt_thermodyn_interp([temp_,bw_, object.p[index]])
-			
+
 		if melt_frac < melt_frac_limit:
 				
-			melt_frac == 0.0
+			melt_frac = np.array([0.0])
 
 		getattr(object, 'melt_fluid_mass_frac')[index] = melt_frac
 
@@ -1075,11 +1075,11 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	melt_samples_all = []
 	accepted = 0
 	print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
-	print(text_color.YELLOW + f'{n_iter} total samples.' + text_color.END)
+	print(text_color.YELLOW + f'{n_iter*2} total samples, {n_iter} minimum samples.' + text_color.END)
 	print(text_color.RED + f'{burning} burning samples.' + text_color.END)
 
 	#loop for monte-carlo
-	for _ in range(n_iter):
+	for _ in range(n_iter*2):
 		
 		#proposing the new parameters
 		proposal = np.array(current_params)
@@ -1138,7 +1138,7 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 				
 				if melt_frac < melt_frac_limit:
 				
-					melt_frac == 0.0
+					melt_frac = np.array([0.0])
 
 				getattr(object, 'melt_fluid_mass_frac')[index] = melt_frac
 
@@ -1199,8 +1199,16 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 						melt_samples.append(melt_frac.copy())
 					accepted += 1
 
-			if _ > burning:
+			
 				acceptance_rate = accepted / (_ - burning)
+				if _ > burning:
+					# After base iterations, check if we need to continue
+					if _ >= n_iter and (_ - n_iter) % 2000 == 0:
+						if acceptance_rate <= 0.3:
+							print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
+							break
+						else:
+							print(f'Acceptance rate {acceptance_rate:.3f} still too high. Continuing...')
 				acceptance_rates.append(acceptance_rate)
 				misfits_all_cond.append(misf_cond)
 				misfits_all_vp.append(misf_vp)
