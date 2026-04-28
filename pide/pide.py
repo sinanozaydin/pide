@@ -2331,6 +2331,8 @@ class pide(object):
 		else:
 			self.bulk_xfe = array_modifier(input = self.bulk_xfe, array = self.T, varname = 'bulk_xfe')
 			
+		self.seismic_setup = False
+			
 	def set_param1_mineral(self, reval = False, **kwargs):
 	
 		"""
@@ -5936,7 +5938,9 @@ class pide(object):
 				KD_gt_ol = _KD_garnet_olivine(self.T[idx_xfe], X_Ca_garnet)
 				self.ol_xfe[idx_xfe], self.opx_xfe[idx_xfe], self.cpx_xfe[idx_xfe], self.garnet_xfe[idx_xfe] = _solve_single(
 					self.bulk_xfe[idx_xfe], self.ol_frac[idx_xfe], self.opx_frac[idx_xfe], self.cpx_frac[idx_xfe], self.garnet_frac[idx_xfe],
-					KD_gt_ol, KD_opx_ol, KD_cpx_ol)		
+					KD_gt_ol, KD_opx_ol, KD_cpx_ol)
+					
+		self.seismic_setup = False
 		
 	def transition_zone_water_distribute(self, method = 'array', **kwargs):
 	
