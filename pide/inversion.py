@@ -1005,7 +1005,8 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 		else:
 			melt_frac = melt_thermodyn_interp([temp_,bw_, object.p[index]])
 			
-		if melt_frac < 0.0001:
+		if melt_frac < melt_frac_limit:
+				
 			melt_frac == 0.0
 
 		getattr(object, 'melt_fluid_mass_frac')[index] = melt_frac
