@@ -120,6 +120,7 @@ class pide(object):
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
 		self.set_bulk_water(0.0)
+		self.set_bulk_xfe(0.1)
 		self.set_alopx(0)
 		self.set_rock_water()
 		self.set_watercalib()
@@ -173,6 +174,7 @@ class pide(object):
 		self.set_temperature(self.T,reval = True) #in Kelvin
 		self.set_pressure(self.p,reval = True) #in GPa
 		self.set_bulk_water(self.bulk_water,reval = True)
+		self.set_bulk_xfe(self.bulk_xfe, reval = True)
 		self.set_alopx(self.al_opx)
 		self.set_melt_fluid_frac(self.melt_fluid_mass_frac,reval = True)
 		self.set_melt_properties(reval = True)

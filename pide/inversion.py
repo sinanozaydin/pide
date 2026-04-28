@@ -910,7 +910,7 @@ def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_
 	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
 	
 def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, upper_limits,
-	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, melt_thermodyn, pres_interp,
+	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, melt_thermodyn, pres_interp, melt_frac_limit,
 	vp_list = None, vs_list = None, sigma_vp = None, sigma_vs = None,
 	adaptive_alg = True, ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000,
 	comp_index = [0,0], step_size_limits = None, transition_zone = False, param_priors = None,
@@ -1134,6 +1134,10 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 					melt_frac = melt_thermodyn_interp([temp_,bw_])
 				else:
 					melt_frac = melt_thermodyn_interp([temp_,bw_, object.p[index]])
+				
+				if melt_frac < melt_frac_limit:
+				
+					melt_frac == 0.0
 
 				getattr(object, 'melt_fluid_mass_frac')[index] = melt_frac
 
@@ -1318,6 +1322,8 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 		Bounds for the adaptive proposal step sizes. Length n_params.
 	melt_thermodyn : bool, optional
 		Method for determining melt from thermodynamic equations
+	melt_frac_limit : float, optional
+		Minimum melt fraction can be estimated by the inversion algorithm. Any value smaller than this value would be set to 0.
  
 	Returns
 	-------
@@ -1367,6 +1373,7 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 	step_size_limits = kwargs.pop('step_size_limits', None)
 	melt_thermodyn = kwargs.pop('melt_thermodyn', False)
 	melt_interp_object = kwargs.pop('melt_interp_object', None)
+	melt_frac_limit = kwargs.pop('melt_frac_limit', 0.001)
  
 	#Pre checks for the input parameters.
 	if type(ideal_acceptance_bounds) == list:
@@ -1567,7 +1574,8 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			adaptive_alg = adaptive_alg,
 			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
 			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors,
-			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp)
+			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp,
+			melt_frac_limit = melt_frac_limit)
  
 			c = pool.map(process_item_partial, index_list)
  
@@ -1602,7 +1610,8 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 			adaptive_alg = adaptive_alg,
 			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
 			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors,
-			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp)
+			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp,
+			melt_frac_limit = melt_frac_limit)
 
 			sample_distr.append(c[0])
 			acceptance_rates.append(c[1])
