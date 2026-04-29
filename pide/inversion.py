@@ -1199,8 +1199,13 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 						melt_samples.append(melt_frac.copy())
 					accepted += 1
 
-			
-				acceptance_rate = accepted / (_ - burning)
+				
+				if (_ - burning) > 0:
+					acceptance_rate = accepted / (_ - burning)
+					
+				else:
+					acceptance_rate = 0
+					
 				if _ > burning:
 					# After base iterations, check if we need to continue
 					if _ >= n_iter and (_ - n_iter) % 2000 == 0:
