@@ -7,6 +7,7 @@ core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_
 import sys, re, warnings, json, inspect
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.optimize import brentq
 from santex.isotropy import Isotropy
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -47,6 +48,8 @@ from .pide_src.water_sol.rwd_wds_sol import *
 #importing eos functions
 from .pide_src.eos.fluid_eos import *
 from .pide_src.eos.melt_eos import Holland_Green_Powell_2018_ds633_MeltEOS
+#importin anelasticity functions
+from .pide_src.anelasticity import Q1_Sobolev1996, Q2_Berckhemer1982, YamauchiTakei2016, JacksonFaul2010
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
@@ -117,6 +120,7 @@ class pide(object):
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
 		self.set_bulk_water(0.0)
+		self.set_bulk_xfe(0.1)
 		self.set_alopx(0)
 		self.set_rock_water()
 		self.set_watercalib()
@@ -125,8 +129,9 @@ class pide(object):
 		self.set_param1_mineral()
 		self.set_param1_rock()
 		self.set_melt_or_fluid_mode(mode = 'melt') #default choice is melt - 1
+		self.set_seismic_attenuation(mode = 'JF2010') #default choice is JF2010
 		self.set_solid_phase_method(mode = 'mineral') #default choice is mineral - 2
-		self.set_solid_phs_mix_method(method = 0)
+		self.set_solid_phs_mix_method(method = 1) #default choice H-S lower bounds
 		self.set_solid_melt_fluid_mix_method(method = 0)
 		self.set_melt_fluid_conductivity_choice()
 		self.set_melt_fluid_frac(0)
@@ -169,6 +174,7 @@ class pide(object):
 		self.set_temperature(self.T,reval = True) #in Kelvin
 		self.set_pressure(self.p,reval = True) #in GPa
 		self.set_bulk_water(self.bulk_water,reval = True)
+		self.set_bulk_xfe(self.bulk_xfe, reval = True)
 		self.set_alopx(self.al_opx)
 		self.set_melt_fluid_frac(self.melt_fluid_mass_frac,reval = True)
 		self.set_melt_properties(reval = True)
@@ -931,6 +937,19 @@ class pide(object):
 			self.density_loaded = False
 			self.density_fluid_loaded = False
 			self.seismic_setup = False
+		
+	def set_seismic_attenuation(self,mode):
+	
+		"""A method to set seismic attenuation.
+		
+		Input:
+		string 'none','Q1','Q2','JF2010','YT2016'
+		
+		Example:
+		set_seismic_attenuation('JF2010')
+		
+		"""
+		self.seismic_attenuation = mode
 		
 	def set_watercalib(self,**kwargs):
 	
@@ -2183,7 +2202,10 @@ class pide(object):
 		self.bulk_water = array_modifier(input = value, array = self.T, varname = 'bulk_water')
 		self.solid_water = array_modifier(input = 0, array = self.T, varname = 'solid_water')
 		
-		self.set_mineral_water() #Running an empty run of this to equate the length of mineral water arrays with the defined T
+		if reval == False:
+			self.set_mineral_water() #Running an empty run of this to equate the length of mineral water arrays with the defined T
+		else:
+			self.set_mineral_water(reval=True)
 		
 		if len(np.flatnonzero(self.bulk_water < 0)) != 0:
 				
@@ -2230,7 +2252,7 @@ class pide(object):
 		> set_xfe_mineral(ol=[0.1, 0.11], opx=[0.1, 0.11], cpx=[0.1, 0.11], garnet=[0.1, 0.11])
 	
 		"""
-	
+
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
 		
@@ -2275,8 +2297,40 @@ class pide(object):
 		pide.xfe_mineral_list = [pide.quartz_xfe, pide.plag_xfe, pide.amp_xfe, pide.kfelds_xfe,
 			 pide.opx_xfe, pide.cpx_xfe, pide.mica_xfe, pide.garnet_xfe, pide.sulphide_xfe,
 				   pide.graphite_xfe, pide.ol_xfe, pide.sp_xfe, pide.rwd_wds_xfe, pide.perov_xfe, pide.mixture_xfe, pide.other_xfe]
-				   
+		
+		self.bulk_xfe  = np.sum([xfe * frac for xfe, frac in zip(self.xfe_mineral_list, self.mineral_frac_list)], axis=0) / np.sum(self.mineral_frac_list, axis=0)
+
 		self.density_loaded = False
+		self.seismic_setup = False
+
+	def set_bulk_xfe(self,value, reval = False, index = None):
+	
+		"""
+		Set bulk water content, overriding individual mineral water contents.
+	
+		Parameters
+		----------
+		value : float or array-like
+			Bulk xfe content value(s). Can be a single float or a 1-D array.
+		reval : bool, optional
+			Whether to re-evaluate dependent calculations after setting bulk xFe. Default is False.
+		index : int or None, optional
+			Optional index to specify where to apply the bulk water content. Default is None.
+	
+		Examples
+		--------
+		> set_bulk_xfe(0.1)
+		> set_bulk_xfe([100,200,1000])
+	
+		"""
+		if self.temperature_default == True:
+			self._suggestion_temp_array()
+			
+		if reval == False:
+			self.bulk_xfe = array_modifier(input = value, array = self.T, varname = 'bulk_xfe')
+		else:
+			self.bulk_xfe = array_modifier(input = self.bulk_xfe, array = self.T, varname = 'bulk_xfe')
+			
 		self.seismic_setup = False
 			
 	def set_param1_mineral(self, reval = False, **kwargs):
@@ -3009,12 +3063,7 @@ class pide(object):
 			pide.other_seis_selection = kwargs.pop('other', "fo")
 			self.seis_property_overwrite[15] = True
 
-		pide.minerals_seis_selections = [pide.quartz_seis_selection, pide.plag_seis_selection, pide.amp_seis_selection, pide.kfelds_seis_selection, pide.opx_seis_selection,
-				   pide.cpx_seis_selection, pide.mica_seis_selection, pide.garnet_seis_selection, pide.sulphide_seis_selection,
-				   pide.graphite_seis_selection, pide.ol_seis_selection, pide.sp_seis_selection, pide.rwd_wds_seis_selection, pide.perov_seis_selection,
-				   pide.mixture_seis_selection, pide.other_seis_selection]
-				   
-	def set_melt_composition(self, comp ,from_lib = False,lib_composition = 'Basalt',default = False):
+	def set_melt_composition(self, comp ,default = False):
 
 		"""
 		Set the melt composition used for melt velocity and density calculations.
@@ -3054,10 +3103,6 @@ class pide(object):
 		if default == False:
 			
 			self.melt_composition_method = 'Input'
-
-		if from_lib == True:
-
-			self.melt_comp = _get_melt_composition_from_lib(lib_composition)
 		
 		if check_type(comp) == 'array':
 			if isinstance(comp, (list, tuple, np.ndarray)) and all(isinstance(item, (list, tuple, np.ndarray)) for item in comp):
@@ -3375,7 +3420,7 @@ class pide(object):
 								   E = self.h_i[1][pide.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][pide.melt_cond_selection],
 								   E = self.h_pol[1][pide.melt_cond_selection],r = 0, alpha = 0, water = 0)
-			
+		
 		elif pide.type[1][pide.melt_cond_selection] == '1':
 
 			cond_melt[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
@@ -3396,9 +3441,8 @@ class pide(object):
 			else:
 
 				melt_odd_function = pide.name[1][pide.melt_cond_selection]
-			
-			cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
-			'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], Melt_SiO2 = self.sio2_melt[idx_node], method = method)')
+				cond_melt[idx_node] = eval(melt_odd_function + '(T = self.T[idx_node], P = self.p[idx_node], Melt_H2O = self.h2o_melt[idx_node]/water_corr_factor,' +
+				'Melt_CO2 = self.co2_melt[idx_node], Melt_Na2O = self.na2o_melt[idx_node], Melt_K2O = self.k2o_melt[idx_node], Melt_SiO2 = self.sio2_melt[idx_node], method = method)')
 
 		return cond_melt
 
@@ -3662,7 +3706,7 @@ class pide(object):
 									   sigma = sigma_p,
 									   E = h_p, r = r_p,
 									   alpha = alpha_p, water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor)
-				
+
 			elif pide.type[min_idx][min_sum_idx] == '3':
 	
 				if ('*' in pide.name[min_idx][min_sum_idx]) == True:
@@ -4516,21 +4560,41 @@ class pide(object):
 			index = None
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
-			
-		if np.mean(self.melt_fluid_mass_frac) != 0.0:
-					
-			self.calculate_density_solid()
-			self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
-			
-			if pide.fluid_or_melt_method == 0:
-				self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
-			elif pide.fluid_or_melt_method == 1:
-				self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
 		
+		if method == 'array':
+			if np.mean(self.melt_fluid_mass_frac) != 0.0:
+						
+				self.calculate_density_solid()
+				self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
+				
+				if pide.fluid_or_melt_method == 0:
+					self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
+				elif pide.fluid_or_melt_method == 1:
+					self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
+			
+			else:
+			
+				self.melt_fluid_cond = np.zeros(len(self.T))
+				
 		else:
 		
-			self.melt_fluid_cond = np.zeros(len(self.T))
-		
+			if self.melt_fluid_mass_frac[index] != 0.0:
+				
+				self.calculate_density_solid()
+				self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
+				
+				if pide.fluid_or_melt_method == 0:
+					self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
+				elif pide.fluid_or_melt_method == 1:
+					self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
+					
+			else:
+				
+				try:
+					self.melt_fluid_cond[index] = 0.0
+				except AttributeError:
+					self.melt_fluid_cond = np.zeros(len(self.T))
+
 		if pide.solid_phase_method == 1:
 		
 			if np.mean(self.granite_frac) != 0:
@@ -4713,6 +4777,9 @@ class pide(object):
 			fraction_list = np.array(fraction_list)
 			
 		elif pide.solid_phase_method == 2:
+
+			if len(self.ol_xfe) != len(self.T):
+				self.revalue_arrays()
 				
 			if np.mean(self.quartz_frac) != 0.0:
 				if self.seis_property_overwrite[0] == False:
@@ -4763,24 +4830,36 @@ class pide(object):
 				fraction_list.append(self.kfelds_frac)
 
 			if np.mean(self.opx_frac) != 0.0:
-				
+				"""
 				if self.seis_property_overwrite[4] == False:
 					opx_id_list = np.array([self.mat_ref[15][pide.minerals_cond_selections[4]]] * len(self.T))
 				else:
 					opx_id_list = np.array([self.opx_seis_selection] * len(self.T))
-				
+				"""
+				opx_id_list = ['en'] * len(self.T)
+				opx_id_list_2 = ['fs'] * len(self.T)
+
 				id_list_global.append(opx_id_list)
-				fraction_list.append(self.opx_frac)
+				id_list_global.append(opx_id_list_2)
+				fraction_list.append(self.opx_frac*(1-self.opx_xfe))
+				fraction_list.append(self.opx_frac*(self.opx_xfe))
 
 			if np.mean(self.cpx_frac) != 0.0:
 				
+				"""
 				if self.seis_property_overwrite[5] == False:
 					cpx_id_list = np.array([self.mat_ref[16][pide.minerals_cond_selections[5]]] * len(self.T))
 				else:
 					cpx_id_list = np.array([self.cpx_seis_selection] * len(self.T))
+				"""
 				
+				cpx_id_list = ['di'] * len(self.T)
+				cpx_id_list_2 = ['hed'] * len(self.T)
+
 				id_list_global.append(cpx_id_list)
-				fraction_list.append(self.cpx_frac)
+				id_list_global.append(cpx_id_list_2)
+				fraction_list.append(self.cpx_frac*(1-self.cpx_xfe))
+				fraction_list.append(self.cpx_frac*(self.cpx_xfe))
 
 			if np.mean(self.mica_frac) != 0.0:
 				
@@ -4794,13 +4873,20 @@ class pide(object):
 
 			if np.mean(self.garnet_frac) != 0.0:
 				
+				"""
 				if self.seis_property_overwrite[7] == False:
 					garnet_id_list = np.array([self.mat_ref[18][pide.minerals_cond_selections[7]]] * len(self.T))
 				else:
 					garnet_id_list = np.array([self.garnet_seis_selection] * len(self.T))
-				
+				"""
+					
+				garnet_id_list = ['py'] * len(self.T)
+				garnet_id_list_2 = ['alm'] * len(self.T)
+
 				id_list_global.append(garnet_id_list)
-				fraction_list.append(self.garnet_frac)
+				id_list_global.append(garnet_id_list_2)
+				fraction_list.append(self.garnet_frac*(1-self.garnet_xfe))
+				fraction_list.append(self.garnet_frac*(self.garnet_xfe))
 
 			if np.mean(self.sulphide_frac) != 0.0:
 				
@@ -4829,8 +4915,13 @@ class pide(object):
 				else:
 					ol_id_list = np.array([self.ol_seis_selection] * len(self.T))
 				
+				ol_id_list = ['fo'] * len(self.T)
+				ol_id_list_2 = ['fa'] * len(self.T)
+
 				id_list_global.append(ol_id_list)
-				fraction_list.append(self.ol_frac)
+				id_list_global.append(ol_id_list_2)
+				fraction_list.append(self.ol_frac*(1-self.ol_xfe))
+				fraction_list.append(self.ol_frac*(self.ol_xfe))
 
 			if np.mean(self.sp_frac) != 0.0:
 				
@@ -4892,7 +4983,7 @@ class pide(object):
 		unique_compositions = np.unique(id_list_global, axis = 0)
 		
 		idx_unique = []
-		
+
 		for ii in range(0,len(unique_compositions)):
 		
 			cmp = np.all(id_list_global == unique_compositions[ii], axis = 1)
@@ -4910,6 +5001,10 @@ class pide(object):
 		self.v_bulk_lower = np.zeros(len(self.T))
 		self.v_s_lower = np.zeros(len(self.T))
 		self.v_p_lower = np.zeros(len(self.T))
+		
+		self.v_anelasticity_bulk = np.zeros(len(self.T))
+		self.v_anelasticity_p = np.zeros(len(self.T))
+		self.v_anelasticity_s = np.zeros(len(self.T))
 		
 		self.seismic_setup = True
 			
@@ -4965,6 +5060,11 @@ class pide(object):
 				self.v_p[self.idx_unique[comp_idx]] = medium[1]
 				self.v_s[self.idx_unique[comp_idx]] = medium[2]
 				
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p[self.idx_unique[comp_idx]],self.T[self.idx_unique[comp_idx]],self.seismic_attenuation)
+				self.v_anelasticity_bulk[self.idx_unique[comp_idx]] = v_anelasticity[0]
+				self.v_anelasticity_p[self.idx_unique[comp_idx]] = v_anelasticity[1]
+				self.v_anelasticity_s[self.idx_unique[comp_idx]] = v_anelasticity[2]
+				
 		elif method == 'index':
 			
 			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
@@ -4975,6 +5075,11 @@ class pide(object):
 			self.v_bulk[index] = medium[0]
 			self.v_p[index] = medium[1]
 			self.v_s[index] = medium[2]
+			
+			v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation)
+			self.v_anelasticity_bulk[index] = v_anelasticity[0]
+			self.v_anelasticity_p[index] = v_anelasticity[1]
+			self.v_anelasticity_s[index] = v_anelasticity[2]
 			
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
 			
@@ -5015,11 +5120,41 @@ class pide(object):
 				self.v_s[index] = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
 				
 		if method == 'array':
-			return self.v_bulk, self.v_p, self.v_s
+			return self.v_bulk*self.v_anelasticity_bulk, self.v_p*self.v_anelasticity_p, self.v_s*self.v_anelasticity_s
 			
 		elif method == 'index':
-			return self.v_bulk[index], self.v_p[index], self.v_s[index]
-
+			return self.v_bulk[index]*self.v_anelasticity_bulk[index], self.v_p[index]*self.v_anelasticity_p[index], self.v_s[index]*self.v_anelasticity_s[index]
+				
+	def calculate_seismic_anelasticity(self, P, T, Qmode):
+	
+		"""
+		Calculate the seismic anelasticity due to attenuation.
+		The v_anelasticity_bulk is set same with v_anelasticity_p
+	
+		Parameters
+		----------
+		Qmode : 'Q1'
+			Attenuation model.
+	
+		Returns
+		-------
+		float or array
+			v_anelasticity
+		"""
+		if Qmode == 'Q1':
+			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = Q1_Sobolev1996(P,T)
+		elif Qmode == 'Q2':
+			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = Q2_Berckhemer1982(P,T)
+		elif Qmode == 'JF2010':
+			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = JacksonFaul2010(P,T)
+		elif Qmode == 'YT2016':
+			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = YamauchiTakei2016(P,T)
+		elif Qmode == 'none':
+			v_anelasticity_b = 1
+			v_anelasticity_p = 1
+			v_anelasticity_s = 1
+		return [v_anelasticity_b,v_anelasticity_p,v_anelasticity_s]
+		
 	def calculate_density_solid(self, min_idx = None):
 	
 		"""
@@ -5152,7 +5287,7 @@ class pide(object):
 								if 'xFe' in self.name[mineral][min_sel_list[mineral-11]]:
 								
 									ref_dens = linear_density(xfe_input=pide.xfe_mineral_list[mineral-11], density_list = [ref_0, ref_1])
-								
+									
 									density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 									temperature = self.T, pressure = self.p, ref_density = ref_dens, return_vp_vs_vbulk=False, return_aktout=False)
 								
@@ -5409,7 +5544,6 @@ class pide(object):
 		self.B_QIF_high = 7.492
 		self.C_QIF_low = 0.044
 		self.C_QIF_high = 0.05
-
 
 		if (mode == 0):
 
@@ -5680,7 +5814,153 @@ class pide(object):
 		#calculating garnet water content
 		pide.garnet_water[idx_node] = pide.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		pide.garnet_water[self.garnet_frac == 0] = 0.0
+
+	def mantle_xfe_distribute(self, KD_opx_ol=1.0, KD_cpx_ol=0.85,
+		X_Ca_garnet=0.05, method='array', **kwargs):
+		"""
+		Distribute bulk xFe (Fe/(Fe+Mg)) to individual mantle minerals using
+		Fe-Mg exchange partition coefficients.
+
+		KD is defined as: KD_mineral/ol = (Fe/Mg)_mineral / (Fe/Mg)_olivine
+
+		Garnet KD is temperature-dependent following O'Neill & Wood (1979):
+			ln(KD_gt/ol) = A/T + B + C * X_Ca_garnet
+		where T is in Kelvin.
+
+		Parameters
+		----------
+		bulk_xfe : float or array
+			Bulk rock xFe = Fe/(Fe+Mg), e.g., 0.10 for Mg# = 90
+		KD_opx_ol : float
+			Fe-Mg exchange coefficient between opx and olivine.
+			Default = 1.0 (von Seckendorff & O'Neill, 1993)
+		KD_cpx_ol : float
+			Fe-Mg exchange coefficient between cpx and olivine.
+			Default = 0.85
+		X_Ca_garnet : float
+			Mole fraction of Ca in garnet (grossular component).
+			Default = 0.05 for typical mantle pyrope.
+		method : str
+			'array' to process all points, 'index' to process a single point
+		sol_idx : int, optional
+			Index of the point to solve when method='index'
+
+
+		References
+		----------
+		O'Neill & Wood (1979) Contrib Mineral Petrol 70:59-70
+			- Garnet-olivine Fe-Mg exchange, T-dependent KD
+		von Seckendorff & O'Neill (1993) Contrib Mineral Petrol 113:196-207
+			- Olivine-orthopyroxene Fe-Mg exchange
+		Krogh (1988) Contrib Mineral Petrol 99:44-48
+			- Garnet-clinopyroxene Fe-Mg exchange
+		"""
+
+		sol_idx = kwargs.pop('sol_idx', 0)
+
+		if method == 'array':
+			idx_node = None
+		elif method == 'index':
+			idx_node = sol_idx
+
+		def _KD_garnet_olivine(T_K, X_Ca=0.05):
+			"""
+			Temperature-dependent KD for garnet/olivine Fe-Mg exchange.
+			From O'Neill & Wood (1979), simplified for mantle peridotite compositions.
+
+			KD = (Fe/Mg)_garnet / (Fe/Mg)_olivine
+
+			ln(KD) = 3740/T - 1.50 + 1.5 * X_Ca_garnet
+
+			At 1273 K (1000°C): KD ≈ 2.1 (for X_Ca = 0.05)
+			At 1573 K (1300°C): KD ≈ 1.7
+			At 1073 K (800°C):  KD ≈ 2.6
+			"""
+			ln_KD = 3740.0 / T_K - 1.50 + 1.5 * X_Ca
+			return np.exp(ln_KD)
+
+		def _xfe_from_FeMg(FeMg_ratio):
+			"""Convert Fe/Mg ratio to xFe = Fe/(Fe+Mg)"""
+			return FeMg_ratio / (1.0 + FeMg_ratio)
+
+		def _FeMg_from_xfe(xfe):
+			"""Convert xFe = Fe/(Fe+Mg) to Fe/Mg ratio"""
+			return xfe / (1.0 - xfe)
+
+		def _solve_single(bulk_xfe_i, ol_frac_i, opx_frac_i, cpx_frac_i, garnet_frac_i,
+			KD_gt_ol_i, KD_opx_ol_i, KD_cpx_ol_i):
+			"""
+			Solve for olivine xFe given bulk xFe and partition coefficients.
+
+			Mass balance: bulk_xfe = sum(mineral_xfe_i * frac_i) / sum(frac_i)
+
+			Given KD values, each mineral's xFe is a function of olivine's xFe:
+				(Fe/Mg)_mineral = KD * (Fe/Mg)_olivine
+				xfe_mineral = KD * FeMg_ol / (1 + KD * FeMg_ol)
+			"""
+
+			total_frac = ol_frac_i + opx_frac_i + cpx_frac_i + garnet_frac_i
+
+			if total_frac == 0:
+				return bulk_xfe_i, bulk_xfe_i, bulk_xfe_i, bulk_xfe_i
+
+			def mass_balance_residual(ol_xfe_guess):
+
+				if ol_xfe_guess <= 0 or ol_xfe_guess >= 1:
+					return 1e10
+
+				FeMg_ol = _FeMg_from_xfe(ol_xfe_guess)
+
+				# Calculate each mineral's xFe from KD and olivine Fe/Mg
+				FeMg_opx = KD_opx_ol_i * FeMg_ol
+				FeMg_cpx = KD_cpx_ol_i * FeMg_ol
+				FeMg_gt = KD_gt_ol_i * FeMg_ol
+
+				opx_xfe_i = _xfe_from_FeMg(FeMg_opx)
+				cpx_xfe_i = _xfe_from_FeMg(FeMg_cpx)
+				gt_xfe_i = _xfe_from_FeMg(FeMg_gt)
+
+				# Mass balance
+				calculated_bulk = (ol_xfe_guess * ol_frac_i +
+					opx_xfe_i * opx_frac_i +
+					cpx_xfe_i * cpx_frac_i +
+					gt_xfe_i * garnet_frac_i) / total_frac
+
+				return calculated_bulk - bulk_xfe_i
+
+			# Solve for olivine xFe using Brent's method
+			try:
+				ol_xfe_sol = brentq(mass_balance_residual, 1e-6, 1.0 - 1e-6)
+			except ValueError:
+				# If brentq fails, return bulk_xfe for all minerals
+				return bulk_xfe_i, bulk_xfe_i, bulk_xfe_i, bulk_xfe_i
+
+			# Calculate other mineral xFe from solution
+			FeMg_ol = _FeMg_from_xfe(ol_xfe_sol)
+			opx_xfe_sol = _xfe_from_FeMg(KD_opx_ol_i * FeMg_ol)
+			cpx_xfe_sol = _xfe_from_FeMg(KD_cpx_ol_i * FeMg_ol)
+			gt_xfe_sol = _xfe_from_FeMg(KD_gt_ol_i * FeMg_ol)
+
+			return ol_xfe_sol, opx_xfe_sol, cpx_xfe_sol, gt_xfe_sol
+
+		n = len(self.bulk_xfe)
 		
+		if len(self.ol_xfe) != n:
+			self.set_xfe_mineral(reval = True)
+
+		if method == 'index':
+			KD_gt_ol = _KD_garnet_olivine(self.T[idx_node], X_Ca_garnet)
+			self.ol_xfe[idx_node], self.opx_xfe[idx_node], self.cpx_xfe[idx_node], self.garnet_xfe[idx_node] = _solve_single(
+				self.bulk_xfe[idx_node], self.ol_frac[idx_node], self.opx_frac[idx_node], self.cpx_frac[idx_node], self.garnet_frac[idx_node],
+				KD_gt_ol, KD_opx_ol, KD_cpx_ol)
+		else:
+			for idx_xfe in range(n):
+				KD_gt_ol = _KD_garnet_olivine(self.T[idx_xfe], X_Ca_garnet)
+				self.ol_xfe[idx_xfe], self.opx_xfe[idx_xfe], self.cpx_xfe[idx_xfe], self.garnet_xfe[idx_xfe] = _solve_single(
+					self.bulk_xfe[idx_xfe], self.ol_frac[idx_xfe], self.opx_frac[idx_xfe], self.cpx_frac[idx_xfe], self.garnet_frac[idx_xfe],
+					KD_gt_ol, KD_opx_ol, KD_cpx_ol)
+					
+		self.seismic_setup = False
 		
 	def transition_zone_water_distribute(self, method = 'array', **kwargs):
 	

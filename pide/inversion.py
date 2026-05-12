@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
 from .utils.utils import text_color, check_type
+import copy
 
 def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 
@@ -17,7 +19,7 @@ def _comp_adjust_(_comp_list, comp_alien, comp_old,final = False):
 
 	return comp_list
 
-def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_increment, acceptence_threshold, results_list = None,
+def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, acceptence_threshold, results_list = None,
 	init_guess = None, transition_zone = False, water_solv=False, comp_solv=False, melt_solv=False, comp_type = None, comp_index = None, low_value_threshold = None,
 	sfd = False,init_guess_preiter = True):
 
@@ -33,167 +35,126 @@ def _solv_cond_(index, cond_list, object, param, upperlimit, lowerlimit, search_
 				
 	else:
 		init_guess = None
-
+	
+	search_increment = (upperlimit[index] - lowerlimit[index]) / 8.0
 	param_search_array = np.arange(lowerlimit[index], upperlimit[index] , search_increment)
+		
+	restart = True
+	init_search_increment = search_increment.copy()
+	init_restart = True
 
-	if len(param_search_array) == 1:
+	while restart:
 
-		sol_param = upperlimit[index]
+		restart = False
 
-		if comp_solv == True:
+		if init_guess == None:
+			idx_start_search = 0
+		else:
+			if init_restart == True:
+				idx_start_search = np.argmin(np.abs(param_search_array-init_guess))
+				init_restart = False
+			else:
+				idx_start_search = 0
 
-			print(text_color.RED + 'WARNING: There is no search array can be created with the given lower/upper limit and search increment for composition. Try to change these parameters to have a more reliable solution.' + text_color.END)
+		for j in range(idx_start_search,len(param_search_array)):
 
-			if comp_type == 'mineral':
-				_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
-				object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
-				object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
-				comp_old = _comp_list[comp_index]
-			elif comp_type == 'rock':
-				_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
-				object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
-
-			comp_list = _comp_adjust_(np.array(_comp_list), upperlimit[index], comp_old)
-
-			for idx_t in range(len(_comp_list)):
+			if comp_solv == True:
 
 				if comp_type == 'mineral':
-					object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
+					_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
+					object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
+					object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
+					comp_old = _comp_list[comp_index]
 				elif comp_type == 'rock':
-					object.rock_frac_list[idx_t][index] = comp_list[idx_t]
+					_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
+					object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
 
-			exec('object.' + param + '[' + str(index) + ']='  + str(upperlimit[index]))
+				comp_list = _comp_adjust_(np.array(_comp_list), param_search_array[j], comp_old)
 
-			if object.bulk_water[index] > 0.0:
-				water_solv = True
-
-		else:
-			exec('object.' + param + '[' + str(index) + ']='  + str(upperlimit[index]))
-
-		if water_solv == True:
-			if transition_zone == False:
-				object.mantle_water_distribute(method = 'index', sol_idx = index)
-			else:
-				object.transition_zone_water_distribute(method = 'index', sol_idx = index)
-		cond_calced = object.calculate_conductivity(method = 'index', sol_idx = index, sfd = sfd)
-		residual = cond_list[index] - cond_calced
-
-	else:
-
-		restart = True
-		init_search_increment = np.array(search_increment)
-		init_restart = True
-
-		while restart:
-
-			restart = False
-
-			if init_guess == None:
-				idx_start_search = 0
-			else:
-				if init_restart == True:
-					idx_start_search = np.argmin(np.abs(param_search_array-init_guess))
-					init_restart = False
-				else:
-					idx_start_search = 0
-
-			for j in range(idx_start_search,len(param_search_array)):
-
-				if comp_solv == True:
+				for idx_t in range(len(_comp_list)):
 
 					if comp_type == 'mineral':
-						_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
-						object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
-						object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
-						comp_old = _comp_list[comp_index]
+						object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
 					elif comp_type == 'rock':
-						_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
-						object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
+						object.rock_frac_list[idx_t][index] = comp_list[idx_t]
 
-					comp_list = _comp_adjust_(np.array(_comp_list), param_search_array[j], comp_old)
+				exec('object.' + param + '[' + str(index) + ']='  + str(param_search_array[j]))
 
-					for idx_t in range(len(_comp_list)):
-
-						if comp_type == 'mineral':
-							object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
-						elif comp_type == 'rock':
-							object.rock_frac_list[idx_t][index] = comp_list[idx_t]
-
-					exec('object.' + param + '[' + str(index) + ']='  + str(param_search_array[j]))
-
-					if object.bulk_water[index] > 0.0:
-						water_solv = True
-					else:
-						water_solv = False
-
+				if object.bulk_water[index] > 0.0:
+					water_solv = True
 				else:
+					water_solv = False
 
-					exec('object.' + param + '[' + str(index) + ']='  + str(param_search_array[j]))
+			else:
 
-				if water_solv == True:
-					if transition_zone == False:
-						object.mantle_water_distribute(method = 'index', sol_idx = index)
+				exec('object.' + param + '[' + str(index) + ']='  + str(param_search_array[j]))
+
+			if water_solv == True:
+				if transition_zone == False:
+					object.mantle_water_distribute(method = 'index', sol_idx = index)
+				else:
+					object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+
+			cond_calced = object.calculate_conductivity(method = 'index',sol_idx = index, sfd = sfd)
+			
+			residual = cond_list[index] - cond_calced
+
+			if abs(residual) < (acceptence_threshold * 1e-2 * cond_list[index]):
+				restart = False
+				if low_value_threshold is None:
+					sol_param = param_search_array[j]
+				else:
+					if param_search_array[j] < low_value_threshold:
+						sol_param = lowerlimit[index]
 					else:
-						object.transition_zone_water_distribute(method = 'index', sol_idx = index)
-
-				cond_calced = object.calculate_conductivity(method = 'index',sol_idx = index, sfd = sfd)
-				
-				residual = cond_list[index] - cond_calced
-
-				if abs(residual) < (acceptence_threshold * 1e-2 * cond_list[index]):
-					restart = False
-					if low_value_threshold is None:
 						sol_param = param_search_array[j]
-					else:
-						if param_search_array[j] < low_value_threshold:
-							sol_param = 0.0
-						else:
-							sol_param = param_search_array[j]
 
-					break
+				break
 
-				else:
+			else:
+				
+				if residual < 0.0:
+					if (len(param_search_array) > 4) and (j>=3):
 
-					if residual < 0.0:
-						if (len(param_search_array) > 4) and (j>=3):
-
-							if search_increment <= (init_search_increment * 1e-2 * acceptence_threshold):
-								#sol_param = lowerlimit[index]
-								sol_param = param_search_array[0]
-								restart = False
-								break
-							else:
-								search_increment = search_increment / 2.0
-								param_search_array = np.arange(param_search_array[j-3], upperlimit[index], search_increment)
-								restart = True
-								break
-						else:
-							if search_increment <= (init_search_increment * 1e-2 * acceptence_threshold):
-								sol_param = param_search_array[0]
-								#sol_param = lowerlimit[index]
-								restart = False
-								break
-							else:
-								search_increment = search_increment / 2.0
-								param_search_array = np.arange(lowerlimit[index], upperlimit[index], search_increment)
-								restart = True
-								break
-					else:
-						if j == len(param_search_array)-1:
-							sol_param = param_search_array[-1] #equivalent to upper limit
+						if search_increment <= (init_search_increment * 1e-2 * acceptence_threshold):
+							#sol_param = lowerlimit[index]
+							sol_param = param_search_array[0]
 							restart = False
 							break
 						else:
-							pass
+							search_increment = search_increment / 2.0
+							param_search_array = np.arange(param_search_array[j-3], upperlimit[index], search_increment)
+							restart = True
+							break
+					else:
+						if search_increment <= (init_search_increment * 1e-2 * acceptence_threshold):
+							sol_param = param_search_array[0]
+							#sol_param = lowerlimit[index]
+							restart = False
+							break
+						else:
+							search_increment = search_increment / 2.0
+							param_search_array = np.arange(lowerlimit[index], upperlimit[index], search_increment)
+							restart = True
+							break
+				else:
+					
+					if j == len(param_search_array)-1:
+						sol_param = upperlimit[index] #equivalent to upper limit
 
-		if results_list is not None:
-			results_list.append(sol_param)
+						restart = False
+						break
+					else:
+						pass
+					
+	if results_list is not None:
+		results_list.append(sol_param)
 
 	return sol_param, residual
 
 
 def conductivity_solver_single_param(object, cond_list, param_name,
-	upper_limit_list, lower_limit_list, search_start, acceptence_threshold, cond_err = None, transition_zone = False, simplify_fluid_density = False,
+	upper_limit_list, lower_limit_list, acceptence_threshold, cond_err = None, transition_zone = False, simplify_fluid_density = False,
 	num_cpu = 1,**kwargs):
 
 	"""
@@ -211,8 +172,6 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 		Upper bounds for the search space of the parameter.
 	lower_limit_list : array-like
 		Lower bounds for the search space of the parameter.
-	search_start : float
-		Initial step size for the line search.
 	acceptence_threshold : float
 		Convergence threshold in % of the value entered in cond_list; the search stops when improvement is below this value.
 	cond_err : array-like, optional
@@ -242,7 +201,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 	
 	conductivity_solver_single_param(object=object, cond_list = [0.1,0.1], param_name = 'bulk_water',
 	upper_limit_list = [1000,1000], lower_limit_list = [0,0],
-	search_start = 30, acceptence_threshold = 1, cond_err = None, transition_zone = False, simplify_fluid_density = False,
+	acceptence_threshold = 1, cond_err = None, transition_zone = False, simplify_fluid_density = False,
 	num_cpu = 5, melt_solv = 0, low_value_threshold = 10)
 	"""
 
@@ -331,7 +290,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 		with multiprocessing.Pool(processes=num_cpu) as pool:
 
 			process_item_partial = partial(_solv_cond_, cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
-			lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list = shared_results, init_guess = None,
+			lowerlimit=lower_limit_list , acceptence_threshold = acceptence_threshold, results_list = shared_results, init_guess = None,
 			transition_zone = transition_zone, water_solv=water_solv,comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index,
 			low_value_threshold = low_value_threshold,sfd = simplify_fluid_density,init_guess_preiter = init_guess_preiter)
 
@@ -339,6 +298,9 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 
 		c_list = [x[0] for x in c]
 		residual_list= [x[1] for x in c]
+
+		c_list = np.array(c_list)
+		residual_list = np.array(residual_list)
 
 	else:
 
@@ -356,7 +318,7 @@ def conductivity_solver_single_param(object, cond_list, param_name,
 				init_guess_ = None
 
 			c = _solv_cond_(index = index_list[idx], cond_list = cond_list, object = object, param = param_name, upperlimit = upper_limit_list,
-				lowerlimit=lower_limit_list , search_increment= search_start, acceptence_threshold = acceptence_threshold, results_list= None, init_guess = init_guess_, transition_zone = transition_zone,
+				lowerlimit=lower_limit_list , acceptence_threshold = acceptence_threshold, results_list= None, init_guess = init_guess_, transition_zone = transition_zone,
 				water_solv=water_solv, comp_solv = comp_solv, melt_solv = melt_solv, comp_type = comp_type, comp_index = comp_index, low_value_threshold = low_value_threshold,
 				sfd = simplify_fluid_density, init_guess_preiter = init_guess_preiter)
 			
@@ -617,7 +579,6 @@ def _solv_MCMC_two_param(index, cond_list, object, initial_params, param_name_1,
 					misf_vs = 0
 				
 				proposed_likelihood = proposed_likelihood_cond * proposed_likelihood_vs * proposed_likelihood_vp
-				# print(proposed_vp,proposed_vs,proposed_cond,proposal[0],proposal[1])
 				# Calculate acceptance probability
 				acceptance_ratio = proposed_likelihood / current_likelihood
 
@@ -947,3 +908,749 @@ def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_
 		save_h5_files(array_list=misfits_all, array_names=array_names_idx, file_name=distr_file_names + '_misfit_all.h5')
 
 	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
+	
+def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, upper_limits,
+	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, melt_thermodyn, pres_interp, melt_frac_limit,
+	vp_list = None, vs_list = None, sigma_vp = None, sigma_vs = None,
+	adaptive_alg = True, ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000,
+	comp_index = [0,0], step_size_limits = None, transition_zone = False, param_priors = None,
+	max_widen_attempts = 3, melt_thermodyn_interp = None):
+	
+	"""
+	MCMC external solver for the metropolis_hastings_n_param function for parallelization purposes.
+	Users should not call this function directly.
+	"""
+	
+	widen_count = 0
+	proposal_stds = list(proposal_stds)
+	
+	if param_priors is not None:
+		param_priors = copy.deepcopy(param_priors)
+
+	if melt_thermodyn == True:
+		
+		if 'T' in param_names:
+			idx_T = param_names.index('T')
+		else:
+			idx_T = None
+		
+		if 'bulk_water' in param_names:
+			idx_B = param_names.index('bulk_water')
+		else:
+			idx_B = None
+
+	n_params = len(param_names)
+	#Using Metropolis-Hastings algorithm
+
+	frac_bool = [False] * n_params
+	comp_index_sub = None
+
+	for ii in range(n_params):
+		if 'frac' in param_names[ii]:
+			if param_names[ii] != 'melt_fluid_mass_frac':
+				frac_bool[ii] = True
+				comp_index_sub = ii
+
+	if sum(frac_bool) > 1:
+		raise KeyError('Currently only one of the parameters chosen can be modal compositional parameter.')
+		
+	melt_solv = 'melt_fluid_mass_frac' in param_names
+
+	current_params = np.array(initial_params[index])
+
+	#Extracting per-index limits
+	param_mins = np.array([lower_limits[i][index] for i in range(n_params)])
+	param_maxs = np.array([upper_limits[i][index] for i in range(n_params)])
+
+	#Initial setting of the parameters.
+	if sum(frac_bool) == 1:
+
+		if object.solid_phase_method == 2: #if mineral
+			_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
+				object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
+				object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
+		else: #if rock
+			_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
+				object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
+
+		comp_old = _comp_list[comp_index[comp_index_sub]]
+
+		comp_list = _comp_adjust_(np.array(_comp_list), current_params[comp_index_sub], comp_old)
+
+		for idx_t in range(len(_comp_list)):
+			if object.solid_phase_method == 2:
+				object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
+			else:
+				object.rock_frac_list[idx_t][index] = comp_list[idx_t]
+
+		water_solv = True
+
+	#Executing the commands - setting initial parameters
+	for ii in range(n_params):
+		getattr(object, param_names[ii])[index] = current_params[ii]
+		
+	if melt_thermodyn == True:
+
+		if idx_T is not None:
+			temp_ = current_params[idx_T] - 273.15
+		else:
+			temp_ = object.T[index] - 273.15
+		if idx_B is not None:
+			bw_ = current_params[idx_B] * 1e-4
+		else:
+			bw_ = object.bulk_water[index] * 1e-4
+
+		if pres_interp == False:
+			melt_frac = melt_thermodyn_interp([temp_,bw_])
+		else:
+			melt_frac = melt_thermodyn_interp([temp_,bw_, object.p[index]])
+
+		if melt_frac < melt_frac_limit:
+				
+			melt_frac = np.array([0.0])
+
+		getattr(object, 'melt_fluid_mass_frac')[index] = melt_frac
+
+	if water_solv == True:
+
+		if transition_zone == False:
+			object.mantle_water_distribute(method = 'index', sol_idx = index)
+		else:
+			object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+			
+		if (melt_solv == True) or (melt_thermodyn == True):
+			
+			#to interpolation of fluid density so eos do not have to be solved at each iteration.
+			try:
+				water_index = param_names.index('bulk_water')
+				water_end = upper_limits[water_index]
+				water_end = water_end[0]
+			except ValueError:
+				water_end = 1e5
+
+			object.calculate_density_fluid(sol_idx = index, method = 'array', interp_for_iter = True, water_start = 0, water_end = water_end)
+
+	if 'bulk_xfe' in param_names:
+
+		object.mantle_xfe_distribute(method = 'index', sol_idx = index)
+
+	#Calculating the initial conductivity
+	cond_init = object.calculate_conductivity(method = 'index', sol_idx = index)
+	if (vp_list is not None) or (vs_list is not None):
+		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'index', sol_idx = index)
+
+	current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+	
+	if vp_list is not None:
+		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index])
+	else:
+		current_likelihood_vp = 1
+	if vs_list is not None:
+		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index])
+	else:
+		current_likelihood_vs = 1
+
+	#Calculate initial prior likelihood
+	current_prior = 1.0
+	if param_priors is not None:
+		for ii in range(n_params):
+			if param_priors[ii] is not None:
+				prior_mean = param_priors[ii][0][index]
+				prior_sigma = param_priors[ii][1][index]
+				current_prior *= np.exp(-0.5 * ((current_params[ii] - prior_mean) / prior_sigma)**2)
+
+	current_likelihood = current_likelihood_cond * current_likelihood_vp * current_likelihood_vs * current_prior
+
+	#empty arrays to fill it up with samples
+	samples = []
+	misfits_cond = []
+	misfits_vp = []
+	misfits_vs = []
+	misfits_all_cond = []
+	misfits_all_vp = []
+	misfits_all_vs = []
+	samples_all = []
+	acceptance_rates = []
+	melt_samples = []
+	melt_samples_all = []
+	accepted = 0
+	print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
+	print(text_color.YELLOW + f'{n_iter*2} total samples, {n_iter} minimum samples.' + text_color.END)
+	print(text_color.RED + f'{burning} burning samples.' + text_color.END)
+
+	#loop for monte-carlo
+	for _ in range(n_iter*2):
+		
+		#proposing the new parameters
+		proposal = np.array(current_params)
+		rand_node = np.random.randint(n_params) #random node generation 0 to n_params-1
+		randomgen = np.random.normal(0, proposal_stds[rand_node], size=1)[0] #proposal for randomwalk step
+		proposal[rand_node] = current_params[rand_node] + randomgen
+		
+		continue_bounds = np.all((proposal > param_mins) & (proposal < param_maxs))
+		
+		if continue_bounds == False:
+			proposal = current_params #if out of bounds go back to the previous parameters
+
+		if continue_bounds == True:
+			#adjusting for composition if needed...
+			if comp_solv == True:
+
+				if sum(frac_bool) == 1:
+
+					if object.solid_phase_method == 2: #if mineral
+						_comp_list = [object.quartz_frac[index], object.plag_frac[index], object.amp_frac[index], object.kfelds_frac[index], object.opx_frac[index], object.cpx_frac[index],
+							object.mica_frac[index], object.garnet_frac[index], object.sulphide_frac[index], object.graphite_frac[index], object.ol_frac[index], object.sp_frac[index], object.rwd_wds_frac[index],
+							object.perov_frac[index], object.mixture_frac[index], object.other_frac[index]]
+					else: #if rock
+						_comp_list = [object.granite_frac[index],object.granulite_frac[index],object.sandstone_frac[index],object.gneiss_frac[index],object.amphibolite_frac[index],
+							object.basalt_frac[index],object.mud_frac[index],object.gabbro_frac[index],object.other_rock_frac[index]]
+
+					comp_old = _comp_list[comp_index[comp_index_sub]]
+
+					comp_list = _comp_adjust_(np.array(_comp_list), proposal[comp_index_sub], comp_old)
+
+					for idx_t in range(len(_comp_list)):
+						if object.solid_phase_method == 2:
+							object.mineral_frac_list[idx_t][index] = comp_list[idx_t]
+						else:
+							object.rock_frac_list[idx_t][index] = comp_list[idx_t]
+
+			#setting up the proposed parameters
+			for ii in range(n_params):
+				getattr(object, param_names[ii])[index] = proposal[ii]
+			
+			if melt_thermodyn == True:
+
+				if idx_T is not None:
+					temp_ = proposal[idx_T] - 273.15
+				else:
+					temp_ = object.T[index] - 273.15
+				if idx_B is not None:
+					bw_ = proposal[idx_B] * 1e-4
+				else:
+					bw_ = object.bulk_water[index] * 1e-4
+
+				if pres_interp == False:
+					melt_frac = melt_thermodyn_interp([temp_,bw_])
+				else:
+					melt_frac = melt_thermodyn_interp([temp_,bw_, object.p[index]])
+				
+				if melt_frac < melt_frac_limit:
+				
+					melt_frac = np.array([0.0])
+
+				getattr(object, 'melt_fluid_mass_frac')[index] = melt_frac
+
+			#distribute water if needed
+			if water_solv == True:
+				if transition_zone == False:
+					object.mantle_water_distribute(method = 'index', sol_idx = index)
+				else:
+					object.transition_zone_water_distribute(method = 'index', sol_idx = index)
+			
+			if 'bulk_xfe' in param_names:
+		
+				object.mantle_xfe_distribute(method = 'index', sol_idx = index)
+
+			proposed_cond = object.calculate_conductivity(method = 'index', sol_idx = index)
+			if (vp_list is not None) or (vs_list is not None):
+				v_bulk, proposed_vp, proposed_vs = object.calculate_seismic_velocities(method = 'index', sol_idx = index)
+			
+			proposed_likelihood_cond, misf_cond = _likelihood(proposed_cond, cond_list[index], sigma_cond[index])
+			
+			if vp_list is not None:
+				proposed_likelihood_vp, misf_vp = _likelihood(proposed_vp, vp_list[index], sigma_vp[index], norm = 'linear')
+			else:
+				proposed_likelihood_vp = 1
+				misf_vp = 0
+				
+			if vs_list is not None:
+				proposed_likelihood_vs, misf_vs = _likelihood(proposed_vs, vs_list[index], sigma_vs[index], norm = 'linear')
+			else:
+				proposed_likelihood_vs = 1
+				misf_vs = 0
+
+			#Calculate prior likelihood for proposed parameters
+			proposed_prior = 1.0
+			if param_priors is not None:
+				for ii in range(n_params):
+					if param_priors[ii] is not None:
+						prior_mean = param_priors[ii][0][index]
+						prior_sigma = param_priors[ii][1][index]
+						proposed_prior *= np.exp(-0.5 * ((proposal[ii] - prior_mean) / prior_sigma)**2)
+
+			proposed_likelihood = proposed_likelihood_cond * proposed_likelihood_vs * proposed_likelihood_vp * proposed_prior
+
+			# Calculate acceptance probability
+			acceptance_ratio = proposed_likelihood / current_likelihood
+			
+			if np.random.rand() < acceptance_ratio:
+
+				current_params = proposal
+				current_likelihood = proposed_likelihood
+
+				if _ > burning:
+					samples.append(current_params.copy())
+					misfits_cond.append(misf_cond)
+					misfits_vp.append(misf_vp)
+					misfits_vs.append(misf_vs)
+					if melt_thermodyn == True:
+						melt_samples.append(melt_frac.copy())
+					accepted += 1
+
+				
+				if (_ - burning) > 0:
+					acceptance_rate = accepted / (_ - burning)
+					
+				else:
+					acceptance_rate = 0
+					
+				if _ > burning:
+					# After base iterations, check if we need to continue
+					if _ >= n_iter and (_ - n_iter) % 2000 == 0:
+						if acceptance_rate <= 0.3:
+							print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
+							break
+						else:
+							print(f'Acceptance rate {acceptance_rate:.3f} still too high. Continuing...')
+				acceptance_rates.append(acceptance_rate)
+				misfits_all_cond.append(misf_cond)
+				misfits_all_vp.append(misf_vp)
+				misfits_all_vs.append(misf_vs)
+				samples_all.append(current_params.copy())
+				if melt_thermodyn == True:
+					melt_samples_all.append(melt_frac.copy())
+				
+				# Check if stuck after enough post-burn-in samples
+				if ((_ - burning) % 5000 == 0) and accepted == 0:
+					print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
+					if widen_count < max_widen_attempts:
+						widen_count += 1
+						# Widen priors for parameters that have them
+						if param_priors is not None:
+							for ii in range(n_params):
+								if param_priors[ii] is not None:
+									param_priors[ii][1][index] = param_priors[ii][1][index] * 1.25
+									print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} to sigma={param_priors[ii][1][index]:.1f}, attempt {widen_count}' + text_color.END)
+				
+				if adaptive_alg == True:
+					if (_ + 1) % adaptive_check_length == 0:
+						if acceptance_rate < 0.1:
+							proposal_stds[rand_node] *= 0.8
+							status = 'very low'
+							color = text_color.RED
+						elif acceptance_rate < ideal_acceptance_bounds[0]:
+							proposal_stds[rand_node] *= 0.95
+							status = 'low'
+							color = text_color.YELLOW
+						elif acceptance_rate > 0.5:
+							proposal_stds[rand_node] *= 1.2
+							status = 'very high'
+							color = text_color.RED
+						elif acceptance_rate > ideal_acceptance_bounds[1]:
+							proposal_stds[rand_node] *= 1.05
+							status = 'high'
+							color = text_color.YELLOW
+						else:
+							status = 'good'
+							color = text_color.GREEN
+					
+						# Enforce step size limits (both min and max)
+						if step_size_limits is not None:
+							if proposal_stds[rand_node] > step_size_limits[rand_node]:
+								proposal_stds[rand_node] = step_size_limits[rand_node]
+						print(color + f'Acceptance {status}: {acceptance_rate:.3f} | Steps: {[round(s,4) for s in proposal_stds]} | {(_/n_iter)*100:.1f}% done' + text_color.END)
+				else:
+					if (_ + 1) % adaptive_check_length == 0:
+						print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+
+	misfits = [misfits_cond, misfits_vp, misfits_vs]
+	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs]
+	
+	if melt_thermodyn == False:
+		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
+	else:
+		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all), np.array(melt_samples), np.array(melt_samples_all)
+ 
+def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, upper_limits,
+	lower_limits, sigma_cond, proposal_stds, n_iter, vp_list = None, vs_list = None, sigma_vs = None, sigma_vp = None,
+	burning = 0, transition_zone = False, num_cpu = 1, param_priors = None, **kwargs):
+ 
+	"""
+	Perform Metropolis-Hastings MCMC inversion for electrical conductivity using n model parameters.
+ 
+	This function uses a stochastic sampling approach to estimate the posterior distribution of n 
+	input parameters based on observed conductivity and optionally seismic velocity data.
+ 
+	Parameters
+	----------
+	object : object
+		A pide model instance for calculating conductivity.
+	cond_list : array-like
+		Observed conductivity values to fit [S/m].
+	initial_params : list or array-like
+		Initial values for the n parameters to invert. Shape (n_points, n_params).
+	param_names : list of str
+		Names of the parameters to invert (must be attributes of `object`).
+	upper_limits : tuple of array-like
+		Upper bounds for each parameter. Shape (n_params,) where each element is array of length n_points.
+	lower_limits : tuple of array-like
+		Lower bounds for each parameter. Shape (n_params,) where each element is array of length n_points.
+	sigma_cond : float or array-like
+		Standard deviation or error for conductivity observations in logarithm of conductivity [S/m].
+	proposal_stds : list or array-like
+		Standard deviations for proposal distribution of the parameters. Length n_params.
+	n_iter : int
+		Number of iterations for the MCMC chain.
+	vp_list : array-like, optional
+		Observed Vp values to fit [km/s].
+	vs_list : array-like, optional
+		Observed Vs values to fit [km/s].
+	sigma_vp : array-like, optional
+		Standard deviation for Vp observations [km/s].
+	sigma_vs : array-like, optional
+		Standard deviation for Vs observations [km/s].
+	burning : int, optional
+		Number of initial iterations to discard as burn-in (default is 0).
+	transition_zone : bool, optional
+		If True, use transition zone water distribution functions (default is False).
+	num_cpu : int, optional
+		Number of CPU cores to use for parallel computation (default is 1).
+	param_priors : list, optional
+		List of length n_params. Each element is either None (flat prior) or a tuple 
+		(prior_mean_array, prior_sigma_array) for a Gaussian prior. Arrays are length n_points.
+		Example for 3 params (water=flat, melt=flat, T=Gaussian):
+		param_priors = [None, None, (T_mean_array, sigma_T_array)]
+	save_distr : bool, optional
+		If True, saves the MCMC samples to disk (default is False).
+	distr_file_names : str, optional
+		Base name for saved distribution files (default is 'distribution_solution').
+	adaptive_alg : bool, optional
+		If True, enables adaptive adjustment of proposal standard deviations based on acceptance rate.
+	ideal_acceptance_bounds : list of float, optional
+		Target acceptance rate bounds for adaptive algorithm (default is [0.2, 0.3]).
+	adaptive_check_length : int, optional
+		Number of iterations between check for adaptive algorithm (default is 1000).
+	step_size_limits : list of float, optional
+		Bounds for the adaptive proposal step sizes. Length n_params.
+	melt_thermodyn : bool, optional
+		Method for determining melt from thermodynamic equations
+	melt_frac_limit : float, optional
+		Minimum melt fraction can be estimated by the inversion algorithm. Any value smaller than this value would be set to 0.
+ 
+	Returns
+	-------
+	sample_distr : list of arrays
+		Accepted parameter samples for each point.
+	acceptance_rates : list of arrays
+		Acceptance rate record for each point.
+	misfits : list
+		Misfits of the accepted distribution [cond, vp, vs].
+	samples_all : list of arrays
+		All parameter samples for each point.
+	misfits_all : list
+		All misfits [cond, vp, vs].
+ 
+	Examples
+	--------
+	samples, acceptance_rates, misfits, samples_all, misfits_all = metropolis_hastings_n_param(
+		object = p_obj, cond_list = [0.1, 0.1],
+		initial_params = [[200, 0.25, 1300.0]],
+		param_names = ['bulk_water', 'melt_fluid_mass_frac', 'T'],
+		upper_limits = (np.array([2000,2000]), np.array([0.5,0.5]), np.array([1500,1500])),
+		lower_limits = (np.array([0,0]), np.array([0,0]), np.array([1100,1100])),
+		sigma_cond = [0.1, 0.1], proposal_stds = [200, 0.25, 50],
+		n_iter = 2e5, burning = 1e4, transition_zone = False, num_cpu = 1,
+		param_priors = [None, None, (T_mean_array, sigma_T_array)],
+		adaptive_alg = True, step_size_limits = [25000, 0.5, 100])
+	"""
+ 
+	n_params = len(param_names)
+ 
+	#Pre-checks for if
+	if object.solid_phase_method == 2:
+		object.set_mineral_water(ol = 0, opx = 0, cpx = 0, garnet = 0, mica = 0, amp = 0,
+		quartz = 0, plag = 0, kfelds = 0, sulphide = 0, graphite = 0, sp = 0, rwd_wds = 0,
+		perov = 0, mixture = 0, other = 0)
+	elif object.solid_phase_method == 1:
+		object.set_rock_water(granite = 0, granulite = 0, sandstone = 0, gneiss = 0,
+		amphibolite = 0, basalt = 0, mud = 0, gabbro = 0, other_rock = 0)
+ 
+	cond_check = object.calculate_conductivity()
+ 
+	save_distr = kwargs.pop('save_distr', False)
+	distr_file_names = kwargs.pop('distr_file_names', 'distribution_solution')
+	adaptive_alg = kwargs.pop('adaptive_alg', True)
+	ideal_acceptance_bounds = kwargs.pop('ideal_acceptance_bounds', [0.2, 0.3])
+	adaptive_check_length = kwargs.pop('adaptive_check_length', 1000)
+	step_size_limits = kwargs.pop('step_size_limits', None)
+	melt_thermodyn = kwargs.pop('melt_thermodyn', False)
+	melt_interp_object = kwargs.pop('melt_interp_object', None)
+	melt_frac_limit = kwargs.pop('melt_frac_limit', 0.001)
+ 
+	#Pre checks for the input parameters.
+	if type(ideal_acceptance_bounds) == list:
+		if len(ideal_acceptance_bounds) == 2:
+			pass
+		else:
+			raise ValueError(f'ideal_acceptance_bounds has to be a list containing two values. Currently it is {ideal_acceptance_bounds}')
+	else:
+		raise ValueError(f'ideal_acceptance_bounds has to be a list containing two values. Currently it is {ideal_acceptance_bounds}')
+ 
+	for name in param_names:
+		try:
+			getattr(object, name)
+		except AttributeError:
+			raise AttributeError(f'There is no such parameter name {name} for the pide object.')
+  
+	if burning >= n_iter:
+		raise ValueError('Burning samples cannot be larger than the total iteration number (n_iter).')
+ 
+	if len(cond_list) == len(initial_params) == len(upper_limits[0]) == len(lower_limits[0]) == len(sigma_cond) == len(object.T):
+		pass
+	else:
+		raise IndexError('The length of the arrays for each conductivity solution (cond_list) are not same. cond_list, initial_params, upper_limits, lower_limits and sigma_conds has to be the same length.')
+ 
+	#Check that all limits have the right number of parameters
+	if len(upper_limits) != n_params:
+		raise IndexError(f'upper_limits has {len(upper_limits)} entries but {n_params} parameters were specified.')
+	if len(lower_limits) != n_params:
+		raise IndexError(f'lower_limits has {len(lower_limits)} entries but {n_params} parameters were specified.')
+	if len(proposal_stds) != n_params:
+		raise IndexError(f'proposal_stds has {len(proposal_stds)} entries but {n_params} parameters were specified.')
+	if len(initial_params[0]) != n_params:
+		raise IndexError(f'initial_params has {len(initial_params[0])} entries but {n_params} parameters were specified.')
+ 
+	min_list = ['quartz_frac', 'plag_frac', 'amp_frac', 'kfelds_frac', 'opx_frac', 'cpx_frac',
+		'mica_frac', 'garnet_frac', 'sulphide_frac', 'graphite_frac', 'ol_frac', 'sp_frac', 'rwd_wds_frac',
+		'perov_frac', 'mixture_frac', 'other_frac']
+ 
+	rock_list = ['granite_frac', 'granulite_frac', 'sandstone_frac', 'gneiss_frac', 'amphibolite_frac',
+			'basalt_frac', 'mud_frac', 'gabbro_frac', 'other_rock_frac']
+ 
+	index_list = np.array(list(range(0, len(object.T)))) #creating the index array tied to the T array.
+ 
+	comp_solv = False
+	water_solv = False
+	comp_type = None
+	comp_index = []
+	comp_type_list = []
+ 
+	if any('water' in xx for xx in param_names) == True:
+		if 'bulk_water' in param_names:
+			water_solv = True
+			if len(getattr(object, 'bulk_water')) != len(object.T):
+				object.set_bulk_water(0.0)
+		else:
+			raise ValueError('You cannot change just a single phase water content. If you are after fitting for a single phase, try bulk_water as the parameter.')
+	
+	
+	if any('melt' in xx for xx in param_names) == True:
+		if melt_thermodyn == False:
+			water_solv = True
+			for ii in range(n_params):
+				if len(getattr(object, param_names[ii])) != len(object.T):
+					object.set_parameter(param_names[ii], 0.0)
+		else:
+			raise KeyError('While melt_thermodyn is set to True, the user cannot choose melt fraction as a independent parameter. Melt fraction is estimated from thermodynamic equations.')
+		
+	if melt_thermodyn == True:
+		water_solv = True
+		if melt_interp_object is None:
+			print('Establishing grid interpolator for thermodynamic melt modelling...')
+			object.set_bulk_water(0.0)
+			object.mantle_water_distribute()
+			if np.all(object.p == object.p[0]):
+				pres_interp = False
+			else:
+				pres_interp = True
+
+			d_per_melt = (object.ol_frac * object.d_melt_ol) +\
+					(object.opx_frac_wt * object.d_melt_opx) +\
+					(object.cpx_frac_wt * object.d_melt_cpx) +\
+					(object.garnet_frac_wt * object.d_melt_garnet)
+			
+			d_per_melt_avg = np.average(d_per_melt)
+
+			if 'T' in param_names:
+				idx_T = param_names.index('T')
+				upper_lim_T = np.amax(upper_limits[idx_T]) - 273.15
+				low_lim_T = np.amin(lower_limits[idx_T]) - 273.15
+			else:
+				upper_lim_T = np.amax(object.T) + 100.0 - 273.15
+				low_lim_T = np.amin(object.T) - 273.15
+
+			low_lim_X = 0
+			up_lim_X = 5.0
+			
+			from pide.geodyn.mantlemelting.katz_2003 import F_wet
+			
+			T_grid = np.arange(low_lim_T, upper_lim_T, 25)
+			
+			if pres_interp == False:
+				X_grid = np.linspace(low_lim_X, up_lim_X, 200)  # wt% water
+				F_table = np.zeros((len(T_grid), len(X_grid)))
+				for i, t in enumerate(T_grid):
+					for j, x in enumerate(X_grid):
+						F_table[i, j] = F_wet(T=t, P=object.p[0], X=x, D=d_per_melt_avg)
+				F_table[F_table < 0] = 0.0
+
+				melt_interp = RegularGridInterpolator((T_grid, X_grid), F_table, 
+												bounds_error=False, fill_value=0.0)
+				
+			elif pres_interp == True:
+				print('Startin thermodynamic pre-interpolator for melt. If this is taking more than 5 minutes restart.')
+				low_lim_P = np.amin(object.p) - 0.1
+				upper_lim_P = np.amax(object.p) + 0.1
+				X_grid = np.linspace(low_lim_X, up_lim_X, 50)  # wt% water
+				P_grid = np.linspace(low_lim_P,upper_lim_P,50)
+				F_table = np.zeros((len(T_grid), len(X_grid), len(P_grid)))
+				for i, t in enumerate(T_grid):
+					for j, x in enumerate(X_grid):
+						for k, pr in enumerate(P_grid):
+							F_table[i, j, k] = F_wet(T=t, P=pr, X=x, D=d_per_melt_avg)
+
+				F_table[F_table < 0] = 0.0
+				print('F table finished')
+				print('Interpolating')
+				melt_interp = RegularGridInterpolator((T_grid, X_grid, P_grid), F_table, 
+												bounds_error=False, fill_value=0.0)
+				print('Interpolation table finished.')
+		else:
+
+			melt_interp = melt_interp_object
+	else:
+
+		melt_interp = None
+		pres_interp = False
+ 
+	if any('frac' in xx for xx in param_names) == True:
+
+		comp_solv = True
+		water_solv = True
+ 
+		for ii in range(n_params):
+			if param_names[ii] != 'melt_fluid_mass_frac':
+				if param_names[ii] in min_list:
+					comp_type = 'mineral'
+					comp_type_list.append(comp_type)
+					comp_index.append(min_list.index(param_names[ii]))
+				elif param_names[ii] in rock_list:
+					comp_type = 'rock'
+					comp_type_list.append(comp_type)
+					comp_index.append(rock_list.index(param_names[ii]))
+				else:
+					comp_type = None
+					comp_type_list.append(comp_type)
+					comp_index.append(None)
+			else:
+				comp_type = None
+				comp_type_list.append(comp_type)
+				comp_index.append(None)
+ 
+			if comp_type is not None:
+				if len(getattr(object, param_names[ii])) != len(object.T):
+					object.set_parameter(param_names[ii], 0.0)
+ 
+		if (('mineral' in comp_type_list) == True) and (('rock' in comp_type_list) == True):
+			raise ValueError('The user cannot enter both rock and mineral as the inversion parameter. Choose only one.')
+ 
+	#The last check for setting up other parameters.
+	for ii in range(n_params):
+		if len(getattr(object, param_names[ii])) != len(object.T):
+			object.set_parameter(param_names[ii], 0.0)
+ 
+	if num_cpu > 1:
+ 
+		import multiprocessing
+		import os
+		from functools import partial
+ 
+		max_num_cores = os.cpu_count()
+ 
+		if num_cpu > max_num_cores:
+			raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
+ 
+	if num_cpu > 1:
+ 
+		manager = multiprocessing.Manager()
+		shared_results = manager.list()
+ 
+		with multiprocessing.Pool(processes=num_cpu) as pool:
+ 
+			process_item_partial = partial(_solv_MCMC_n_param, object = object, cond_list = cond_list,
+			initial_params = initial_params, param_names = param_names,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond,
+			proposal_stds = proposal_stds, n_iter = n_iter, burning = burning,
+			vp_list = vp_list, vs_list = vs_list, sigma_vp = sigma_vp, sigma_vs = sigma_vs,
+			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index,
+			adaptive_alg = adaptive_alg,
+			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
+			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors,
+			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp,
+			melt_frac_limit = melt_frac_limit)
+ 
+			c = pool.map(process_item_partial, index_list)
+ 
+		sample_distr = [x[0] for x in c]
+		acceptance_rates = [x[1] for x in c]
+		misfits = [x[2] for x in c]
+		samples_all = [x[3] for x in c]
+		misfits_all = [x[4] for x in c]
+		if melt_thermodyn == True:
+			melt_samples = [x[5] for x in c]
+			melt_samples_all = [x[6] for x in c]
+			
+ 
+	else:
+ 
+		sample_distr = []
+		acceptance_rates = []
+		misfits = []
+		samples_all = []
+		misfits_all = []
+		melt_samples = []
+		melt_samples_all = []
+ 
+		for idx in range(0, len(index_list)):
+			
+			c = _solv_MCMC_n_param(index = index_list[idx], object = object, cond_list = cond_list,
+			initial_params = initial_params, param_names = param_names,
+			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond,
+			proposal_stds = proposal_stds, n_iter = n_iter, burning = burning,
+			vp_list = vp_list, vs_list = vs_list, sigma_vp = sigma_vp, sigma_vs = sigma_vs,
+			water_solv = water_solv, comp_solv = comp_solv, comp_index = comp_index,
+			adaptive_alg = adaptive_alg,
+			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
+			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors,
+			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp,
+			melt_frac_limit = melt_frac_limit)
+
+			sample_distr.append(c[0])
+			acceptance_rates.append(c[1])
+			misfits.append(c[2])
+			samples_all.append(c[3])
+			misfits_all.append(c[4])
+			if melt_thermodyn == True:
+				melt_samples.append(c[5])
+				melt_samples_all.append(c[6])
+ 
+	if save_distr == True:
+ 
+		from pide.utils.utils import save_h5_files
+ 
+		array_names_idx = list(range(len(sample_distr)))
+		array_names_idx = [str(element) for element in array_names_idx]
+ 
+		save_h5_files(array_list=sample_distr, array_names=array_names_idx, file_name=distr_file_names + '_distr.h5')
+		save_h5_files(array_list=acceptance_rates, array_names=array_names_idx, file_name=distr_file_names + '_acceptance.h5')
+		save_h5_files(array_list=misfits, array_names=array_names_idx, file_name=distr_file_names + '_misfit.h5')
+		save_h5_files(array_list=samples_all, array_names=array_names_idx, file_name=distr_file_names + '_distr_all.h5')
+		save_h5_files(array_list=misfits_all, array_names=array_names_idx, file_name=distr_file_names + '_misfit_all.h5')
+	
+	if melt_thermodyn == False:
+		return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
+	else:
+		return sample_distr, acceptance_rates, misfits, samples_all, misfits_all, melt_samples, melt_samples_all
+	
