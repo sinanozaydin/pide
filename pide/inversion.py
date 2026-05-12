@@ -1272,6 +1272,8 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
 	else:
 		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all), np.array(melt_samples), np.array(melt_samples_all)
+		
+# def _solv_MCMC_column()
  
 def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, upper_limits,
 	lower_limits, sigma_cond, proposal_stds, n_iter, vp_list = None, vs_list = None, sigma_vs = None, sigma_vp = None,

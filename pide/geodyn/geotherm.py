@@ -1,6 +1,6 @@
 import numpy as np
 
-def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BDL_T = 0,kinked = False, **kwargs):
+def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BDL_T = 0,kinked = False, thermal_lab = False,**kwargs):
 
 	'''
 
@@ -38,6 +38,8 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 
 	'''
 
+	thermal_lab_temp = kwargs.pop('thermal_lab_temp',1300)
+	mechanical_lab_depth = kwargs.pop('mechanical_lab_depth', 120)
 
 	if kinked == False:
 		BDL_T = 0
@@ -230,16 +232,25 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 		idx_geotherm_nearest = 0
 
 	if adiabat == True:
-
-		T_C_Adiabat, T_K_Adiabat = T_Katsura_2022_Adiabat(p)
-
-		idx_LAB = np.argwhere(np.diff(np.sign(T - T_K_Adiabat)) != 0)
-
-		try:
-			T[idx_LAB[0][0]:] = T_K_Adiabat[idx_LAB[0][0]:]
-		except IndexError:
-			pass
-
+		
+		if thermal_lab == False:
+			T_C_Adiabat, T_K_Adiabat = T_Katsura_2022_Adiabat(p)
+	
+			idx_LAB = np.argwhere(np.diff(np.sign(T - T_K_Adiabat)) != 0)
+	
+			try:
+				T[idx_LAB[0][0]:] = T_K_Adiabat[idx_LAB[0][0]:]
+			except IndexError:
+				pass
+		else:
+		
+			grad_adiabat = T_Katsura_2022_Adiabat(p, out_type='grad')
+			idx_LAB = np.argwhere(np.diff(np.sign(T-273.15 - thermal_lab_temp)) != 0)[0][0] 
+			grad_adiabat = T_Katsura_2022_Adiabat(p, out_type='grad')
+			for idx_rc in range(idx_LAB+1,len(T)):
+				T[idx_rc] = T[idx_rc-1] + (grad_adiabat[idx_rc] * (depth[idx_rc] - depth[idx_rc-1]) * 1e-3) 
+				
+			
 
 	if kinked == False:
 		if adiabat == True:
@@ -252,7 +263,7 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 		else:
 			return T, depth/1e3, p, idx_geotherm_nearest
 	
-def T_Katsura_2022_Adiabat(P_input):
+def T_Katsura_2022_Adiabat(P_input, out_type = 'temp'):
 
 	'''
 	A function that calculates the mantle adiabat temperature for given pressure
@@ -269,11 +280,22 @@ def T_Katsura_2022_Adiabat(P_input):
 	11.9,12.6,13.4,13.7,13.7,14.1,14.9,15.6,16.4,17.1]
 	T = [1646,1657,1667,1672,1682,1691,1700,1709,1718,1726,1735,1743,1751,
 	1759,1766,1774,1781,1788,1796,1799,1860,1863,1871,1878,1885,1892]
+	grad = [0.54,0.53,0.51,0.5,0.48,0.47,0.46,0.44,0.43,0.42,0.41,0.41,
+	0.4,0.39,0.38,0.37,0.36,0.36,0.37,0.36,0.36,0.36,0.36,0.36,0.35,0.35]
 
 	Depth = np.array(Depth)
-	T_C = np.array(T) - 273.15
+	if out_type == 'temp':
+		T_C = np.array(T) - 273.15
+	
+		T_C_out = np.interp(P_input ,P ,T_C)
+		T_K_out = T_C_out + 273.15
+		
+		return T_C_out, T_K_out
+	elif out_type == 'grad':
+		grad_ = np.array(grad)
+		
+		grad_out = np.interp(P_input ,P , grad_)
+		
+		return grad_out
 
-	T_C_out = np.interp(P_input ,P ,T_C)
-	T_K_out = T_C_out + 273.15
-
-	return T_C_out, T_K_out
+	
