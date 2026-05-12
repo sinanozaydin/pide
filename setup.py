@@ -38,6 +38,7 @@ setup(
         'psutil',
         'burnman',
         'CoolProp',
+        'xarray'
     ],
     keywords = ['petrophysics', 'geodynamic modelling', 'magnetotelluric', 'electrical conductivity', 'seismic velocity']
 )
