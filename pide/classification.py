@@ -24,8 +24,6 @@ def _katz2003_wet_parallel(index, max_water, d_per_melt, cpx_frac , P, T, f_dumm
 
 def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_cpu = 1,**kwargs):
 
-	import ipdb
-	import time
 	import matplotlib.pyplot as plt
 	
 	print('ENTERED')
@@ -130,7 +128,6 @@ def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_
 	
 	print(text_color.GREEN + "STEP 2 Finished..." + text_color.END)
 		
-	ipdb.set_trace()
 	#STEP 3:
 	#Performing possible existence of melt
 	pass
@@ -160,7 +157,3 @@ def mantle_classification(cond, T, P, Vp = None, Vs = None, material = None,num_
 	print('STEP 4 Inversion Started...')
 	water_solv = conductivity_solver_single_param(object = p_obj, cond_list = cond[mask_unclassified],param_name = 'bulk_water',
 	upper_limit_list=max_water[mask_unclassified], lower_limit_list=np.zeros(len(T_step_4)),acceptence_threshold=0.1,num_cpu = num_cpu)
-
-	
-	import ipdb
-	ipdb.set_trace()
