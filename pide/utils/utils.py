@@ -364,8 +364,6 @@ def save_mcmc_results_nc(filename, lon, lat, sample_distr, acceptance_rates, mis
 	print(f'  Variables: {list(dataset.data_vars)}')
 
 	return dataset
-
-
 	
 def _comp_adjust_idx_based(_comp_list, comp_alien, idx, array = False):
 

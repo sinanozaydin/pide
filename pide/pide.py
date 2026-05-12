@@ -3420,7 +3420,7 @@ class pide(object):
 								   E = self.h_i[1][pide.melt_cond_selection],r = 0, alpha = 0, water = 0) + self.calculate_arrhenian_single(T = self.T[idx_node],
 								   sigma = self.sigma_pol[1][pide.melt_cond_selection],
 								   E = self.h_pol[1][pide.melt_cond_selection],r = 0, alpha = 0, water = 0)
-			
+		
 		elif pide.type[1][pide.melt_cond_selection] == '1':
 
 			cond_melt[idx_node] = self.calculate_arrhenian_single(T = self.T[idx_node],
@@ -3706,7 +3706,7 @@ class pide(object):
 									   sigma = sigma_p,
 									   E = h_p, r = r_p,
 									   alpha = alpha_p, water = pide.mineral_water_list[min_sub_idx][idx_node] / water_corr_factor)
-				
+
 			elif pide.type[min_idx][min_sum_idx] == '3':
 	
 				if ('*' in pide.name[min_idx][min_sum_idx]) == True:
@@ -4560,21 +4560,41 @@ class pide(object):
 			index = None
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
-			
-		if np.mean(self.melt_fluid_mass_frac) != 0.0:
-					
-			self.calculate_density_solid()
-			self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
-			
-			if pide.fluid_or_melt_method == 0:
-				self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
-			elif pide.fluid_or_melt_method == 1:
-				self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
 		
+		if method == 'array':
+			if np.mean(self.melt_fluid_mass_frac) != 0.0:
+						
+				self.calculate_density_solid()
+				self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
+				
+				if pide.fluid_or_melt_method == 0:
+					self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
+				elif pide.fluid_or_melt_method == 1:
+					self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
+			
+			else:
+			
+				self.melt_fluid_cond = np.zeros(len(self.T))
+				
 		else:
 		
-			self.melt_fluid_cond = np.zeros(len(self.T))
-		
+			if self.melt_fluid_mass_frac[index] != 0.0:
+				
+				self.calculate_density_solid()
+				self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
+				
+				if pide.fluid_or_melt_method == 0:
+					self.melt_fluid_cond = self.calculate_fluids_conductivity(method = method, sol_idx = index)
+				elif pide.fluid_or_melt_method == 1:
+					self.melt_fluid_cond = self.calculate_melt_conductivity(method = method, sol_idx = index)
+					
+			else:
+				
+				try:
+					self.melt_fluid_cond[index] = 0.0
+				except AttributeError:
+					self.melt_fluid_cond = np.zeros(len(self.T))
+
 		if pide.solid_phase_method == 1:
 		
 			if np.mean(self.granite_frac) != 0:
