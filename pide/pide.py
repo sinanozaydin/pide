@@ -2298,7 +2298,7 @@ class pide(object):
 			 pide.opx_xfe, pide.cpx_xfe, pide.mica_xfe, pide.garnet_xfe, pide.sulphide_xfe,
 				   pide.graphite_xfe, pide.ol_xfe, pide.sp_xfe, pide.rwd_wds_xfe, pide.perov_xfe, pide.mixture_xfe, pide.other_xfe]
 		
-		self.bulk_xfe  = np.sum([xfe * frac for xfe, frac in zip(self.xfe_mineral_list, self.mineral_frac_list)], axis=0) / np.sum(self.mineral_frac_list, axis=0)
+		# self.bulk_xfe  = np.sum([xfe * frac for xfe, frac in zip(self.xfe_mineral_list, self.mineral_frac_list)], axis=0) / np.sum(self.mineral_frac_list, axis=0)
 
 		self.density_loaded = False
 		self.seismic_setup = False
@@ -5942,7 +5942,7 @@ class pide(object):
 			gt_xfe_sol = _xfe_from_FeMg(KD_gt_ol_i * FeMg_ol)
 
 			return ol_xfe_sol, opx_xfe_sol, cpx_xfe_sol, gt_xfe_sol
-
+		
 		n = len(self.bulk_xfe)
 		
 		if len(self.ol_xfe) != n:

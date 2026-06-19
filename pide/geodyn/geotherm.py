@@ -1,6 +1,10 @@
 import numpy as np
 
+<<<<<<< Updated upstream
 def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BDL_T = 0,kinked = False, thermal_lab = False,**kwargs):
+=======
+def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BDL_T = 0,kinked = False, thermal_lab = False, thermal_lab_depth = None, thermal_lab_temp = None, **kwargs):
+>>>>>>> Stashed changes
 
 	'''
 
@@ -232,16 +236,51 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 		idx_geotherm_nearest = 0
 
 	if adiabat == True:
+<<<<<<< Updated upstream
 		
 		if thermal_lab == False:
 			T_C_Adiabat, T_K_Adiabat = T_Katsura_2022_Adiabat(p)
 	
 			idx_LAB = np.argwhere(np.diff(np.sign(T - T_K_Adiabat)) != 0)
 	
+=======
+
+		if thermal_lab and thermal_lab_temp is not None:
+			# Find where conductive geotherm reaches the LAB temperature
+			thermal_lab_temp_K = thermal_lab_temp + 273.15
+			idx_LAB = np.argmin(np.abs(T - thermal_lab_temp_K))
+			
+			# If conductive geotherm never reaches LAB temp, use the last point
+			if T[idx_LAB] < thermal_lab_temp_K * 0.95:
+				idx_LAB = len(T) - 1
+			
+			# Build adiabat starting from LAB temperature
+			grad_adiabat = T_Katsura_2022_Adiabat(p, out_type='grad')
+			T[idx_LAB] = thermal_lab_temp_K
+			for idx_rc in range(idx_LAB + 1, len(T)):
+				T[idx_rc] = T[idx_rc - 1] + (grad_adiabat[idx_rc] * (depth[idx_rc] - depth[idx_rc - 1]) * 1e-3)
+
+
+		elif thermal_lab and thermal_lab_depth is not None:
+			
+			idx_LAB = np.argmin(np.abs(depth/1e3 - thermal_lab_depth))
+			
+			T_at_LAB = T[idx_LAB]
+			
+			grad_adiabat = T_Katsura_2022_Adiabat(p, out_type='grad')
+			for idx_rc in range(idx_LAB + 1, len(T)):
+				T[idx_rc] = T[idx_rc-1] + (grad_adiabat[idx_rc] * (depth[idx_rc] - depth[idx_rc-1]) * 1e-3)
+		
+		else:
+			# Original behaviour: find intersection with Katsura adiabat
+			T_C_Adiabat, T_K_Adiabat = T_Katsura_2022_Adiabat(p)
+			idx_LAB = np.argwhere(np.diff(np.sign(T - T_K_Adiabat)) != 0)
+>>>>>>> Stashed changes
 			try:
 				T[idx_LAB[0][0]:] = T_K_Adiabat[idx_LAB[0][0]:]
 			except IndexError:
 				pass
+<<<<<<< Updated upstream
 		else:
 		
 			grad_adiabat = T_Katsura_2022_Adiabat(p, out_type='grad')
@@ -251,6 +290,9 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 				T[idx_rc] = T[idx_rc-1] + (grad_adiabat[idx_rc] * (depth[idx_rc] - depth[idx_rc-1]) * 1e-3) 
 				
 			
+=======
+
+>>>>>>> Stashed changes
 
 	if kinked == False:
 		if adiabat == True:
@@ -263,7 +305,11 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 		else:
 			return T, depth/1e3, p, idx_geotherm_nearest
 	
+<<<<<<< Updated upstream
 def T_Katsura_2022_Adiabat(P_input, out_type = 'temp'):
+=======
+def T_Katsura_2022_Adiabat(P_input, out_type = 'T'):
+>>>>>>> Stashed changes
 
 	'''
 	A function that calculates the mantle adiabat temperature for given pressure
@@ -271,6 +317,7 @@ def T_Katsura_2022_Adiabat(P_input, out_type = 'temp'):
 
 	###Parameters###
 	P_input: Pressure in GPa
+	out_type: 'T' for temperature, 'grad' for dT/dz gradient in K/km
 
 	'''
 
@@ -284,13 +331,20 @@ def T_Katsura_2022_Adiabat(P_input, out_type = 'temp'):
 	0.4,0.39,0.38,0.37,0.36,0.36,0.37,0.36,0.36,0.36,0.36,0.36,0.35,0.35]
 
 	Depth = np.array(Depth)
+<<<<<<< Updated upstream
 	if out_type == 'temp':
 		T_C = np.array(T) - 273.15
 	
+=======
+	T_C = np.array(T) - 273.15
+
+	if out_type == 'T':
+>>>>>>> Stashed changes
 		T_C_out = np.interp(P_input ,P ,T_C)
 		T_K_out = T_C_out + 273.15
 		
 		return T_C_out, T_K_out
+<<<<<<< Updated upstream
 	elif out_type == 'grad':
 		grad_ = np.array(grad)
 		
@@ -299,3 +353,20 @@ def T_Katsura_2022_Adiabat(P_input, out_type = 'temp'):
 		return grad_out
 
 	
+=======
+		
+	elif out_type == 'grad':
+	
+		# dT/dz in K/km from the tabulated values
+		dT = np.diff(T)
+		dz = np.diff(Depth)
+		grad = dT / dz  # K/km at midpoints
+
+		# Pressures at midpoints
+		P_mid = (np.array(P[:-1]) + np.array(P[1:])) / 2.0
+
+		# Interpolate gradient onto input pressures
+		grad_out = np.interp(P_input, P_mid, grad)
+
+		return grad_out
+>>>>>>> Stashed changes
