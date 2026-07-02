@@ -38,7 +38,6 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 
 	'''
 
-	thermal_lab_temp = kwargs.pop('thermal_lab_temp',1300)
 	mechanical_lab_depth = kwargs.pop('mechanical_lab_depth', 120)
 
 	if kinked == False:
@@ -232,7 +231,7 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 		idx_geotherm_nearest = 0
 
 	if adiabat == True:
-
+		
 		if thermal_lab and thermal_lab_temp is not None:
 			# Find where conductive geotherm reaches the LAB temperature
 			thermal_lab_temp_K = thermal_lab_temp + 273.15
