@@ -910,7 +910,7 @@ def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_
 
 	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
 	
-def _solv_MCMC_column(column_index_list, object, depths, moho_depth,
+def _solv_MCMC_column(index, object, depths, moho_depth,
 	cond_obs, vp_obs, vs_obs,
 	sigma_cond, sigma_vp, sigma_vs,
 	initial_SHF, initial_LAB_temp,
@@ -933,7 +933,7 @@ def _solv_MCMC_column(column_index_list, object, depths, moho_depth,
 	
 	Parameters
 	----------
-	column_index : int
+	index : int
 		Index identifying this column (for parallel dispatch).
 	object : pide object
 		A pide instance with length = len(depths). Pre-configured with
@@ -1024,8 +1024,8 @@ def _solv_MCMC_column(column_index_list, object, depths, moho_depth,
 	n_params = len(param_names)
 	
 	# Total number of MCMC dimensions:
-	# 2 scalars (SHF, LAB_temp) + n_params * n_depths
-	n_total = 2 + n_params * n_depths
+	# 2 scalars (SHF) + n_params * n_depths
+	n_total = 1 + n_params * n_depths
 	
 	# Deep copy mutable inputs
 	proposal_stds = list(proposal_stds)
