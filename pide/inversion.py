@@ -913,10 +913,10 @@ def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_
 def _solv_MCMC_column(index, object, depths, moho_depth,
 	cond_obs, vp_obs, vs_obs,
 	sigma_cond, sigma_vp, sigma_vs,
-	initial_SHF, initial_LAB_temp,
+	initial_SHF,
 	initial_params, param_names,
 	upper_limits, lower_limits,
-	SHF_bounds, LAB_temp_bounds,
+	SHF_bounds,
 	proposal_stds, n_iter, burning,
 	geotherm_func,
 	melt_thermodyn=False, melt_thermodyn_interp=None,
@@ -1046,9 +1046,6 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	# --- Determine which params need water distribution ---
 	water_solv = 'bulk_water' in param_names
 	
-	# --- Index lookups for param_names ---
-	idx_water = param_names.index('bulk_water') if 'bulk_water' in param_names else None
-	idx_xfe = param_names.index('bulk_xfe') if 'bulk_xfe' in param_names else None
 	
 	# --- Calculate initial geotherm and set on object ---
 	def _update_geotherm(shf_val, lab_temp_val):
