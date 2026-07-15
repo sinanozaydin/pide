@@ -911,115 +911,92 @@ def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_
 	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
 	
 def _solv_MCMC_column(index, object, depths, moho_depth,
-	cond_obs, vp_obs, vs_obs,
+	cond_list, vp_list, vs_list,
 	sigma_cond, sigma_vp, sigma_vs,
 	initial_SHF,
 	initial_params, param_names,
 	upper_limits, lower_limits,
 	SHF_bounds,
 	proposal_stds, n_iter, burning,
-	geotherm_func,
 	melt_thermodyn=False, melt_thermodyn_interp=None,
 	adaptive_alg=True, ideal_acceptance_bounds=[0.2, 0.3],
 	adaptive_check_length=1000, step_size_limits=None,
-	param_priors=None, SHF_prior=None, LAB_temp_prior=None):
+	param_priors=None, SHF_prior=None, lab_temp = 1350):
 	"""
 	MCMC column solver for geotherm-based inversion.
-	
-	Samples SHF and LAB_temperature as scalar parameters, plus
-	bulk_water and bulk_xfe (and optionally other params) as vectors
-	along a depth column. Temperature is derived from the geotherm
-	function, not sampled directly.
-	
+
+	Samples SHF as a scalar parameter, plus depth-varying parameters
+	(e.g., bulk_water, bulk_xfe) along a depth column. Temperature is
+	derived from the geotherm function using SHF and a fixed LAB temperature.
+
 	Parameters
 	----------
 	index : int
-		Index identifying this column (for parallel dispatch).
+		Column index for parallel dispatch.
 	object : pide object
-		A pide instance with length = len(depths). Pre-configured with
-		composition, conductivity models, etc.
+		Pre-configured pide instance with length = len(depths).
 	depths : array
-		Depth nodes in km (e.g., [50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200]).
+		Depth nodes in km.
 	moho_depth : float
-		Moho depth in km for this column (fixed).
+		Moho depth in km (fixed).
 	cond_obs : array
-		Observed conductivity at each depth node [S/m]. Length = len(depths).
+		Observed conductivity at each depth node [S/m].
 	vp_obs : array or None
-		Observed Vp at each depth node [km/s]. Length = len(depths).
+		Observed Vp at each depth node [km/s].
 	vs_obs : array or None
-		Observed Vs at each depth node [km/s]. Length = len(depths).
+		Observed Vs at each depth node [km/s].
 	sigma_cond : array
-		Conductivity uncertainty at each depth node (log space).
+		Conductivity uncertainty at each depth (log space).
 	sigma_vp : array or None
-		Vp uncertainty at each depth node [km/s].
+		Vp uncertainty at each depth [km/s].
 	sigma_vs : array or None
-		Vs uncertainty at each depth node [km/s].
+		Vs uncertainty at each depth [km/s].
 	initial_SHF : float
-		Initial surface heat flow value [mW/m^2].
-	initial_LAB_temp : float
-		Initial LAB temperature [°C].
+		Initial surface heat flow [mW/m^2].
 	initial_params : array
-		Initial values for depth-varying parameters.
-		Shape: (n_depths, n_params) — one row per depth, one column per param.
+		Shape (n_depths, n_params). Initial values for depth-varying params.
 	param_names : list of str
 		Names of depth-varying parameters (e.g., ['bulk_water', 'bulk_xfe']).
-	upper_limits : list of arrays
-		Upper bounds for each depth-varying parameter. Each array length = n_depths.
-	lower_limits : list of arrays
-		Lower bounds for each depth-varying parameter. Each array length = n_depths.
+	upper_limits : tuple of arrays
+		Upper bounds per parameter. Each array length = n_depths.
+	lower_limits : tuple of arrays
+		Lower bounds per parameter. Each array length = n_depths.
 	SHF_bounds : tuple
-		(min_SHF, max_SHF) bounds for surface heat flow.
-	LAB_temp_bounds : tuple
-		(min_LAB_temp, max_LAB_temp) bounds for LAB temperature.
+		(min_SHF, max_SHF).
 	proposal_stds : list
-		Proposal step sizes. Order: [SHF_std, LAB_temp_std, param0_std, param1_std, ...].
-		The depth-varying params share one step size per parameter name (not per depth).
+		Step sizes. Order: [SHF_std, param0_std, param1_std, ...].
 	n_iter : int
-		Total number of MCMC iterations.
+		Total MCMC iterations.
 	burning : int
-		Number of burn-in iterations.
+		Burn-in iterations.
 	geotherm_func : callable
-		Function to calculate geotherm. Must accept (SHF, thermal_lab_temp, moho, ...)
-		and return (T_array, depth_array, p_array, idx_LAB).
+		Geotherm function. Called as geotherm_func(SHF=..., T_0=0,
+		max_depth=..., moho=..., adiabat=True, thermal_lab=True,
+		thermal_lab_temp=lab_temp).
 	melt_thermodyn : bool
-		If True, calculate melt from Katz lookup table.
+		If True, calculate melt from Katz lookup.
 	melt_thermodyn_interp : RegularGridInterpolator or None
 		3D interpolator (T_celsius, water_wt%, P_GPa) -> melt fraction.
 	adaptive_alg : bool
-		Enable adaptive step size adjustment.
+		Enable adaptive step sizes.
 	ideal_acceptance_bounds : list
-		Target acceptance rate range [low, high].
+		Target acceptance rate [low, high].
 	adaptive_check_length : int
-		Iterations between adaptive step size checks.
+		Iterations between adaptive checks.
 	step_size_limits : list or None
-		Maximum step sizes. Same order as proposal_stds.
+		[min, max] step size per parameter.
 	param_priors : list or None
-		Priors for depth-varying parameters. List of length n_params.
-		Each element is None (flat prior) or (mean_array, sigma_array)
-		where arrays have length n_depths.
+		Per depth-varying parameter. Each is None or (mean_array, sigma_array).
 	SHF_prior : tuple or None
-		(mean, sigma) Gaussian prior for SHF. None for flat prior.
-	LAB_temp_prior : tuple or None
-		(mean, sigma) Gaussian prior for LAB temperature. None for flat prior.
-	
-	Returns
-	-------
-	samples : array
-		Accepted samples. Each sample is [SHF, LAB_temp, param0[0], param0[1], ..., param1[0], ...].
-	acceptance_rates : array
-		Acceptance rate history.
-	misfits : list
-		[misfits_cond, misfits_vp, misfits_vs] for accepted samples.
-	samples_all : array
-		All samples (accepted and rejected current state).
-	misfits_all : list
-		All misfits.
-	melt_samples : list or None
-		Melt fraction profiles for accepted samples (if melt_thermodyn=True).
-	melt_samples_all : list or None
-		All melt fraction profiles.
+		(mean, sigma) for Gaussian SHF prior.
+	lab_temp : float
+		Fixed LAB temperature in Celsius. Default 1350.
 	"""
- 
+	
+	#deep copy object to not confuse multiprocessing workers.
+	object = copy.deepcopy(object)
+	
+	#determining length of the parametrisation.
 	n_depths = len(depths)
 	n_params = len(param_names)
 	
@@ -1032,27 +1009,22 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	if param_priors is not None:
 		param_priors = copy.deepcopy(param_priors)
 	
-	# --- Build the current state vector ---
-	# State layout: [SHF, LAB_temp, param0[0], param0[1], ..., param0[n_depths-1],
-	#                               param1[0], param1[1], ..., param1[n_depths-1], ...]
 	current_SHF = initial_SHF
-	current_LAB_temp = initial_LAB_temp
 	current_depth_params = np.array(initial_params, dtype=float)  # shape (n_depths, n_params)
-	
-	# --- Build bounds arrays ---
-	param_mins_depth = np.array([lower_limits[i] for i in range(n_params)]).T  # (n_depths, n_params)
-	param_maxs_depth = np.array([upper_limits[i] for i in range(n_params)]).T  # (n_depths, n_params)
 	
 	# --- Determine which params need water distribution ---
 	water_solv = 'bulk_water' in param_names
 	
-	
+	melt_solv = 'melt_fluid_mass_frac' in param_names
+	if melt_thermodyn is True:
+		melt_solv = True
+		
 	# --- Calculate initial geotherm and set on object ---
 	def _update_geotherm(shf_val, lab_temp_val):
 		"""Calculate geotherm and interpolate onto depth nodes."""
 		T_full, depth_full, p_full, idx_LAB = calculate_hasterok2011_geotherm(
 			SHF=shf_val, T_0=0, max_depth=depths[-1] + 10,
-			moho=moho_depth, adiabat=True,
+			moho=moho_depth[index], adiabat=True,
 			thermal_lab = True, thermal_lab_temp = lab_temp_val)
 		
 		# Interpolate onto our depth nodes
@@ -1063,7 +1035,82 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		P_at_depths = P_interp_func(depths)
 		
 		return T_at_depths, P_at_depths
+	
+	#Generating the initial temperature from initial SHF distribution.
+	T_init, P_init = _update_geotherm(shf_val=initial_SHF[index],lab_temp_val=lab_temp)
+	
+	object.set_temperature(T_init)
+	object.set_pressure(P_init)
+	
+	# --- Set initial depth-varying parameters on object ---
+	for ii in range(n_params):
+		getattr(object, param_names[ii])[:n_depths] = current_depth_params[:, ii]
+	
+	# --- Distribute xFe to minerals if needed ---
+	if 'bulk_xfe' in param_names:
+		object.mantle_xfe_distribute()
+		
+	# --- Calculate initial melt from Katz if enabled ---
+	melt_frac_limit = 0.005
+	current_melt = None
+	
+	if melt_thermodyn and melt_thermodyn_interp is not None:
+		
+		idx_water = param_names.index('bulk_water') if 'bulk_water' in param_names else None
+		current_melt = np.zeros(n_depths)
+		for iz in range(n_depths):
+			T_C = object.T[iz] - 273.15
+			if idx_water is not None:
+				water_wt = current_depth_params[iz, idx_water] * 1e-4
+			else:
+				water_wt = object.bulk_water[iz] * 1e-4
+			melt_val = float(melt_thermodyn_interp([T_C, water_wt, object.p[iz]]))
+			if melt_val < melt_frac_limit:
+				melt_val = 0.0
+			current_melt[iz] = melt_val
+		object.melt_fluid_mass_frac[:n_depths] = current_melt
+	
+	# --- Set up fluid density interpolation for melt calculations ---
+	if water_solv == True:
+	
+		object.mantle_water_distribute()
+		
+		if (melt_solv == True) or (melt_thermodyn == True):
+			
+			#to interpolation of fluid density so eos do not have to be solved at each iteration.
+			try:
+				idx_water = param_names.index('bulk_water')
+				water_end = upper_limits[idx_water][index]
+				water_end = np.amax(water_end)
+			except ValueError:
+				water_end = 1e5
 
+			object.calculate_density_fluid(sol_idx = index, method = 'array',
+			interp_for_iter = True, water_start = 0, water_end = water_end)
+
+	#Calculating the initial conductivity
+	if cond_list is not None:
+		cond_init = object.calculate_conductivity(method = 'array')
+	if (vp_list is not None) or (vs_list is not None):
+		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'array')
+	
+	if cond_list is not None:
+		current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+	else:
+		current_likelihood_cond = 1
+	
+	if vp_list is not None:
+		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'normal')
+	else:
+		current_likelihood_vp = 1
+	if vs_list is not None:
+		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'normal')
+	else:
+		current_likelihood_vs = 1
+	
+	
+	import ipdb
+	ipdb.set_trace()
 	
 	
 	
