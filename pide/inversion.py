@@ -1096,21 +1096,26 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	if cond_list is not None:
 		current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+		current_likelihood_cond = np.sum(current_likelihood_cond)
 	else:
 		current_likelihood_cond = 1
 	
 	if vp_list is not None:
-		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'normal')
+		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
+		current_likelihood_vp = np.sum(current_likelihood_vp)
 	else:
 		current_likelihood_vp = 1
 	if vs_list is not None:
-		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'normal')
+		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'linear')
+		current_likelihood_vs = np.sum(current_likelihood_vs)
 	else:
 		current_likelihood_vs = 1
-	
-	
 	import ipdb
 	ipdb.set_trace()
+	if SHF_prior[index] is not None:
+		current_prior_log += -0.5 * ((current_SHF - SHF_prior[0]) / SHF_prior[1])**2
+	cansu = 1
+	
 	
 	
 	
@@ -1247,24 +1252,26 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
 	
 	if vp_list is not None:
-		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'normal')
+		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
 	else:
 		current_likelihood_vp = 1
+		misf_vp = 0
 	if vs_list is not None:
-		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'normal')
+		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'linear')
 	else:
 		current_likelihood_vs = 1
+		misf_vs = 0
 
 	#Calculate initial prior likelihood
-	current_prior = 1.0
+	current_prior = 0.0
 	if param_priors is not None:
 		for ii in range(n_params):
 			if param_priors[ii] is not None:
 				prior_mean = param_priors[ii][0][index]
 				prior_sigma = param_priors[ii][1][index]
-				current_prior *= np.exp(-0.5 * ((current_params[ii] - prior_mean) / prior_sigma)**2)
+				current_prior += -0.5 * ((current_params[ii] - prior_mean) / prior_sigma)**2
 
-	current_likelihood = current_likelihood_cond * current_likelihood_vp * current_likelihood_vs * current_prior
+	current_likelihood = np.exp(current_misf + misf_vp + misf_vs + current_prior)
 
 	#empty arrays to fill it up with samples
 	samples = []
@@ -1377,15 +1384,15 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 				misf_vs = 0
 
 			#Calculate prior likelihood for proposed parameters
-			proposed_prior = 1.0
+			proposed_prior = 0.0
 			if param_priors is not None:
 				for ii in range(n_params):
 					if param_priors[ii] is not None:
 						prior_mean = param_priors[ii][0][index]
 						prior_sigma = param_priors[ii][1][index]
-						proposed_prior *= np.exp(-0.5 * ((proposal[ii] - prior_mean) / prior_sigma)**2)
+						proposed_prior += -0.5 * ((proposal[ii] - prior_mean) / prior_sigma)**2
 
-			proposed_likelihood = proposed_likelihood_cond * proposed_likelihood_vs * proposed_likelihood_vp * proposed_prior
+			proposed_likelihood = np.exp(misf_cond + misf_vp + misf_vs + proposed_prior)
 
 			# Calculate acceptance probability
 			acceptance_ratio = proposed_likelihood / current_likelihood
