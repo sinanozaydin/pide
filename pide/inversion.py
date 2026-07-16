@@ -1247,11 +1247,11 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 	current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
 	
 	if vp_list is not None:
-		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index])
+		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'normal')
 	else:
 		current_likelihood_vp = 1
 	if vs_list is not None:
-		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index])
+		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'normal')
 	else:
 		current_likelihood_vs = 1
 
