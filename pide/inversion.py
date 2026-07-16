@@ -921,7 +921,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	melt_thermodyn=False, melt_thermodyn_interp=None,
 	adaptive_alg=True, ideal_acceptance_bounds=[0.2, 0.3],
 	adaptive_check_length=1000, step_size_limits=None,
-	param_priors=None, SHF_prior=None, lab_temp = 1350):
+	param_priors=None, SHF_prior=None, lab_temp = 1350,**kwargs):
 	"""
 	MCMC column solver for geotherm-based inversion.
 
@@ -993,6 +993,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		Fixed LAB temperature in Celsius. Default 1350.
 	"""
 	
+	melt_frac_limit = kwargs.pop('melt_frac_limit',0.005)
+	
 	#deep copy object to not confuse multiprocessing workers.
 	object = copy.deepcopy(object)
 	
@@ -1051,7 +1053,6 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		object.mantle_xfe_distribute()
 		
 	# --- Calculate initial melt from Katz if enabled ---
-	melt_frac_limit = 0.005
 	current_melt = None
 	
 	if melt_thermodyn and melt_thermodyn_interp is not None:
@@ -1099,21 +1100,96 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		current_likelihood_cond = np.sum(current_likelihood_cond)
 	else:
 		current_likelihood_cond = 1
+		current_misf = 0.0
 	
 	if vp_list is not None:
 		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
 		current_likelihood_vp = np.sum(current_likelihood_vp)
 	else:
 		current_likelihood_vp = 1
+		misf_vp = 0
 	if vs_list is not None:
 		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'linear')
 		current_likelihood_vs = np.sum(current_likelihood_vs)
 	else:
 		current_likelihood_vs = 1
+		misf_vs = 0
+
+	current_prior_log = 0.0
+	
+	#SHF prior:
+	if SHF_prior is not None:
+		current_prior_log += -0.5 * ((initial_SHF[index] - SHF_prior[index][0]) / SHF_prior[index][1])**2
+	
+	#DO THIS LATER, does not work now.
+	if param_priors is not None:
+		for ii in range(n_params):
+			if param_priors[ii] is not None:
+				prior_mean = param_priors[ii][0]   # array length n_depths
+				prior_sigma = param_priors[ii][1]   # array length n_depths
+				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
+	
+	current_likelihood = np.exp(np.sum(current_misf) + np.sum(misf_vp) + np.sum(misf_vs) + current_prior_log)
+	
+	samples = []
+	misfits_cond = []
+	misfits_vp = []
+	misfits_vs = []
+	misfits_all_cond = []
+	misfits_all_vp = []
+	misfits_all_vs = []
+	samples_all = []
+	acceptance_rates = []
+	melt_samples = []
+	melt_samples_all = []
+	accepted = 0
+	
+	# --- Bounds ---
+	param_mins_depth = np.array([lower_limits[i][index] for i in range(n_params)])  # (n_params, n_depths)
+	param_maxs_depth = np.array([upper_limits[i][index] for i in range(n_params)])  # (n_params, n_depths)
+	
+	def _get_step_idx(dim):
+		if dim == 0:
+			return 0
+		else:
+			return 1 + (dim - 1) // n_depths
+	
+	
+	print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
+	print(text_color.YELLOW + f'{n_iter*2} total samples, {n_iter} minimum samples.' + text_color.END)
+	print(text_color.RED + f'{burning} burning samples.' + text_color.END)
+	
+	for _ in range(n_iter*2):
+		
+		# Pick random dimension
+		rand_dim = np.random.randint(n_total)
+		step_idx = _get_step_idx(rand_dim)
+		print(step_idx)
+		import ipdb
+		ipdb.set_trace()
+		randomgen = np.random.normal(0, proposal_stds[step_idx])
+		"""
+		# Copy current state
+		proposed_SHF = current_SHF
+		proposed_depth_params = current_depth_params.copy()
+		continue_bounds = True
+		import ipdb
+		ipdb.set_trace()
+		if rand_dim == 0:
+			proposed_SHF = current_SHF + randomgen
+			if proposed_SHF < SHF_bounds[index][0] or proposed_SHF > SHF_bounds[index][1]:
+				continue_bounds = False
+		else:
+			param_idx = (rand_dim - 1) // n_depths
+			depth_idx = (rand_dim - 1) % n_depths
+			proposed_depth_params[depth_idx, param_idx] += randomgen
+			if (proposed_depth_params[depth_idx, param_idx] < param_mins_depth[depth_idx, param_idx] or
+				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[depth_idx, param_idx]):
+				continue_bounds = False
+		"""
+	
 	import ipdb
 	ipdb.set_trace()
-	if SHF_prior[index] is not None:
-		current_prior_log += -0.5 * ((current_SHF - SHF_prior[0]) / SHF_prior[1])**2
 	cansu = 1
 	
 	
