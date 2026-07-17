@@ -1011,7 +1011,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	if param_priors is not None:
 		param_priors = copy.deepcopy(param_priors)
 	
-	current_SHF = initial_SHF
+	current_SHF = initial_SHF[index]
 	current_depth_params = np.array(initial_params, dtype=float)  # shape (n_depths, n_params)
 	
 	# --- Determine which params need water distribution ---
@@ -1146,7 +1146,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	# --- Bounds ---
 	param_mins_depth = np.array([lower_limits[i][index] for i in range(n_params)])  # (n_params, n_depths)
-	param_maxs_depth = np.array([upper_limits[i][index] for i in range(n_params)])  # (n_params, n_depths)
+	param_maxs_depth = np.array([upper_limits[i][index] for i in range(n_params)])
 	
 	def _get_step_idx(dim):
 		if dim == 0:
@@ -1164,29 +1164,27 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		# Pick random dimension
 		rand_dim = np.random.randint(n_total)
 		step_idx = _get_step_idx(rand_dim)
-		print(step_idx)
-		import ipdb
-		ipdb.set_trace()
+
 		randomgen = np.random.normal(0, proposal_stds[step_idx])
-		"""
+		
 		# Copy current state
 		proposed_SHF = current_SHF
 		proposed_depth_params = current_depth_params.copy()
 		continue_bounds = True
-		import ipdb
-		ipdb.set_trace()
+		
 		if rand_dim == 0:
 			proposed_SHF = current_SHF + randomgen
+			print(proposed_SHF)
 			if proposed_SHF < SHF_bounds[index][0] or proposed_SHF > SHF_bounds[index][1]:
 				continue_bounds = False
 		else:
 			param_idx = (rand_dim - 1) // n_depths
 			depth_idx = (rand_dim - 1) % n_depths
 			proposed_depth_params[depth_idx, param_idx] += randomgen
-			if (proposed_depth_params[depth_idx, param_idx] < param_mins_depth[depth_idx, param_idx] or
-				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[depth_idx, param_idx]):
+			if (proposed_depth_params[depth_idx, param_idx] < param_mins_depth[param_idx, depth_idx] or
+				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[param_idx, depth_idx]):
 				continue_bounds = False
-		"""
+
 	
 	import ipdb
 	ipdb.set_trace()
