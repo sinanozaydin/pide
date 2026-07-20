@@ -921,7 +921,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	melt_thermodyn=False, melt_thermodyn_interp=None,
 	adaptive_alg=True, ideal_acceptance_bounds=[0.2, 0.3],
 	adaptive_check_length=1000, step_size_limits=None,
-	param_priors=None, SHF_prior=None, lab_temp = 1350,**kwargs):
+	param_priors=None, SHF_prior=None, lab_temp = 1350,
+	composition = None, **kwargs):
 	"""
 	MCMC column solver for geotherm-based inversion.
 
@@ -997,10 +998,25 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	#deep copy object to not confuse multiprocessing workers.
 	object = copy.deepcopy(object)
-	
+
 	#determining length of the parametrisation.
 	n_depths = len(depths)
 	n_params = len(param_names)
+
+	frac_bool = [False] * n_params
+	comp_index_sub = None
+
+	for ii in range(n_params):
+		if 'frac' in param_names[ii]:
+			if param_names[ii] != 'melt_fluid_mass_frac':
+				frac_bool[ii] = True
+				comp_index_sub = ii
+
+	# Temperature and pressure are controlled by the geotherm, not directly sampled
+	for name in param_names:
+		if name in ['T', 'p']:
+			raise ValueError(f"'{name}' cannot be a free parameter in column mode. "
+				f"Temperature is controlled by SHF and pressure is derived from the geotherm.")
 	
 	# Total number of MCMC dimensions:
 	# 2 scalars (SHF) + n_params * n_depths
@@ -1040,19 +1056,24 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	#Generating the initial temperature from initial SHF distribution.
 	T_init, P_init = _update_geotherm(shf_val=initial_SHF[index],lab_temp_val=lab_temp)
-	
 	object.set_temperature(T_init)
 	object.set_pressure(P_init)
-	
-	# --- Set initial depth-varying parameters on object ---
+
+	#Setting the composition if defined, recasting into temperature and pressure length if single.
+	if composition is not None:
+		object.set_composition_solid_mineral(**composition)
+	else:
+		object.set_composition_solid_mineral(reval = True)
+		
+	#Setting all the parameters defined...
 	for ii in range(n_params):
 		getattr(object, param_names[ii])[:n_depths] = current_depth_params[:, ii]
 	
-	# --- Distribute xFe to minerals if needed ---
+	#if bulk xFe is changed distributing iron among defined minerals.
 	if 'bulk_xfe' in param_names:
 		object.mantle_xfe_distribute()
 		
-	# --- Calculate initial melt from Katz if enabled ---
+	#Calculating thermodynamic calculation of partial melting is True.
 	current_melt = None
 	
 	if melt_thermodyn and melt_thermodyn_interp is not None:
@@ -1174,7 +1195,6 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		
 		if rand_dim == 0:
 			proposed_SHF = current_SHF + randomgen
-			print(proposed_SHF)
 			if proposed_SHF < SHF_bounds[index][0] or proposed_SHF > SHF_bounds[index][1]:
 				continue_bounds = False
 		else:
@@ -1185,6 +1205,89 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[param_idx, depth_idx]):
 				continue_bounds = False
 
+	if continue_bounds == True:
+
+		if rand_dim == 0:
+			T_, P_= _update_geotherm(proposed_SHF, lab_temp)
+			object.set_temperature(T_)
+			object.set_pressure(P_)
+		
+		else:
+			
+			#if one of the paramters are a composition parameter.
+			if frac_bool[param_idx] == True:
+
+				if object.solid_phase_method == 2:
+					_comp_list = [object.quartz_frac[depth_idx], object.plag_frac[depth_idx], object.amp_frac[depth_idx], object.kfelds_frac[depth_idx], object.opx_frac[depth_idx], object.cpx_frac[depth_idx],
+						object.mica_frac[depth_idx], object.garnet_frac[depth_idx], object.sulphide_frac[depth_idx], object.graphite_frac[depth_idx], object.ol_frac[depth_idx], object.sp_frac[depth_idx], object.rwd_wds_frac[depth_idx],
+						object.perov_frac[depth_idx], object.mixture_frac[depth_idx], object.other_frac[depth_idx]]
+				else:
+					_comp_list = [object.granite_frac[depth_idx],object.granulite_frac[depth_idx],object.sandstone_frac[depth_idx],object.gneiss_frac[depth_idx],object.amphibolite_frac[depth_idx],
+						object.basalt_frac[depth_idx],object.mud_frac[depth_idx],object.gabbro_frac[depth_idx],object.other_rock_frac[depth_idx]]
+
+				comp_old = _comp_list[comp_index[comp_index_sub]]
+
+				comp_list = _comp_adjust_(np.array(_comp_list), proposed_depth_params[depth_idx, comp_index_sub], comp_old)
+
+				for idx_t in range(len(_comp_list)):
+					if object.solid_phase_method == 2:
+						object.mineral_frac_list[idx_t][depth_idx] = comp_list[idx_t]
+					else:
+						object.rock_frac_list[idx_t][depth_idx] = comp_list[idx_t]
+
+			#Changing the depth dependent parameter.
+			getattr(object, param_names[param_idx])[depth_idx] = proposed_depth_params[depth_idx, param_idx]
+
+			#if bulk xFe is changed distributing iron among defined minerals.
+			if 'bulk_xfe' in param_names:
+				object.mantle_xfe_distribute(method = 'index', sol_idx = depth_idx)
+			
+			if melt_thermodyn and melt_thermodyn_interp is not None:
+				
+				T_C = object.T[depth_idx] - 273.15
+				water_wt = object.bulk_water[depth_idx] * 1e-4
+				melt_val = float(melt_thermodyn_interp([T_C, water_wt, object.p[depth_idx]]))
+				if melt_val < melt_frac_limit:
+					melt_val = 0.0
+				object.melt_fluid_mass_frac[depth_idx] = melt_val
+
+			# --- Set up fluid density interpolation for melt calculations ---
+			if water_solv == True:
+			
+				object.mantle_water_distribute(method = 'index', sol_idx = depth_idx)
+				
+				if (melt_solv == True) or (melt_thermodyn == True):
+					
+					object.calculate_density_fluid(sol_idx = depth_idx, method = 'index',
+					interp_for_iter = True, water_start = 0, water_end = water_end)
+
+		#Calculating the initial conductivity
+		if cond_list is not None:
+			cond_ = object.calculate_conductivity(method = 'array')
+		if (vp_list is not None) or (vs_list is not None):
+			v_bulk_, vp_, vs_ = object.calculate_seismic_velocities(method = 'array')
+		
+		if cond_list is not None:
+			current_likelihood_cond, current_misf = _likelihood(cond_, cond_list[index], sigma_cond[index])
+			current_likelihood_cond = np.sum(current_likelihood_cond)
+		else:
+			current_likelihood_cond = 1
+			current_misf = 0.0
+		
+		if vp_list is not None:
+			current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
+			current_likelihood_vp = np.sum(current_likelihood_vp)
+		else:
+			current_likelihood_vp = 1
+			misf_vp = 0
+		if vs_list is not None:
+			current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'linear')
+			current_likelihood_vs = np.sum(current_likelihood_vs)
+		else:
+			current_likelihood_vs = 1
+			misf_vs = 0
+
+			
 	
 	import ipdb
 	ipdb.set_trace()
@@ -1558,9 +1661,7 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
 	else:
 		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all), np.array(melt_samples), np.array(melt_samples_all)
-		
-# def _solv_MCMC_column()
- 
+		 
 def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, upper_limits,
 	lower_limits, sigma_cond, proposal_stds, n_iter, vp_list = None, vs_list = None, sigma_vs = None, sigma_vp = None,
 	burning = 0, transition_zone = False, num_cpu = 1, param_priors = None, **kwargs):
