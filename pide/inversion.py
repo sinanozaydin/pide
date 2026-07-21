@@ -922,7 +922,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	adaptive_alg=True, ideal_acceptance_bounds=[0.2, 0.3],
 	adaptive_check_length=1000, step_size_limits=None,
 	param_priors=None, SHF_prior=None, lab_temp = 1350,
-	composition = None, **kwargs):
+	composition = None,max_widen_attempts = 3,
+	**kwargs):
 	"""
 	MCMC column solver for geotherm-based inversion.
 
@@ -995,9 +996,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	"""
 	
 	melt_frac_limit = kwargs.pop('melt_frac_limit',0.005)
+	comp_index = kwargs.pop('comp_index',[0] * len(param_names))
 	
 	#deep copy object to not confuse multiprocessing workers.
 	object = copy.deepcopy(object)
+	
+	widen_count = 0
 
 	#determining length of the parametrisation.
 	n_depths = len(depths)
@@ -1205,96 +1209,209 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[param_idx, depth_idx]):
 				continue_bounds = False
 
-	if continue_bounds == True:
-
-		if rand_dim == 0:
-			T_, P_= _update_geotherm(proposed_SHF, lab_temp)
-			object.set_temperature(T_)
-			object.set_pressure(P_)
-		
-		else:
+		if continue_bounds == True:
+	
+			if rand_dim == 0:
+				T_, P_= _update_geotherm(proposed_SHF, lab_temp)
+				object.set_temperature(T_)
+				object.set_pressure(P_)
+				
+				#if bulk xFe is changed distributing iron among defined minerals.
+				if 'bulk_xfe' in param_names:
+					object.mantle_xfe_distribute(method = 'array')
+				
+				if melt_thermodyn and melt_thermodyn_interp is not None:
+				
+					current_melt = np.zeros(n_depths)
+					for iz in range(n_depths):
+						T_C = object.T[iz] - 273.15
+						water_wt = object.bulk_water[iz] * 1e-4
+						melt_frac = float(melt_thermodyn_interp([T_C, water_wt, object.p[iz]]))
+						if melt_frac < melt_frac_limit:
+							melt_frac = 0.0
+						current_melt[iz] = melt_frac
+					object.melt_fluid_mass_frac[:n_depths] = current_melt
+						
+				# --- Set up fluid density interpolation for melt calculations ---
+				if water_solv == True:
+				
+					object.mantle_water_distribute(method = 'array')
 			
-			#if one of the paramters are a composition parameter.
-			if frac_bool[param_idx] == True:
-
-				if object.solid_phase_method == 2:
-					_comp_list = [object.quartz_frac[depth_idx], object.plag_frac[depth_idx], object.amp_frac[depth_idx], object.kfelds_frac[depth_idx], object.opx_frac[depth_idx], object.cpx_frac[depth_idx],
-						object.mica_frac[depth_idx], object.garnet_frac[depth_idx], object.sulphide_frac[depth_idx], object.graphite_frac[depth_idx], object.ol_frac[depth_idx], object.sp_frac[depth_idx], object.rwd_wds_frac[depth_idx],
-						object.perov_frac[depth_idx], object.mixture_frac[depth_idx], object.other_frac[depth_idx]]
-				else:
-					_comp_list = [object.granite_frac[depth_idx],object.granulite_frac[depth_idx],object.sandstone_frac[depth_idx],object.gneiss_frac[depth_idx],object.amphibolite_frac[depth_idx],
-						object.basalt_frac[depth_idx],object.mud_frac[depth_idx],object.gabbro_frac[depth_idx],object.other_rock_frac[depth_idx]]
-
-				comp_old = _comp_list[comp_index[comp_index_sub]]
-
-				comp_list = _comp_adjust_(np.array(_comp_list), proposed_depth_params[depth_idx, comp_index_sub], comp_old)
-
-				for idx_t in range(len(_comp_list)):
+			else:
+				
+				#if one of the paramters are a composition parameter.
+				if frac_bool[param_idx] == True:
+	
 					if object.solid_phase_method == 2:
-						object.mineral_frac_list[idx_t][depth_idx] = comp_list[idx_t]
+						_comp_list = [object.quartz_frac[depth_idx], object.plag_frac[depth_idx], object.amp_frac[depth_idx], object.kfelds_frac[depth_idx], object.opx_frac[depth_idx], object.cpx_frac[depth_idx],
+							object.mica_frac[depth_idx], object.garnet_frac[depth_idx], object.sulphide_frac[depth_idx], object.graphite_frac[depth_idx], object.ol_frac[depth_idx], object.sp_frac[depth_idx], object.rwd_wds_frac[depth_idx],
+							object.perov_frac[depth_idx], object.mixture_frac[depth_idx], object.other_frac[depth_idx]]
 					else:
-						object.rock_frac_list[idx_t][depth_idx] = comp_list[idx_t]
-
-			#Changing the depth dependent parameter.
-			getattr(object, param_names[param_idx])[depth_idx] = proposed_depth_params[depth_idx, param_idx]
-
-			#if bulk xFe is changed distributing iron among defined minerals.
-			if 'bulk_xfe' in param_names:
-				object.mantle_xfe_distribute(method = 'index', sol_idx = depth_idx)
-			
-			if melt_thermodyn and melt_thermodyn_interp is not None:
+						_comp_list = [object.granite_frac[depth_idx],object.granulite_frac[depth_idx],object.sandstone_frac[depth_idx],object.gneiss_frac[depth_idx],object.amphibolite_frac[depth_idx],
+							object.basalt_frac[depth_idx],object.mud_frac[depth_idx],object.gabbro_frac[depth_idx],object.other_rock_frac[depth_idx]]
+	
+					comp_old = _comp_list[comp_index[comp_index_sub]]
+	
+					comp_list = _comp_adjust_(np.array(_comp_list), proposed_depth_params[depth_idx, comp_index_sub], comp_old)
+	
+					for idx_t in range(len(_comp_list)):
+						if object.solid_phase_method == 2:
+							object.mineral_frac_list[idx_t][depth_idx] = comp_list[idx_t]
+						else:
+							object.rock_frac_list[idx_t][depth_idx] = comp_list[idx_t]
+	
+				#Changing the depth dependent parameter.
+				getattr(object, param_names[param_idx])[depth_idx] = proposed_depth_params[depth_idx, param_idx]
+	
+				#if bulk xFe is changed distributing iron among defined minerals.
+				if 'bulk_xfe' in param_names:
+					object.mantle_xfe_distribute(method = 'index', sol_idx = depth_idx)
 				
-				T_C = object.T[depth_idx] - 273.15
-				water_wt = object.bulk_water[depth_idx] * 1e-4
-				melt_val = float(melt_thermodyn_interp([T_C, water_wt, object.p[depth_idx]]))
-				if melt_val < melt_frac_limit:
-					melt_val = 0.0
-				object.melt_fluid_mass_frac[depth_idx] = melt_val
-
-			# --- Set up fluid density interpolation for melt calculations ---
-			if water_solv == True:
-			
-				object.mantle_water_distribute(method = 'index', sol_idx = depth_idx)
-				
-				if (melt_solv == True) or (melt_thermodyn == True):
+				if melt_thermodyn and melt_thermodyn_interp is not None:
 					
-					object.calculate_density_fluid(sol_idx = depth_idx, method = 'index',
-					interp_for_iter = True, water_start = 0, water_end = water_end)
-
-		#Calculating the initial conductivity
-		if cond_list is not None:
-			cond_ = object.calculate_conductivity(method = 'array')
-		if (vp_list is not None) or (vs_list is not None):
-			v_bulk_, vp_, vs_ = object.calculate_seismic_velocities(method = 'array')
-		
-		if cond_list is not None:
-			current_likelihood_cond, current_misf = _likelihood(cond_, cond_list[index], sigma_cond[index])
-			current_likelihood_cond = np.sum(current_likelihood_cond)
-		else:
-			current_likelihood_cond = 1
-			current_misf = 0.0
-		
-		if vp_list is not None:
-			current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
-			current_likelihood_vp = np.sum(current_likelihood_vp)
-		else:
-			current_likelihood_vp = 1
-			misf_vp = 0
-		if vs_list is not None:
-			current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'linear')
-			current_likelihood_vs = np.sum(current_likelihood_vs)
-		else:
-			current_likelihood_vs = 1
-			misf_vs = 0
-
+					T_C = object.T[depth_idx] - 273.15
+					water_wt = object.bulk_water[depth_idx] * 1e-4
+					melt_frac = float(melt_thermodyn_interp([T_C, water_wt, object.p[depth_idx]]))
+					if melt_frac < melt_frac_limit:
+						melt_frac = 0.0
+					object.melt_fluid_mass_frac[depth_idx] = melt_frac
+	
+				# --- Set up fluid density interpolation for melt calculations ---
+				if water_solv == True:
+				
+					object.mantle_water_distribute(method = 'index', sol_idx = depth_idx)
+	
+			#Calculating the initial conductivity
+			if cond_list is not None:
+				cond_ = object.calculate_conductivity(method = 'array')
+			if (vp_list is not None) or (vs_list is not None):
+				v_bulk_, vp_, vs_ = object.calculate_seismic_velocities(method = 'array')
 			
+			if cond_list is not None:
+				proposed_likelihood_cond, misf_cond = _likelihood(cond_, cond_list[index], sigma_cond[index])
+				proposed_likelihood_cond = np.sum(proposed_likelihood_cond)
+			else:
+				proposed_likelihood_cond = 1
+				misf_cond = 0.0
+			
+			if vp_list is not None:
+				proposed_likelihood_vp, misf_vp = _likelihood(vp_, vp_list[index], sigma_vp[index], norm = 'linear')
+				proposed_likelihood_vp = np.sum(proposed_likelihood_vp)
+			else:
+				proposed_likelihood_vp = 1
+				misf_vp = 0
+			if vs_list is not None:
+				proposed_likelihood_vs, misf_vs = _likelihood(vs_, vs_list[index], sigma_vs[index], norm = 'linear')
+				proposed_likelihood_vs = np.sum(proposed_likelihood_vs)
+			else:
+				proposed_likelihood_vs = 1
+				misf_vs = 0
+			
+			#Calculate prior likelihood for proposed parameters
+			proposed_prior = 0.0
+			if param_priors is not None:
+				for ii in range(n_params):
+					if param_priors[ii] is not None:
+						prior_mean = param_priors[ii][0]   # array length n_depths
+						prior_sigma = param_priors[ii][1]   # array length n_depths
+						proposed_prior += np.sum(-0.5 * ((proposed_depth_params[:, ii] - prior_mean) / prior_sigma)**2)
+						
+			proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + proposed_prior)
+			
+			# Calculate acceptance probability
+			acceptance_ratio = proposed_likelihood / current_likelihood
+
+			if np.random.rand() < acceptance_ratio:
+
+				current_SHF = proposed_SHF
+				current_depth_params = proposed_depth_params.copy()
+				current_likelihood = proposed_likelihood
+				sample_vec = np.concatenate([[current_SHF], current_depth_params.flatten('F')])
+				
+				if _ > burning:
+					samples.append(sample_vec.copy())
+					misfits_cond.append(misf_cond)
+					misfits_vp.append(misf_vp)
+					misfits_vs.append(misf_vs)
+					if melt_thermodyn == True:
+						melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
+					accepted += 1
+
+				if (_ - burning) > 0:
+					acceptance_rate = accepted / (_ - burning)
+					
+				else:
+					acceptance_rate = 0
+					
+				if _ > burning:
+					# After base iterations, check if we need to continue
+					if _ >= n_iter and (_ - n_iter) % 2000 == 0:
+						if acceptance_rate <= 0.3:
+							print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
+							break
+						else:
+							print(f'Acceptance rate {acceptance_rate:.3f} still too high. Continuing...')
+							
+				acceptance_rates.append(acceptance_rate)
+				misfits_all_cond.append(misf_cond.copy())
+				misfits_all_vp.append(misf_vp.copy())
+				misfits_all_vs.append(misf_vs.copy())
+				samples_all.append(sample_vec.copy())
+				
+				if melt_thermodyn == True:
+					melt_samples_all.append(object.melt_fluid_mass_frac[:n_depths].copy())
+				
+				# Check if stuck after enough post-burn-in samples
+				if ((_ - burning) % 5000 == 0) and accepted == 0:
+					print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
+					if widen_count < max_widen_attempts:
+						widen_count += 1
+						# Widen priors for parameters that have them
+						if param_priors is not None:
+							for ii in range(n_params):
+								if param_priors[ii] is not None:
+									param_priors[ii][1][index] = param_priors[ii][1][index] * 1.25
+									print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} to sigma={param_priors[ii][1][index]:.1f}, attempt {widen_count}' + text_color.END)
+				
+				if adaptive_alg == True:
+					if (_ + 1) % adaptive_check_length == 0:
+						if acceptance_rate < 0.1:
+							proposal_stds[step_idx] *= 0.8
+							status = 'very low'
+							color = text_color.RED
+						elif acceptance_rate < ideal_acceptance_bounds[0]:
+							proposal_stds[step_idx] *= 0.95
+							status = 'low'
+							color = text_color.YELLOW
+						elif acceptance_rate > 0.5:
+							proposal_stds[step_idx] *= 1.2
+							status = 'very high'
+							color = text_color.RED
+						elif acceptance_rate > ideal_acceptance_bounds[1]:
+							proposal_stds[step_idx] *= 1.05
+							status = 'high'
+							color = text_color.YELLOW
+						else:
+							status = 'good'
+							color = text_color.GREEN
+					
+						# Enforce step size limits (both min and max)
+						if step_size_limits is not None:
+							if proposal_stds[step_idx] > step_size_limits[step_idx]:
+								proposal_stds[step_idx] = step_size_limits[step_idx]
+						print(color + f'Acceptance {status}: {acceptance_rate:.3f} | Steps: {[round(s,4) for s in proposal_stds]} | {(_/n_iter)*100:.1f}% done' + text_color.END)
+				else:
+					if (_ + 1) % adaptive_check_length == 0:
+						print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+
+
+	misfits = [misfits_cond, misfits_vp, misfits_vs]
+	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs]
 	
-	import ipdb
-	ipdb.set_trace()
-	cansu = 1
-	
-	
-	
+	if melt_thermodyn == False:
+		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
+	else:
+		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all), np.array(melt_samples), np.array(melt_samples_all)	
 	
 def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, upper_limits,
 	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, melt_thermodyn, pres_interp, melt_frac_limit,
