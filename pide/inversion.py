@@ -1033,6 +1033,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	current_SHF = initial_SHF[index]
 	current_depth_params = np.array(initial_params, dtype=float)  # shape (n_depths, n_params)
+	if current_depth_params.ndim == 1:
+		current_depth_params = current_depth_params.reshape(-1, 1)  # (n_depths, 1)
 	
 	# --- Determine which params need water distribution ---
 	water_solv = 'bulk_water' in param_names
@@ -1155,15 +1157,19 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
 	
 	current_likelihood = np.exp(np.sum(current_misf) + np.sum(misf_vp) + np.sum(misf_vs) + current_prior_log)
-	
-	samples = []
+
+	samples_SHF = []
+	samples_temp = []
+	samples_depth_params = []
 	misfits_cond = []
 	misfits_vp = []
 	misfits_vs = []
 	misfits_all_cond = []
 	misfits_all_vp = []
 	misfits_all_vs = []
-	samples_all = []
+	samples_SHF_all = []
+	samples_temp_all = []
+	samples_depth_params_all = []
 	acceptance_rates = []
 	melt_samples = []
 	melt_samples_all = []
@@ -1172,6 +1178,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	# --- Bounds ---
 	param_mins_depth = np.array([lower_limits[i][index] for i in range(n_params)])  # (n_params, n_depths)
 	param_maxs_depth = np.array([upper_limits[i][index] for i in range(n_params)])
+	
+	# Ensure 2D even with single parameter
+	if param_mins_depth.ndim == 1:
+		param_mins_depth = param_mins_depth.reshape(1, -1)
+		param_maxs_depth = param_maxs_depth.reshape(1, -1)
 	
 	def _get_step_idx(dim):
 		if dim == 0:
@@ -1185,7 +1196,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	print(text_color.RED + f'{burning} burning samples.' + text_color.END)
 	
 	for _ in range(n_iter*2):
-		
+	
 		# Pick random dimension
 		rand_dim = np.random.randint(n_total)
 		step_idx = _get_step_idx(rand_dim)
@@ -1205,10 +1216,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			param_idx = (rand_dim - 1) // n_depths
 			depth_idx = (rand_dim - 1) % n_depths
 			proposed_depth_params[depth_idx, param_idx] += randomgen
+
 			if (proposed_depth_params[depth_idx, param_idx] < param_mins_depth[param_idx, depth_idx] or
 				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[param_idx, depth_idx]):
 				continue_bounds = False
-
+		
 		if continue_bounds == True:
 	
 			if rand_dim == 0:
@@ -1326,10 +1338,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				current_SHF = proposed_SHF
 				current_depth_params = proposed_depth_params.copy()
 				current_likelihood = proposed_likelihood
-				sample_vec = np.concatenate([[current_SHF], current_depth_params.flatten('F')])
 				
 				if _ > burning:
-					samples.append(sample_vec.copy())
+					samples_SHF.append(current_SHF)
+					samples_temp.append(object.T.copy())
+					samples_depth_params.append(current_depth_params.copy())
 					misfits_cond.append(misf_cond)
 					misfits_vp.append(misf_vp)
 					misfits_vs.append(misf_vs)
@@ -1337,81 +1350,85 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
 					accepted += 1
 
-				if (_ - burning) > 0:
-					acceptance_rate = accepted / (_ - burning)
-					
+		if (_ - burning) > 0:
+			acceptance_rate = accepted / (_ - burning)
+			
+		else:
+			acceptance_rate = 0
+			
+		if _ > burning:
+			# After base iterations, check if we need to continue
+			if _ >= n_iter and (_ - n_iter) % 2000 == 0:
+				if acceptance_rate <= 0.3:
+					print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
+					break
 				else:
-					acceptance_rate = 0
+					print(f'Acceptance rate {acceptance_rate:.3f} still too high. Continuing...')
 					
-				if _ > burning:
-					# After base iterations, check if we need to continue
-					if _ >= n_iter and (_ - n_iter) % 2000 == 0:
-						if acceptance_rate <= 0.3:
-							print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
-							break
-						else:
-							print(f'Acceptance rate {acceptance_rate:.3f} still too high. Continuing...')
-							
-				acceptance_rates.append(acceptance_rate)
-				misfits_all_cond.append(misf_cond.copy())
-				misfits_all_vp.append(misf_vp.copy())
-				misfits_all_vs.append(misf_vs.copy())
-				samples_all.append(sample_vec.copy())
-				
-				if melt_thermodyn == True:
-					melt_samples_all.append(object.melt_fluid_mass_frac[:n_depths].copy())
-				
-				# Check if stuck after enough post-burn-in samples
-				if ((_ - burning) % 5000 == 0) and accepted == 0:
-					print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
-					if widen_count < max_widen_attempts:
-						widen_count += 1
-						# Widen priors for parameters that have them
-						if param_priors is not None:
-							for ii in range(n_params):
-								if param_priors[ii] is not None:
-									param_priors[ii][1][index] = param_priors[ii][1][index] * 1.25
-									print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} to sigma={param_priors[ii][1][index]:.1f}, attempt {widen_count}' + text_color.END)
-				
-				if adaptive_alg == True:
-					if (_ + 1) % adaptive_check_length == 0:
-						if acceptance_rate < 0.1:
-							proposal_stds[step_idx] *= 0.8
-							status = 'very low'
-							color = text_color.RED
-						elif acceptance_rate < ideal_acceptance_bounds[0]:
-							proposal_stds[step_idx] *= 0.95
-							status = 'low'
-							color = text_color.YELLOW
-						elif acceptance_rate > 0.5:
-							proposal_stds[step_idx] *= 1.2
-							status = 'very high'
-							color = text_color.RED
-						elif acceptance_rate > ideal_acceptance_bounds[1]:
-							proposal_stds[step_idx] *= 1.05
-							status = 'high'
-							color = text_color.YELLOW
-						else:
-							status = 'good'
-							color = text_color.GREEN
-					
-						# Enforce step size limits (both min and max)
-						if step_size_limits is not None:
-							if proposal_stds[step_idx] > step_size_limits[step_idx]:
-								proposal_stds[step_idx] = step_size_limits[step_idx]
-						print(color + f'Acceptance {status}: {acceptance_rate:.3f} | Steps: {[round(s,4) for s in proposal_stds]} | {(_/n_iter)*100:.1f}% done' + text_color.END)
+		acceptance_rates.append(acceptance_rate)
+		misfits_all_cond.append(misf_cond.copy())
+		misfits_all_vp.append(misf_vp.copy())
+		misfits_all_vs.append(misf_vs.copy())
+		samples_depth_params_all.append(current_depth_params.copy())
+		samples_SHF_all.append(current_SHF)
+		samples_temp_all.append(object.T.copy())
+		
+		if melt_thermodyn == True:
+			melt_samples_all.append(object.melt_fluid_mass_frac[:n_depths].copy())
+		
+		# Check if stuck after enough post-burn-in samples
+		if _ != 0:
+			if _ > burning and ((_ - burning) % 5000 == 0) and accepted == 0:
+				print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
+				if widen_count < max_widen_attempts:
+					widen_count += 1
+					# Widen priors for parameters that have them
+					if param_priors is not None:
+						for ii in range(n_params):
+							if param_priors[ii] is not None:
+								param_priors[ii][1][index] = param_priors[ii][1][index] * 1.25
+								print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} to sigma={param_priors[ii][1][index]:.1f}, attempt {widen_count}' + text_color.END)
+			
+		if adaptive_alg == True:
+			if (_ + 1) % adaptive_check_length == 0:
+				if acceptance_rate < 0.1:
+					proposal_stds[step_idx] *= 0.8
+					status = 'very low'
+					color = text_color.RED
+				elif acceptance_rate < ideal_acceptance_bounds[0]:
+					proposal_stds[step_idx] *= 0.95
+					status = 'low'
+					color = text_color.YELLOW
+				elif acceptance_rate > 0.5:
+					proposal_stds[step_idx] *= 1.2
+					status = 'very high'
+					color = text_color.RED
+				elif acceptance_rate > ideal_acceptance_bounds[1]:
+					proposal_stds[step_idx] *= 1.05
+					status = 'high'
+					color = text_color.YELLOW
 				else:
-					if (_ + 1) % adaptive_check_length == 0:
-						print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+					status = 'good'
+					color = text_color.GREEN
+			
+				# Enforce step size limits (both min and max)
+				if step_size_limits is not None:
+					if proposal_stds[step_idx] > step_size_limits[step_idx]:
+						proposal_stds[step_idx] = step_size_limits[step_idx]
+				print(color + f'Acceptance {status}: {acceptance_rate:.3f} | Steps: {[round(s,4) for s in proposal_stds]} | {(_/n_iter)*100:.1f}% done' + text_color.END)
+		else:
+			if (_ + 1) % adaptive_check_length == 0:
+				print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 
 
 	misfits = [misfits_cond, misfits_vp, misfits_vs]
 	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs]
 	
 	if melt_thermodyn == False:
-		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all)
+		return np.array(samples_SHF), np.array(samples_temp), np.array(samples_depth_params), np.array(acceptance_rates), misfits, np.array(samples_SHF_all),np.array(samples_depth_params_all), np.array(misfits_all)
+		
 	else:
-		return np.array(samples), np.array(acceptance_rates), misfits, np.array(samples_all), np.array(misfits_all), np.array(melt_samples), np.array(melt_samples_all)	
+		return np.array(samples_SHF), np.array(samples_temp), np.array(samples_depth_params), np.array(acceptance_rates), misfits, np.array(samples_SHF_all),np.array(samples_depth_params_all), np.array(misfits_all), np.array(melt_samples), np.array(melt_samples_all)	
 	
 def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, upper_limits,
 	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, melt_thermodyn, pres_interp, melt_frac_limit,

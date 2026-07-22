@@ -5054,7 +5054,7 @@ class pide(object):
 				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.unique_compositions[comp_idx], fraction_list=self.fraction_list[self.idx_unique[comp_idx]])
 				
 				medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
-				pressure = self.p[self.idx_unique[comp_idx]], temperature=self.T[self.idx_unique[comp_idx]], modulii_return = True)
+				pressure = self.p[self.idx_unique[comp_idx]], temperature=self.T[self.idx_unique[comp_idx]]-273.15, modulii_return = True)
 				
 				self.v_bulk[self.idx_unique[comp_idx]] = medium[0]
 				self.v_p[self.idx_unique[comp_idx]] = medium[1]
@@ -5070,7 +5070,7 @@ class pide(object):
 			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
 			
 			medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
-				pressure = np.array([self.p[index]]), temperature=np.array([self.T[index]]), modulii_return = True)
+				pressure = np.array([self.p[index]]), temperature=np.array([self.T[index]-273.15]), modulii_return = True)
 			
 			self.v_bulk[index] = medium[0]
 			self.v_p[index] = medium[1]
