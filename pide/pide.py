@@ -5010,7 +5010,7 @@ class pide(object):
 			
 		return unique_compositions, fraction_list, idx_unique, id_list_global
 		
-	def calculate_seismic_velocities(self, mixing_method = 'HS', method = 'array', **kwargs):
+	def calculate_seismic_velocities(self, mixing_method = 'HS-Medium', melt_mixing_method = 'HS-Upper', method = 'array', **kwargs):
 	
 		"""
 		Calculate seismic velocities for the configured environment.
@@ -5056,9 +5056,16 @@ class pide(object):
 				medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
 				pressure = self.p[self.idx_unique[comp_idx]], temperature=self.T[self.idx_unique[comp_idx]]-273.15, modulii_return = True)
 				
-				self.v_bulk[self.idx_unique[comp_idx]] = medium[0]
-				self.v_p[self.idx_unique[comp_idx]] = medium[1]
-				self.v_s[self.idx_unique[comp_idx]] = medium[2]
+				if mixing_method == 'HS-Medium':
+					array_seis = medium.copy()
+				elif mixing_method == 'HS-Upper':
+					array_seis = upper.copy()
+				elif mixing_method == 'HS-Lower':
+					array_seis = lower.copy()
+				
+				self.v_bulk[self.idx_unique[comp_idx]] = array_seis[0]
+				self.v_p[self.idx_unique[comp_idx]] = array_seis[1]
+				self.v_s[self.idx_unique[comp_idx]] = array_seis[2]
 				
 				v_anelasticity = self.calculate_seismic_anelasticity(self.p[self.idx_unique[comp_idx]],self.T[self.idx_unique[comp_idx]],self.seismic_attenuation)
 				self.v_anelasticity_bulk[self.idx_unique[comp_idx]] = v_anelasticity[0]
@@ -5072,9 +5079,16 @@ class pide(object):
 			medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
 				pressure = np.array([self.p[index]]), temperature=np.array([self.T[index]-273.15]), modulii_return = True)
 			
-			self.v_bulk[index] = medium[0]
-			self.v_p[index] = medium[1]
-			self.v_s[index] = medium[2]
+			if mixing_method == 'HS-Medium':
+				array_seis = medium.copy()
+			elif mixing_method == 'HS-Upper':
+				array_seis = upper.copy()
+			elif mixing_method == 'HS-Lower':
+				array_seis = lower.copy()
+			
+			self.v_bulk[index] = array_seis[0]
+			self.v_p[index] = array_seis[1]
+			self.v_s[index] = array_seis[2]
 			
 			v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation)
 			self.v_anelasticity_bulk[index] = v_anelasticity[0]
@@ -5097,22 +5111,50 @@ class pide(object):
 			
 			alpha = (shear_mod * (9*bulk_mod + 8*shear_mod)) / (6*(bulk_mod + 2*shear_mod))
 			if method == 'array':
-				#Hashin-Shtrikman Lower-Bound 
-				shear_mod_mixture = (((self.melt_fluid_frac / alpha) + ((1-self.melt_fluid_frac) / (shear_mod + alpha)))**-1) - alpha
-				bulk_mod_mixture = (((self.melt_fluid_frac / (self.K_melt_fluid + (1.3333333333333333 * shear_mod))) +\
-				((1-self.melt_fluid_frac) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
-				
+				#Hashin-Shtrikman Upper-Bound (reference/host phase = solid, the stiff phase)
+				#This is the bound pide's original code computed, previously mislabeled 'Lower-Bound' in the comment.
+				if melt_mixing_method == 'HS-Upper':
+					shear_mod_mixture = (((self.melt_fluid_frac / alpha) + ((1-self.melt_fluid_frac) / (shear_mod + alpha)))**-1) - alpha
+					bulk_mod_mixture = (((self.melt_fluid_frac / (self.K_melt_fluid + (1.3333333333333333 * shear_mod))) +\
+					((1-self.melt_fluid_frac) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
+					
+				elif melt_mixing_method == 'HS-Lower':
+					#Hashin-Shtrikman Lower-Bound (reference/host phase = melt, the soft phase)
+					#Melt has zero shear modulus by definition (a liquid cannot support shear),
+					#so alpha_melt collapses to exactly zero and shear_mod_mixture goes to zero
+					#for any nonzero melt fraction. This is the correct limiting behavior, not an error,
+					#but must be handled explicitly to avoid a literal division by zero.
+					self.shear_mod_melt = 0.0
+ 
+					with np.errstate(divide='ignore', invalid='ignore'):
+						shear_mod_mixture = np.where(
+							self.melt_fluid_frac > 0,
+							0.0,
+							shear_mod)
+			 
+					bulk_mod_mixture = ((self.melt_fluid_frac / self.K_melt_fluid) +
+						((1 - self.melt_fluid_frac) / bulk_mod))**-1
+					
 				density_mixture = (self.melt_fluid_mass_frac * self.dens_melt_fluid) + ((1-self.melt_fluid_mass_frac) * self.density_solids) * 1e3
+				
 				self.v_bulk = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
 				self.v_p = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
 				self.v_s = 0.001 * np.sqrt(shear_mod_mixture / density_mixture)
 				
 			elif method == 'index':
-				#Hashin-Shtrikman Lower-Bound 
+				#Hashin-Shtrikman Upper-Bound 
 				
-				shear_mod_mixture = (((self.melt_fluid_frac[index] / alpha) + ((1-self.melt_fluid_frac[index]) / (shear_mod + alpha)))**-1) - alpha
-				bulk_mod_mixture = (((self.melt_fluid_frac[index] / (self.K_melt_fluid[index] + (1.3333333333333333 * shear_mod))) +\
-				((1-self.melt_fluid_frac[index]) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
+				if melt_mixing_method == 'HS-Upper':
+					shear_mod_mixture = (((self.melt_fluid_frac[index] / alpha) + ((1-self.melt_fluid_frac[index]) / (shear_mod + alpha)))**-1) - alpha
+					bulk_mod_mixture = (((self.melt_fluid_frac[index] / (self.K_melt_fluid[index] + (1.3333333333333333 * shear_mod))) +\
+					((1-self.melt_fluid_frac[index]) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
+					
+				elif melt_mixing_method == 'HS-Lower':
+	
+					shear_mod_mixture = 0.0
+			 
+					bulk_mod_mixture = ((self.melt_fluid_frac[index] / self.K_melt_fluid[index]) +
+						((1 - self.melt_fluid_frac[index]) / bulk_mod))**-1				
 				
 				density_mixture = (self.melt_fluid_mass_frac[index] * self.dens_melt_fluid[index]) + ((1-self.melt_fluid_mass_frac[index]) * self.density_solids[index]) * 1e3
 				self.v_bulk[index] = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
