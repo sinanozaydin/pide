@@ -1123,11 +1123,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'array')
 	
 	if cond_list is not None:
-		current_likelihood_cond, current_misf = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+		current_likelihood_cond, misf_cond = _likelihood(cond_init, cond_list[index], sigma_cond[index])
 		current_likelihood_cond = np.sum(current_likelihood_cond)
 	else:
 		current_likelihood_cond = 1
-		current_misf = 0.0
+		misf_cond = 0.0
 	
 	if vp_list is not None:
 		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
@@ -1156,7 +1156,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				prior_sigma = param_priors[ii][1]   # array length n_depths
 				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
 	
-	current_likelihood = np.exp(np.sum(current_misf) + np.sum(misf_vp) + np.sum(misf_vs) + current_prior_log)
+	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + current_prior_log)
 
 	samples_SHF = []
 	samples_temp = []
@@ -1364,7 +1364,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					break
 				else:
 					print(f'Acceptance rate {acceptance_rate:.3f} still too high. Continuing...')
-					
+		
+		
 		acceptance_rates.append(acceptance_rate)
 		misfits_all_cond.append(misf_cond.copy())
 		misfits_all_vp.append(misf_vp.copy())
@@ -1372,6 +1373,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		samples_depth_params_all.append(current_depth_params.copy())
 		samples_SHF_all.append(current_SHF)
 		samples_temp_all.append(object.T.copy())
+
 		
 		if melt_thermodyn == True:
 			melt_samples_all.append(object.melt_fluid_mass_frac[:n_depths].copy())
