@@ -1127,20 +1127,20 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		current_likelihood_cond = np.sum(current_likelihood_cond)
 	else:
 		current_likelihood_cond = 1
-		misf_cond = 0.0
+		misf_cond = np.zeros(len(object.T))
 	
 	if vp_list is not None:
 		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
 		current_likelihood_vp = np.sum(current_likelihood_vp)
 	else:
 		current_likelihood_vp = 1
-		misf_vp = 0
+		misf_vp = np.zeros(len(object.T))
 	if vs_list is not None:
 		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'linear')
 		current_likelihood_vs = np.sum(current_likelihood_vs)
 	else:
 		current_likelihood_vs = 1
-		misf_vs = 0
+		misf_vs = np.zeros(len(object.T))
 
 	current_prior_log = 0.0
 	
@@ -1304,20 +1304,20 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				proposed_likelihood_cond = np.sum(proposed_likelihood_cond)
 			else:
 				proposed_likelihood_cond = 1
-				misf_cond = 0.0
+				misf_cond = np.zeros(len(object.T))
 			
 			if vp_list is not None:
 				proposed_likelihood_vp, misf_vp = _likelihood(vp_, vp_list[index], sigma_vp[index], norm = 'linear')
 				proposed_likelihood_vp = np.sum(proposed_likelihood_vp)
 			else:
 				proposed_likelihood_vp = 1
-				misf_vp = 0
+				misf_vp = np.zeros(len(object.T))
 			if vs_list is not None:
 				proposed_likelihood_vs, misf_vs = _likelihood(vs_, vs_list[index], sigma_vs[index], norm = 'linear')
 				proposed_likelihood_vs = np.sum(proposed_likelihood_vs)
 			else:
 				proposed_likelihood_vs = 1
-				misf_vs = 0
+				misf_vs = np.zeros(len(object.T))
 			
 			#Calculate prior likelihood for proposed parameters
 			proposed_prior = 0.0
@@ -1359,12 +1359,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		if _ > burning:
 			# After base iterations, check if we need to continue
 			if _ >= n_iter and (_ - n_iter) % 2000 == 0:
-				if acceptance_rate <= 0.3:
+				if  0.2 <= acceptance_rate <= 0.3:
 					print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
 					break
 				else:
-					print(f'Acceptance rate {acceptance_rate:.3f} still too high. Continuing...')
-		
+					print(f'Acceptance rate {acceptance_rate:.3f} still not converged to desired acceptance rate. Continuing to maximum number of iterations...')
 		
 		acceptance_rates.append(acceptance_rate)
 		misfits_all_cond.append(misf_cond.copy())
@@ -1425,12 +1424,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 	misfits = [misfits_cond, misfits_vp, misfits_vs]
 	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs]
-	
+
 	if melt_thermodyn == False:
-		return np.array(samples_SHF), np.array(samples_temp), np.array(samples_depth_params), np.array(acceptance_rates), misfits, np.array(samples_SHF_all),np.array(samples_depth_params_all), np.array(misfits_all)
+		return np.array(samples_SHF), np.array(samples_temp), np.array(samples_depth_params), np.array(acceptance_rates), misfits, np.array(samples_SHF_all),np.array(samples_depth_params_all), misfits_all
 		
 	else:
-		return np.array(samples_SHF), np.array(samples_temp), np.array(samples_depth_params), np.array(acceptance_rates), misfits, np.array(samples_SHF_all),np.array(samples_depth_params_all), np.array(misfits_all), np.array(melt_samples), np.array(melt_samples_all)	
+		return np.array(samples_SHF), np.array(samples_temp), np.array(samples_depth_params), np.array(acceptance_rates), misfits, np.array(samples_SHF_all),np.array(samples_depth_params_all), misfits_all, np.array(melt_samples), np.array(melt_samples_all)	
 	
 def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, upper_limits,
 	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, melt_thermodyn, pres_interp, melt_frac_limit,
@@ -1734,11 +1733,11 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 				if _ > burning:
 					# After base iterations, check if we need to continue
 					if _ >= n_iter and (_ - n_iter) % 2000 == 0:
-						if acceptance_rate <= 0.3:
+						if 0.2 <= acceptance_rate <= 0.3:
 							print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
 							break
 						else:
-							print(f'Acceptance rate {acceptance_rate:.3f} still too high. Continuing...')
+							print(f'Acceptance rate {acceptance_rate:.3f} not converged to acceptable range. Continuing to maximum number of iterations...')
 				acceptance_rates.append(acceptance_rate)
 				misfits_all_cond.append(misf_cond)
 				misfits_all_vp.append(misf_vp)
