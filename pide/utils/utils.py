@@ -61,6 +61,10 @@ def array_modifier(input, array, varname):
 		
 		ret_array = np.ones(len(array)) * input
 		
+	elif type(input) == str:
+		
+		ret_array = [input] * len(array)
+		
 	elif type(input) == float:
 		
 		ret_array = np.ones(len(array)) * input
@@ -71,13 +75,16 @@ def array_modifier(input, array, varname):
 		
 	elif type(input) == list:
 		
-		if len(input) == 1:
-			ret_array = np.ones(len(array)) * input[0]
+		if type(input[0]) == int:
+			pass
 		else:
-			ret_array = np.array(input)
-			if len(ret_array) != len(array):
-				
-				raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
+			if len(input) == 1:
+				ret_array = np.ones(len(array)) * input[0]
+			else:
+				ret_array = np.array(input)
+				if len(ret_array) != len(array):
+					
+					raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
 		
 	elif type(input) == np.ndarray:
 	
@@ -87,9 +94,9 @@ def array_modifier(input, array, varname):
 			ret_array = input
 			if len(ret_array) != len(array):
 				raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
-			
-	return ret_array
 	
+	return ret_array
+
 def read_csv(filename,delim,linefiltering = True,elementfiltering = True):
 	"""
 	Simple function for reading csv files and give out filtered output for given delimiter (delim)

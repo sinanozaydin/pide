@@ -6,7 +6,7 @@ core_path_ext = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'pide_
 
 import sys, re, warnings, json, inspect
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, RegularGridInterpolator
 from scipy.optimize import brentq
 from santex.isotropy import Isotropy
 
@@ -53,7 +53,7 @@ from .pide_src.anelasticity import Q1_Sobolev1996, Q2_Berckhemer1982, YamauchiTa
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv, text_color, _comp_adjust_idx_based, modify_melt_composition
+from .utils.utils import check_type, array_modifier, read_csv, text_color, modify_melt_composition
 from .utils.geochem import classify_tas_diagram
 
 
@@ -92,6 +92,7 @@ class pide(object):
 		self._read_water_calib()
 		self._read_melt_composition_files()
 		self._read_average_melt_composition()
+		self._read_NCFMAS_composition()
 		self._form_object()
 		
 	def _form_object(self):
@@ -109,6 +110,7 @@ class pide(object):
 		self.seis_property_overwrite = [False] * 16
 		self.melt_composition_method = 'Default'
 		self.melt_comp_manual = False
+		self.KD_opx_ol_interp = None
 		
 		self.object_formed = False
 		#setting up default values for the pide object
@@ -116,6 +118,7 @@ class pide(object):
 		self.set_pressure(np.ones(1) * 1.0) #in GPa
 		self.set_composition_solid_mineral(overlookError = True)
 		self.set_composition_solid_rock(overlookError = True)
+		self.set_composition_NCFMAS(composition_name='PUM')
 		self.set_mineral_conductivity_choice()
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
@@ -197,6 +200,7 @@ class pide(object):
 		if self.phs_melt_mix_method == 0:
 			self.set_melt_fluid_interconnectivity(reval = True)
 		self.set_grain_boundary_water_partitioning(reval = True)
+		self.set_composition_NCFMAS(reval = True)
 		
 	def _read_cond_models(self):
 		
@@ -573,6 +577,12 @@ class pide(object):
 		self.average_melt_composition_data = read_csv(os.path.join(self.core_path, 'geochem', 'average_melt_compositions_GEOROC.csv'), delim = ',')
 		self.average_melt_composition_names = np.array(self.average_melt_composition_data)[:,1]
 		self.average_melt_composition_names = list(self.average_melt_composition_names[1:])
+		
+	def _read_NCFMAS_composition(self):
+	
+		self.NCFMAS_composition_data = read_csv(os.path.join(self.core_path, 'eos', 'fe_mg_lookup', 'fe_mg_list.csv'), delim = ',')
+		self.NCFMAS_names = np.array(self.NCFMAS_composition_data)[1:,0]
+		self.NCFMAS_lookup_tables = np.array(self.NCFMAS_composition_data)[1:,7]
 				
 	def set_parameter(self, param_name, value):
 	
@@ -802,8 +812,52 @@ class pide(object):
 			
 				raise ValueError('The entered in rock composition do not add up to 1.')
 				
-		self.density_loaded = False			
-			
+		self.density_loaded = False
+		
+	def set_composition_NCFMAS(self, composition_name=None, custom_composition_wt_pct=None, reval=False, **kwargs):
+	
+		"""
+		Set the NCFMAS bulk composition to be used for Fe-Mg partitioning
+		(mantle_xfe_distribute), as a depth-varying array matching self.T.
+	
+		Parameters
+		----------
+		composition_name : str, list, or array, optional
+			Name of a registered reference composition (e.g. 'PUM', 'DMM', 'KLB-1').
+			A single string is broadcast to every depth; a list/array must match
+			len(self.T).
+		custom_composition_wt_pct : dict, list, or array, optional
+			Manually entered bulk composition(s) in wt% oxides, with keys
+			'SiO2', 'MgO', 'FeO', 'Al2O3', 'CaO', 'Na2O'. A single dict is
+			broadcast to every depth; a list of dicts must match len(self.T).
+		reval : bool
+			If True, re-broadcast the already-stored values against the
+			current self.T (e.g. after self.T has changed length), same
+			pattern as set_composition_solid_rock.
+	
+		At each depth, provide exactly one of composition_name or
+		custom_composition_wt_pct, not both, not neither.
+		"""
+	
+		if self.temperature_default == True:
+			self._suggestion_temp_array()
+	
+		if reval == False:
+		
+			if composition_name is not None:
+				self.NCFMAS_composition_name = array_modifier(input=composition_name, array=self.T,
+					varname='NCFMAS_composition_name')
+			else:
+				self.NCFMAS_composition_name = None
+				
+		elif reval == True:
+		
+			if composition_name is not None:
+				self.NCFMAS_composition_name = array_modifier(input=self.NCFMAS_composition_name, array=self.T,
+					varname='NCFMAS_composition_name')
+			else:
+				self.NCFMAS_composition_name = None
+				
 	def set_temperature(self,T,reval = False):
 	
 		"""
@@ -5856,152 +5910,144 @@ class pide(object):
 		#calculating garnet water content
 		pide.garnet_water[idx_node] = pide.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		pide.garnet_water[self.garnet_frac == 0] = 0.0
-
-	def mantle_xfe_distribute(self, KD_opx_ol=1.0, KD_cpx_ol=0.85,
-		X_Ca_garnet=0.05, method='array', **kwargs):
+		
+	def mantle_xfe_distribute(self, method = 'array', **kwargs):
 		"""
 		Distribute bulk xFe (Fe/(Fe+Mg)) to individual mantle minerals using
-		Fe-Mg exchange partition coefficients.
-
-		KD is defined as: KD_mineral/ol = (Fe/Mg)_mineral / (Fe/Mg)_olivine
-
-		Garnet KD is temperature-dependent following O'Neill & Wood (1979):
-			ln(KD_gt/ol) = A/T + B + C * X_Ca_garnet
-		where T is in Kelvin.
-
+		Fe-Mg exchange partition coefficients (K_D) looked up from a BurnMan
+		Gibbs-minimization table as a function of (T, P, bulk_xfe).
+	
 		Parameters
 		----------
-		bulk_xfe : float or array
-			Bulk rock xFe = Fe/(Fe+Mg), e.g., 0.10 for Mg# = 90
-		KD_opx_ol : float
-			Fe-Mg exchange coefficient between opx and olivine.
-			Default = 1.0 (von Seckendorff & O'Neill, 1993)
-		KD_cpx_ol : float
-			Fe-Mg exchange coefficient between cpx and olivine.
-			Default = 0.85
-		X_Ca_garnet : float
-			Mole fraction of Ca in garnet (grossular component).
-			Default = 0.05 for typical mantle pyrope.
 		method : str
 			'array' to process all points, 'index' to process a single point
 		sol_idx : int, optional
 			Index of the point to solve when method='index'
-
-
-		References
-		----------
-		O'Neill & Wood (1979) Contrib Mineral Petrol 70:59-70
-			- Garnet-olivine Fe-Mg exchange, T-dependent KD
-		von Seckendorff & O'Neill (1993) Contrib Mineral Petrol 113:196-207
-			- Olivine-orthopyroxene Fe-Mg exchange
-		Krogh (1988) Contrib Mineral Petrol 99:44-48
-			- Garnet-clinopyroxene Fe-Mg exchange
 		"""
-
+	
 		sol_idx = kwargs.pop('sol_idx', 0)
-
+	
 		if method == 'array':
 			idx_node = None
 		elif method == 'index':
 			idx_node = sol_idx
-
-		def _KD_garnet_olivine(T_K, X_Ca=0.05):
-			"""
-			Temperature-dependent KD for garnet/olivine Fe-Mg exchange.
-			From O'Neill & Wood (1979), simplified for mantle peridotite compositions.
-
-			KD = (Fe/Mg)_garnet / (Fe/Mg)_olivine
-
-			ln(KD) = 3740/T - 1.50 + 1.5 * X_Ca_garnet
-
-			At 1273 K (1000°C): KD ≈ 2.1 (for X_Ca = 0.05)
-			At 1573 K (1300°C): KD ≈ 1.7
-			At 1073 K (800°C):  KD ≈ 2.6
-			"""
-			ln_KD = 3740.0 / T_K - 1.50 + 1.5 * X_Ca
-			return np.exp(ln_KD)
-
+	
 		def _xfe_from_FeMg(FeMg_ratio):
-			"""Convert Fe/Mg ratio to xFe = Fe/(Fe+Mg)"""
 			return FeMg_ratio / (1.0 + FeMg_ratio)
-
+	
 		def _FeMg_from_xfe(xfe):
-			"""Convert xFe = Fe/(Fe+Mg) to Fe/Mg ratio"""
 			return xfe / (1.0 - xfe)
-
+	
+		# --- Load and cache interpolators on first call ---
+		if self.KD_opx_ol_interp is None:
+	
+			all_comps = np.unique(self.NCFMAS_composition_name)
+	
+			if np.isin(all_comps, self.NCFMAS_names).all() == False:
+				raise ValueError('Please create the compositional library for the missing NCFMAS composition alongside with their lookup tables. To build\
+				the lookup tables, plase refer to eos.fe_distr_eos.build_KD_table.')
+	
+			else:
+				index_map =  {name: i for i, name in enumerate(self.NCFMAS_names)}
+				idx_NCFMAS = [index_map[name] for name in self.NCFMAS_composition_name]
+				# store per-node composition index so _solve_single can pick the
+				# right interpolator later, this was being computed but discarded
+				self.NCFMAS_composition_index = np.array(idx_NCFMAS)
+	
+			self.KD_opx_ol_interp = []
+			self.KD_cpx_ol_interp = []
+			self.KD_gt_ol_interp = []
+			for i_ in np.unique(idx_NCFMAS):
+	
+				_KD_data = np.load(os.path.join(self.core_path, 'eos', 'fe_mg_lookup', self.NCFMAS_lookup_tables[i_]))
+	
+				self.KD_opx_ol_interp.append(RegularGridInterpolator(
+					(_KD_data['T_grid'], _KD_data['P_grid'], _KD_data['xfe_grid']), _KD_data['KD_opx_ol_table'],
+					bounds_error=False, fill_value=np.nan))
+				self.KD_cpx_ol_interp.append(RegularGridInterpolator(
+					(_KD_data['T_grid'], _KD_data['P_grid'], _KD_data['xfe_grid']), _KD_data['KD_cpx_ol_table'],
+					bounds_error=False, fill_value=np.nan))
+				self.KD_gt_ol_interp.append(RegularGridInterpolator(
+					(_KD_data['T_grid'], _KD_data['P_grid'], _KD_data['xfe_grid']), _KD_data['KD_gt_ol_table'],
+					bounds_error=False, fill_value=np.nan))
+	
+		def _lookup_KDs(T_K, P_GPa, ol_xfe_guess, comp_idx):
+			point = [T_K, P_GPa, ol_xfe_guess]
+			KD_opx = self.KD_opx_ol_interp[comp_idx](point).item()
+			KD_cpx = self.KD_cpx_ol_interp[comp_idx](point).item()
+			KD_gt = self.KD_gt_ol_interp[comp_idx](point).item()
+			return KD_opx, KD_cpx, KD_gt
+	
+		def _get_xfe_bounds(comp_idx):
+			# RegularGridInterpolator stores its grid axes in .grid;
+			# axis 2 is the xfe axis (T, P, xfe order used when building it).
+			xfe_axis = self.KD_gt_ol_interp[comp_idx].grid[2]
+			return xfe_axis.min() + 0.01, xfe_axis.max() - 1e-4
+	
 		def _solve_single(bulk_xfe_i, ol_frac_i, opx_frac_i, cpx_frac_i, garnet_frac_i,
-			KD_gt_ol_i, KD_opx_ol_i, KD_cpx_ol_i):
-			"""
-			Solve for olivine xFe given bulk xFe and partition coefficients.
-
-			Mass balance: bulk_xfe = sum(mineral_xfe_i * frac_i) / sum(frac_i)
-
-			Given KD values, each mineral's xFe is a function of olivine's xFe:
-				(Fe/Mg)_mineral = KD * (Fe/Mg)_olivine
-				xfe_mineral = KD * FeMg_ol / (1 + KD * FeMg_ol)
-			"""
-
+			T_K_i, P_GPa_i, comp_idx_i):
+	
 			total_frac = ol_frac_i + opx_frac_i + cpx_frac_i + garnet_frac_i
-
 			if total_frac == 0:
 				return bulk_xfe_i, bulk_xfe_i, bulk_xfe_i, bulk_xfe_i
-
+	
 			def mass_balance_residual(ol_xfe_guess):
-
-				if ol_xfe_guess <= 0 or ol_xfe_guess >= 1:
+				KD_opx, KD_cpx, KD_gt = _lookup_KDs(T_K_i, P_GPa_i, ol_xfe_guess, comp_idx_i)
+	
+				if np.isnan(KD_opx) or np.isnan(KD_cpx) or np.isnan(KD_gt):
+					# Outside the table's valid (T,P,xfe) range, e.g. the
+					# high-T/low-P garnet-instability corner. Push the
+					# residual away from zero so brentq doesn't treat this
+					# as a candidate root.
 					return 1e10
-
+	
 				FeMg_ol = _FeMg_from_xfe(ol_xfe_guess)
-
-				# Calculate each mineral's xFe from KD and olivine Fe/Mg
-				FeMg_opx = KD_opx_ol_i * FeMg_ol
-				FeMg_cpx = KD_cpx_ol_i * FeMg_ol
-				FeMg_gt = KD_gt_ol_i * FeMg_ol
-
-				opx_xfe_i = _xfe_from_FeMg(FeMg_opx)
-				cpx_xfe_i = _xfe_from_FeMg(FeMg_cpx)
-				gt_xfe_i = _xfe_from_FeMg(FeMg_gt)
-
-				# Mass balance
+				opx_xfe_i = _xfe_from_FeMg(KD_opx * FeMg_ol) if opx_frac_i > 0 else ol_xfe_guess
+				cpx_xfe_i = _xfe_from_FeMg(KD_cpx * FeMg_ol) if cpx_frac_i > 0 else ol_xfe_guess
+				gt_xfe_i = _xfe_from_FeMg(KD_gt * FeMg_ol) if garnet_frac_i > 0 else ol_xfe_guess
+	
 				calculated_bulk = (ol_xfe_guess * ol_frac_i +
 					opx_xfe_i * opx_frac_i +
 					cpx_xfe_i * cpx_frac_i +
 					gt_xfe_i * garnet_frac_i) / total_frac
-
+	
 				return calculated_bulk - bulk_xfe_i
-
-			# Solve for olivine xFe using Brent's method
+	
+			xfe_lo, xfe_hi = _get_xfe_bounds(comp_idx_i)
+	
 			try:
-				ol_xfe_sol = brentq(mass_balance_residual, 1e-6, 1.0 - 1e-6)
+				ol_xfe_sol = brentq(mass_balance_residual, xfe_lo, xfe_hi)
 			except ValueError:
-				# If brentq fails, return bulk_xfe for all minerals
-				return bulk_xfe_i, bulk_xfe_i, bulk_xfe_i, bulk_xfe_i
-
-			# Calculate other mineral xFe from solution
+				# bulk_xfe not reachable within the table's valid xfe range
+				print(text_color.RED + 'WARNING:' + text_color.END + 'The xFe partitioning failed at some of the P-T points.')
+				return np.nan, np.nan, np.nan, np.nan
+	
+			KD_opx, KD_cpx, KD_gt = _lookup_KDs(T_K_i, P_GPa_i, ol_xfe_sol, comp_idx_i)
 			FeMg_ol = _FeMg_from_xfe(ol_xfe_sol)
-			opx_xfe_sol = _xfe_from_FeMg(KD_opx_ol_i * FeMg_ol)
-			cpx_xfe_sol = _xfe_from_FeMg(KD_cpx_ol_i * FeMg_ol)
-			gt_xfe_sol = _xfe_from_FeMg(KD_gt_ol_i * FeMg_ol)
-
+			opx_xfe_sol = _xfe_from_FeMg(KD_opx * FeMg_ol) if opx_frac_i > 0 else ol_xfe_sol
+			cpx_xfe_sol = _xfe_from_FeMg(KD_cpx * FeMg_ol) if cpx_frac_i > 0 else ol_xfe_sol
+			gt_xfe_sol = _xfe_from_FeMg(KD_gt * FeMg_ol) if garnet_frac_i > 0 else ol_xfe_sol
+	
 			return ol_xfe_sol, opx_xfe_sol, cpx_xfe_sol, gt_xfe_sol
 		
-		n = len(self.bulk_xfe)
-		
-		if len(self.ol_xfe) != n:
-			self.set_xfe_mineral(reval = True)
-
+		if len(self.ol_xfe) != len(self.bulk_xfe):
+			self.set_xfe_mineral(reval=True)
+	
+		# P must be in GPa for the lookup table; convert if self.p is stored in
+		# a different unit (check against how pide stores pressure elsewhere).
 		if method == 'index':
-			KD_gt_ol = _KD_garnet_olivine(self.T[idx_node], X_Ca_garnet)
 			self.ol_xfe[idx_node], self.opx_xfe[idx_node], self.cpx_xfe[idx_node], self.garnet_xfe[idx_node] = _solve_single(
-				self.bulk_xfe[idx_node], self.ol_frac[idx_node], self.opx_frac[idx_node], self.cpx_frac[idx_node], self.garnet_frac[idx_node],
-				KD_gt_ol, KD_opx_ol, KD_cpx_ol)
+				self.bulk_xfe[idx_node], self.ol_frac[idx_node], self.opx_frac[idx_node],
+				self.cpx_frac[idx_node], self.garnet_frac[idx_node],
+				self.T[idx_node], self.p[idx_node], self.NCFMAS_composition_index[idx_node])
 		else:
-			for idx_xfe in range(n):
-				KD_gt_ol = _KD_garnet_olivine(self.T[idx_xfe], X_Ca_garnet)
+			for idx_xfe in range(len(self.bulk_xfe)):
+
 				self.ol_xfe[idx_xfe], self.opx_xfe[idx_xfe], self.cpx_xfe[idx_xfe], self.garnet_xfe[idx_xfe] = _solve_single(
-					self.bulk_xfe[idx_xfe], self.ol_frac[idx_xfe], self.opx_frac[idx_xfe], self.cpx_frac[idx_xfe], self.garnet_frac[idx_xfe],
-					KD_gt_ol, KD_opx_ol, KD_cpx_ol)
-					
+					self.bulk_xfe[idx_xfe], self.ol_frac[idx_xfe], self.opx_frac[idx_xfe],
+					self.cpx_frac[idx_xfe], self.garnet_frac[idx_xfe],
+					self.T[idx_xfe], self.p[idx_xfe], self.NCFMAS_composition_index[idx_xfe])
+	
 		self.seismic_setup = False
 		
 	def transition_zone_water_distribute(self, method = 'array', **kwargs):
