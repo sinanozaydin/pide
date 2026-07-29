@@ -53,7 +53,7 @@ from .pide_src.anelasticity import Q1_Sobolev1996, Q2_Berckhemer1982, YamauchiTa
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv, text_color, modify_melt_composition
+from .utils.utils import check_type, array_modifier, read_csv, text_color, modify_melt_composition, _safe_bisection_root
 from .utils.geochem import classify_tas_diagram
 
 
@@ -844,20 +844,14 @@ class pide(object):
 	
 		if reval == False:
 		
-			if composition_name is not None:
-				self.NCFMAS_composition_name = array_modifier(input=composition_name, array=self.T,
-					varname='NCFMAS_composition_name')
-			else:
-				self.NCFMAS_composition_name = None
+			self.NCFMAS_composition_name = array_modifier(input=composition_name, array=self.T,
+				varname='NCFMAS_composition_name')
 				
 		elif reval == True:
-		
-			if composition_name is not None:
-				self.NCFMAS_composition_name = array_modifier(input=self.NCFMAS_composition_name, array=self.T,
-					varname='NCFMAS_composition_name')
-			else:
-				self.NCFMAS_composition_name = None
-				
+			
+			self.NCFMAS_composition_name = array_modifier(input=self.NCFMAS_composition_name, array=self.T,
+				varname='NCFMAS_composition_name')
+
 	def set_temperature(self,T,reval = False):
 	
 		"""
@@ -5940,6 +5934,11 @@ class pide(object):
 	
 		# --- Load and cache interpolators on first call ---
 		if self.KD_opx_ol_interp is None:
+
+			if len(self.NCFMAS_composition_name) != len(self.T):
+				
+				self.set_composition_NCFMAS(reval = True)
+				
 	
 			all_comps = np.unique(self.NCFMAS_composition_name)
 	
@@ -5993,9 +5992,10 @@ class pide(object):
 	
 			def mass_balance_residual(ol_xfe_guess):
 				KD_opx, KD_cpx, KD_gt = _lookup_KDs(T_K_i, P_GPa_i, ol_xfe_guess, comp_idx_i)
-	
+
 				if np.isnan(KD_opx) or np.isnan(KD_cpx) or np.isnan(KD_gt):
-					# Outside the table's valid (T,P,xfe) range, e.g. the
+					# Outside the table's 
+					# valid (T,P,xfe) range, e.g. the
 					# high-T/low-P garnet-instability corner. Push the
 					# residual away from zero so brentq doesn't treat this
 					# as a candidate root.
@@ -6017,11 +6017,38 @@ class pide(object):
 	
 			try:
 				ol_xfe_sol = brentq(mass_balance_residual, xfe_lo, xfe_hi)
+				if abs(mass_balance_residual(ol_xfe_sol)) > 1e-6:
+					# brentq "succeeded" but landed on a bad point near a NaN pocket
+					ol_xfe_sol = _safe_bisection_root(mass_balance_residual, xfe_lo, xfe_hi)
 			except ValueError:
-				# bulk_xfe not reachable within the table's valid xfe range
-				print(text_color.RED + 'WARNING:' + text_color.END + 'The xFe partitioning failed at some of the P-T points.')
-				return np.nan, np.nan, np.nan, np.nan
+				try:
+					ol_xfe_sol = _safe_bisection_root(mass_balance_residual, xfe_lo, xfe_hi)
+					print(ol_xfe_sol)
+				except ValueError:
+					# Last resort: direct linear approximation (valid when Fe
+					# content is low, i.e. xfe ~ Fe/Mg). Evaluate KDs at bulk_xfe
+					# as a reference point since ol_xfe is not yet known here.
+					KD_opx, KD_cpx, KD_gt = _lookup_KDs(T_K_i, P_GPa_i, bulk_xfe_i, comp_idx_i)
+
+					if np.isnan(KD_opx) or np.isnan(KD_cpx) or np.isnan(KD_gt):
+						import ipdb
+						ipdb.set_trace()
+						print(text_color.RED + 'WARNING:' + text_color.END +
+							' The xFe partitioning failed at some of the P-T points.')
+						return np.nan, np.nan, np.nan, np.nan
 	
+					denom = (ol_frac_i +
+						(opx_frac_i * KD_opx if opx_frac_i > 0 else 0) +
+						(cpx_frac_i * KD_cpx if cpx_frac_i > 0 else 0) +
+						(garnet_frac_i * KD_gt if garnet_frac_i > 0 else 0))
+	
+					ol_xfe_sol = (bulk_xfe_i * total_frac) / denom
+
+	
+					print(text_color.YELLOW + 'NOTE:' + text_color.END +
+						' Used linear K_D approximation as fallback at this P-T point '
+						'(exact solver failed to bracket a root).')
+
 			KD_opx, KD_cpx, KD_gt = _lookup_KDs(T_K_i, P_GPa_i, ol_xfe_sol, comp_idx_i)
 			FeMg_ol = _FeMg_from_xfe(ol_xfe_sol)
 			opx_xfe_sol = _xfe_from_FeMg(KD_opx * FeMg_ol) if opx_frac_i > 0 else ol_xfe_sol

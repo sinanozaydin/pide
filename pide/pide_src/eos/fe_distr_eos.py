@@ -47,9 +47,9 @@ def get_composition(name):
 		raise ValueError(f"Unknown composition '{name}'. Available: {list(COMPOSITIONS_WT_PCT)}")
 	return to_cations(*COMPOSITIONS_WT_PCT[name])
 	
-_DEFAULT_T_GRID = np.linspace(800, 1650, 20)
+_DEFAULT_T_GRID = np.linspace(800, 2000, 25)
 _DEFAULT_P_GRID = np.linspace(1, 8.0, 25)
-_DEFAULT_XFE_GRID = np.linspace(0.05, 0.2, 16)
+_DEFAULT_XFE_GRID = np.linspace(0.03, 0.25, 20)
 
 def _new_assemblage():
 	"""Fresh olivine+opx+cpx+garnet phase objects and starting guesses.

@@ -77,6 +77,13 @@ def array_modifier(input, array, varname):
 		
 		if type(input[0]) == int:
 			pass
+		elif type(input[0]) == str:
+			if len(input) == 1:
+				ret_array = [input[0]] * len(array)
+			else:
+				ret_array = input
+				if len(ret_array) != len(array):	
+					raise RuntimeError('The entered list of ***' + varname + '*** does not match the length of the entered temperature array.')
 		else:
 			if len(input) == 1:
 				ret_array = np.ones(len(array)) * input[0]
@@ -521,6 +528,52 @@ def adjust_composition_batch(compositions, indexes_to_change, new_values_per_com
 		adjusted = adjust_single_composition(comp, indexes_to_change, new_values_per_composition[i])
 		results.append(adjusted)
 	return np.array(results)
+
+def _safe_bisection_root(residual_func, lo, hi, tol=1e-6, max_iter=100):
+	"""
+	Manual bisection root-finder that safely navigates around interior NaN
+	'pockets' in the residual function (e.g. isolated failed points in the
+	KD lookup table). Unlike brentq, which can be misled into a false root
+	or crash if its internal search lands on a NaN-forced sentinel value,
+	this explicitly checks every evaluation and nudges away from NaNs
+	before treating a point as usable.
+	"""
+	def eval_safe(x, step):
+		for attempt in range(8):
+			val = residual_func(x)
+			if not np.isnan(val):
+				return x, val
+			x = x + step * (attempt + 1)
+			if x < lo or x > hi:
+				return None, None
+		return None, None
+
+	f_lo = residual_func(lo)
+	f_hi = residual_func(hi)
+	if np.isnan(f_lo) or np.isnan(f_hi):
+		raise ValueError('Bracket endpoints are NaN.')
+	if np.sign(f_lo) == np.sign(f_hi):
+		raise ValueError('No sign change at bracket endpoints.')
+
+	a, b, fa, fb = lo, hi, f_lo, f_hi
+	for _ in range(max_iter):
+		mid = 0.5 * (a + b)
+		step = (b - a) * 0.02
+		mid_x, fmid = eval_safe(mid, step)
+		if mid_x is None:
+			mid_x, fmid = eval_safe(mid, -step)
+		if mid_x is None:
+			raise ValueError('Could not find a valid evaluation near midpoint '
+				'(NaN region too wide to navigate around).')
+
+		if abs(fmid) < tol or (b - a) < tol:
+			return mid_x
+		if np.sign(fmid) == np.sign(fa):
+			a, fa = mid_x, fmid
+		else:
+			b, fb = mid_x, fmid
+
+	return 0.5 * (a + b)
 	
 class text_color:
    
