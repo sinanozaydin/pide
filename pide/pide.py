@@ -5905,14 +5905,25 @@ class pide(object):
 		pide.garnet_water[idx_node] = pide.ol_water[idx_node] * self.d_garnet_ol[idx_node]
 		pide.garnet_water[self.garnet_frac == 0] = 0.0
 		
-	def mantle_xfe_distribute(self, method = 'array', **kwargs):
+	def mantle_xfe_distribute(self, KD_opx_ol=1.0, KD_cpx_ol=0.85, KD_gt_ol=1.9, method='array', **kwargs):
 		"""
 		Distribute bulk xFe (Fe/(Fe+Mg)) to individual mantle minerals using
-		Fe-Mg exchange partition coefficients (K_D) looked up from a BurnMan
-		Gibbs-minimization table as a function of (T, P, bulk_xfe).
+		simple, fixed, user-defined Fe-Mg exchange partition coefficients:
+	
+			K_D = (Fe/Mg)_phase / (Fe/Mg)_olivine
+	
+		solved via mass balance against the modal fractions already set via
+		set_composition_solid_mineral. No T/P/xfe-dependent lookup table is
+		used — if you want that behavior, this is not that function.
 	
 		Parameters
 		----------
+		KD_opx_ol, KD_cpx_ol, KD_gt_ol : float
+			Fixed Fe-Mg exchange partition coefficients for opx, cpx, and
+			garnet relative to olivine. Defaults are illustrative mantle
+			values (KD_gt_ol=1.9 matches the O'Neill & Wood 1979 magnesian
+			mantle value validated earlier); override with your own values
+			if you have better constraints for your system.
 		method : str
 			'array' to process all points, 'index' to process a single point
 		sol_idx : int, optional
@@ -5920,11 +5931,7 @@ class pide(object):
 		"""
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
-	
-		if method == 'array':
-			idx_node = None
-		elif method == 'index':
-			idx_node = sol_idx
+		idx_node = None if method == 'array' else sol_idx
 	
 		def _xfe_from_FeMg(FeMg_ratio):
 			return FeMg_ratio / (1.0 + FeMg_ratio)
@@ -5932,79 +5939,16 @@ class pide(object):
 		def _FeMg_from_xfe(xfe):
 			return xfe / (1.0 - xfe)
 	
-		# --- Load and cache interpolators on first call ---
-		if self.KD_opx_ol_interp is None:
-
-			if len(self.NCFMAS_composition_name) != len(self.T):
-				
-				self.set_composition_NCFMAS(reval = True)
-				
-	
-			all_comps = np.unique(self.NCFMAS_composition_name)
-	
-			if np.isin(all_comps, self.NCFMAS_names).all() == False:
-				raise ValueError('Please create the compositional library for the missing NCFMAS composition alongside with their lookup tables. To build\
-				the lookup tables, plase refer to eos.fe_distr_eos.build_KD_table.')
-	
-			else:
-				index_map =  {name: i for i, name in enumerate(self.NCFMAS_names)}
-				idx_NCFMAS = [index_map[name] for name in self.NCFMAS_composition_name]
-				# store per-node composition index so _solve_single can pick the
-				# right interpolator later, this was being computed but discarded
-				self.NCFMAS_composition_index = np.array(idx_NCFMAS)
-	
-			self.KD_opx_ol_interp = []
-			self.KD_cpx_ol_interp = []
-			self.KD_gt_ol_interp = []
-			for i_ in np.unique(idx_NCFMAS):
-	
-				_KD_data = np.load(os.path.join(self.core_path, 'eos', 'fe_mg_lookup', self.NCFMAS_lookup_tables[i_]))
-	
-				self.KD_opx_ol_interp.append(RegularGridInterpolator(
-					(_KD_data['T_grid'], _KD_data['P_grid'], _KD_data['xfe_grid']), _KD_data['KD_opx_ol_table'],
-					bounds_error=False, fill_value=np.nan))
-				self.KD_cpx_ol_interp.append(RegularGridInterpolator(
-					(_KD_data['T_grid'], _KD_data['P_grid'], _KD_data['xfe_grid']), _KD_data['KD_cpx_ol_table'],
-					bounds_error=False, fill_value=np.nan))
-				self.KD_gt_ol_interp.append(RegularGridInterpolator(
-					(_KD_data['T_grid'], _KD_data['P_grid'], _KD_data['xfe_grid']), _KD_data['KD_gt_ol_table'],
-					bounds_error=False, fill_value=np.nan))
-	
-		def _lookup_KDs(T_K, P_GPa, ol_xfe_guess, comp_idx):
-			point = [T_K, P_GPa, ol_xfe_guess]
-			KD_opx = self.KD_opx_ol_interp[comp_idx](point).item()
-			KD_cpx = self.KD_cpx_ol_interp[comp_idx](point).item()
-			KD_gt = self.KD_gt_ol_interp[comp_idx](point).item()
-			return KD_opx, KD_cpx, KD_gt
-	
-		def _get_xfe_bounds(comp_idx):
-			# RegularGridInterpolator stores its grid axes in .grid;
-			# axis 2 is the xfe axis (T, P, xfe order used when building it).
-			xfe_axis = self.KD_gt_ol_interp[comp_idx].grid[2]
-			return xfe_axis.min() + 0.01, xfe_axis.max() - 1e-4
-	
-		def _solve_single(bulk_xfe_i, ol_frac_i, opx_frac_i, cpx_frac_i, garnet_frac_i,
-			T_K_i, P_GPa_i, comp_idx_i):
-	
+		def _solve_single(bulk_xfe_i, ol_frac_i, opx_frac_i, cpx_frac_i, garnet_frac_i):
 			total_frac = ol_frac_i + opx_frac_i + cpx_frac_i + garnet_frac_i
 			if total_frac == 0:
 				return bulk_xfe_i, bulk_xfe_i, bulk_xfe_i, bulk_xfe_i
 	
 			def mass_balance_residual(ol_xfe_guess):
-				KD_opx, KD_cpx, KD_gt = _lookup_KDs(T_K_i, P_GPa_i, ol_xfe_guess, comp_idx_i)
-
-				if np.isnan(KD_opx) or np.isnan(KD_cpx) or np.isnan(KD_gt):
-					# Outside the table's 
-					# valid (T,P,xfe) range, e.g. the
-					# high-T/low-P garnet-instability corner. Push the
-					# residual away from zero so brentq doesn't treat this
-					# as a candidate root.
-					return 1e10
-	
 				FeMg_ol = _FeMg_from_xfe(ol_xfe_guess)
-				opx_xfe_i = _xfe_from_FeMg(KD_opx * FeMg_ol) if opx_frac_i > 0 else ol_xfe_guess
-				cpx_xfe_i = _xfe_from_FeMg(KD_cpx * FeMg_ol) if cpx_frac_i > 0 else ol_xfe_guess
-				gt_xfe_i = _xfe_from_FeMg(KD_gt * FeMg_ol) if garnet_frac_i > 0 else ol_xfe_guess
+				opx_xfe_i = _xfe_from_FeMg(KD_opx_ol * FeMg_ol) if opx_frac_i > 0 else ol_xfe_guess
+				cpx_xfe_i = _xfe_from_FeMg(KD_cpx_ol * FeMg_ol) if cpx_frac_i > 0 else ol_xfe_guess
+				gt_xfe_i = _xfe_from_FeMg(KD_gt_ol * FeMg_ol) if garnet_frac_i > 0 else ol_xfe_guess
 	
 				calculated_bulk = (ol_xfe_guess * ol_frac_i +
 					opx_xfe_i * opx_frac_i +
@@ -6013,67 +5957,30 @@ class pide(object):
 	
 				return calculated_bulk - bulk_xfe_i
 	
-			xfe_lo, xfe_hi = _get_xfe_bounds(comp_idx_i)
+			# No lookup table, no NaN pockets, no bracket-poisoning risk —
+			# a fixed-KD mass balance residual is smooth and monotonic across
+			# the whole (0,1) range, so a plain brentq call is safe on its own.
+			ol_xfe_sol = brentq(mass_balance_residual, 1e-6, 1.0 - 1e-6)
 	
-			try:
-				ol_xfe_sol = brentq(mass_balance_residual, xfe_lo, xfe_hi)
-				if abs(mass_balance_residual(ol_xfe_sol)) > 1e-6:
-					# brentq "succeeded" but landed on a bad point near a NaN pocket
-					ol_xfe_sol = _safe_bisection_root(mass_balance_residual, xfe_lo, xfe_hi)
-			except ValueError:
-				try:
-					ol_xfe_sol = _safe_bisection_root(mass_balance_residual, xfe_lo, xfe_hi)
-					print(ol_xfe_sol)
-				except ValueError:
-					# Last resort: direct linear approximation (valid when Fe
-					# content is low, i.e. xfe ~ Fe/Mg). Evaluate KDs at bulk_xfe
-					# as a reference point since ol_xfe is not yet known here.
-					KD_opx, KD_cpx, KD_gt = _lookup_KDs(T_K_i, P_GPa_i, bulk_xfe_i, comp_idx_i)
-
-					if np.isnan(KD_opx) or np.isnan(KD_cpx) or np.isnan(KD_gt):
-						import ipdb
-						ipdb.set_trace()
-						print(text_color.RED + 'WARNING:' + text_color.END +
-							' The xFe partitioning failed at some of the P-T points.')
-						return np.nan, np.nan, np.nan, np.nan
-	
-					denom = (ol_frac_i +
-						(opx_frac_i * KD_opx if opx_frac_i > 0 else 0) +
-						(cpx_frac_i * KD_cpx if cpx_frac_i > 0 else 0) +
-						(garnet_frac_i * KD_gt if garnet_frac_i > 0 else 0))
-	
-					ol_xfe_sol = (bulk_xfe_i * total_frac) / denom
-
-	
-					print(text_color.YELLOW + 'NOTE:' + text_color.END +
-						' Used linear K_D approximation as fallback at this P-T point '
-						'(exact solver failed to bracket a root).')
-
-			KD_opx, KD_cpx, KD_gt = _lookup_KDs(T_K_i, P_GPa_i, ol_xfe_sol, comp_idx_i)
 			FeMg_ol = _FeMg_from_xfe(ol_xfe_sol)
-			opx_xfe_sol = _xfe_from_FeMg(KD_opx * FeMg_ol) if opx_frac_i > 0 else ol_xfe_sol
-			cpx_xfe_sol = _xfe_from_FeMg(KD_cpx * FeMg_ol) if cpx_frac_i > 0 else ol_xfe_sol
-			gt_xfe_sol = _xfe_from_FeMg(KD_gt * FeMg_ol) if garnet_frac_i > 0 else ol_xfe_sol
+			opx_xfe_sol = _xfe_from_FeMg(KD_opx_ol * FeMg_ol) if opx_frac_i > 0 else ol_xfe_sol
+			cpx_xfe_sol = _xfe_from_FeMg(KD_cpx_ol * FeMg_ol) if cpx_frac_i > 0 else ol_xfe_sol
+			gt_xfe_sol = _xfe_from_FeMg(KD_gt_ol * FeMg_ol) if garnet_frac_i > 0 else ol_xfe_sol
 	
 			return ol_xfe_sol, opx_xfe_sol, cpx_xfe_sol, gt_xfe_sol
-		
+	
 		if len(self.ol_xfe) != len(self.bulk_xfe):
 			self.set_xfe_mineral(reval=True)
 	
-		# P must be in GPa for the lookup table; convert if self.p is stored in
-		# a different unit (check against how pide stores pressure elsewhere).
 		if method == 'index':
 			self.ol_xfe[idx_node], self.opx_xfe[idx_node], self.cpx_xfe[idx_node], self.garnet_xfe[idx_node] = _solve_single(
 				self.bulk_xfe[idx_node], self.ol_frac[idx_node], self.opx_frac[idx_node],
-				self.cpx_frac[idx_node], self.garnet_frac[idx_node],
-				self.T[idx_node], self.p[idx_node], self.NCFMAS_composition_index[idx_node])
+				self.cpx_frac[idx_node], self.garnet_frac[idx_node])
 		else:
 			for idx_xfe in range(len(self.bulk_xfe)):
-
 				self.ol_xfe[idx_xfe], self.opx_xfe[idx_xfe], self.cpx_xfe[idx_xfe], self.garnet_xfe[idx_xfe] = _solve_single(
 					self.bulk_xfe[idx_xfe], self.ol_frac[idx_xfe], self.opx_frac[idx_xfe],
-					self.cpx_frac[idx_xfe], self.garnet_frac[idx_xfe],
-					self.T[idx_xfe], self.p[idx_xfe], self.NCFMAS_composition_index[idx_xfe])
+					self.cpx_frac[idx_xfe], self.garnet_frac[idx_xfe])
 	
 		self.seismic_setup = False
 		
