@@ -48,6 +48,7 @@ from .pide_src.water_sol.rwd_wds_sol import *
 #importing eos functions
 from .pide_src.eos.fluid_eos import *
 from .pide_src.eos.melt_eos import Holland_Green_Powell_2018_ds633_MeltEOS
+from .pide_src.eos.burnman_mantle_lookup import BurnmanTableQuery
 #importin anelasticity functions
 from .pide_src.anelasticity import Q1_Sobolev1996, Q2_Berckhemer1982, YamauchiTakei2016, JacksonFaul2010
 #importing mineral stability functions
@@ -92,7 +93,6 @@ class pide(object):
 		self._read_water_calib()
 		self._read_melt_composition_files()
 		self._read_average_melt_composition()
-		self._read_NCFMAS_composition()
 		self._form_object()
 		
 	def _form_object(self):
@@ -118,7 +118,7 @@ class pide(object):
 		self.set_pressure(np.ones(1) * 1.0) #in GPa
 		self.set_composition_solid_mineral(overlookError = True)
 		self.set_composition_solid_rock(overlookError = True)
-		self.set_composition_NCFMAS(composition_name='PUM')
+		self.set_NCFMAS()
 		self.set_mineral_conductivity_choice()
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
@@ -577,13 +577,7 @@ class pide(object):
 		self.average_melt_composition_data = read_csv(os.path.join(self.core_path, 'geochem', 'average_melt_compositions_GEOROC.csv'), delim = ',')
 		self.average_melt_composition_names = np.array(self.average_melt_composition_data)[:,1]
 		self.average_melt_composition_names = list(self.average_melt_composition_names[1:])
-		
-	def _read_NCFMAS_composition(self):
-	
-		self.NCFMAS_composition_data = read_csv(os.path.join(self.core_path, 'eos', 'fe_mg_lookup', 'fe_mg_list.csv'), delim = ',')
-		self.NCFMAS_names = np.array(self.NCFMAS_composition_data)[1:,0]
-		self.NCFMAS_lookup_tables = np.array(self.NCFMAS_composition_data)[1:,7]
-				
+						
 	def set_parameter(self, param_name, value):
 	
 		"""
@@ -814,44 +808,110 @@ class pide(object):
 				
 		self.density_loaded = False
 		
-	def set_composition_NCFMAS(self, composition_name=None, custom_composition_wt_pct=None, reval=False, **kwargs):
-	
+	def set_composition_triangle(self, f_pyx=None, f_lherz=None, reval=False, **kwargs):
+
 		"""
-		Set the NCFMAS bulk composition to be used for Fe-Mg partitioning
-		(mantle_xfe_distribute), as a depth-varying array matching self.T.
+		Set the dunite*/pyroxenite*/lherzolite* bulk composition mixing
+		fractions (Munch et al. 2025 style three-endmember mixing) to be
+		used for Fe-Mg partitioning and modal mineralogy lookup
+		(mantle_xfe_distribute / BurnmanTableQuery), as depth-varying
+		arrays matching self.T.
+	
+		Only f_pyx and f_lherz are set directly; f_dun = 1 - f_pyx - f_lherz
+		is computed automatically and does not need to be provided.
 	
 		Parameters
 		----------
-		composition_name : str, list, or array, optional
-			Name of a registered reference composition (e.g. 'PUM', 'DMM', 'KLB-1').
-			A single string is broadcast to every depth; a list/array must match
-			len(self.T).
-		custom_composition_wt_pct : dict, list, or array, optional
-			Manually entered bulk composition(s) in wt% oxides, with keys
-			'SiO2', 'MgO', 'FeO', 'Al2O3', 'CaO', 'Na2O'. A single dict is
-			broadcast to every depth; a list of dicts must match len(self.T).
+		f_pyx : float, list, or array
+			Pyroxenite* mixing fraction. A single float is broadcast to
+			every depth; a list/array must match len(self.T).
+		f_lherz : float, list, or array
+			Lherzolite* mixing fraction. Same broadcasting rules as f_pyx.
 		reval : bool
 			If True, re-broadcast the already-stored values against the
 			current self.T (e.g. after self.T has changed length), same
-			pattern as set_composition_solid_rock.
+			pattern as set_composition_solid_rock / set_composition_NCFMAS.
 	
-		At each depth, provide exactly one of composition_name or
-		custom_composition_wt_pct, not both, not neither.
+		At each depth, f_pyx + f_lherz must be <= 1 (the implied f_dun
+		fraction cannot be negative).
 		"""
 	
 		if self.temperature_default == True:
 			self._suggestion_temp_array()
 	
 		if reval == False:
-		
-			self.NCFMAS_composition_name = array_modifier(input=composition_name, array=self.T,
-				varname='NCFMAS_composition_name')
-				
+	
+			self.f_pyx = array_modifier(input=f_pyx, array=self.T, varname='f_pyx')
+			self.f_lherz = array_modifier(input=f_lherz, array=self.T, varname='f_lherz')
+	
 		elif reval == True:
-			
-			self.NCFMAS_composition_name = array_modifier(input=self.NCFMAS_composition_name, array=self.T,
-				varname='NCFMAS_composition_name')
-
+	
+			self.f_pyx = array_modifier(input=self.f_pyx, array=self.T, varname='f_pyx')
+			self.f_lherz = array_modifier(input=self.f_lherz, array=self.T, varname='f_lherz')
+	
+		overlookError = kwargs.pop('overlookError', False)
+		if overlookError == False:
+			for i in range(0, len(self.T)):
+				if self.f_pyx[i] + self.f_lherz[i] > 1.0 + 1e-9:
+					raise ValueError(f'At index {i}, f_pyx + f_lherz = {self.f_pyx[i] + self.f_lherz[i]} '
+						'exceeds 1.0 (the implied dunite fraction, f_dun = 1 - f_pyx - f_lherz, cannot be negative).')
+				if self.f_pyx[i] < 0 or self.f_lherz[i] < 0:
+					raise ValueError(f'At index {i}, f_pyx and f_lherz must both be non-negative.')
+	
+		self.f_dun = 1.0 - self.f_pyx - self.f_lherz
+		
+		if len(self.ol_frac) != len(self.T):
+			self.set_composition_solid_mineral(reval = True)
+		if len(self.ol_xfe) != len(self.T):
+			self.set_xfe_mineral(reval = True)
+		if len(self.SiO2) != len(self.T):
+			self.set_NCFMAS(reval = True)
+		
+		self.triangle_table_loaded = False
+		
+	def set_NCFMAS(self, sio2=None, mgo=None, feo=None, al2o3=None, cao=None, na2o=None, reval=False, **kwargs):
+	
+		"""
+		Set the bulk NCFMAS oxide composition (SiO2, MgO, FeO, Al2O3, CaO,
+		Na2O), as depth-varying arrays matching self.T. This is a manual,
+		direct way of setting bulk composition, as an alternative to
+		set_composition_triangle (which derives composition from f_pyx/f_lherz
+		mixing) or set_composition_NCFMAS (which selects a registered
+		reference composition by name).
+	
+		Parameters
+		----------
+		sio2, mgo, feo, al2o3, cao, na2o : float, list, or array, optional
+			Oxide wt% values. A single float is broadcast to every depth;
+			a list/array must match len(self.T). Any oxide left as None is
+			treated as 0.0 at every depth.
+		reval : bool
+			If True, re-broadcast the already-stored values against the
+			current self.T (e.g. after self.T has changed length), same
+			pattern as set_composition_NCFMAS / set_composition_triangle.
+		"""
+	
+		if self.temperature_default == True:
+			self._suggestion_temp_array()
+	
+		if reval == False:
+	
+			self.SiO2 = array_modifier(input=sio2 if sio2 is not None else 0.0, array=self.T, varname='SiO2')
+			self.MgO = array_modifier(input=mgo if mgo is not None else 0.0, array=self.T, varname='MgO')
+			self.FeO = array_modifier(input=feo if feo is not None else 0.0, array=self.T, varname='FeO')
+			self.Al2O3 = array_modifier(input=al2o3 if al2o3 is not None else 0.0, array=self.T, varname='Al2O3')
+			self.CaO = array_modifier(input=cao if cao is not None else 0.0, array=self.T, varname='CaO')
+			self.Na2O = array_modifier(input=na2o if na2o is not None else 0.0, array=self.T, varname='Na2O')
+	
+		elif reval == True:
+	
+			self.SiO2 = array_modifier(input=self.SiO2, array=self.T, varname='SiO2')
+			self.MgO = array_modifier(input=self.MgO, array=self.T, varname='MgO')
+			self.FeO = array_modifier(input=self.FeO, array=self.T, varname='FeO')
+			self.Al2O3 = array_modifier(input=self.Al2O3, array=self.T, varname='Al2O3')
+			self.CaO = array_modifier(input=self.CaO, array=self.T, varname='CaO')
+			self.Na2O = array_modifier(input=self.Na2O, array=self.T, varname='Na2O')
+	
 	def set_temperature(self,T,reval = False):
 	
 		"""
@@ -5689,6 +5749,91 @@ class pide(object):
 			self.water_fugacity = Pitzer_and_Sterner_1994_PureWaterEOS(T = self.T, P = self.p)
 			
 			self.water_fugacity_calculated = True
+			
+	def calculate_composition_from_triangle(self, npz_path="burnman_pyx_lherz_dun.npz", method='array', **kwargs):
+
+		"""
+		Populate bulk composition, modal mineralogy, and per-phase xFe from
+		the BurnMan dunite*/pyroxenite*/lherzolite* lookup table, using the
+		f_pyx / f_lherz fractions already set via set_composition_triangle,
+		together with self.T and self.p at each depth.
+	
+		Unlike mantle_xfe_distribute (which distributes a given bulk_xfe
+		across a FIXED, user-specified mode using partition coefficients),
+		this derives modal fractions AND each phase's Fe# together, directly
+		from the Gibbs-minimization table, self-consistently for the exact
+		(f_pyx, f_lherz, T, P) queried — mode is no longer an independent
+		input here, it's an output.
+	
+		Parameters
+		----------
+		npz_path : str
+			Path to the lookup table .npz (see BurnmanTableQuery).
+		method : str
+			'array' to process all depths, 'index' to process a single point
+		sol_idx : int, optional
+			Index of the point to solve when method='index'
+	
+		Points that return NaN (above the solidus, or outside the
+		dunite/pyroxenite/lherzolite triangle) are left as NaN in every
+		output field for that depth, with a warning printed — these depths
+		should be handled by a melt model instead, not trusted as solid
+		mineralogy.
+		"""
+	
+		sol_idx = kwargs.pop('sol_idx', 0)
+		idx_node = None if method == 'array' else sol_idx
+		
+		if getattr(self, 'triangle_table_loaded', False) == False or not hasattr(self, '_triangle_query'):
+			self._triangle_query = BurnmanTableQuery(npz_path)
+			self.triangle_table_loaded = True
+		
+		if len(self.v_p) != len(self.T):
+			self.v_p = np.ones(len(self.T))
+			self.v_s = np.ones(len(self.T))
+			
+		if len(self.density_solids) != len(self.T):
+			self.density_solids = np.ones(len(self.T)) * 3.3
+	
+		def _solve_single(i):
+			
+			result = self._triangle_query.query(self.f_pyx[i], self.f_lherz[i], self.T[i], self.p[i])
+	
+			if np.isnan(result['v_p']):
+				print(text_color.RED + 'WARNING:' + text_color.END +
+					f' Depth index {i} (T={self.T[i]}, P={self.p[i]}) returned NaN from the '
+					'triangle table — above the solidus or outside the composition triangle. '
+					'Consider a melt model for this point.')
+				return
+	
+			self.ol_frac[i] = result['ol']
+			self.opx_frac[i] = result['opx']
+			self.cpx_frac[i] = result['cpx']
+			self.garnet_frac[i] = result['garnet']
+			self.sp_frac[i] = result['spinel']
+			self.ol_xfe[i] = result['ol_xfe']
+			self.opx_xfe[i] = result['opx_xfe']
+			self.cpx_xfe[i] = result['cpx_xfe']
+			self.garnet_xfe[i] = result['garnet_xfe']
+			self.sp_xfe[i] = result['spinel_xfe']
+			self.SiO2[i] = result['SiO2']
+			self.MgO[i] = result['MgO']
+			self.FeO[i] = result['FeO']
+			self.Al2O3[i] = result['Al2O3']
+			self.CaO[i] = result['CaO']
+			self.Na2O[i] = result['Na2O']
+			self.v_p[i] = result['v_p']
+			self.v_s[i] = result['v_s']
+			self.density_solids[i] = result['density']
+	
+		if method == 'index':
+			_solve_single(idx_node)
+		else:
+			for i in range(len(self.T)):
+				_solve_single(i)
+		
+		self.seismic_calculation_method = 'gibbs'
+	
 		
 	def _load_mantle_water_partitions(self, method, **kwargs):
 	
