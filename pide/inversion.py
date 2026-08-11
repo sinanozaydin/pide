@@ -922,7 +922,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	adaptive_alg=True, ideal_acceptance_bounds=[0.2, 0.3],
 	adaptive_check_length=1000, step_size_limits=None,
 	param_priors=None, SHF_prior=None, lab_temp = 1350,
-	composition = None,max_widen_attempts = 3,
+	composition = None, max_widen_attempts = 3,
 	**kwargs):
 	"""
 	MCMC column solver for geotherm-based inversion.
@@ -1003,7 +1003,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	widen_count = 0
 
-	#determining length of the parametrisation.
+	#determining length of the parametrisation	
 	n_depths = len(depths)
 	n_params = len(param_names)
 
@@ -1021,11 +1021,20 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		if name in ['T', 'p']:
 			raise ValueError(f"'{name}' cannot be a free parameter in column mode. "
 				f"Temperature is controlled by SHF and pressure is derived from the geotherm.")
+				
+	if ('f_pyx' in param_names) or ('f_lherz' in param_names):
+		triangle_calculation = True
+		if 'bulk_xfe' in param_names:
+			raise AttributeError('Both triangle composition (f_pyx or f_lherz) and bulk_xfe can not be considered to vary with composition at the same time.')
+	else:
+		triangle_calculation = False
 	
 	# Total number of MCMC dimensions:
 	# 2 scalars (SHF) + n_params * n_depths
-	n_total = 1 + n_params * n_depths
-	
+	n_param_total = n_params * n_depths
+	n_shf_slots = n_params  # SHF sampled with weight equal to 2 individual dimensions
+	n_total = n_param_total + n_shf_slots
+
 	# Deep copy mutable inputs
 	proposal_stds = list(proposal_stds)
 	if param_priors is not None:
@@ -1077,8 +1086,14 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	#if bulk xFe is changed distributing iron among defined minerals.
 	if 'bulk_xfe' in param_names:
-		object.mantle_xfe_distribute()
-		
+		if triangle_calculation == False:
+			object.mantle_xfe_distribute()
+		else:
+			raise AttributeError('xFe and triangle gibbs calculation method cannot be used at the same time.')
+	else:
+		if triangle_calculation == True:
+			object.calculate_composition_modulii_from_triangle(method = 'array')
+
 	#Calculating thermodynamic calculation of partial melting is True.
 	current_melt = None
 	
@@ -1185,15 +1200,19 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		param_maxs_depth = param_maxs_depth.reshape(1, -1)
 	
 	def _get_step_idx(dim):
-		if dim == 0:
+		if dim < n_shf_slots:
 			return 0
 		else:
-			return 1 + (dim - 1) // n_depths
-	
+			dim_offset = dim - n_shf_slots
+			return 1 + dim_offset // n_depths
 	
 	print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
 	print(text_color.YELLOW + f'{n_iter*2} total samples, {n_iter} minimum samples.' + text_color.END)
 	print(text_color.RED + f'{burning} burning samples.' + text_color.END)
+	
+	n_reject_bounds = 0
+	n_reject_nan = 0
+	n_reject_likelihood = 0
 	
 	for _ in range(n_iter*2):
 	
@@ -1202,28 +1221,46 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		step_idx = _get_step_idx(rand_dim)
 
 		randomgen = np.random.normal(0, proposal_stds[step_idx])
-		
+
 		# Copy current state
 		proposed_SHF = current_SHF
 		proposed_depth_params = current_depth_params.copy()
 		continue_bounds = True
-		
-		if rand_dim == 0:
+
+		if rand_dim <= n_shf_slots:
 			proposed_SHF = current_SHF + randomgen
 			if proposed_SHF < SHF_bounds[index][0] or proposed_SHF > SHF_bounds[index][1]:
 				continue_bounds = False
 		else:
-			param_idx = (rand_dim - 1) // n_depths
-			depth_idx = (rand_dim - 1) % n_depths
+			dim_offset = rand_dim - n_shf_slots
+			param_idx = dim_offset // n_depths
+			depth_idx = dim_offset % n_depths
 			proposed_depth_params[depth_idx, param_idx] += randomgen
-
+		
 			if (proposed_depth_params[depth_idx, param_idx] < param_mins_depth[param_idx, depth_idx] or
 				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[param_idx, depth_idx]):
 				continue_bounds = False
 		
+			# Additional joint constraint for the triangle composition: f_pyx and
+			# f_lherz are perturbed one at a time (not jointly), so the individual
+			# [0,1] bounds check above isn't enough on its own — the OTHER
+			# fraction (held fixed this iteration) must be checked too, since
+			# f_dun = 1 - f_pyx - f_lherz cannot go negative.
+			if triangle_calculation == True and continue_bounds == True:
+				if param_names[param_idx] == 'f_pyx':
+					idx_other = param_names.index('f_lherz')
+					other_val = current_depth_params[depth_idx, idx_other]
+					if proposed_depth_params[depth_idx, param_idx] + other_val > 1.0:
+						continue_bounds = False
+				elif param_names[param_idx] == 'f_lherz':
+					idx_other = param_names.index('f_pyx')
+					other_val = current_depth_params[depth_idx, idx_other]
+					if proposed_depth_params[depth_idx, param_idx] + other_val > 1.0:
+						continue_bounds = False
+		
 		if continue_bounds == True:
 	
-			if rand_dim == 0:
+			if rand_dim <= n_shf_slots:
 				T_, P_= _update_geotherm(proposed_SHF, lab_temp)
 				object.set_temperature(T_)
 				object.set_pressure(P_)
@@ -1231,6 +1268,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				#if bulk xFe is changed distributing iron among defined minerals.
 				if 'bulk_xfe' in param_names:
 					object.mantle_xfe_distribute(method = 'array')
+				else:
+					if triangle_calculation == True:
+						object.calculate_composition_modulii_from_triangle(method = 'array')
 				
 				if melt_thermodyn and melt_thermodyn_interp is not None:
 				
@@ -1248,11 +1288,13 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				if water_solv == True:
 				
 					object.mantle_water_distribute(method = 'array')
-			
 			else:
 				
-				#if one of the paramters are a composition parameter.
+				#if one of the parameters are a composition parameter.
 				if frac_bool[param_idx] == True:
+				
+					if triangle_calculation == True:
+						raise AttributeError('Single compositional value and triangle calculation method cannot be used together.')
 	
 					if object.solid_phase_method == 2:
 						_comp_list = [object.quartz_frac[depth_idx], object.plag_frac[depth_idx], object.amp_frac[depth_idx], object.kfelds_frac[depth_idx], object.opx_frac[depth_idx], object.cpx_frac[depth_idx],
@@ -1327,28 +1369,61 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						prior_mean = param_priors[ii][0]   # array length n_depths
 						prior_sigma = param_priors[ii][1]   # array length n_depths
 						proposed_prior += np.sum(-0.5 * ((proposed_depth_params[:, ii] - prior_mean) / prior_sigma)**2)
-						
+			
 			proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + proposed_prior)
 			
-			# Calculate acceptance probability
-			acceptance_ratio = proposed_likelihood / current_likelihood
+			"""
+			# --- diagnostic: confirm or refute the underflow hypothesis, and
+			# see whether predicted vs observed are even in the right ballpark ---
+			print(f"  misf_cond sum: {np.sum(misf_cond):.2f}  "
+				f"misf_vp sum: {np.sum(misf_vp):.2f}  "
+				f"misf_vs sum: {np.sum(misf_vs):.2f}  "
+				f"prior: {proposed_prior:.2f}  "
+				f"total: {np.sum(misf_cond)+np.sum(misf_vp)+np.sum(misf_vs)+proposed_prior:.2f}  "
+				f"current_likelihood: {current_likelihood}  "
+				f"proposed_likelihood: {proposed_likelihood}")
 
-			if np.random.rand() < acceptance_ratio:
-
-				current_SHF = proposed_SHF
-				current_depth_params = proposed_depth_params.copy()
-				current_likelihood = proposed_likelihood
-				
-				if _ > burning:
-					samples_SHF.append(current_SHF)
-					samples_temp.append(object.T.copy())
-					samples_depth_params.append(current_depth_params.copy())
-					misfits_cond.append(misf_cond)
-					misfits_vp.append(misf_vp)
-					misfits_vs.append(misf_vs)
-					if melt_thermodyn == True:
-						melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
-					accepted += 1
+			if cond_list is not None:
+				print(f"    cond calc: {cond_}")
+				print(f"    cond obs:  {cond_list[index]}")
+				print(f"    sigma_cond: {sigma_cond[index]}")
+			if vp_list is not None:
+				print(f"    vp calc: {vp_}")
+				print(f"    vp obs:  {vp_list[index]}")
+				print(f"    sigma_vp: {sigma_vp[index]}")
+			if vs_list is not None:
+				print(f"    vs calc: {vs_}")
+				print(f"    vs obs:  {vs_list[index]}")
+				print(f"    sigma_vs: {sigma_vs[index]}")
+			"""
+			
+			if np.isnan(proposed_likelihood):
+				n_reject_nan += 1
+			else:
+				# Calculate acceptance probability
+				acceptance_ratio = proposed_likelihood / current_likelihood
+	
+				if np.random.rand() < acceptance_ratio:
+	
+					current_SHF = proposed_SHF
+					current_depth_params = proposed_depth_params.copy()
+					current_likelihood = proposed_likelihood
+					
+					if _ > burning:
+						samples_SHF.append(current_SHF)
+						samples_temp.append(object.T.copy())
+						samples_depth_params.append(current_depth_params.copy())
+						misfits_cond.append(misf_cond)
+						misfits_vp.append(misf_vp)
+						misfits_vs.append(misf_vs)
+						if melt_thermodyn == True:
+							melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
+						accepted += 1
+				else:
+					n_reject_likelihood += 1
+					
+		else:
+			n_reject_bounds += 1
 
 		if (_ - burning) > 0:
 			acceptance_rate = accepted / (_ - burning)
@@ -1392,6 +1467,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			
 		if adaptive_alg == True:
 			if (_ + 1) % adaptive_check_length == 0:
+				print(f'Rejected based on likelihood per cent(%): {1e2*n_reject_likelihood / _}')
+				print(f'Rejected based on NaN petrophysical/thermodynamic calculation per cent(%): {1e2*n_reject_nan / _}')
+				print(f'Rejected based on bound limitations per cent(%): {1e2*n_reject_bounds / _}')
 				if acceptance_rate < 0.1:
 					proposal_stds[step_idx] *= 0.8
 					status = 'very low'

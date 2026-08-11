@@ -203,7 +203,7 @@ class pide(object):
 		if self.phs_melt_mix_method == 0:
 			self.set_melt_fluid_interconnectivity(reval = True)
 		self.set_grain_boundary_water_partitioning(reval = True)
-		self.set_composition_NCFMAS(reval = True)
+		self.set_NCFMAS(reval = True)
 		
 	def _read_cond_models(self):
 		
@@ -832,7 +832,7 @@ class pide(object):
 		reval : bool
 			If True, re-broadcast the already-stored values against the
 			current self.T (e.g. after self.T has changed length), same
-			pattern as set_composition_solid_rock / set_composition_NCFMAS.
+			pattern as set_composition_solid_rock / set_NCFMAS.
 	
 		At each depth, f_pyx + f_lherz must be <= 1 (the implied f_dun
 		fraction cannot be negative).
@@ -879,7 +879,7 @@ class pide(object):
 		Na2O), as depth-varying arrays matching self.T. This is a manual,
 		direct way of setting bulk composition, as an alternative to
 		set_composition_triangle (which derives composition from f_pyx/f_lherz
-		mixing) or set_composition_NCFMAS (which selects a registered
+		mixing) or set_NCFMAS (which selects a registered
 		reference composition by name).
 	
 		Parameters
@@ -891,7 +891,7 @@ class pide(object):
 		reval : bool
 			If True, re-broadcast the already-stored values against the
 			current self.T (e.g. after self.T has changed length), same
-			pattern as set_composition_NCFMAS / set_composition_triangle.
+			pattern as set_NCFMAS / set_composition_triangle.
 		"""
 	
 		if self.temperature_default == True:
@@ -5865,10 +5865,32 @@ class pide(object):
 			result = self._triangle_query.query(self.f_pyx[i], self.f_lherz[i], self.T[i], self.p[i])
 	
 			if np.isnan(result['v_p']):
+				"""
 				print(text_color.RED + 'WARNING:' + text_color.END +
 					f' Depth index {i} (T={self.T[i]}, P={self.p[i]}) returned NaN from the '
 					'triangle table — above the solidus or outside the composition triangle. '
 					'Consider a melt model for this point.')
+				"""
+				self.ol_frac[i] = np.nan
+				self.opx_frac[i] = np.nan
+				self.cpx_frac[i] = np.nan
+				self.garnet_frac[i] = np.nan
+				self.sp_frac[i] = np.nan
+				self.ol_xfe[i] = np.nan
+				self.opx_xfe[i] = np.nan
+				self.cpx_xfe[i] = np.nan
+				self.garnet_xfe[i] = np.nan
+				self.sp_xfe[i] = np.nan
+				self.SiO2[i] = np.nan
+				self.MgO[i] = np.nan
+				self.FeO[i] = np.nan
+				self.Al2O3[i] = np.nan
+				self.CaO[i] = np.nan
+				self.Na2O[i] = np.nan
+				self.v_p[i] = np.nan
+				self.v_s[i] = np.nan
+				self.v_bulk[i] = np.nan
+				self.density_solids[i] = np.nan
 				return
 	
 			self.ol_frac[i] = result['ol']
