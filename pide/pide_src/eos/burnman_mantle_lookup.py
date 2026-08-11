@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import os
 from scipy.interpolate import RegularGridInterpolator
 
 
@@ -8,7 +9,7 @@ class AboveSolidusError(Exception):
 	pass
 
 class BurnmanTableQuery:
-	def __init__(self, npz_path = "burnman_pyx_lherz_dun.npz"):
+	def __init__(self, npz_path = None):
 	
 		"""
 		Fast query interface for the BurnMan-derived dunite/pyroxenite/lherzolite
@@ -55,6 +56,10 @@ class BurnmanTableQuery:
 			# result: {'v_p':..., 'v_s':..., 'density':..., 'ol':..., 'opx':...,
 			#          'cpx':..., 'garnet':..., 'spinel':..., 'nudge_used': None}
 		"""
+
+		if npz_path is None:
+			npz_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'burnman_pyx_lherz_dun.npz')
+
 		d_loaded = np.load(npz_path, allow_pickle=True)
 		d = {k: d_loaded[k] for k in d_loaded.files}
  

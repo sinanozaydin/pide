@@ -575,6 +575,33 @@ def _safe_bisection_root(residual_func, lo, hi, tol=1e-6, max_iter=100):
 
 	return 0.5 * (a + b)
 	
+def _check_conductivity_mechanism_warning():
+
+	"""
+	Warn if the only selected conductivity mechanism is proton conduction.
+
+	Proton conduction alone only captures the water-related contribution
+	to conductivity — it does not include the anhydrous ("dry") baseline
+	conductivity that any mantle mineral has regardless of water content.
+	Using proton conduction in isolation will silently return near-zero
+	total conductivity for anhydrous or low-water compositions, which is
+	not physically meaningful. Proton conduction should always be summed
+	with a dry conduction mechanism, not used on its own.
+	"""
+
+	raise AttributeError(
+	"Only proton conduction is selected. This captures the water-related "
+	"conductivity contribution only — it does NOT include the dry (anhydrous) "
+	"baseline conductivity that a mineral has independent of water content. "
+	"Using proton conduction alone will return near-zero total conductivity "
+	"wherever water content is low. Sum this with a dry conduction mechanism "
+	"(e.g. small polaron / ionic conduction) to get a physically meaningful result. "
+	"In order to overcome this issue, please try using a complete conductivity model including both dry and wet, "
+	"or sum a dry and wet conductivity model with: "
+	"set_mineral_conductivity_choice(cpx = [2, '3/proton']). "
+	"Please refer to notebook 1 for more information on how to mix conduction models."
+	)
+	
 class text_color:
    
    #color object for to be called by the print outs.

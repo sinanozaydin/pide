@@ -39,6 +39,7 @@ from .pide_src.cond_models.minerals.mixtures_odd import *
 from .pide_src.cond_models.minerals.perov_odd import *
 from .pide_src.cond_models.minerals.rwd_wds_odd import *
 from .pide_src.cond_models.minerals.other_odd import *
+from .pide_src.cond_models.minerals.spinel_odd import *
 #importing water-partitioning odd functions
 from .pide_src.water_partitioning.water_part_odd import *
 #importing mineral solubility functions
@@ -54,7 +55,7 @@ from .pide_src.anelasticity import Q1_Sobolev1996, Q2_Berckhemer1982, YamauchiTa
 #importing mineral stability functions
 from .pide_src.min_stab.min_stab import *
 #importing utils
-from .utils.utils import check_type, array_modifier, read_csv, text_color, modify_melt_composition, _safe_bisection_root
+from .utils.utils import check_type, array_modifier, read_csv, text_color, modify_melt_composition, _check_conductivity_mechanism_warning
 from .utils.geochem import classify_tas_diagram
 
 
@@ -119,6 +120,7 @@ class pide(object):
 		self.set_composition_solid_mineral(overlookError = True)
 		self.set_composition_solid_rock(overlookError = True)
 		self.set_NCFMAS()
+		self.set_seismic_calculation_method()
 		self.set_mineral_conductivity_choice()
 		self.set_rock_conductivity_choice()
 		self.set_mineral_water()
@@ -186,6 +188,7 @@ class pide(object):
 		
 		#arrays with mineral specific arrays
 		if pide.solid_phase_method == 2:
+		
 			self.set_composition_solid_mineral(reval = True,overlookError = True)
 			self.set_mineral_water(reval = True)
 			self.set_xfe_mineral(reval = True)
@@ -720,7 +723,6 @@ class pide(object):
 			bool_composition = self._check_composition(method = 'mineral')
 	
 			if bool_composition == False:
-			
 				raise ValueError('The values entered in mineral composition do not add up to 1.')
 				
 		self.density_loaded = False
@@ -861,13 +863,14 @@ class pide(object):
 		self.f_dun = 1.0 - self.f_pyx - self.f_lherz
 		
 		if len(self.ol_frac) != len(self.T):
-			self.set_composition_solid_mineral(reval = True)
+			self.set_composition_solid_mineral(ol = 1.0)
 		if len(self.ol_xfe) != len(self.T):
 			self.set_xfe_mineral(reval = True)
 		if len(self.SiO2) != len(self.T):
 			self.set_NCFMAS(reval = True)
 		
 		self.triangle_table_loaded = False
+		self.seismic_calculation_method = 'gibbs'
 		
 	def set_NCFMAS(self, sio2=None, mgo=None, feo=None, al2o3=None, cao=None, na2o=None, reval=False, **kwargs):
 	
@@ -911,6 +914,37 @@ class pide(object):
 			self.Al2O3 = array_modifier(input=self.Al2O3, array=self.T, varname='Al2O3')
 			self.CaO = array_modifier(input=self.CaO, array=self.T, varname='CaO')
 			self.Na2O = array_modifier(input=self.Na2O, array=self.T, varname='Na2O')
+			
+	def set_seismic_calculation_method(self, method='modes'):
+
+		"""
+		Set how calculate_seismic_velocities computes bulk Vp/Vs.
+	
+		'modes' (default): the existing pide behavior — recompute Vp/Vs from
+		individual mineral elastic moduli via mixing laws (e.g. Hashin-
+		Shtrikman), using whatever modal fractions and mineral compositions
+		are currently set, regardless of how they were set.
+	
+		'gibbs': skip the mixing-law calculation entirely and use the Vp/Vs
+		values already computed directly by the Gibbs-minimization lookup
+		table itself (calculate_composition_from_triangle / self.v_p,
+		self.v_s), since those come from the same equilibrium calculation
+		as the modal mineralogy and are already internally self-consistent.
+		Only meaningful for depths where composition was actually set via
+		set_composition_triangle + calculate_composition_from_triangle —
+		using 'gibbs' without having called that first will leave self.v_p /
+		self.v_s empty or stale.
+	
+		Parameters
+		----------
+		method : str
+			'modes' or 'gibbs'.
+		"""
+	
+		if method not in ('modes', 'gibbs'):
+			raise ValueError(f"set_seismic_calculation_method: method must be 'modes' or 'gibbs', got '{method}'.")
+	
+		self.seismic_calculation_method = method
 	
 	def set_temperature(self,T,reval = False):
 	
@@ -1474,7 +1508,6 @@ class pide(object):
 	
 	def list_mineral_econd_models(self, mineral_name):
 
-		
 		"""
 		List all possible electrical conductivity models for the specified mineral.
 	
@@ -1994,7 +2027,7 @@ class pide(object):
 				   pide.mixture_cond_selection, pide.other_cond_selection]
 		
 		pide.sec_minerals_cond_selections = []
-		
+
 		#if conditionals if two conduction models are chosen in a list, it only accepts two 
 		if any(isinstance(item, list) for item in pide.minerals_cond_selections): #if conditional if there are any lists entered for multiple conduction mechanisms
 		
@@ -2015,11 +2048,15 @@ class pide(object):
 						raise ValueError('Only two model indexes can be entered for a mineral.')
 					
 				else:
-				
 					pide.sec_minerals_cond_selections.append(None)
+					if self.mechanism_model[i+11][pide.minerals_cond_selections[i]] == 'proton':
+						_check_conductivity_mechanism_warning()
 					
 		else:
-		
+			for i in range(0,len(pide.minerals_cond_selections)):
+				if self.mechanism_model[i+11][pide.minerals_cond_selections[i]] == 'proton':
+					_check_conductivity_mechanism_warning()
+				
 			pide.sec_minerals_cond_selections = [None] * len(pide.minerals_cond_selections)
 					
 		self._mineral_conductivity_choice_check()
@@ -2406,8 +2443,6 @@ class pide(object):
 			 pide.opx_xfe, pide.cpx_xfe, pide.mica_xfe, pide.garnet_xfe, pide.sulphide_xfe,
 				   pide.graphite_xfe, pide.ol_xfe, pide.sp_xfe, pide.rwd_wds_xfe, pide.perov_xfe, pide.mixture_xfe, pide.other_xfe]
 		
-		# self.bulk_xfe  = np.sum([xfe * frac for xfe, frac in zip(self.xfe_mineral_list, self.mineral_frac_list)], axis=0) / np.sum(self.mineral_frac_list, axis=0)
-
 		self.density_loaded = False
 		self.seismic_setup = False
 
@@ -3719,7 +3754,7 @@ class pide(object):
 		
 		min_list = [idx_cond_mineral]
 		mechanism_list = [mechanism_1]
-		
+
 		if pide.sec_minerals_cond_selections[min_sub_idx] != None:
 		
 			try:
@@ -5149,20 +5184,45 @@ class pide(object):
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
 		
-		if self.seismic_setup == False:
+		if self.seismic_calculation_method == 'modes':
 		
-			self.unique_compositions, self.fraction_list, self.idx_unique, self.id_list_global = self._setup_seismic_calculation_()
+			if self.seismic_setup == False:
+			
+				self.unique_compositions, self.fraction_list, self.idx_unique, self.id_list_global = self._setup_seismic_calculation_()
+						
+			isotropy_object = Isotropy()
+			
+			if method == 'array':
+			
+				for comp_idx in range(0,len(self.unique_compositions)):
 					
-		isotropy_object = Isotropy()
-		
-		if method == 'array':
+					phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.unique_compositions[comp_idx], fraction_list=self.fraction_list[self.idx_unique[comp_idx]])
 					
-			for comp_idx in range(0,len(self.unique_compositions)):
+					medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
+					pressure = self.p[self.idx_unique[comp_idx]], temperature=self.T[self.idx_unique[comp_idx]]-273.15, modulii_return = True)
+					
+					if mixing_method == 'HS-Medium':
+						array_seis = medium.copy()
+					elif mixing_method == 'HS-Upper':
+						array_seis = upper.copy()
+					elif mixing_method == 'HS-Lower':
+						array_seis = lower.copy()
+					
+					self.v_bulk[self.idx_unique[comp_idx]] = array_seis[0]
+					self.v_p[self.idx_unique[comp_idx]] = array_seis[1]
+					self.v_s[self.idx_unique[comp_idx]] = array_seis[2]
+					
+					v_anelasticity = self.calculate_seismic_anelasticity(self.p[self.idx_unique[comp_idx]],self.T[self.idx_unique[comp_idx]],self.seismic_attenuation)
+					self.v_anelasticity_bulk[self.idx_unique[comp_idx]] = v_anelasticity[0]
+					self.v_anelasticity_p[self.idx_unique[comp_idx]] = v_anelasticity[1]
+					self.v_anelasticity_s[self.idx_unique[comp_idx]] = v_anelasticity[2]
+					
+			elif method == 'index':
 				
-				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.unique_compositions[comp_idx], fraction_list=self.fraction_list[self.idx_unique[comp_idx]])
+				phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
 				
 				medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
-				pressure = self.p[self.idx_unique[comp_idx]], temperature=self.T[self.idx_unique[comp_idx]]-273.15, modulii_return = True)
+					pressure = np.array([self.p[index]]), temperature=np.array([self.T[index]-273.15]), modulii_return = True)
 				
 				if mixing_method == 'HS-Medium':
 					array_seis = medium.copy()
@@ -5171,42 +5231,39 @@ class pide(object):
 				elif mixing_method == 'HS-Lower':
 					array_seis = lower.copy()
 				
-				self.v_bulk[self.idx_unique[comp_idx]] = array_seis[0]
-				self.v_p[self.idx_unique[comp_idx]] = array_seis[1]
-				self.v_s[self.idx_unique[comp_idx]] = array_seis[2]
+				self.v_bulk[index] = array_seis[0]
+				self.v_p[index] = array_seis[1]
+				self.v_s[index] = array_seis[2]
 				
-				v_anelasticity = self.calculate_seismic_anelasticity(self.p[self.idx_unique[comp_idx]],self.T[self.idx_unique[comp_idx]],self.seismic_attenuation)
-				self.v_anelasticity_bulk[self.idx_unique[comp_idx]] = v_anelasticity[0]
-				self.v_anelasticity_p[self.idx_unique[comp_idx]] = v_anelasticity[1]
-				self.v_anelasticity_s[self.idx_unique[comp_idx]] = v_anelasticity[2]
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation)
+				self.v_anelasticity_bulk[index] = v_anelasticity[0]
+				self.v_anelasticity_p[index] = v_anelasticity[1]
+				self.v_anelasticity_s[index] = v_anelasticity[2]
 				
-		elif method == 'index':
+		elif self.seismic_calculation_method == 'gibbs':
 			
-			phase_constant_list, fraction_ = isotropy_object.set_modal_composition(phase_list=self.id_list_global[index], fraction_list=self.fraction_list[index])
+			if method == 'array':
 			
-			medium,upper,lower,bulk_mod,shear_mod = isotropy_object.hashin_shtrikman_bounds(phase_constant_list=phase_constant_list, fraction_list=fraction_,
-				pressure = np.array([self.p[index]]), temperature=np.array([self.T[index]-273.15]), modulii_return = True)
+				self.calculate_composition_modulii_from_triangle(method = 'array')
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p, self.T, self.seismic_attenuation)
+				self.v_anelasticity_bulk = v_anelasticity[0]
+				self.v_anelasticity_p = v_anelasticity[1]
+				self.v_anelasticity_s = v_anelasticity[2]
+				
+			elif method == 'index':
 			
-			if mixing_method == 'HS-Medium':
-				array_seis = medium.copy()
-			elif mixing_method == 'HS-Upper':
-				array_seis = upper.copy()
-			elif mixing_method == 'HS-Lower':
-				array_seis = lower.copy()
-			
-			self.v_bulk[index] = array_seis[0]
-			self.v_p[index] = array_seis[1]
-			self.v_s[index] = array_seis[2]
-			
-			v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation)
-			self.v_anelasticity_bulk[index] = v_anelasticity[0]
-			self.v_anelasticity_p[index] = v_anelasticity[1]
-			self.v_anelasticity_s[index] = v_anelasticity[2]
+				self.calculate_composition_modulii_from_triangle(sol_idx = index, method = 'index')
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation)
+				self.v_anelasticity_bulk[index] = v_anelasticity[0]
+				self.v_anelasticity_p[index] = v_anelasticity[1]
+				self.v_anelasticity_s[index] = v_anelasticity[2]
 			
 		if np.mean(self.melt_fluid_mass_frac) != 0.0:
 			
 			if self.density_fluid_loaded == False:
-				self.calculate_density_solid()
+				
+				if self.seismic_calculation_method == 'modes':
+					self.calculate_density_solid()
 				self.calculate_density_fluid(method = method,sol_idx = index)
 				
 				self.melt_fluid_frac = np.zeros(len(self.melt_fluid_mass_frac))
@@ -5217,7 +5274,8 @@ class pide(object):
 						
 						self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i]))))
 			
-			alpha = (shear_mod * (9*bulk_mod + 8*shear_mod)) / (6*(bulk_mod + 2*shear_mod))
+			alpha = (shear_mod * (9*bulk_mod + 8*shear_mod)) / (6 * (bulk_mod + 2*shear_mod))
+			
 			if method == 'array':
 				#Hashin-Shtrikman Upper-Bound (reference/host phase = solid, the stiff phase)
 				#This is the bound pide's original code computed, previously mislabeled 'Lower-Bound' in the comment.
@@ -5750,7 +5808,7 @@ class pide(object):
 			
 			self.water_fugacity_calculated = True
 			
-	def calculate_composition_from_triangle(self, npz_path="burnman_pyx_lherz_dun.npz", method='array', **kwargs):
+	def calculate_composition_modulii_from_triangle(self, npz_path=None, method='array', **kwargs):
 
 		"""
 		Populate bulk composition, modal mineralogy, and per-phase xFe from
@@ -5788,9 +5846,16 @@ class pide(object):
 			self._triangle_query = BurnmanTableQuery(npz_path)
 			self.triangle_table_loaded = True
 		
+		if getattr(self, 'v_p', None) is None:
+			self.v_p = np.ones(len(self.T))
+			self.v_s = np.ones(len(self.T))
+			self.v_bulk = np.ones(len(self.T))
+			self.density_solids = np.ones(len(self.T)) * 3.3
+			
 		if len(self.v_p) != len(self.T):
 			self.v_p = np.ones(len(self.T))
 			self.v_s = np.ones(len(self.T))
+			self.v_bulk = np.ones(len(self.T))
 			
 		if len(self.density_solids) != len(self.T):
 			self.density_solids = np.ones(len(self.T)) * 3.3
@@ -5824,16 +5889,14 @@ class pide(object):
 			self.Na2O[i] = result['Na2O']
 			self.v_p[i] = result['v_p']
 			self.v_s[i] = result['v_s']
+			self.v_bulk[i] = np.sqrt(self.v_p[i]**2 - (4/3) * self.v_s[i]**2)
 			self.density_solids[i] = result['density']
 	
 		if method == 'index':
 			_solve_single(idx_node)
 		else:
 			for i in range(len(self.T)):
-				_solve_single(i)
-		
-		self.seismic_calculation_method = 'gibbs'
-	
+				_solve_single(i)	
 		
 	def _load_mantle_water_partitions(self, method, **kwargs):
 	
