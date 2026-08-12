@@ -909,11 +909,768 @@ def metropolis_hastings_two_param(object, cond_list, initial_params, param_name_
 		save_h5_files(array_list=misfits_all, array_names=array_names_idx, file_name=distr_file_names + '_misfit_all.h5')
 
 	return sample_distr, acceptance_rates, misfits, samples_all, misfits_all
+
+def _fractions_to_unconstrained(f_pyx, f_lherz, eps=1e-6):
+	"""Real (f_pyx, f_lherz) -> two unconstrained reals that can take any
+	value. f_dun = 1 - f_pyx - f_lherz is implied."""
+	f_dun = 1.0 - f_pyx - f_lherz
+	u1 = np.clip(f_dun, eps, 1 - eps)
+	remaining = f_pyx + f_lherz
+	u2 = np.clip(f_pyx / remaining, eps, 1 - eps) if remaining > eps else 0.5
+	return np.log(u1 / (1 - u1)), np.log(u2 / (1 - u2))
+
+
+def _unconstrained_to_fractions(x1, x2):
+	"""Two unconstrained reals -> valid (f_pyx, f_lherz). ANY input gives a
+	pair satisfying f_pyx >= 0, f_lherz >= 0, f_pyx + f_lherz <= 1, so the
+	triangle constraint can never be violated and never needs checking."""
+	u1 = 1.0 / (1.0 + np.exp(-x1))
+	u2 = 1.0 / (1.0 + np.exp(-x2))
+	remaining = 1.0 - u1
+	return remaining * u2, remaining * (1.0 - u2)
 	
 def _solv_MCMC_column(index, object, depths, moho_depth,
 	cond_list, vp_list, vs_list,
 	sigma_cond, sigma_vp, sigma_vs,
-	initial_SHF,
+	initial_SHF, initial_lab_temp,
+	initial_params, param_names,
+	upper_limits, lower_limits,
+	SHF_bounds,
+	proposal_stds, n_iter, burning,
+	melt_thermodyn=False, melt_thermodyn_interp=None,
+	adaptive_alg=True, ideal_acceptance_bounds=[0.2, 0.3],
+	adaptive_check_length=1000, step_size_limits=None,
+	param_priors=None, SHF_prior=None, lab_temp = 1350,
+	invert_lab_temp = False, lab_temp_bounds = None,
+	composition = None, max_widen_attempts = 3,
+	record_names = None,
+	**kwargs):
+	"""
+	MCMC column solver for geotherm-based inversion.
+
+	Samples SHF as a scalar parameter, plus depth-varying parameters
+	(e.g., bulk_water, bulk_xfe) along a depth column. Temperature is
+	derived from the geotherm function using SHF and a LAB temperature.
+
+	If invert_lab_temp is False (default), lab_temp is held FIXED at the
+	value given by the `lab_temp` argument (Celsius), exactly as before —
+	this is a backward-compatible default, nothing else changes.
+
+	If invert_lab_temp is True, LAB temperature becomes a SECOND sampled
+	scalar parameter alongside SHF, using `initial_lab_temp` as its
+	starting value (per column, same shape as initial_SHF) and
+	`lab_temp_bounds` as its (min, max) bounds (same shape as SHF_bounds).
+	The fixed `lab_temp` argument is ignored in this case.
+
+	IMPORTANT: proposal_stds ordering changes depending on invert_lab_temp:
+		invert_lab_temp=False: [SHF_std, param0_std, param1_std, ...]
+		invert_lab_temp=True:  [SHF_std, lab_temp_std, param0_std, param1_std, ...]
+
+	record_names lets you additionally record ANY other object attribute
+	(e.g. ['ol_frac', 'ol_xfe', 'garnet_frac']) at every depth, alongside
+	the sampled parameters, without those attributes being sampled
+	themselves — they're just read off the object and stored, wherever
+	they end up after everything else that iteration set. The recorded
+	dicts are always the LAST two items in the return tuple, regardless
+	of which other flags (invert_lab_temp, melt_thermodyn) are set, so
+	results[-2] / results[-1] always work.
+
+	Parameters
+	----------
+	index : int
+		Column index for parallel dispatch.
+	object : pide object
+		Pre-configured pide instance with length = len(depths).
+	depths : array
+		Depth nodes in km.
+	moho_depth : float
+		Moho depth in km (fixed).
+	cond_obs : array
+		Observed conductivity at each depth node [S/m].
+	vp_obs : array or None
+		Observed Vp at each depth node [km/s].
+	vs_obs : array or None
+		Observed Vs at each depth node [km/s].
+	sigma_cond : array
+		Conductivity uncertainty at each depth (log space).
+	sigma_vp : array or None
+		Vp uncertainty at each depth [km/s].
+	sigma_vs : array or None
+		Vs uncertainty at each depth [km/s].
+	initial_SHF : array
+		Initial surface heat flow [mW/m^2], per column.
+	initial_lab_temp : array
+		Initial LAB temperature [Celsius], per column. Only used if
+		invert_lab_temp=True; otherwise ignored (pass anything, e.g. None).
+	initial_params : array
+		Shape (n_depths, n_params). Initial values for depth-varying params.
+	param_names : list of str
+		Names of depth-varying parameters (e.g., ['bulk_water', 'bulk_xfe']).
+	upper_limits : tuple of arrays
+		Upper bounds per parameter. Each array length = n_depths.
+	lower_limits : tuple of arrays
+		Lower bounds per parameter. Each array length = n_depths.
+	SHF_bounds : tuple
+		(min_SHF, max_SHF), per column.
+	proposal_stds : list
+		Step sizes. See ordering note above.
+	n_iter : int
+		Total MCMC iterations.
+	burning : int
+		Burn-in iterations.
+	melt_thermodyn : bool
+		If True, calculate melt from Katz lookup.
+	melt_thermodyn_interp : RegularGridInterpolator or None
+		3D interpolator (T_celsius, water_wt%, P_GPa) -> melt fraction.
+	adaptive_alg : bool
+		Enable adaptive step sizes.
+	ideal_acceptance_bounds : list
+		Target acceptance rate [low, high].
+	adaptive_check_length : int
+		Iterations between adaptive checks.
+	step_size_limits : list or None
+		[min, max] step size per parameter, same ordering as proposal_stds.
+	param_priors : list or None
+		Per depth-varying parameter. Each is None or (mean_array, sigma_array).
+	SHF_prior : tuple or None
+		(mean, sigma) for Gaussian SHF prior.
+	lab_temp : float
+		Fixed LAB temperature in Celsius, used when invert_lab_temp=False.
+		Default 1350.
+	invert_lab_temp : bool
+		If True, sample LAB temperature as a free scalar parameter instead
+		of holding it fixed. Default False.
+	lab_temp_bounds : tuple or None
+		(min_lab_temp, max_lab_temp), per column. Required if
+		invert_lab_temp=True; ignored otherwise.
+	record_names : list of str or None
+		Names of additional object attributes to record at every depth
+		(e.g. ['ol_frac', 'ol_xfe']), read off the object as-is, not
+		sampled. Default None (records nothing extra).
+	"""
+
+	melt_frac_limit = kwargs.pop('melt_frac_limit',0.005)
+	comp_index = kwargs.pop('comp_index',[0] * len(param_names))
+
+	#deep copy object to not confuse multiprocessing workers.
+	object = copy.deepcopy(object)
+
+	widen_count = 0
+
+	#determining length of the parametrisation
+	n_depths = len(depths)
+	n_params = len(param_names)
+
+	frac_bool = [False] * n_params
+	comp_index_sub = None
+
+	for ii in range(n_params):
+		if 'frac' in param_names[ii]:
+			if param_names[ii] != 'melt_fluid_mass_frac':
+				frac_bool[ii] = True
+				comp_index_sub = ii
+
+	# Temperature and pressure are controlled by the geotherm, not directly sampled
+	for name in param_names:
+		if name in ['T', 'p']:
+			raise ValueError(f"'{name}' cannot be a free parameter in column mode. "
+				f"Temperature is controlled by SHF and pressure is derived from the geotherm.")
+
+	if ('f_pyx' in param_names) or ('f_lherz' in param_names):
+		triangle_calculation = True
+		if 'bulk_xfe' in param_names:
+			raise AttributeError('Both triangle composition (f_pyx or f_lherz) and bulk_xfe can not be considered to vary with composition at the same time.')
+	else:
+		triangle_calculation = False
+
+	if invert_lab_temp == True and lab_temp_bounds is None:
+		raise ValueError('lab_temp_bounds must be provided when invert_lab_temp=True.')
+
+	if record_names is None:
+		record_names = []
+
+	# --- Scalars: SHF is always sampled; lab_temp is optionally a second
+	# sampled scalar. Each scalar gets n_params "slots" of sampling weight,
+	# same relative emphasis SHF always had -- this generalizes the old
+	# single-scalar setup without changing behavior when invert_lab_temp=False.
+	scalar_names = ['SHF']
+	scalar_slots = [n_params]
+	scalar_bounds_list = [SHF_bounds]
+	current_scalars = [initial_SHF[index]]
+
+	if invert_lab_temp == True:
+		scalar_names.append('lab_temp')
+		scalar_slots.append(n_params)
+		scalar_bounds_list.append(lab_temp_bounds)
+		current_scalars.append(initial_lab_temp[index])
+
+	current_scalars = np.array(current_scalars, dtype=float)
+	n_scalars = len(scalar_names)
+	n_scalar_total = sum(scalar_slots)
+	scalar_slot_bounds = np.cumsum([0] + scalar_slots)
+
+	n_param_total = n_params * n_depths
+	n_total = n_param_total + n_scalar_total
+
+	def _get_scalar_idx(dim):
+		return int(np.searchsorted(scalar_slot_bounds, dim, side='right') - 1)
+
+	def _get_step_idx(dim):
+		if dim < n_scalar_total:
+			return _get_scalar_idx(dim)
+		else:
+			dim_offset = dim - n_scalar_total
+			return n_scalars + dim_offset // n_depths
+
+	# Deep copy mutable inputs
+	proposal_stds = list(proposal_stds)
+	if param_priors is not None:
+		param_priors = copy.deepcopy(param_priors)
+
+	current_depth_params = np.array(initial_params, dtype=float)  # shape (n_depths, n_params)
+	if current_depth_params.ndim == 1:
+		current_depth_params = current_depth_params.reshape(-1, 1)  # (n_depths, 1)
+
+	# --- Determine which params need water distribution ---
+	water_solv = 'bulk_water' in param_names
+
+	melt_solv = 'melt_fluid_mass_frac' in param_names
+	if melt_thermodyn is True:
+		melt_solv = True
+
+	# --- Calculate initial geotherm and set on object ---
+	def _update_geotherm(shf_val, lab_temp_val):
+		"""Calculate geotherm and interpolate onto depth nodes."""
+		T_full, depth_full, p_full, idx_LAB = calculate_hasterok2011_geotherm(
+			SHF=shf_val, T_0=0, max_depth=depths[-1] + 10,
+			moho=moho_depth[index], adiabat=True,
+			thermal_lab = True, thermal_lab_temp = lab_temp_val)
+
+		# Interpolate onto our depth nodes
+		T_interp_func = interp1d(depth_full, T_full, kind='linear', fill_value='extrapolate')
+		P_interp_func = interp1d(depth_full, p_full, kind='linear', fill_value='extrapolate')
+
+		T_at_depths = T_interp_func(depths)
+		P_at_depths = P_interp_func(depths)
+
+		return T_at_depths, P_at_depths
+
+	#Generating the initial temperature from initial SHF (and lab_temp if inverted) distribution.
+	_lab_temp_for_geotherm = current_scalars[1] if invert_lab_temp else lab_temp
+	T_init, P_init = _update_geotherm(shf_val=current_scalars[0], lab_temp_val=_lab_temp_for_geotherm)
+	object.set_temperature(T_init)
+	object.set_pressure(P_init)
+
+	#Setting the composition if defined, recasting into temperature and pressure length if single.
+	if composition is not None:
+		object.set_composition_solid_mineral(**composition)
+	else:
+		object.set_composition_solid_mineral(reval = True)
+
+	#Setting all the parameters defined...
+	for ii in range(n_params):
+		getattr(object, param_names[ii])[:n_depths] = current_depth_params[:, ii]
+
+	# converting the f_pyx/f_lherz columns into unconstrained coordinates ---
+	# From here on, these two columns of current_depth_params hold logit-space
+	# values (any real number), NOT fractions. They get converted back to real
+	# fractions only where the physics needs them, and before samples are stored.
+	if triangle_calculation == True:
+		idx_fp = param_names.index('f_pyx')
+		idx_fl = param_names.index('f_lherz')
+		for iz in range(n_depths):
+			x1, x2 = _fractions_to_unconstrained(
+				current_depth_params[iz, idx_fp], current_depth_params[iz, idx_fl])
+			current_depth_params[iz, idx_fp] = x1
+			current_depth_params[iz, idx_fl] = x2
+
+	#if bulk xFe is changed distributing iron among defined minerals.
+	if 'bulk_xfe' in param_names:
+		if triangle_calculation == False:
+			object.mantle_xfe_distribute()
+		else:
+			raise AttributeError('xFe and triangle gibbs calculation method cannot be used at the same time.')
+	else:
+		if triangle_calculation == True:
+			object.calculate_composition_modulii_from_triangle(method = 'array')
+
+	#Calculating thermodynamic calculation of partial melting is True.
+	current_melt = None
+
+	if melt_thermodyn and melt_thermodyn_interp is not None:
+
+		idx_water = param_names.index('bulk_water') if 'bulk_water' in param_names else None
+		current_melt = np.zeros(n_depths)
+		for iz in range(n_depths):
+			T_C = object.T[iz] - 273.15
+			if idx_water is not None:
+				water_wt = current_depth_params[iz, idx_water] * 1e-4
+			else:
+				water_wt = object.bulk_water[iz] * 1e-4
+			melt_val = float(melt_thermodyn_interp([T_C, water_wt, object.p[iz]]))
+			if melt_val < melt_frac_limit:
+				melt_val = 0.0
+			current_melt[iz] = melt_val
+		object.melt_fluid_mass_frac[:n_depths] = current_melt
+
+	# --- Set up fluid density interpolation for melt calculations ---
+	if water_solv == True:
+
+		object.mantle_water_distribute()
+
+		if (melt_solv == True) or (melt_thermodyn == True):
+
+			#to interpolation of fluid density so eos do not have to be solved at each iteration.
+			try:
+				idx_water = param_names.index('bulk_water')
+				water_end = upper_limits[idx_water][index]
+				water_end = np.amax(water_end)
+			except ValueError:
+				water_end = 1e5
+
+			object.calculate_density_fluid(sol_idx = index, method = 'array',
+			interp_for_iter = True, water_start = 0, water_end = water_end)
+
+
+	if (vp_list is not None) or (vs_list is not None):
+		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'array')
+
+	#Calculating the initial conductivity
+	if cond_list is not None:
+		cond_init = object.calculate_conductivity(method = 'array')
+
+	if cond_list is not None:
+		current_likelihood_cond, misf_cond = _likelihood(cond_init, cond_list[index], sigma_cond[index])
+		current_likelihood_cond = np.sum(current_likelihood_cond)
+	else:
+		current_likelihood_cond = 1
+		misf_cond = np.zeros(len(object.T))
+
+	if vp_list is not None:
+		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
+		current_likelihood_vp = np.sum(current_likelihood_vp)
+	else:
+		current_likelihood_vp = 1
+		misf_vp = np.zeros(len(object.T))
+	if vs_list is not None:
+		current_likelihood_vs, misf_vs = _likelihood(vs_init, vs_list[index], sigma_vs[index], norm = 'linear')
+		current_likelihood_vs = np.sum(current_likelihood_vs)
+	else:
+		current_likelihood_vs = 1
+		misf_vs = np.zeros(len(object.T))
+
+	current_prior_log = 0.0
+
+	#SHF prior:
+	if SHF_prior is not None:
+		current_prior_log += -0.5 * ((current_scalars[0] - SHF_prior[index][0]) / SHF_prior[index][1])**2
+
+	#DO THIS LATER, does not work now.
+	if param_priors is not None:
+		for ii in range(n_params):
+			if param_priors[ii] is not None:
+				prior_mean = param_priors[ii][0]   # array length n_depths
+				prior_sigma = param_priors[ii][1]   # array length n_depths
+				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
+
+	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + current_prior_log)
+
+	samples_SHF = []
+	samples_lab_temp = []
+	samples_temp = []
+	samples_depth_params = []
+	misfits_cond = []
+	misfits_vp = []
+	misfits_vs = []
+	misfits_all_cond = []
+	misfits_all_vp = []
+	misfits_all_vs = []
+	samples_SHF_all = []
+	samples_lab_temp_all = []
+	samples_temp_all = []
+	samples_depth_params_all = []
+	acceptance_rates = []
+	melt_samples = []
+	melt_samples_all = []
+	accepted = 0
+
+	# --- Additional recorded object attributes (not sampled, just read off
+	# the object and stored alongside everything else). ---
+	samples_record = {name: [] for name in record_names}
+	samples_record_all = {name: [] for name in record_names}
+
+	# --- Bounds ---
+	param_mins_depth = np.array([lower_limits[i][index] for i in range(n_params)])  # (n_params, n_depths)
+	param_maxs_depth = np.array([upper_limits[i][index] for i in range(n_params)])
+
+	# Ensure 2D even with single parameter
+	if param_mins_depth.ndim == 1:
+		param_mins_depth = param_mins_depth.reshape(1, -1)
+		param_maxs_depth = param_maxs_depth.reshape(1, -1)
+
+	if triangle_calculation == True:
+		# these columns are no longer fractions, so their user-supplied
+		# [0,1] bounds no longer apply -- replace with a wide unconstrained
+		# range (±6 in logit space covers fractions ~0.0025 to ~0.9975)
+		param_mins_depth[idx_fp, :] = -6.0
+		param_maxs_depth[idx_fp, :] = 6.0
+		param_mins_depth[idx_fl, :] = -6.0
+		param_maxs_depth[idx_fl, :] = 6.0
+
+	def _to_real_fractions(params):
+		"""Convert the stored logit-space f_pyx/f_lherz columns back to real
+		fractions, for saving samples. Every other column (e.g. bulk_water)
+		is copied through untouched, and nothing is converted at all if the
+		triangle method isn't in use."""
+		out = params.copy()
+		if triangle_calculation == True:
+			for iz in range(n_depths):
+				fp, fl = _unconstrained_to_fractions(out[iz, idx_fp], out[iz, idx_fl])
+				out[iz, idx_fp] = fp
+				out[iz, idx_fl] = fl
+		return out
+
+	print(text_color.GREEN + 'Monte-Carlo loop is started' + text_color.END)
+	print(text_color.YELLOW + f'{n_iter*2} total samples, {n_iter} minimum samples.' + text_color.END)
+	print(text_color.RED + f'{burning} burning samples.' + text_color.END)
+	if invert_lab_temp == True:
+		print(text_color.YELLOW + 'LAB temperature is being inverted as a free scalar parameter.' + text_color.END)
+	if len(record_names) > 0:
+		print(text_color.YELLOW + f'Additionally recording: {record_names}' + text_color.END)
+
+	n_reject_bounds = 0
+	n_reject_nan = 0
+	n_reject_likelihood = 0
+
+	n_step_dims = n_scalars + n_params
+	n_attempted_per_dim = [0] * n_step_dims
+	n_accepted_per_dim = [0] * n_step_dims
+
+	for _ in range(n_iter*2):
+
+		# Pick random dimension
+		rand_dim = np.random.randint(n_total)
+		step_idx = _get_step_idx(rand_dim)
+		n_attempted_per_dim[step_idx] += 1
+
+		randomgen = np.random.normal(0, proposal_stds[step_idx])
+
+		# Copy current state
+		proposed_scalars = current_scalars.copy()
+		proposed_depth_params = current_depth_params.copy()
+		continue_bounds = True
+
+		if rand_dim < n_scalar_total:
+			s_idx = _get_scalar_idx(rand_dim)
+			proposed_scalars[s_idx] = current_scalars[s_idx] + randomgen
+			lo, hi = scalar_bounds_list[s_idx][index]
+			if proposed_scalars[s_idx] < lo or proposed_scalars[s_idx] > hi:
+				continue_bounds = False
+		else:
+			dim_offset = rand_dim - n_scalar_total
+			param_idx = dim_offset // n_depths
+			depth_idx = dim_offset % n_depths
+
+			proposed_depth_params[depth_idx, param_idx] += randomgen
+
+			if (proposed_depth_params[depth_idx, param_idx] < param_mins_depth[param_idx, depth_idx] or
+				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[param_idx, depth_idx]):
+				continue_bounds = False
+
+		if continue_bounds == True:
+
+			if rand_dim < n_scalar_total:
+				_lab_temp_proposed = proposed_scalars[1] if invert_lab_temp else lab_temp
+				T_, P_= _update_geotherm(proposed_scalars[0], _lab_temp_proposed)
+				object.set_temperature(T_)
+				object.set_pressure(P_)
+
+				#if bulk xFe is changed distributing iron among defined minerals.
+				if 'bulk_xfe' in param_names:
+					object.mantle_xfe_distribute(method = 'array')
+				else:
+					if triangle_calculation == True:
+						for iz in range(n_depths):
+							fp, fl = _unconstrained_to_fractions(
+								proposed_depth_params[iz, idx_fp],
+								proposed_depth_params[iz, idx_fl])
+							object.f_pyx[iz] = fp
+							object.f_lherz[iz] = fl
+
+				if melt_thermodyn and melt_thermodyn_interp is not None:
+
+					current_melt = np.zeros(n_depths)
+					for iz in range(n_depths):
+						T_C = object.T[iz] - 273.15
+						water_wt = object.bulk_water[iz] * 1e-4
+						melt_frac = float(melt_thermodyn_interp([T_C, water_wt, object.p[iz]]))
+						if melt_frac < melt_frac_limit:
+							melt_frac = 0.0
+						current_melt[iz] = melt_frac
+					object.melt_fluid_mass_frac[:n_depths] = current_melt
+
+				# --- Set up fluid density interpolation for melt calculations ---
+				if water_solv == True:
+
+					object.mantle_water_distribute(method = 'array')
+			else:
+
+				#if one of the parameters are a composition parameter.
+				if frac_bool[param_idx] == True:
+
+					if triangle_calculation == True:
+						raise AttributeError('Single compositional value and triangle calculation method cannot be used together.')
+
+					if object.solid_phase_method == 2:
+						_comp_list = [object.quartz_frac[depth_idx], object.plag_frac[depth_idx], object.amp_frac[depth_idx], object.kfelds_frac[depth_idx], object.opx_frac[depth_idx], object.cpx_frac[depth_idx],
+							object.mica_frac[depth_idx], object.garnet_frac[depth_idx], object.sulphide_frac[depth_idx], object.graphite_frac[depth_idx], object.ol_frac[depth_idx], object.sp_frac[depth_idx], object.rwd_wds_frac[depth_idx],
+							object.perov_frac[depth_idx], object.mixture_frac[depth_idx], object.other_frac[depth_idx]]
+					else:
+						_comp_list = [object.granite_frac[depth_idx],object.granulite_frac[depth_idx],object.sandstone_frac[depth_idx],object.gneiss_frac[depth_idx],object.amphibolite_frac[depth_idx],
+							object.basalt_frac[depth_idx],object.mud_frac[depth_idx],object.gabbro_frac[depth_idx],object.other_rock_frac[depth_idx]]
+
+					comp_old = _comp_list[comp_index[comp_index_sub]]
+
+					comp_list = _comp_adjust_(np.array(_comp_list), proposed_depth_params[depth_idx, comp_index_sub], comp_old)
+
+					for idx_t in range(len(_comp_list)):
+						if object.solid_phase_method == 2:
+							object.mineral_frac_list[idx_t][depth_idx] = comp_list[idx_t]
+						else:
+							object.rock_frac_list[idx_t][depth_idx] = comp_list[idx_t]
+
+				#Changing the depth dependent parameter.
+				if triangle_calculation == True and param_names[param_idx] in ('f_pyx', 'f_lherz'):
+					# these columns hold logit-space values, so convert the PAIR
+					# back to real fractions before handing them to the physics
+					fp, fl = _unconstrained_to_fractions(
+						proposed_depth_params[depth_idx, idx_fp],
+						proposed_depth_params[depth_idx, idx_fl])
+					object.f_pyx[depth_idx] = fp
+					object.f_lherz[depth_idx] = fl
+				else:
+					getattr(object, param_names[param_idx])[depth_idx] = proposed_depth_params[depth_idx, param_idx]
+
+				#if bulk xFe is changed distributing iron among defined minerals.
+				if 'bulk_xfe' in param_names:
+					object.mantle_xfe_distribute(method = 'index', sol_idx = depth_idx)
+
+				if melt_thermodyn and melt_thermodyn_interp is not None:
+
+					T_C = object.T[depth_idx] - 273.15
+					water_wt = object.bulk_water[depth_idx] * 1e-4
+					melt_frac = float(melt_thermodyn_interp([T_C, water_wt, object.p[depth_idx]]))
+					if melt_frac < melt_frac_limit:
+						melt_frac = 0.0
+					object.melt_fluid_mass_frac[depth_idx] = melt_frac
+
+				# --- Set up fluid density interpolation for melt calculations ---
+				if water_solv == True:
+
+					object.mantle_water_distribute(method = 'index', sol_idx = depth_idx)
+
+			#Calculating the conductivity and seismic velocities.
+			if (vp_list is not None) or (vs_list is not None):
+				v_bulk_, vp_, vs_ = object.calculate_seismic_velocities(method = 'array')
+
+			#calculating conductivity later, because the conductivity may depend on gibbs-derived mineral
+			#assemblage calculated within calculate_seismic_velocities call
+			if cond_list is not None:
+				cond_ = object.calculate_conductivity(method = 'array')
+
+			if cond_list is not None:
+				proposed_likelihood_cond, misf_cond = _likelihood(cond_, cond_list[index], sigma_cond[index])
+				proposed_likelihood_cond = np.sum(proposed_likelihood_cond)
+			else:
+				proposed_likelihood_cond = 1
+				misf_cond = np.zeros(len(object.T))
+
+			if vp_list is not None:
+				proposed_likelihood_vp, misf_vp = _likelihood(vp_, vp_list[index], sigma_vp[index], norm = 'linear')
+				proposed_likelihood_vp = np.sum(proposed_likelihood_vp)
+			else:
+				proposed_likelihood_vp = 1
+				misf_vp = np.zeros(len(object.T))
+			if vs_list is not None:
+				proposed_likelihood_vs, misf_vs = _likelihood(vs_, vs_list[index], sigma_vs[index], norm = 'linear')
+				proposed_likelihood_vs = np.sum(proposed_likelihood_vs)
+			else:
+				proposed_likelihood_vs = 1
+				misf_vs = np.zeros(len(object.T))
+
+			#Calculate prior likelihood for proposed parameters
+			proposed_prior = 0.0
+			if param_priors is not None:
+				for ii in range(n_params):
+					if param_priors[ii] is not None:
+						prior_mean = param_priors[ii][0]   # array length n_depths
+						prior_sigma = param_priors[ii][1]   # array length n_depths
+						proposed_prior += np.sum(-0.5 * ((proposed_depth_params[:, ii] - prior_mean) / prior_sigma)**2)
+
+			proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + proposed_prior)
+
+			if np.isnan(proposed_likelihood):
+				n_reject_nan += 1
+			else:
+				# Calculate acceptance probability
+				acceptance_ratio = proposed_likelihood / current_likelihood
+
+				if np.random.rand() < acceptance_ratio:
+
+					current_scalars = proposed_scalars.copy()
+					current_depth_params = proposed_depth_params.copy()
+					current_likelihood = proposed_likelihood
+
+					if _ > burning:
+						samples_SHF.append(current_scalars[0])
+						if invert_lab_temp == True:
+							samples_lab_temp.append(current_scalars[1])
+						samples_temp.append(object.T.copy())
+						samples_depth_params.append(_to_real_fractions(current_depth_params))
+						misfits_cond.append(misf_cond)
+						misfits_vp.append(misf_vp)
+						misfits_vs.append(misf_vs)
+						if melt_thermodyn == True:
+							melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
+						for rname in record_names:
+							samples_record[rname].append(np.array(getattr(object, rname)[:n_depths]).copy())
+						accepted += 1
+						n_accepted_per_dim[step_idx] += 1
+				else:
+					n_reject_likelihood += 1
+
+		else:
+			n_reject_bounds += 1
+
+		if (_ - burning) > 0:
+			acceptance_rate = accepted / (_ - burning)
+
+		else:
+			acceptance_rate = 0
+
+		if _ > burning:
+			# After base iterations, check if we need to continue
+			if _ >= n_iter and (_ - n_iter) % 2000 == 0:
+				if  0.2 <= acceptance_rate <= 0.3:
+					print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
+					break
+				else:
+					print(f'Acceptance rate {acceptance_rate:.3f} still not converged to desired acceptance rate. Continuing to maximum number of iterations...')
+
+		acceptance_rates.append(acceptance_rate)
+		misfits_all_cond.append(misf_cond.copy())
+		misfits_all_vp.append(misf_vp.copy())
+		misfits_all_vs.append(misf_vs.copy())
+		samples_depth_params_all.append(_to_real_fractions(current_depth_params))
+		samples_SHF_all.append(current_scalars[0])
+		if invert_lab_temp == True:
+			samples_lab_temp_all.append(current_scalars[1])
+		samples_temp_all.append(object.T.copy())
+		for rname in record_names:
+			samples_record_all[rname].append(np.array(getattr(object, rname)[:n_depths]).copy())
+
+
+		if melt_thermodyn == True:
+			melt_samples_all.append(object.melt_fluid_mass_frac[:n_depths].copy())
+
+		# Check if stuck after enough post-burn-in samples
+		if _ != 0:
+			if _ > burning and ((_ - burning) % 5000 == 0) and accepted == 0:
+				print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
+				if widen_count < max_widen_attempts:
+					widen_count += 1
+					# Widen priors for parameters that have them
+					if param_priors is not None:
+						for ii in range(n_params):
+							if param_priors[ii] is not None:
+								param_priors[ii][1][index] = param_priors[ii][1][index] * 1.25
+								print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} to sigma={param_priors[ii][1][index]:.1f}, attempt {widen_count}' + text_color.END)
+
+		if acceptance_rate < 0.1:
+			color_ovr = text_color.RED
+		elif acceptance_rate < ideal_acceptance_bounds[0]:
+			color_ovr = text_color.YELLOW
+		elif acceptance_rate > ideal_acceptance_bounds[1]:
+			color_ovr = text_color.YELLOW
+		elif acceptance_rate > 0.5:
+			color_ovr = text_color.RED
+		else:
+			color_ovr = text_color.GREEN
+
+		if adaptive_alg == True:
+			if (_ + 1) % adaptive_check_length == 0:
+				print(f'Rejected based on likelihood per cent(%): {(1e2*n_reject_likelihood / _):.2f}')
+				print(f'Rejected based on NaN petrophysical/thermodynamic calculation per cent(%): {(1e2*n_reject_nan / _):.2f}')
+				print(f'Rejected based on bound limitations per cent(%): {(1e2*n_reject_bounds / _):.2f}')
+
+				for d in range(n_step_dims):
+					if n_attempted_per_dim[d] == 0:
+						continue
+					dim_acceptance = n_accepted_per_dim[d] / n_attempted_per_dim[d]
+					if dim_acceptance < 0.1:
+						proposal_stds[d] *= 0.8
+						status, color = 'very low', text_color.RED
+					elif dim_acceptance < ideal_acceptance_bounds[0]:
+						proposal_stds[d] *= 0.95
+						status, color = 'low', text_color.YELLOW
+					elif dim_acceptance > 0.5:
+						proposal_stds[d] *= 1.2
+						status, color = 'very high', text_color.RED
+					elif dim_acceptance > ideal_acceptance_bounds[1]:
+						proposal_stds[d] *= 1.05
+						status, color = 'high', text_color.YELLOW
+					else:
+						status, color = 'good', text_color.GREEN
+					if step_size_limits is not None:
+						proposal_stds[d] = min(proposal_stds[d], step_size_limits[d])
+					name = scalar_names[d] if d < n_scalars else param_names[d - n_scalars]
+					print(color + f'  {name}: acceptance {status} ({dim_acceptance:.3f}), '
+						f'attempted={n_attempted_per_dim[d]}, step={proposal_stds[d]:.4f}' + text_color.END)
+
+				n_attempted_per_dim = [0] * n_step_dims
+				n_accepted_per_dim = [0] * n_step_dims
+
+				print(color_ovr + f'Overall acceptance: {acceptance_rate:.3f} | {(_/n_iter)*100:.1f}% done' + text_color.END)
+		else:
+			if (_ + 1) % adaptive_check_length == 0:
+				print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
+
+
+	misfits = [misfits_cond, misfits_vp, misfits_vs]
+	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs]
+
+	samples_record = {k: np.array(v) for k, v in samples_record.items()}
+	samples_record_all = {k: np.array(v) for k, v in samples_record_all.items()}
+
+	if invert_lab_temp == True:
+		if melt_thermodyn == False:
+			return (np.array(samples_SHF), np.array(samples_lab_temp), np.array(samples_temp),
+				np.array(samples_depth_params), np.array(acceptance_rates), misfits,
+				np.array(samples_SHF_all), np.array(samples_lab_temp_all),
+				np.array(samples_depth_params_all), misfits_all,
+				samples_record, samples_record_all)
+		else:
+			return (np.array(samples_SHF), np.array(samples_lab_temp), np.array(samples_temp),
+				np.array(samples_depth_params), np.array(acceptance_rates), misfits,
+				np.array(samples_SHF_all), np.array(samples_lab_temp_all),
+				np.array(samples_depth_params_all), misfits_all,
+				np.array(melt_samples), np.array(melt_samples_all),
+				samples_record, samples_record_all)
+	else:
+		if melt_thermodyn == False:
+			return (np.array(samples_SHF), np.array(samples_temp), np.array(samples_depth_params),
+			np.array(acceptance_rates), misfits, np.array(samples_SHF_all),np.array(samples_depth_params_all),
+			misfits_all, samples_record, samples_record_all)
+		else:
+			return (np.array(samples_SHF), np.array(samples_temp), np.array(samples_depth_params),
+			np.array(acceptance_rates), misfits, np.array(samples_SHF_all),np.array(samples_depth_params_all),
+			misfits_all, np.array(melt_samples), np.array(melt_samples_all),
+			samples_record, samples_record_all)
+		
+def _solv_MCMC_column_old(index, object, depths, moho_depth,
+	cond_list, vp_list, vs_list,
+	sigma_cond, sigma_vp, sigma_vs,
+	initial_SHF, initial_lab_temp,
 	initial_params, param_names,
 	upper_limits, lower_limits,
 	SHF_bounds,
@@ -1044,7 +1801,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	current_depth_params = np.array(initial_params, dtype=float)  # shape (n_depths, n_params)
 	if current_depth_params.ndim == 1:
 		current_depth_params = current_depth_params.reshape(-1, 1)  # (n_depths, 1)
-	
+		
 	# --- Determine which params need water distribution ---
 	water_solv = 'bulk_water' in param_names
 	
@@ -1083,6 +1840,19 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	#Setting all the parameters defined...
 	for ii in range(n_params):
 		getattr(object, param_names[ii])[:n_depths] = current_depth_params[:, ii]
+		
+	# converting the f_pyx/f_lherz columns into unconstrained coordinates ---
+	# From here on, these two columns of current_depth_params hold logit-space
+	# values (any real number), NOT fractions. They get converted back to real
+	# fractions only where the physics needs them, and before samples are stored.
+	if triangle_calculation == True:
+		idx_fp = param_names.index('f_pyx')
+		idx_fl = param_names.index('f_lherz')
+		for iz in range(n_depths):
+			x1, x2 = _fractions_to_unconstrained(
+				current_depth_params[iz, idx_fp], current_depth_params[iz, idx_fl])
+			current_depth_params[iz, idx_fp] = x1
+			current_depth_params[iz, idx_fl] = x2
 	
 	#if bulk xFe is changed distributing iron among defined minerals.
 	if 'bulk_xfe' in param_names:
@@ -1093,7 +1863,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	else:
 		if triangle_calculation == True:
 			object.calculate_composition_modulii_from_triangle(method = 'array')
-
+			
 	#Calculating thermodynamic calculation of partial melting is True.
 	current_melt = None
 	
@@ -1131,11 +1901,13 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			object.calculate_density_fluid(sol_idx = index, method = 'array',
 			interp_for_iter = True, water_start = 0, water_end = water_end)
 
+	
+	if (vp_list is not None) or (vs_list is not None):
+		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'array')
+		
 	#Calculating the initial conductivity
 	if cond_list is not None:
 		cond_init = object.calculate_conductivity(method = 'array')
-	if (vp_list is not None) or (vs_list is not None):
-		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'array')
 	
 	if cond_list is not None:
 		current_likelihood_cond, misf_cond = _likelihood(cond_init, cond_list[index], sigma_cond[index])
@@ -1172,7 +1944,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
 	
 	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + current_prior_log)
-
+	
 	samples_SHF = []
 	samples_temp = []
 	samples_depth_params = []
@@ -1198,6 +1970,28 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	if param_mins_depth.ndim == 1:
 		param_mins_depth = param_mins_depth.reshape(1, -1)
 		param_maxs_depth = param_maxs_depth.reshape(1, -1)
+	
+	if triangle_calculation == True:
+		# these columns are no longer fractions, so their user-supplied
+		# [0,1] bounds no longer apply -- replace with a wide unconstrained
+		# range (±6 in logit space covers fractions ~0.0025 to ~0.9975)
+		param_mins_depth[idx_fp, :] = -6.0
+		param_maxs_depth[idx_fp, :] = 6.0
+		param_mins_depth[idx_fl, :] = -6.0
+		param_maxs_depth[idx_fl, :] = 6.0
+		
+	def _to_real_fractions(params):
+		"""Convert the stored logit-space f_pyx/f_lherz columns back to real
+		fractions, for saving samples. Every other column (e.g. bulk_water)
+		is copied through untouched, and nothing is converted at all if the
+		triangle method isn't in use."""
+		out = params.copy()
+		if triangle_calculation == True:
+			for iz in range(n_depths):
+				fp, fl = _unconstrained_to_fractions(out[iz, idx_fp], out[iz, idx_fl])
+				out[iz, idx_fp] = fp
+				out[iz, idx_fl] = fl
+		return out
 	
 	def _get_step_idx(dim):
 		if dim < n_shf_slots:
@@ -1227,7 +2021,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		proposed_depth_params = current_depth_params.copy()
 		continue_bounds = True
 
-		if rand_dim <= n_shf_slots:
+		if rand_dim < n_shf_slots:
 			proposed_SHF = current_SHF + randomgen
 			if proposed_SHF < SHF_bounds[index][0] or proposed_SHF > SHF_bounds[index][1]:
 				continue_bounds = False
@@ -1235,32 +2029,16 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			dim_offset = rand_dim - n_shf_slots
 			param_idx = dim_offset // n_depths
 			depth_idx = dim_offset % n_depths
+
 			proposed_depth_params[depth_idx, param_idx] += randomgen
 		
 			if (proposed_depth_params[depth_idx, param_idx] < param_mins_depth[param_idx, depth_idx] or
 				proposed_depth_params[depth_idx, param_idx] > param_maxs_depth[param_idx, depth_idx]):
 				continue_bounds = False
 		
-			# Additional joint constraint for the triangle composition: f_pyx and
-			# f_lherz are perturbed one at a time (not jointly), so the individual
-			# [0,1] bounds check above isn't enough on its own — the OTHER
-			# fraction (held fixed this iteration) must be checked too, since
-			# f_dun = 1 - f_pyx - f_lherz cannot go negative.
-			if triangle_calculation == True and continue_bounds == True:
-				if param_names[param_idx] == 'f_pyx':
-					idx_other = param_names.index('f_lherz')
-					other_val = current_depth_params[depth_idx, idx_other]
-					if proposed_depth_params[depth_idx, param_idx] + other_val > 1.0:
-						continue_bounds = False
-				elif param_names[param_idx] == 'f_lherz':
-					idx_other = param_names.index('f_pyx')
-					other_val = current_depth_params[depth_idx, idx_other]
-					if proposed_depth_params[depth_idx, param_idx] + other_val > 1.0:
-						continue_bounds = False
-		
 		if continue_bounds == True:
 	
-			if rand_dim <= n_shf_slots:
+			if rand_dim < n_shf_slots:
 				T_, P_= _update_geotherm(proposed_SHF, lab_temp)
 				object.set_temperature(T_)
 				object.set_pressure(P_)
@@ -1270,7 +2048,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					object.mantle_xfe_distribute(method = 'array')
 				else:
 					if triangle_calculation == True:
-						object.calculate_composition_modulii_from_triangle(method = 'array')
+						for iz in range(n_depths):
+							fp, fl = _unconstrained_to_fractions(
+								proposed_depth_params[iz, idx_fp],
+								proposed_depth_params[iz, idx_fl])
+							object.f_pyx[iz] = fp
+							object.f_lherz[iz] = fl
 				
 				if melt_thermodyn and melt_thermodyn_interp is not None:
 				
@@ -1315,7 +2098,17 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 							object.rock_frac_list[idx_t][depth_idx] = comp_list[idx_t]
 	
 				#Changing the depth dependent parameter.
-				getattr(object, param_names[param_idx])[depth_idx] = proposed_depth_params[depth_idx, param_idx]
+				#Changing the depth dependent parameter.
+				if triangle_calculation == True and param_names[param_idx] in ('f_pyx', 'f_lherz'):
+					# these columns hold logit-space values, so convert the PAIR
+					# back to real fractions before handing them to the physics
+					fp, fl = _unconstrained_to_fractions(
+						proposed_depth_params[depth_idx, idx_fp],
+						proposed_depth_params[depth_idx, idx_fl])
+					object.f_pyx[depth_idx] = fp
+					object.f_lherz[depth_idx] = fl
+				else:
+					getattr(object, param_names[param_idx])[depth_idx] = proposed_depth_params[depth_idx, param_idx]
 	
 				#if bulk xFe is changed distributing iron among defined minerals.
 				if 'bulk_xfe' in param_names:
@@ -1335,11 +2128,14 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				
 					object.mantle_water_distribute(method = 'index', sol_idx = depth_idx)
 	
-			#Calculating the initial conductivity
-			if cond_list is not None:
-				cond_ = object.calculate_conductivity(method = 'array')
+			#Calculating the conductivity and seismic velocities.
 			if (vp_list is not None) or (vs_list is not None):
 				v_bulk_, vp_, vs_ = object.calculate_seismic_velocities(method = 'array')
+				
+			#calculating conductivity later, because the conductivity may depend on gibbs-derived mineral 
+			#assemblage calculated within calculate_seismic_velocities call	
+			if cond_list is not None:
+				cond_ = object.calculate_conductivity(method = 'array')
 			
 			if cond_list is not None:
 				proposed_likelihood_cond, misf_cond = _likelihood(cond_, cond_list[index], sigma_cond[index])
@@ -1360,7 +2156,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			else:
 				proposed_likelihood_vs = 1
 				misf_vs = np.zeros(len(object.T))
-			
+				
 			#Calculate prior likelihood for proposed parameters
 			proposed_prior = 0.0
 			if param_priors is not None:
@@ -1371,32 +2167,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						proposed_prior += np.sum(-0.5 * ((proposed_depth_params[:, ii] - prior_mean) / prior_sigma)**2)
 			
 			proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + proposed_prior)
-			
-			"""
-			# --- diagnostic: confirm or refute the underflow hypothesis, and
-			# see whether predicted vs observed are even in the right ballpark ---
-			print(f"  misf_cond sum: {np.sum(misf_cond):.2f}  "
-				f"misf_vp sum: {np.sum(misf_vp):.2f}  "
-				f"misf_vs sum: {np.sum(misf_vs):.2f}  "
-				f"prior: {proposed_prior:.2f}  "
-				f"total: {np.sum(misf_cond)+np.sum(misf_vp)+np.sum(misf_vs)+proposed_prior:.2f}  "
-				f"current_likelihood: {current_likelihood}  "
-				f"proposed_likelihood: {proposed_likelihood}")
-
-			if cond_list is not None:
-				print(f"    cond calc: {cond_}")
-				print(f"    cond obs:  {cond_list[index]}")
-				print(f"    sigma_cond: {sigma_cond[index]}")
-			if vp_list is not None:
-				print(f"    vp calc: {vp_}")
-				print(f"    vp obs:  {vp_list[index]}")
-				print(f"    sigma_vp: {sigma_vp[index]}")
-			if vs_list is not None:
-				print(f"    vs calc: {vs_}")
-				print(f"    vs obs:  {vs_list[index]}")
-				print(f"    sigma_vs: {sigma_vs[index]}")
-			"""
-			
+						
 			if np.isnan(proposed_likelihood):
 				n_reject_nan += 1
 			else:
@@ -1412,7 +2183,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					if _ > burning:
 						samples_SHF.append(current_SHF)
 						samples_temp.append(object.T.copy())
-						samples_depth_params.append(current_depth_params.copy())
+						samples_depth_params.append(_to_real_fractions(current_depth_params))
 						misfits_cond.append(misf_cond)
 						misfits_vp.append(misf_vp)
 						misfits_vs.append(misf_vs)
@@ -1444,7 +2215,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		misfits_all_cond.append(misf_cond.copy())
 		misfits_all_vp.append(misf_vp.copy())
 		misfits_all_vs.append(misf_vs.copy())
-		samples_depth_params_all.append(current_depth_params.copy())
+		samples_depth_params_all.append(_to_real_fractions(current_depth_params))
 		samples_SHF_all.append(current_SHF)
 		samples_temp_all.append(object.T.copy())
 
@@ -1467,9 +2238,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			
 		if adaptive_alg == True:
 			if (_ + 1) % adaptive_check_length == 0:
-				print(f'Rejected based on likelihood per cent(%): {1e2*n_reject_likelihood / _}')
-				print(f'Rejected based on NaN petrophysical/thermodynamic calculation per cent(%): {1e2*n_reject_nan / _}')
-				print(f'Rejected based on bound limitations per cent(%): {1e2*n_reject_bounds / _}')
+				print(f'Rejected based on likelihood per cent(%): {(1e2*n_reject_likelihood / _):.2f}')
+				print(f'Rejected based on NaN petrophysical/thermodynamic calculation per cent(%): {(1e2*n_reject_nan / _):.2f}')
+				print(f'Rejected based on bound limitations per cent(%): {(1e2*n_reject_bounds / _):.2f}')
 				if acceptance_rate < 0.1:
 					proposal_stds[step_idx] *= 0.8
 					status = 'very low'
@@ -1772,7 +2543,7 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 			else:
 				proposed_likelihood_vs = 1
 				misf_vs = 0
-
+			
 			#Calculate prior likelihood for proposed parameters
 			proposed_prior = 0.0
 			if param_priors is not None:
