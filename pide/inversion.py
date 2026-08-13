@@ -936,7 +936,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	initial_params, param_names,
 	upper_limits, lower_limits,
 	SHF_bounds,
-	proposal_stds, n_iter, burning,
+	proposal_stds, n_iter, burning, lab_depth = None, sigma_lab = None,
 	melt_thermodyn=False, melt_thermodyn_interp=None,
 	adaptive_alg=True, ideal_acceptance_bounds=[0.2, 0.3],
 	adaptive_check_length=1000, step_size_limits=None,
@@ -985,18 +985,23 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		Depth nodes in km.
 	moho_depth : float
 		Moho depth in km (fixed).
-	cond_obs : array
+	cond_list : array
 		Observed conductivity at each depth node [S/m].
-	vp_obs : array or None
+	vp_list : array or None
 		Observed Vp at each depth node [km/s].
-	vs_obs : array or None
+	vs_list : array or None
 		Observed Vs at each depth node [km/s].
+	lab_depth: float or None
+		Observed Lab depth [km] from independent information. This is used
+		to fit to the estimations.
 	sigma_cond : array
 		Conductivity uncertainty at each depth (log space).
 	sigma_vp : array or None
 		Vp uncertainty at each depth [km/s].
 	sigma_vs : array or None
 		Vs uncertainty at each depth [km/s].
+	sigma_lab : float or None
+		Lab depth uncertainty [km].
 	initial_SHF : array
 		Initial surface heat flow [mW/m^2], per column.
 	initial_lab_temp : array
@@ -1152,12 +1157,13 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 		T_at_depths = T_interp_func(depths)
 		P_at_depths = P_interp_func(depths)
+		LAB = depth_full[idx_LAB]
 
-		return T_at_depths, P_at_depths
+		return T_at_depths, P_at_depths, LAB
 
 	#Generating the initial temperature from initial SHF (and lab_temp if inverted) distribution.
 	_lab_temp_for_geotherm = current_scalars[1] if invert_lab_temp else lab_temp
-	T_init, P_init = _update_geotherm(shf_val=current_scalars[0], lab_temp_val=_lab_temp_for_geotherm)
+	T_init, P_init, LAB = _update_geotherm(shf_val=current_scalars[0], lab_temp_val=_lab_temp_for_geotherm)
 	object.set_temperature(T_init)
 	object.set_pressure(P_init)
 
@@ -1258,6 +1264,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	else:
 		current_likelihood_vs = 1
 		misf_vs = np.zeros(len(object.T))
+		
+	if lab_depth is not None:
+		current_likelihood_lab, misf_lab = _likelihood(LAB, lab_depth, sigma_lab, norm = 'linear')
+	else:
+		current_likelihood_lab = 1
+		misf_lab = 0.0
 
 	current_prior_log = 0.0
 
@@ -1273,7 +1285,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				prior_sigma = param_priors[ii][1]   # array length n_depths
 				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
 
-	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + current_prior_log)
+	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + current_prior_log)
 
 	samples_SHF = []
 	samples_lab_temp = []
@@ -1381,7 +1393,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 			if rand_dim < n_scalar_total:
 				_lab_temp_proposed = proposed_scalars[1] if invert_lab_temp else lab_temp
-				T_, P_= _update_geotherm(proposed_scalars[0], _lab_temp_proposed)
+				T_, P_, LAB = _update_geotherm(proposed_scalars[0], _lab_temp_proposed)
 				object.set_temperature(T_)
 				object.set_pressure(P_)
 
@@ -1497,6 +1509,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			else:
 				proposed_likelihood_vs = 1
 				misf_vs = np.zeros(len(object.T))
+				
+			if lab_depth is not None:
+				current_likelihood_lab, misf_lab = _likelihood(LAB, lab_depth, sigma_lab, norm = 'linear')
+			else:
+				current_likelihood_lab = 1
+				misf_lab = 0.0
 
 			#Calculate prior likelihood for proposed parameters
 			proposed_prior = 0.0
@@ -1507,7 +1525,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						prior_sigma = param_priors[ii][1]   # array length n_depths
 						proposed_prior += np.sum(-0.5 * ((proposed_depth_params[:, ii] - prior_mean) / prior_sigma)**2)
 
-			proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + proposed_prior)
+			proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + proposed_prior)
 
 			if np.isnan(proposed_likelihood):
 				n_reject_nan += 1
