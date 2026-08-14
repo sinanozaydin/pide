@@ -1136,6 +1136,10 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	if current_depth_params.ndim == 1:
 		current_depth_params = current_depth_params.reshape(-1, 1)  # (n_depths, 1)
 
+	initial_params = np.array(initial_params, dtype=float)
+	if initial_params.ndim == 1:
+		initial_params = initial_params.reshape(-1, 1)
+
 	# --- Determine which params need water distribution ---
 	water_solv = 'bulk_water' in param_names
 
@@ -1283,6 +1287,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			if param_priors[ii] is not None:
 				prior_mean = param_priors[ii][0]   # array length n_depths
 				prior_sigma = param_priors[ii][1]   # array length n_depths
+
 				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
 
 	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + current_prior_log)
@@ -1523,7 +1528,19 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					if param_priors[ii] is not None:
 						prior_mean = param_priors[ii][0]   # array length n_depths
 						prior_sigma = param_priors[ii][1]   # array length n_depths
-						proposed_prior += np.sum(-0.5 * ((proposed_depth_params[:, ii] - prior_mean) / prior_sigma)**2)
+
+						if triangle_calculation == True and ii == idx_fp:
+							param_vals = np.array([_unconstrained_to_fractions(
+								proposed_depth_params[iz, idx_fp], proposed_depth_params[iz, idx_fl])[0]
+								for iz in range(n_depths)])
+						elif triangle_calculation == True and ii == idx_fl:
+							param_vals = np.array([_unconstrained_to_fractions(
+								proposed_depth_params[iz, idx_fp], proposed_depth_params[iz, idx_fl])[1]
+								for iz in range(n_depths)])
+						else:
+							param_vals = proposed_depth_params[:, ii]
+
+						proposed_prior += np.sum(-0.5 * ((param_vals - prior_mean) / prior_sigma)**2)
 
 			proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + proposed_prior)
 
@@ -1569,7 +1586,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		if _ > burning:
 			# After base iterations, check if we need to continue
 			if _ >= n_iter and (_ - n_iter) % 2000 == 0:
-				if  0.2 <= acceptance_rate <= 0.3:
+				if  ideal_acceptance_bounds[0] <= acceptance_rate <= ideal_acceptance_bounds[1]:
 					print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
 					break
 				else:
@@ -1959,6 +1976,7 @@ def _solv_MCMC_column_old(index, object, depths, moho_depth,
 			if param_priors[ii] is not None:
 				prior_mean = param_priors[ii][0]   # array length n_depths
 				prior_sigma = param_priors[ii][1]   # array length n_depths
+
 				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
 	
 	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + current_prior_log)
