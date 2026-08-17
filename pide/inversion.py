@@ -1113,7 +1113,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	scalar_slot_bounds = np.cumsum([0] + scalar_slots)
 
 	n_param_total = n_params * n_depths
-	n_total = n_param_total + n_scalar_total
+	n_joint_total = n_depths if triangle_calculation == True else 0
+	n_total = n_param_total + n_scalar_total + n_joint_total
 
 	def _get_scalar_idx(dim):
 		return int(np.searchsorted(scalar_slot_bounds, dim, side='right') - 1)
@@ -1121,12 +1122,17 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	def _get_step_idx(dim):
 		if dim < n_scalar_total:
 			return _get_scalar_idx(dim)
-		else:
+		elif dim < n_scalar_total + n_param_total:
 			dim_offset = dim - n_scalar_total
 			return n_scalars + dim_offset // n_depths
+		else:
+			return n_scalars + n_params  # dedicated step index for the joint move
 
 	# Deep copy mutable inputs
 	proposal_stds = list(proposal_stds)
+	#adding another step for the joint step if triangle_calculation is True.
+	if triangle_calculation == True:
+		proposal_stds = list(proposal_stds) + [np.mean(proposal_stds[-2:])]
 	if param_priors is not None:
 		param_priors = copy.deepcopy(param_priors)
 
@@ -1364,7 +1370,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	n_reject_nan = 0
 	n_reject_likelihood = 0
 
-	n_step_dims = n_scalars + n_params
+	n_step_dims = n_scalars + n_params + (1 if triangle_calculation == True else 0)
 	n_attempted_per_dim = [0] * n_step_dims
 	n_accepted_per_dim = [0] * n_step_dims
 
@@ -1389,7 +1395,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			lo, hi = scalar_bounds_list[s_idx][index]
 			if proposed_scalars[s_idx] < lo or proposed_scalars[s_idx] > hi:
 				continue_bounds = False
-		else:
+
+		elif rand_dim < n_scalar_total + n_param_total:
 			dim_offset = rand_dim - n_scalar_total
 			param_idx = dim_offset // n_depths
 			depth_idx = dim_offset % n_depths
@@ -1405,6 +1412,30 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					proposed_depth_params[depth_idx, idx_fp],
 					proposed_depth_params[depth_idx, idx_fl])
 				if fp_check < f_pyx_real_floor[depth_idx] or fl_check < f_lherz_real_floor[depth_idx]:
+					continue_bounds = False
+
+		else:
+			# joint f_pyx/f_lherz move: step BOTH logit values together in
+			# one iteration, fixing f_lherz's structural disadvantage in
+			# the stick-breaking transform (see earlier discussion).
+			joint_depth_idx = rand_dim - n_scalar_total - n_param_total
+
+			eps_fp = np.random.normal(0, proposal_stds[step_idx])
+			eps_fl = np.random.normal(0, proposal_stds[step_idx])
+			proposed_depth_params[joint_depth_idx, idx_fp] += eps_fp
+			proposed_depth_params[joint_depth_idx, idx_fl] += eps_fl
+
+			if (proposed_depth_params[joint_depth_idx, idx_fp] < param_mins_depth[idx_fp, joint_depth_idx] or
+				proposed_depth_params[joint_depth_idx, idx_fp] > param_maxs_depth[idx_fp, joint_depth_idx] or
+				proposed_depth_params[joint_depth_idx, idx_fl] < param_mins_depth[idx_fl, joint_depth_idx] or
+				proposed_depth_params[joint_depth_idx, idx_fl] > param_maxs_depth[idx_fl, joint_depth_idx]):
+				continue_bounds = False
+
+			if continue_bounds == True:
+				fp_check, fl_check = _unconstrained_to_fractions(
+					proposed_depth_params[joint_depth_idx, idx_fp],
+					proposed_depth_params[joint_depth_idx, idx_fl])
+				if fp_check < f_pyx_real_floor[joint_depth_idx] or fl_check < f_lherz_real_floor[joint_depth_idx]:
 					continue_bounds = False
 
 		if continue_bounds == True:
@@ -1445,7 +1476,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				if water_solv == True:
 
 					object.mantle_water_distribute(method = 'array')
-			else:
+			elif rand_dim < n_scalar_total + n_param_total:
 
 				#if one of the parameters are a composition parameter.
 				if frac_bool[param_idx] == True:
@@ -1500,6 +1531,30 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				if water_solv == True:
 
 					object.mantle_water_distribute(method = 'index', sol_idx = depth_idx)
+
+			else:
+				
+				# joint f_pyx/f_lherz move: both columns were already updated
+				# above (Site 4), just push the resulting real fractions onto
+				# the object. Mirrors the single-move branch's post-processing
+				# (melt/water recompute) for consistency, using its own
+				# joint_depth_idx throughout -- never touches depth_idx.
+				fp, fl = _unconstrained_to_fractions(
+					proposed_depth_params[joint_depth_idx, idx_fp],
+					proposed_depth_params[joint_depth_idx, idx_fl])
+				object.f_pyx[joint_depth_idx] = fp
+				object.f_lherz[joint_depth_idx] = fl
+
+				if melt_thermodyn and melt_thermodyn_interp is not None:
+					T_C = object.T[joint_depth_idx] - 273.15
+					water_wt = object.bulk_water[joint_depth_idx] * 1e-4
+					melt_frac = float(melt_thermodyn_interp([T_C, water_wt, object.p[joint_depth_idx]]))
+					if melt_frac < melt_frac_limit:
+						melt_frac = 0.0
+					object.melt_fluid_mass_frac[joint_depth_idx] = melt_frac
+
+				if water_solv == True:
+					object.mantle_water_distribute(method = 'index', sol_idx = joint_depth_idx)
 
 			#Calculating the conductivity and seismic velocities.
 			if (vp_list is not None) or (vs_list is not None):
@@ -1679,7 +1734,13 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						status, color = 'good', text_color.GREEN
 					if step_size_limits is not None:
 						proposal_stds[d] = min(proposal_stds[d], step_size_limits[d])
-					name = scalar_names[d] if d < n_scalars else param_names[d - n_scalars]
+
+					if d < n_scalars:
+						name = scalar_names[d]
+					elif d < n_scalars + n_params:
+						name = param_names[d - n_scalars]
+					else:
+						name = 'f_pyx_f_lherz_joint'
 					print(color + f'  {name}: acceptance {status} ({dim_acceptance:.3f}), '
 						f'attempted={n_attempted_per_dim[d]}, step={proposal_stds[d]:.4f}' + text_color.END)
 
