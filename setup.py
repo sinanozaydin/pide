@@ -16,6 +16,7 @@ setup(
             'pide_src/cond_models/minerals/*csv',
             'pide_src/cond_models/rocks/*csv',
             'pide_src/eos/*csv',
+            'pide_src/eos/*npz',
             'pide_src/geochem/*csv'
         ],
     },
