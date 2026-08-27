@@ -4706,8 +4706,9 @@ class pide(object):
 		
 		if method == 'array':
 			if np.mean(self.melt_fluid_mass_frac) != 0.0:
-						
-				self.calculate_density_solid()
+				
+				if self.seismic_calculation_method == 'modes':
+					self.calculate_density_solid()
 				self.calculate_density_fluid(method = method, sol_idx = sol_idx, sfd = sfd)
 				
 				if pide.fluid_or_melt_method == 0:
@@ -4718,7 +4719,6 @@ class pide(object):
 			else:
 			
 				self.melt_fluid_cond = np.zeros(len(self.T))
-				
 		else:
 		
 			if self.melt_fluid_mass_frac[index] != 0.0:
@@ -5273,6 +5273,10 @@ class pide(object):
 					if self.melt_fluid_mass_frac[i] != 0.0:
 						
 						self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i]))))
+						
+			if self.seismic_calculation_method == 'gibbs':
+				shear_mod = self.shear_mod_solid.copy()
+				bulk_mod = self.bulk_mod_solid.copy()
 			
 			alpha = (shear_mod * (9*bulk_mod + 8*shear_mod)) / (6 * (bulk_mod + 2*shear_mod))
 			
@@ -5851,12 +5855,16 @@ class pide(object):
 			self.v_s = np.ones(len(self.T))
 			self.v_bulk = np.ones(len(self.T))
 			self.density_solids = np.ones(len(self.T)) * 3.3
+			self.shear_mod_solid = np.ones(len(self.T))
+			self.bulk_mod_solid = np.ones(len(self.T))
 			
 		if len(self.v_p) != len(self.T):
 			self.v_p = np.ones(len(self.T))
 			self.v_s = np.ones(len(self.T))
 			self.v_bulk = np.ones(len(self.T))
-			
+			self.shear_mod_solid = np.ones(len(self.T))
+			self.bulk_mod_solid = np.ones(len(self.T))
+		
 		if len(self.density_solids) != len(self.T):
 			self.density_solids = np.ones(len(self.T)) * 3.3
 	
@@ -5891,6 +5899,8 @@ class pide(object):
 				self.v_s[i] = np.nan
 				self.v_bulk[i] = np.nan
 				self.density_solids[i] = np.nan
+				self.shear_mod_solid[i] = np.nan
+				self.bulk_mod_solid[i] = np.nan
 				return
 	
 			self.ol_frac[i] = result['ol']
@@ -5911,8 +5921,10 @@ class pide(object):
 			self.Na2O[i] = result['Na2O']
 			self.v_p[i] = result['v_p']
 			self.v_s[i] = result['v_s']
-			self.v_bulk[i] = np.sqrt(self.v_p[i]**2 - (4/3) * self.v_s[i]**2)
+			self.v_bulk[i] = np.sqrt(self.v_p[i]**2 - 1.3333 * self.v_s[i]**2)
 			self.density_solids[i] = result['density']
+			self.shear_mod_solid[i] = self.density_solids[i] * self.v_s[i]**2
+			self.bulk_mod_solid[i] = self.density_solids[i] * (self.v_p[i]**2 - (1.3333*self.v_s[i]**2))
 	
 		if method == 'index':
 			_solve_single(idx_node)

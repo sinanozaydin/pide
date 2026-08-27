@@ -1248,18 +1248,18 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 	if (vp_list is not None) or (vs_list is not None):
 		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'array')
-
+	
 	#Calculating the initial conductivity
 	if cond_list is not None:
 		cond_init = object.calculate_conductivity(method = 'array')
-
+	
 	if cond_list is not None:
 		current_likelihood_cond, misf_cond = _likelihood(cond_init, cond_list[index], sigma_cond[index])
 		current_likelihood_cond = np.sum(current_likelihood_cond)
 	else:
 		current_likelihood_cond = 1
 		misf_cond = np.zeros(len(object.T))
-
+	
 	if vp_list is not None:
 		current_likelihood_vp, misf_vp = _likelihood(vp_init, vp_list[index], sigma_vp[index], norm = 'linear')
 		current_likelihood_vp = np.sum(current_likelihood_vp)
@@ -1278,7 +1278,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	else:
 		current_likelihood_lab = 1
 		misf_lab = 0.0
-
+	
 	current_prior_log = 0.0
 
 	#SHF prior:
@@ -1295,7 +1295,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
 
 	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + current_prior_log)
-
+	
+	if np.isnan(current_likelihood) == True:
+		raise ValueError('From the initial calculations likelihood is calculate to be nan. Try to change the initial parameters.\
+		This likely caused by f_pyx, f_lherz parameters cannot finding a solution at a certain depth index.')
+	
 	samples_SHF = []
 	samples_lab_temp = []
 	samples_lab = []
@@ -1563,8 +1567,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			#calculating conductivity later, because the conductivity may depend on gibbs-derived mineral
 			#assemblage calculated within calculate_seismic_velocities call
 			if cond_list is not None:
-				cond_ = object.calculate_conductivity(method = 'array')
-
+				cond_ = object.calculate_conductivity(method = 'array')			
+			
 			if cond_list is not None:
 				proposed_likelihood_cond, misf_cond = _likelihood(cond_, cond_list[index], sigma_cond[index])
 				proposed_likelihood_cond = np.sum(proposed_likelihood_cond)
@@ -1616,6 +1620,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 			if np.isnan(proposed_likelihood):
 				n_reject_nan += 1
+				object = object_backup
 			else:
 				# Calculate acceptance probability
 				acceptance_ratio = proposed_likelihood / current_likelihood
@@ -1670,7 +1675,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		misfits_all_cond.append(misf_cond.copy())
 		misfits_all_vp.append(misf_vp.copy())
 		misfits_all_vs.append(misf_vs.copy())
-		misfits_all_lab.append(misf_lab.copy())
+		misfits_all_lab.append(misf_lab)
 		samples_depth_params_all.append(_to_real_fractions(current_depth_params))
 		samples_SHF_all.append(current_scalars[0])
 		
@@ -2055,6 +2060,9 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 			
 			#Calculate prior likelihood for proposed parameters
 			proposed_prior = 0.0
+			
+			if SHF_prior is not None:
+				proposed_prior += -0.5 * ((proposed_scalars[0] - SHF_prior[index][0]) / SHF_prior[index][1])**2
 			if param_priors is not None:
 				for ii in range(n_params):
 					if param_priors[ii] is not None:
@@ -2539,7 +2547,91 @@ def metropolis_hastings_n_param(object, cond_list, initial_params, param_names, 
 	else:
 		return sample_distr, acceptance_rates, misfits, samples_all, misfits_all, melt_samples, melt_samples_all
 		
-		
+#Names given to the components of the misfits/misfits_all lists returned
+#by _solv_MCMC_column, in order, used as dataset names inside the h5 file
+#so the saved output is self-describing rather than positional.
+MISFIT_COMPONENT_NAMES = ['cond', 'vp', 'vs', 'lab']
+
+
+def _save_column_h5(results, filename, metadata=None):
+
+	"""
+	Saves one column's results dict to an h5 file.
+
+	Nested structures are stored as h5 groups rather than being flattened:
+	samples_record/samples_record_all become groups keyed by attribute
+	name, and misfits/misfits_all become groups keyed by data type
+	(cond/vp/vs/lab) instead of bare indices, so the file stays readable
+	without needing to remember the return order.
+
+	NaN values are preserved as-is (relevant for phases that are
+	legitimately absent at a given depth, e.g. sp_frac or garnet_xfe).
+	"""
+
+	with h5py.File(filename, 'w') as f:
+
+		for key, val in results.items():
+
+			if key in ('samples_record', 'samples_record_all'):
+				grp = f.create_group(key)
+				for rname, rval in val.items():
+					grp.create_dataset(rname, data=np.asarray(rval), compression='gzip')
+
+			elif key in ('misfits', 'misfits_all'):
+				grp = f.create_group(key)
+				for i, m in enumerate(val):
+					if i < len(MISFIT_COMPONENT_NAMES):
+						name = MISFIT_COMPONENT_NAMES[i]
+					else:
+						name = f'component_{i}'
+					grp.create_dataset(name, data=np.asarray(m), compression='gzip')
+
+			else:
+				f.create_dataset(key, data=np.asarray(val), compression='gzip')
+
+		if metadata is not None:
+			for k, v in metadata.items():
+				f.attrs[k] = v
+
+
+def _column_filename(file_name_base, index):
+
+	return f'{file_name_base}_column_{index}.h5'
+
+
+def _solv_and_save_column(index, file_name_base, save_metadata, **solver_kwargs):
+
+	"""
+	Runs _solv_MCMC_column for a single column and immediately writes that
+	column's results to its own h5 file, returning only the filename.
+
+	Each worker saves its own file rather than returning the full results
+	dict through the Pool. The sample arrays are large, and passing them
+	back through inter-process pickling would cost far more than writing
+	them directly from the worker. It also means a finished column is
+	safely on disk the moment it completes, rather than only once the
+	whole batch returns.
+	"""
+
+	from pide.inversion import _solv_MCMC_column
+
+	results = _solv_MCMC_column(index=index, **solver_kwargs)
+
+	filename = _column_filename(file_name_base, index)
+
+	metadata = {'column_index': index}
+	if save_metadata is not None:
+		for k, v in save_metadata.items():
+			try:
+				metadata[k] = v[index]
+			except (TypeError, IndexError):
+				pass
+
+	_save_column_h5(results, filename, metadata=metadata)
+
+	return filename
+
+
 def metropolis_hastings_n_param_geotherm(object, depths, moho_depths,
 	cond_list, vp_list, vs_list,
 	sigma_cond_list, sigma_vp_list, sigma_vs_list,
@@ -2547,379 +2639,281 @@ def metropolis_hastings_n_param_geotherm(object, depths, moho_depths,
 	initial_params, param_names,
 	upper_limits, lower_limits,
 	SHF_bounds,
-	proposal_stds, n_iter, burning, lab_depth = None, sigma_lab = None,
+	proposal_stds, n_iter, burning, lab_depth=None, sigma_lab=None,
 	melt_thermodyn=False,
 	adaptive_alg=True, ideal_acceptance_bounds=[0.25, 0.45],
 	adaptive_check_length=1000, step_size_limits=None,
-	param_priors=None, SHF_prior=None, lab_temp = 1350,
-	invert_lab_temp = False, lab_temp_bounds = None,
-	composition = None, max_widen_attempts = 3,
-	record_names = None,
+	param_priors=None, SHF_prior=None, lab_temp=1350,
+	invert_lab_temp=False, lab_temp_bounds=None,
+	composition=None, max_widen_attempts=3,
+	record_names=None, num_cpu=1,
+	file_name_base='column_inversion', resume=True,
+	save_metadata=None,
 	**kwargs):
- 
+
 	"""
-	Perform Metropolis-Hastings MCMC inversion for electrical conductivity using n model parameters.
- 
-	This function uses a stochastic sampling approach to estimate the posterior distribution of n 
-	input parameters based on observed conductivity and optionally seismic velocity data.
- 
+	Metropolis-Hastings MCMC inversion of a geotherm-based mantle column,
+	run independently for many columns (locations) in parallel.
+
+	Each column is solved by _solv_MCMC_column and saved to its own h5
+	file as soon as it finishes, so results accumulate progressively
+	rather than only appearing when the whole batch completes.
+
 	Parameters
 	----------
-	object : object
-		A pide model instance for calculating conductivity.
-	cond_list : array-like
-		Observed conductivity values to fit [S/m].
-	initial_params : list or array-like
-		Initial values for the n parameters to invert. Shape (n_points, n_params).
+	object : pide object
+		Pre-configured pide instance with length = len(depths).
+	depths : array
+		Depth nodes in km, shared by every column.
+	moho_depths : array
+		Moho depth in km, per column.
+	cond_list, vp_list, vs_list : list of arrays or None
+		Observed profiles, one array (length n_depths) per column. Any of
+		them may be None to exclude that data type from the inversion.
+	sigma_cond_list, sigma_vp_list, sigma_vs_list : list of arrays or None
+		Matching uncertainties, one array per column.
+	initial_SHF : array
+		Initial surface heat flow [mW/m^2], per column.
+	initial_lab_temp : array
+		Initial LAB temperature [Celsius], per column. Only used when
+		invert_lab_temp=True.
+	initial_params : array
+		Shape (n_depths, n_params), initial values for depth-varying
+		parameters.
 	param_names : list of str
-		Names of the parameters to invert (must be attributes of `object`).
-	upper_limits : tuple of array-like
-		Upper bounds for each parameter. Shape (n_params,) where each element is array of length n_points.
-	lower_limits : tuple of array-like
-		Lower bounds for each parameter. Shape (n_params,) where each element is array of length n_points.
-	sigma_cond : float or array-like
-		Standard deviation or error for conductivity observations in logarithm of conductivity [S/m].
-	proposal_stds : list or array-like
-		Standard deviations for proposal distribution of the parameters. Length n_params.
-	n_iter : int
-		Number of iterations for the MCMC chain.
-	vp_list : array-like, optional
-		Observed Vp values to fit [km/s].
-	vs_list : array-like, optional
-		Observed Vs values to fit [km/s].
-	sigma_vp : array-like, optional
-		Standard deviation for Vp observations [km/s].
-	sigma_vs : array-like, optional
-		Standard deviation for Vs observations [km/s].
-	burning : int, optional
-		Number of initial iterations to discard as burn-in (default is 0).
-	transition_zone : bool, optional
-		If True, use transition zone water distribution functions (default is False).
-	num_cpu : int, optional
-		Number of CPU cores to use for parallel computation (default is 1).
-	param_priors : list, optional
-		List of length n_params. Each element is either None (flat prior) or a tuple 
-		(prior_mean_array, prior_sigma_array) for a Gaussian prior. Arrays are length n_points.
-		Example for 3 params (water=flat, melt=flat, T=Gaussian):
-		param_priors = [None, None, (T_mean_array, sigma_T_array)]
-	save_distr : bool, optional
-		If True, saves the MCMC samples to disk (default is False).
-	distr_file_names : str, optional
-		Base name for saved distribution files (default is 'distribution_solution').
-	adaptive_alg : bool, optional
-		If True, enables adaptive adjustment of proposal standard deviations based on acceptance rate.
-	ideal_acceptance_bounds : list of float, optional
-		Target acceptance rate bounds for adaptive algorithm (default is [0.2, 0.3]).
-	adaptive_check_length : int, optional
-		Number of iterations between check for adaptive algorithm (default is 1000).
-	step_size_limits : list of float, optional
-		Bounds for the adaptive proposal step sizes. Length n_params.
-	melt_thermodyn : bool, optional
-		Method for determining melt from thermodynamic equations
-	melt_frac_limit : float, optional
-		Minimum melt fraction can be estimated by the inversion algorithm. Any value smaller than this value would be set to 0.
- 
+		Depth-varying parameter names, e.g. ['f_pyx', 'f_lherz'].
+	upper_limits, lower_limits : tuple of lists
+		Per parameter, per column, each entry an array of length n_depths.
+	SHF_bounds : list of tuple
+		(min_SHF, max_SHF) per column.
+	lab_depth, sigma_lab : list or None
+		Observed LAB depth and its uncertainty, per column.
+	num_cpu : int
+		Number of worker processes. On a cluster, pass the core count
+		your job actually requested rather than relying on os.cpu_count(),
+		which reports the whole node's cores, not your allocation.
+	file_name_base : str
+		Output files are written as '{file_name_base}_column_{index}.h5'.
+	resume : bool
+		If True, any column whose output file already exists is skipped,
+		so an interrupted run can be restarted without redoing finished
+		work.
+	save_metadata : dict of lists or None
+		Optional per-column scalars (e.g. {'lat': lat_list, 'lon':
+		lon_list}) written as h5 attributes on each column's file.
+
 	Returns
 	-------
-	sample_distr : list of arrays
-		Accepted parameter samples for each point.
-	acceptance_rates : list of arrays
-		Acceptance rate record for each point.
-	misfits : list
-		Misfits of the accepted distribution [cond, vp, vs].
-	samples_all : list of arrays
-		All parameter samples for each point.
-	misfits_all : list
-		All misfits [cond, vp, vs].
- 
-	Examples
-	--------
-	samples, acceptance_rates, misfits, samples_all, misfits_all = metropolis_hastings_n_param(
-		object = p_obj, cond_list = [0.1, 0.1],
-		initial_params = [[200, 0.25, 1300.0]],
-		param_names = ['bulk_water', 'melt_fluid_mass_frac', 'T'],
-		upper_limits = (np.array([2000,2000]), np.array([0.5,0.5]), np.array([1500,1500])),
-		lower_limits = (np.array([0,0]), np.array([0,0]), np.array([1100,1100])),
-		sigma_cond = [0.1, 0.1], proposal_stds = [200, 0.25, 50],
-		n_iter = 2e5, burning = 1e4, transition_zone = False, num_cpu = 1,
-		param_priors = [None, None, (T_mean_array, sigma_T_array)],
-		adaptive_alg = True, step_size_limits = [25000, 0.5, 100])
+	list of str
+		Paths of every h5 file for this run, including columns that were
+		skipped because they had already been completed.
 	"""
- 
-	n_params = len(param_names)
- 
-	#Pre-checks for if
-	if object.solid_phase_method == 2:
-		object.set_mineral_water(ol = 0, opx = 0, cpx = 0, garnet = 0, mica = 0, amp = 0,
-		quartz = 0, plag = 0, kfelds = 0, sulphide = 0, graphite = 0, sp = 0, rwd_wds = 0,
-		perov = 0, mixture = 0, other = 0)
-	elif object.solid_phase_method == 1:
-		object.set_rock_water(granite = 0, granulite = 0, sandstone = 0, gneiss = 0,
-		amphibolite = 0, basalt = 0, mud = 0, gabbro = 0, other_rock = 0)
- 
-	cond_check = object.calculate_conductivity()
- 
-	save_distr = kwargs.pop('save_distr', False)
-	distr_file_names = kwargs.pop('distr_file_names', 'distribution_solution')
-	adaptive_alg = kwargs.pop('adaptive_alg', True)
-	ideal_acceptance_bounds = kwargs.pop('ideal_acceptance_bounds', [0.2, 0.3])
-	adaptive_check_length = kwargs.pop('adaptive_check_length', 1000)
-	step_size_limits = kwargs.pop('step_size_limits', None)
-	melt_thermodyn = kwargs.pop('melt_thermodyn', False)
-	melt_interp_object = kwargs.pop('melt_interp_object', None)
+
 	melt_frac_limit = kwargs.pop('melt_frac_limit', 0.001)
- 
-	#Pre checks for the input parameters.
+	melt_interp_object = kwargs.pop('melt_interp_object', None)
+
+	n_params = len(param_names)
+
+	#Determining the number of columns from whichever observation list is
+	#present, rather than from len(object.T), which is the number of
+	#DEPTHS in a single column and not the number of columns to dispatch.
+	if vp_list is not None:
+		n_columns = len(vp_list)
+	elif vs_list is not None:
+		n_columns = len(vs_list)
+	elif cond_list is not None:
+		n_columns = len(cond_list)
+	else:
+		raise ValueError('At least one of cond_list, vp_list or vs_list has to be provided.')
+
 	if type(ideal_acceptance_bounds) == list:
-		if len(ideal_acceptance_bounds) == 2:
-			pass
-		else:
+		if len(ideal_acceptance_bounds) != 2:
 			raise ValueError(f'ideal_acceptance_bounds has to be a list containing two values. Currently it is {ideal_acceptance_bounds}')
 	else:
 		raise ValueError(f'ideal_acceptance_bounds has to be a list containing two values. Currently it is {ideal_acceptance_bounds}')
- 
+
 	for name in param_names:
 		try:
 			getattr(object, name)
 		except AttributeError:
 			raise AttributeError(f'There is no such parameter name {name} for the pide object.')
-  
+
 	if burning >= n_iter:
 		raise ValueError('Burning samples cannot be larger than the total iteration number (n_iter).')
- 
-	if len(cond_list) == len(initial_params) == len(upper_limits[0]) == len(lower_limits[0]) == len(sigma_cond) == len(object.T):
-		pass
-	else:
-		raise IndexError('The length of the arrays for each conductivity solution (cond_list) are not same. cond_list, initial_params, upper_limits, lower_limits and sigma_conds has to be the same length.')
- 
-	#Check that all limits have the right number of parameters
+
+	#Per-column length checks, only for the data types actually given.
+	for name, lst in [('cond_list', cond_list), ('vp_list', vp_list), ('vs_list', vs_list),
+		('sigma_cond_list', sigma_cond_list), ('sigma_vp_list', sigma_vp_list),
+		('sigma_vs_list', sigma_vs_list), ('moho_depths', moho_depths),
+		('initial_SHF', initial_SHF), ('SHF_bounds', SHF_bounds)]:
+		if lst is not None:
+			if len(lst) != n_columns:
+				raise IndexError(f'{name} has {len(lst)} entries but {n_columns} columns were inferred.')
+
+	if invert_lab_temp == True:
+		if lab_temp_bounds is None:
+			raise ValueError('lab_temp_bounds must be provided when invert_lab_temp=True.')
+		if initial_lab_temp is None:
+			raise ValueError('initial_lab_temp must be provided when invert_lab_temp=True.')
+
 	if len(upper_limits) != n_params:
 		raise IndexError(f'upper_limits has {len(upper_limits)} entries but {n_params} parameters were specified.')
 	if len(lower_limits) != n_params:
 		raise IndexError(f'lower_limits has {len(lower_limits)} entries but {n_params} parameters were specified.')
-	if len(proposal_stds) != n_params:
-		raise IndexError(f'proposal_stds has {len(proposal_stds)} entries but {n_params} parameters were specified.')
-	if len(initial_params[0]) != n_params:
-		raise IndexError(f'initial_params has {len(initial_params[0])} entries but {n_params} parameters were specified.')
- 
-	min_list = ['quartz_frac', 'plag_frac', 'amp_frac', 'kfelds_frac', 'opx_frac', 'cpx_frac',
-		'mica_frac', 'garnet_frac', 'sulphide_frac', 'graphite_frac', 'ol_frac', 'sp_frac', 'rwd_wds_frac',
-		'perov_frac', 'mixture_frac', 'other_frac']
- 
-	rock_list = ['granite_frac', 'granulite_frac', 'sandstone_frac', 'gneiss_frac', 'amphibolite_frac',
-			'basalt_frac', 'mud_frac', 'gabbro_frac', 'other_rock_frac']
- 
-	index_list = np.array(list(range(0, len(object.T)))) #creating the index array tied to the T array.
- 
-	comp_solv = False
-	water_solv = False
-	comp_type = None
-	comp_index = []
-	comp_type_list = []
- 
-	if any('water' in xx for xx in param_names) == True:
-		if 'bulk_water' in param_names:
-			water_solv = True
-			if len(getattr(object, 'bulk_water')) != len(object.T):
-				object.set_bulk_water(0.0)
-		else:
-			raise ValueError('You cannot change just a single phase water content. If you are after fitting for a single phase, try bulk_water as the parameter.')
-	
-	
-	if any('melt' in xx for xx in param_names) == True:
-		if melt_thermodyn == False:
-			water_solv = True
-			for ii in range(n_params):
-				if len(getattr(object, param_names[ii])) != len(object.T):
-					object.set_parameter(param_names[ii], 0.0)
-		else:
-			raise KeyError('While melt_thermodyn is set to True, the user cannot choose melt fraction as a independent parameter. Melt fraction is estimated from thermodynamic equations.')
-		
-	if melt_thermodyn == True:
-		water_solv = True
-		if melt_interp_object is None:
-			print('Establishing grid interpolator for thermodynamic melt modelling...')
-			object.set_bulk_water(0.0)
-			object.mantle_water_distribute()
-			if np.all(object.p == object.p[0]):
-				pres_interp = False
-			else:
-				pres_interp = True
-
-			d_per_melt = (object.ol_frac * object.d_melt_ol) +\
-					(object.opx_frac_wt * object.d_melt_opx) +\
-					(object.cpx_frac_wt * object.d_melt_cpx) +\
-					(object.garnet_frac_wt * object.d_melt_garnet)
-			
-			d_per_melt_avg = np.average(d_per_melt)
-
-			if 'T' in param_names:
-				idx_T = param_names.index('T')
-				upper_lim_T = np.amax(upper_limits[idx_T]) - 273.15
-				low_lim_T = np.amin(lower_limits[idx_T]) - 273.15
-			else:
-				upper_lim_T = np.amax(object.T) + 100.0 - 273.15
-				low_lim_T = np.amin(object.T) - 273.15
-
-			low_lim_X = 0
-			up_lim_X = 5.0
-			
-			from pide.geodyn.mantlemelting.katz_2003 import F_wet
-			
-			T_grid = np.arange(low_lim_T, upper_lim_T, 25)
-			
-			if pres_interp == False:
-				X_grid = np.linspace(low_lim_X, up_lim_X, 200)  # wt% water
-				F_table = np.zeros((len(T_grid), len(X_grid)))
-				for i, t in enumerate(T_grid):
-					for j, x in enumerate(X_grid):
-						F_table[i, j] = F_wet(T=t, P=object.p[0], X=x, D=d_per_melt_avg)
-				F_table[F_table < 0] = 0.0
-
-				melt_interp = RegularGridInterpolator((T_grid, X_grid), F_table, 
-												bounds_error=False, fill_value=0.0)
-				
-			elif pres_interp == True:
-				print('Startin thermodynamic pre-interpolator for melt. If this is taking more than 5 minutes restart.')
-				low_lim_P = np.amin(object.p) - 0.1
-				upper_lim_P = np.amax(object.p) + 0.1
-				X_grid = np.linspace(low_lim_X, up_lim_X, 50)  # wt% water
-				P_grid = np.linspace(low_lim_P,upper_lim_P,50)
-				F_table = np.zeros((len(T_grid), len(X_grid), len(P_grid)))
-				for i, t in enumerate(T_grid):
-					for j, x in enumerate(X_grid):
-						for k, pr in enumerate(P_grid):
-							F_table[i, j, k] = F_wet(T=t, P=pr, X=x, D=d_per_melt_avg)
-
-				F_table[F_table < 0] = 0.0
-				print('F table finished')
-				print('Interpolating')
-				melt_interp = RegularGridInterpolator((T_grid, X_grid, P_grid), F_table, 
-												bounds_error=False, fill_value=0.0)
-				print('Interpolation table finished.')
-		else:
-
-			melt_interp = melt_interp_object
-	else:
-
-		melt_interp = None
-		pres_interp = False
 
 	if ('f_pyx' in param_names) or ('f_lherz' in param_names):
 		triangle_calculation = True
 	else:
 		triangle_calculation = False
- 
+
+	min_list = ['quartz_frac', 'plag_frac', 'amp_frac', 'kfelds_frac', 'opx_frac', 'cpx_frac',
+		'mica_frac', 'garnet_frac', 'sulphide_frac', 'graphite_frac', 'ol_frac', 'sp_frac',
+		'rwd_wds_frac', 'perov_frac', 'mixture_frac', 'other_frac']
+
+	rock_list = ['granite_frac', 'granulite_frac', 'sandstone_frac', 'gneiss_frac',
+		'amphibolite_frac', 'basalt_frac', 'mud_frac', 'gabbro_frac', 'other_rock_frac']
+
+	comp_index = []
+	comp_type_list = []
+
 	if any('frac' in xx for xx in param_names) == True:
 
-		comp_solv = True
-		water_solv = True
- 
 		for ii in range(n_params):
 			if param_names[ii] != 'melt_fluid_mass_frac':
 				if triangle_calculation == True:
-					raise AttributeError('f_pyx or f_lherz can not be considered at the same time as modal /'
-					'mineralogy fractions as inversion paramteres..')
+					raise AttributeError('f_pyx or f_lherz cannot be considered at the same time as '
+						'modal mineralogy fractions as inversion parameters.')
 				if param_names[ii] in min_list:
-					comp_type = 'mineral'
-					comp_type_list.append(comp_type)
+					comp_type_list.append('mineral')
 					comp_index.append(min_list.index(param_names[ii]))
 				elif param_names[ii] in rock_list:
-					comp_type = 'rock'
-					comp_type_list.append(comp_type)
+					comp_type_list.append('rock')
 					comp_index.append(rock_list.index(param_names[ii]))
-					
 				else:
-					comp_type = None
-					comp_type_list.append(comp_type)
+					comp_type_list.append(None)
 					comp_index.append(None)
 			else:
-				comp_type = None
-				comp_type_list.append(comp_type)
+				comp_type_list.append(None)
 				comp_index.append(None)
- 
-			if comp_type is not None:
-				if len(getattr(object, param_names[ii])) != len(object.T):
-					object.set_parameter(param_names[ii], 0.0)
- 
+
 		if (('mineral' in comp_type_list) == True) and (('rock' in comp_type_list) == True):
 			raise ValueError('The user cannot enter both rock and mineral as the inversion parameter. Choose only one.')
-	
-	if num_cpu > 1:
- 
-		import multiprocessing
-		import os
-		from functools import partial
- 
-		max_num_cores = os.cpu_count()
- 
-		if num_cpu > max_num_cores:
-			raise ValueError('There are not enough cpus in the machine to run this action with ' + str(num_cpu) + ' cores.')
- 
-	if num_cpu > 1:
- 
-		manager = multiprocessing.Manager()
-		shared_results = manager.list()
- 
-		with multiprocessing.Pool(processes=num_cpu) as pool:
- 
-			process_item_partial = partial(_solv_MCMC_column, object = object, cond_list = cond_list,
-			initial_params = initial_params, param_names = param_names,
-			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond,
-			proposal_stds = proposal_stds, n_iter = n_iter, burning = burning,
-			vp_list = vp_list, vs_list = vs_list, sigma_vp = sigma_vp, sigma_vs = sigma_vs,
-			comp_index = comp_index,
-			adaptive_alg = adaptive_alg,
-			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
-			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors,
-			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp,
-			melt_frac_limit = melt_frac_limit)
- 
-			c_ = pool.map(process_item_partial, index_list)
 
-			
- 
+	if len(comp_index) == 0:
+		comp_index = [0] * n_params
+
+	#Building the melt interpolator ONCE here, shared by every worker,
+	#rather than rebuilding this inside each column's process.
+	if melt_thermodyn == True:
+
+		if melt_interp_object is None:
+
+			print('Establishing grid interpolator for thermodynamic melt modelling...')
+			object.set_bulk_water(0.0)
+			object.mantle_water_distribute()
+
+			d_per_melt = (object.ol_frac * object.d_melt_ol) + \
+				(object.opx_frac_wt * object.d_melt_opx) + \
+				(object.cpx_frac_wt * object.d_melt_cpx) + \
+				(object.garnet_frac_wt * object.d_melt_garnet)
+
+			d_per_melt_avg = np.average(d_per_melt)
+
+			from pide.geodyn.mantlemelting.katz_2003 import F_wet
+
+			low_lim_T = np.amin(object.T) - 273.15
+			upper_lim_T = np.amax(object.T) + 100.0 - 273.15
+			T_grid = np.arange(low_lim_T, upper_lim_T, 25)
+
+			low_lim_X, up_lim_X = 0, 5.0
+			X_grid = np.linspace(low_lim_X, up_lim_X, 50)
+
+			low_lim_P = np.amin(object.p) - 0.1
+			upper_lim_P = np.amax(object.p) + 0.1
+			P_grid = np.linspace(low_lim_P, upper_lim_P, 50)
+
+			F_table = np.zeros((len(T_grid), len(X_grid), len(P_grid)))
+			for i, t in enumerate(T_grid):
+				for j, x in enumerate(X_grid):
+					for k, pr in enumerate(P_grid):
+						F_table[i, j, k] = F_wet(T=t, P=pr, X=x, D=d_per_melt_avg)
+
+			F_table[F_table < 0] = 0.0
+
+			melt_interp = RegularGridInterpolator((T_grid, X_grid, P_grid), F_table,
+				bounds_error=False, fill_value=0.0)
+			print('Melt interpolation table finished.')
+
+		else:
+			melt_interp = melt_interp_object
+
 	else:
- 
-		sample_distr = []
-		acceptance_rates = []
-		misfits = []
-		samples_all = []
-		misfits_all = []
-		melt_samples = []
-		melt_samples_all = []
- 
-		for idx in range(0, len(index_list)):
-			
-			c_ = _solv_MCMC_n_param(index = index_list[idx], object = object, cond_list = cond_list,
-			initial_params = initial_params, param_names = param_names,
-			upper_limits = upper_limits, lower_limits = lower_limits, sigma_cond = sigma_cond,
-			proposal_stds = proposal_stds, n_iter = n_iter, burning = burning,
-			vp_list = vp_list, vs_list = vs_list, sigma_vp = sigma_vp, sigma_vs = sigma_vs,
-			comp_index = comp_index,
-			adaptive_alg = adaptive_alg,
-			adaptive_check_length = adaptive_check_length, step_size_limits = step_size_limits,
-			ideal_acceptance_bounds = ideal_acceptance_bounds, param_priors = param_priors,
-			melt_thermodyn = melt_thermodyn, melt_thermodyn_interp = melt_interp, pres_interp = pres_interp,
-			melt_frac_limit = melt_frac_limit)
+		melt_interp = None
 
-			sample_distr.append(c_[0])
-			acceptance_rates.append(c_[1])
-			misfits.append(c_[2])
-			samples_all.append(c_[3])
-			misfits_all.append(c_[4])
-			if melt_thermodyn == True:
-				melt_samples.append(c_[5])
-				melt_samples_all.append(c_[6])
- 
-	
+	#Every argument _solv_MCMC_column needs, other than the per-column
+	#index it is dispatched with.
+	solver_kwargs = dict(
+		object=object, depths=depths, moho_depth=moho_depths,
+		cond_list=cond_list, vp_list=vp_list, vs_list=vs_list,
+		sigma_cond=sigma_cond_list, sigma_vp=sigma_vp_list, sigma_vs=sigma_vs_list,
+		initial_SHF=initial_SHF, initial_lab_temp=initial_lab_temp,
+		initial_params=initial_params, param_names=param_names,
+		upper_limits=upper_limits, lower_limits=lower_limits,
+		SHF_bounds=SHF_bounds,
+		proposal_stds=proposal_stds, n_iter=n_iter, burning=burning,
+		lab_depth=lab_depth, sigma_lab=sigma_lab,
+		melt_thermodyn=melt_thermodyn, melt_thermodyn_interp=melt_interp,
+		adaptive_alg=adaptive_alg, ideal_acceptance_bounds=ideal_acceptance_bounds,
+		adaptive_check_length=adaptive_check_length, step_size_limits=step_size_limits,
+		param_priors=param_priors, SHF_prior=SHF_prior, lab_temp=lab_temp,
+		invert_lab_temp=invert_lab_temp, lab_temp_bounds=lab_temp_bounds,
+		composition=composition, max_widen_attempts=max_widen_attempts,
+		record_names=record_names, comp_index=comp_index,
+		melt_frac_limit=melt_frac_limit)
 
-	array_names_idx = list(range(len(sample_distr)))
-	array_names_idx = [str(element) for element in array_names_idx]
+	all_indices = list(range(n_columns))
+	all_filenames = [_column_filename(file_name_base, i) for i in all_indices]
 
-	save_h5_files(array_list=sample_distr, array_names=array_names_idx, file_name=distr_file_names + '_distr.h5')
-	save_h5_files(array_list=acceptance_rates, array_names=array_names_idx, file_name=distr_file_names + '_acceptance.h5')
-	save_h5_files(array_list=misfits, array_names=array_names_idx, file_name=distr_file_names + '_misfit.h5')
-	save_h5_files(array_list=samples_all, array_names=array_names_idx, file_name=distr_file_names + '_distr_all.h5')
-	save_h5_files(array_list=misfits_all, array_names=array_names_idx, file_name=distr_file_names + '_misfit_all.h5')
-	
+	if resume == True:
+		pending_indices = []
+		for i in all_indices:
+			if os.path.exists(_column_filename(file_name_base, i)):
+				print(f'Skipping column {i}, already finished ({_column_filename(file_name_base, i)} exists).')
+			else:
+				pending_indices.append(i)
+	else:
+		pending_indices = all_indices
+
+	if len(pending_indices) == 0:
+		print('All columns already finished, nothing to run.')
+		return all_filenames
+
+	worker = partial(_solv_and_save_column, file_name_base=file_name_base,
+		save_metadata=save_metadata, **solver_kwargs)
+
+	if num_cpu > 1:
+
+		num_cpu_use = min(num_cpu, len(pending_indices))
+		print(f'Running {len(pending_indices)} columns across {num_cpu_use} processes...')
+
+		#imap_unordered with chunksize=1 hands each worker exactly one
+		#column at a time and yields each result the moment it finishes,
+		#so a worker that finishes early immediately picks up the next
+		#pending column instead of idling until the rest of a pre-assigned
+		#chunk completes.
+		n_done = 0
+		with multiprocessing.Pool(processes=num_cpu_use) as pool:
+			for fname in pool.imap_unordered(worker, pending_indices, chunksize=1):
+				n_done += 1
+				print(f'[{n_done}/{len(pending_indices)}] Saved {fname}')
+
+	else:
+
+		print(f'Running {len(pending_indices)} columns on a single process...')
+		for n_done, i in enumerate(pending_indices, start=1):
+			fname = worker(i)
+			print(f'[{n_done}/{len(pending_indices)}] Saved {fname}')
+
+	print('All columns finished.')
+
+	return all_filenames
