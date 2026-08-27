@@ -44,5 +44,5 @@ def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,
 	
 		
 		
-	return density_melt*1e-3, vp_melt, bulk_modulus_melt
+	return density_melt, vp_melt, bulk_modulus_melt
 

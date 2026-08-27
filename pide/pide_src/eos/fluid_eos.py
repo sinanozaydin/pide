@@ -100,7 +100,7 @@ def co2_eos_coolprop(T,P, method = 'array'):
 		for i in range(len(T)):
 			rho[i] = PropsSI("D", "P", P[i], "T", T[i], "CO2")
 			
-	return rho * 1e-3
+	return rho
 	
 def water_eos_coolprop(T,P, method = 'array'):
 
@@ -113,4 +113,4 @@ def water_eos_coolprop(T,P, method = 'array'):
 		for i in range(len(T)):
 			rho[i] = PropsSI("D", "P", P[i], "T", T[i], "Water")
 			
-	return rho * 1e-3
+	return rho

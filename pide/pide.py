@@ -5305,11 +5305,11 @@ class pide(object):
 					bulk_mod_mixture = ((self.melt_fluid_frac / self.K_melt_fluid) +
 						((1 - self.melt_fluid_frac) / bulk_mod))**-1
 					
-				density_mixture = (self.melt_fluid_mass_frac * self.dens_melt_fluid) + ((1-self.melt_fluid_mass_frac) * self.density_solids) * 1e3
-				
+				density_mixture = (self.melt_fluid_mass_frac * self.dens_melt_fluid) + ((1-self.melt_fluid_mass_frac) * self.density_solids)
+
 				self.v_bulk = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
 				self.v_p = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
-				self.v_s = 0.001 * np.sqrt(shear_mod_mixture / density_mixture)
+				self.v_s = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
 				
 			elif method == 'index':
 				#Hashin-Shtrikman Upper-Bound 
@@ -5326,7 +5326,7 @@ class pide(object):
 					bulk_mod_mixture = ((self.melt_fluid_frac[index] / self.K_melt_fluid[index]) +
 						((1 - self.melt_fluid_frac[index]) / bulk_mod))**-1				
 				
-				density_mixture = (self.melt_fluid_mass_frac[index] * self.dens_melt_fluid[index]) + ((1-self.melt_fluid_mass_frac[index]) * self.density_solids[index]) * 1e3
+				density_mixture = (self.melt_fluid_mass_frac[index] * self.dens_melt_fluid[index]) + ((1-self.melt_fluid_mass_frac[index]) * self.density_solids[index])
 				self.v_bulk[index] = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
 				self.v_p[index] = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
 				self.v_s[index] = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
@@ -5478,7 +5478,7 @@ class pide(object):
 						
 						if type(self.dens_mat[mineral][min_sel_list[mineral-11]]) == float:
 							#if no reference given to a materials.json instance take the float as the density
-							dens_list.append(float(self.dens_mat[mineral][min_sel_list[mineral-11]])/1e3 * np.ones(len(self.T)))
+							dens_list.append(float(self.dens_mat[mineral][min_sel_list[mineral-11]]) * np.ones(len(self.T)))
 							
 						else:
 						
@@ -5488,7 +5488,7 @@ class pide(object):
 								density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 								temperature = self.T, pressure = self.p, return_vp_vs_vbulk=False, return_aktout=False)
 								
-								dens_list.append(density / 1e3)
+								dens_list.append(density)
 								
 							else:
 								
@@ -5503,7 +5503,7 @@ class pide(object):
 									density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 									temperature = self.T, pressure = self.p, ref_density = ref_dens, return_vp_vs_vbulk=False, return_aktout=False)
 								
-									dens_list.append(density / 1e3)
+									dens_list.append(density)
 									
 								else:
 								
@@ -5514,7 +5514,7 @@ class pide(object):
 									density, aks, amu = santex_isot_object.calculate_seismic_properties(self.dens_mat[mineral][min_sel_list[mineral-11]],
 									temperature = self.T, pressure = self.p, ref_density = ref_dens, return_vp_vs_vbulk=False, return_aktout=False)
 								
-									dens_list.append(density / 1e3)
+									dens_list.append(density)
 									
 					else:
 						
@@ -5577,7 +5577,7 @@ class pide(object):
 		if pide.fluid_or_melt_method == 0: #fluid
 			
 			dens = Sanchez_Valle_2013_WaterDensity(T = temp, P = pres)
-			self.dens_melt_fluid = dens * 1e-3
+			self.dens_melt_fluid = dens
 			
 			self.density_fluid_loaded = True
 			
@@ -5646,7 +5646,7 @@ class pide(object):
 					al2o3 = melt_comp_calc[:,1],mgo = melt_comp_calc[:,2],feo = melt_comp_calc[:,3],cao = melt_comp_calc[:,4],
 					na2o = melt_comp_calc[:,5],k2o = melt_comp_calc[:,6],tio2 = melt_comp_calc[:,7],mno = melt_comp_calc[:,8],p2o5 = melt_comp_calc[:,9],
 					cr2o3 = melt_comp_calc[:,10],h2o = melt_comp_calc[:,11])
-					
+
 				else:
 
 					dens_melt_fluid, vp_melt_fluid, K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp, P = pres, sio2 = melt_comp_calc[:,0],
@@ -5710,7 +5710,7 @@ class pide(object):
 						self.dens_melt_fluid[idx_node] = ((self.h2o_melt[idx_node] * 1e-6) * water_dens) +\
 						((self.co2_melt[idx_node] * 1e-6) * co2_dens) +\
 						((1 - (self.h2o_melt[idx_node] * 1e-6) - (self.co2_melt[idx_node] * 1e-6)) * self.dens_melt_fluid_unchanged)
-						
+
 			self.density_fluid_loaded = True
 			
 	def calculate_o2_fugacity(self,mode):
@@ -5854,7 +5854,7 @@ class pide(object):
 			self.v_p = np.ones(len(self.T))
 			self.v_s = np.ones(len(self.T))
 			self.v_bulk = np.ones(len(self.T))
-			self.density_solids = np.ones(len(self.T)) * 3.3
+			self.density_solids = np.ones(len(self.T)) * 3300.0
 			self.shear_mod_solid = np.ones(len(self.T))
 			self.bulk_mod_solid = np.ones(len(self.T))
 			
@@ -5866,7 +5866,7 @@ class pide(object):
 			self.bulk_mod_solid = np.ones(len(self.T))
 		
 		if len(self.density_solids) != len(self.T):
-			self.density_solids = np.ones(len(self.T)) * 3.3
+			self.density_solids = np.ones(len(self.T)) * 3300.0
 	
 		def _solve_single(i):
 			
@@ -5923,8 +5923,8 @@ class pide(object):
 			self.v_s[i] = result['v_s']
 			self.v_bulk[i] = np.sqrt(self.v_p[i]**2 - 1.3333 * self.v_s[i]**2)
 			self.density_solids[i] = result['density']
-			self.shear_mod_solid[i] = self.density_solids[i] * self.v_s[i]**2
-			self.bulk_mod_solid[i] = self.density_solids[i] * (self.v_p[i]**2 - (1.3333*self.v_s[i]**2))
+			self.shear_mod_solid[i] = self.density_solids[i] * (self.v_s[i]*1e3)**2
+			self.bulk_mod_solid[i] = self.density_solids[i] * ((self.v_p[i]*1e3)**2 - (1.3333*(self.v_s[i]*1e3)**2))
 	
 		if method == 'index':
 			_solve_single(idx_node)
