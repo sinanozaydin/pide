@@ -57,6 +57,8 @@ from .pide_src.min_stab.min_stab import *
 #importing utils
 from .utils.utils import check_type, array_modifier, read_csv, text_color, modify_melt_composition, _check_conductivity_mechanism_warning
 from .utils.geochem import classify_tas_diagram
+#importing geodyn
+from .geodyn.mantlemelting.katz_2003 import T_solidus_wet
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -2321,7 +2323,7 @@ class pide(object):
 			pide.sandstone_water, pide.gneiss_water, pide.amphibolite_water, pide.basalt_water,
 			pide.mud_water, pide.gabbro_water, pide.other_rock_water]
 			
-	def set_bulk_water(self,value, reval = False, index = None):
+	def set_bulk_water(self, value, reval = False, index = None):
 	
 		"""
 		Set bulk water content, overriding individual mineral water contents.
@@ -5183,6 +5185,14 @@ class pide(object):
 			index = None
 		else:
 			raise ValueError("The method entered incorrectly. It has to be either 'array' or 'index'.")
+			
+		if len(self.bulk_water) != len(self.T):
+			self.set_bulk_water(self.bulk_water)
+		
+		try:
+			self.d_per_melt
+		except AttributeError:
+			self._define_per_melt()
 		
 		if self.seismic_calculation_method == 'modes':
 		
@@ -5212,7 +5222,8 @@ class pide(object):
 					self.v_p[self.idx_unique[comp_idx]] = array_seis[1]
 					self.v_s[self.idx_unique[comp_idx]] = array_seis[2]
 					
-					v_anelasticity = self.calculate_seismic_anelasticity(self.p[self.idx_unique[comp_idx]],self.T[self.idx_unique[comp_idx]],self.seismic_attenuation)
+					v_anelasticity = self.calculate_seismic_anelasticity(self.p[self.idx_unique[comp_idx]],self.T[self.idx_unique[comp_idx]],self.seismic_attenuation,
+					self.bulk_water[self.idx_unique[comp_idx]], self.d_per_melt[self.idx_unique[comp_idx]])
 					self.v_anelasticity_bulk[self.idx_unique[comp_idx]] = v_anelasticity[0]
 					self.v_anelasticity_p[self.idx_unique[comp_idx]] = v_anelasticity[1]
 					self.v_anelasticity_s[self.idx_unique[comp_idx]] = v_anelasticity[2]
@@ -5235,7 +5246,7 @@ class pide(object):
 				self.v_p[index] = array_seis[1]
 				self.v_s[index] = array_seis[2]
 				
-				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation)
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation, self.bulk_water[index], self.d_per_melt[index])
 				self.v_anelasticity_bulk[index] = v_anelasticity[0]
 				self.v_anelasticity_p[index] = v_anelasticity[1]
 				self.v_anelasticity_s[index] = v_anelasticity[2]
@@ -5245,7 +5256,7 @@ class pide(object):
 			if method == 'array':
 			
 				self.calculate_composition_modulii_from_triangle(method = 'array')
-				v_anelasticity = self.calculate_seismic_anelasticity(self.p, self.T, self.seismic_attenuation)
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p, self.T, self.seismic_attenuation, self.bulk_water, self.d_per_melt)
 				self.v_anelasticity_bulk = v_anelasticity[0]
 				self.v_anelasticity_p = v_anelasticity[1]
 				self.v_anelasticity_s = v_anelasticity[2]
@@ -5253,7 +5264,7 @@ class pide(object):
 			elif method == 'index':
 			
 				self.calculate_composition_modulii_from_triangle(sol_idx = index, method = 'index')
-				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation)
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation, self.bulk_water[index], self.d_per_melt[index])
 				self.v_anelasticity_bulk[index] = v_anelasticity[0]
 				self.v_anelasticity_p[index] = v_anelasticity[1]
 				self.v_anelasticity_s[index] = v_anelasticity[2]
@@ -5337,7 +5348,7 @@ class pide(object):
 		elif method == 'index':
 			return self.v_bulk[index]*self.v_anelasticity_bulk[index], self.v_p[index]*self.v_anelasticity_p[index], self.v_s[index]*self.v_anelasticity_s[index]
 				
-	def calculate_seismic_anelasticity(self, P, T, Qmode):
+	def calculate_seismic_anelasticity(self, P, T, Qmode, bulk_water = None, D = None):
 	
 		"""
 		Calculate the seismic anelasticity due to attenuation.
@@ -5360,7 +5371,16 @@ class pide(object):
 		elif Qmode == 'JF2010':
 			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = JacksonFaul2010(P,T)
 		elif Qmode == 'YT2016':
-			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = YamauchiTakei2016(P,T)
+			T_C_solidus = T_solidus_wet(P, bulk_water, D)
+			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = YamauchiTakei2016(P,T,t_sol_C = T_C_solidus)
+			import matplotlib.pyplot as plt
+			fig = plt.figure()
+			ax = plt.subplot(111)
+			ax.plot(T_C_solidus,P)
+			ax.invert_yaxis()
+			plt.show()
+			import ipdb
+			ipdb.set_trace()
 		elif Qmode == 'none':
 			v_anelasticity_b = 1
 			v_anelasticity_p = 1
@@ -5873,12 +5893,7 @@ class pide(object):
 			result = self._triangle_query.query(self.f_pyx[i], self.f_lherz[i], self.T[i], self.p[i])
 	
 			if np.isnan(result['v_p']):
-				"""
-				print(text_color.RED + 'WARNING:' + text_color.END +
-					f' Depth index {i} (T={self.T[i]}, P={self.p[i]}) returned NaN from the '
-					'triangle table — above the solidus or outside the composition triangle. '
-					'Consider a melt model for this point.')
-				"""
+				
 				self.ol_frac[i] = np.nan
 				self.opx_frac[i] = np.nan
 				self.cpx_frac[i] = np.nan
@@ -5925,6 +5940,29 @@ class pide(object):
 			self.density_solids[i] = result['density']
 			self.shear_mod_solid[i] = self.density_solids[i] * (self.v_s[i]*1e3)**2
 			self.bulk_mod_solid[i] = self.density_solids[i] * ((self.v_p[i]*1e3)**2 - (1.3333*(self.v_s[i]*1e3)**2))
+			
+			if self.ol_frac_wt is None:
+			
+				self.ol_frac_wt = np.zeros(len(self.T))
+				self.opx_frac_wt = np.zeros(len(self.T))
+				self.cpx_frac_wt = np.zeros(len(self.T))
+				self.garnet_frac_wt = np.zeros(len(self.T))
+				self.plag_frac_wt = np.zeros(len(self.T))
+				self.kfelds_frac_wt = np.zeros(len(self.T))
+				self.rwd_wds_frac_wt = np.zeros(len(self.T))
+				self.perov_frac_wt = np.zeros(len(self.T))
+			
+			wt_all_i = (self.ol_frac[i] + self.opx_frac[i] + self.cpx_frac[i] + self.garnet_frac[i] + self.plag_frac[i] +\
+					self.kfelds_frac[i] + self.rwd_wds_frac[i] + self.perov_frac[i])
+			
+			self.ol_frac_wt[i] = self.ol_frac[i] / wt_all_i
+			self.opx_frac_wt[i] = self.opx_frac[i] / wt_all_i
+			self.cpx_frac_wt[i] = self.cpx_frac[i] / wt_all_i
+			self.garnet_frac_wt[i] = self.garnet_frac[i] / wt_all_i
+			self.plag_frac_wt[i] = self.plag_frac[i] / wt_all_i
+			self.kfelds_frac_wt[i] = self.kfelds_frac[i] / wt_all_i
+			self.rwd_wds_frac_wt[i] = self.rwd_wds_frac[i] / wt_all_i
+			self.perov_frac_wt[i] = self.perov_frac[i] / wt_all_i
 	
 		if method == 'index':
 			_solve_single(idx_node)
@@ -6074,7 +6112,20 @@ class pide(object):
 			
 			self.d_cpx_rwd_wds = eval(self.water_rwd_wds_part_name[5][self.d_water_cpx_rwd_wds_choice] + '(p = self.p[idx_node],\
 			p_change = self.water_rwd_wds_part_pchange[5][self.d_water_cpx_rwd_wds_choice], method = method)')
-		
+			
+	def _define_per_melt(self, index = None):
+		#peridotite melt partitioning
+		if index == None:
+			self.d_per_melt = (self.ol_frac_wt * self.d_melt_ol) +\
+					(self.opx_frac_wt * self.d_melt_opx) +\
+					(self.cpx_frac_wt * self.d_melt_cpx) +\
+					(self.garnet_frac_wt * self.d_melt_garnet)
+		else:
+			self.d_per_melt = (self.ol_frac_wt[index] * self.d_melt_ol) +\
+					(self.opx_frac_wt[index] * self.d_melt_opx) +\
+					(self.cpx_frac_wt[index] * self.d_melt_cpx) +\
+					(self.garnet_frac_wt[index] * self.d_melt_garnet)
+				
 	def mantle_water_distribute(self, method = 'array', **kwargs):
 	
 		"""
@@ -6112,11 +6163,7 @@ class pide(object):
 			if len(self.h2o_melt) != len(self.bulk_water):
 				self.h2o_melt = np.zeros(len(self.bulk_water))
 				
-			#peridotite melt partitioning
-			self.d_per_melt = (self.ol_frac_wt * self.d_melt_ol) +\
-					(self.opx_frac_wt * self.d_melt_opx) +\
-					(self.cpx_frac_wt * self.d_melt_cpx) +\
-					(self.garnet_frac_wt * self.d_melt_garnet)
+			self._define_per_melt(index = idx_node)
 			
 			self.h2o_melt[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
 			
