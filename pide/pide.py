@@ -5223,7 +5223,7 @@ class pide(object):
 					self.v_s[self.idx_unique[comp_idx]] = array_seis[2]
 					
 					v_anelasticity = self.calculate_seismic_anelasticity(self.p[self.idx_unique[comp_idx]],self.T[self.idx_unique[comp_idx]],self.seismic_attenuation,
-					self.bulk_water[self.idx_unique[comp_idx]], self.d_per_melt[self.idx_unique[comp_idx]])
+					self.bulk_water[self.idx_unique[comp_idx]], self.d_per_melt[self.idx_unique[comp_idx]], melt_frac = self.melt_fluid_mass_frac[self.idx_unique[comp_idx]])
 					self.v_anelasticity_bulk[self.idx_unique[comp_idx]] = v_anelasticity[0]
 					self.v_anelasticity_p[self.idx_unique[comp_idx]] = v_anelasticity[1]
 					self.v_anelasticity_s[self.idx_unique[comp_idx]] = v_anelasticity[2]
@@ -5246,7 +5246,8 @@ class pide(object):
 				self.v_p[index] = array_seis[1]
 				self.v_s[index] = array_seis[2]
 				
-				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation, self.bulk_water[index], self.d_per_melt[index])
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation, self.bulk_water[index],
+														  self.d_per_melt[index], melt_frac = self.melt_fluid_mass_frac[index])
 				self.v_anelasticity_bulk[index] = v_anelasticity[0]
 				self.v_anelasticity_p[index] = v_anelasticity[1]
 				self.v_anelasticity_s[index] = v_anelasticity[2]
@@ -5256,7 +5257,7 @@ class pide(object):
 			if method == 'array':
 			
 				self.calculate_composition_modulii_from_triangle(method = 'array')
-				v_anelasticity = self.calculate_seismic_anelasticity(self.p, self.T, self.seismic_attenuation, self.bulk_water, self.d_per_melt)
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p, self.T, self.seismic_attenuation, self.bulk_water, self.d_per_melt, self.melt_fluid_mass_frac)
 				self.v_anelasticity_bulk = v_anelasticity[0]
 				self.v_anelasticity_p = v_anelasticity[1]
 				self.v_anelasticity_s = v_anelasticity[2]
@@ -5264,7 +5265,8 @@ class pide(object):
 			elif method == 'index':
 			
 				self.calculate_composition_modulii_from_triangle(sol_idx = index, method = 'index')
-				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation, self.bulk_water[index], self.d_per_melt[index])
+				v_anelasticity = self.calculate_seismic_anelasticity(self.p[index],self.T[index],self.seismic_attenuation, self.bulk_water[index],
+														  self.d_per_melt[index],self.melt_fluid_mass_frac[index])
 				self.v_anelasticity_bulk[index] = v_anelasticity[0]
 				self.v_anelasticity_p[index] = v_anelasticity[1]
 				self.v_anelasticity_s[index] = v_anelasticity[2]
@@ -5348,7 +5350,7 @@ class pide(object):
 		elif method == 'index':
 			return self.v_bulk[index]*self.v_anelasticity_bulk[index], self.v_p[index]*self.v_anelasticity_p[index], self.v_s[index]*self.v_anelasticity_s[index]
 				
-	def calculate_seismic_anelasticity(self, P, T, Qmode, bulk_water = None, D = None):
+	def calculate_seismic_anelasticity(self, P, T, Qmode, bulk_water = None, D = None, melt_frac = None):
 	
 		"""
 		Calculate the seismic anelasticity due to attenuation.
@@ -5371,16 +5373,8 @@ class pide(object):
 		elif Qmode == 'JF2010':
 			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = JacksonFaul2010(P,T)
 		elif Qmode == 'YT2016':
-			T_C_solidus = T_solidus_wet(P, bulk_water, D)
-			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = YamauchiTakei2016(P,T,t_sol_C = T_C_solidus)
-			import matplotlib.pyplot as plt
-			fig = plt.figure()
-			ax = plt.subplot(111)
-			ax.plot(T_C_solidus,P)
-			ax.invert_yaxis()
-			plt.show()
-			import ipdb
-			ipdb.set_trace()
+			T_C_solidus = T_solidus_wet(P, bulk_water*1e-4, D)
+			v_anelasticity_b, v_anelasticity_p, v_anelasticity_s = YamauchiTakei2016(P,T,t_sol_C = T_C_solidus, melt_fraction = melt_frac)
 		elif Qmode == 'none':
 			v_anelasticity_b = 1
 			v_anelasticity_p = 1

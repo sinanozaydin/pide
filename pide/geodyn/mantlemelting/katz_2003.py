@@ -260,7 +260,6 @@ def T_solidus_wet(P, X, D=0.01):
 	vanishing amount of melt and X_melt = X/D. The depression is capped
 	at the value for a water-saturated melt.
 	"""
-	D = 0.01
 	X_melt = X / D
 	delT = np.minimum(delta_T(X_melt), delta_T(X_sat(P)))
 	return T_solidus(P) - np.clip(delT, 0.0, None)
