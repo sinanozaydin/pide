@@ -1174,6 +1174,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	T_init, P_init, LAB = _update_geotherm(shf_val=current_scalars[0], lab_temp_val=_lab_temp_for_geotherm)
 	object.set_temperature(T_init)
 	object.set_pressure(P_init)
+	object.set_parameter('LAB', LAB)
 
 	#Setting the composition if defined, recasting into temperature and pressure length if single.
 	if composition is not None:
@@ -1445,6 +1446,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		if continue_bounds == True:
 
 			object_backup = copy.deepcopy(object)
+			LAB_backup = LAB
 
 			if rand_dim < n_scalar_total:
 				_lab_temp_proposed = proposed_scalars[1] if invert_lab_temp else lab_temp
@@ -1597,6 +1599,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 			#Calculate prior likelihood for proposed parameters
 			proposed_prior = 0.0
+			if SHF_prior is not None:
+				proposed_prior += -0.5 * ((proposed_scalars[0] - SHF_prior[index][0]) / SHF_prior[index][1])**2
 			if param_priors is not None:
 				for ii in range(n_params):
 					if param_priors[ii] is not None:
@@ -1621,6 +1625,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			if np.isnan(proposed_likelihood):
 				n_reject_nan += 1
 				object = object_backup
+				LAB = LAB_backup
+				
 			else:
 				# Calculate acceptance probability
 				acceptance_ratio = proposed_likelihood / current_likelihood
@@ -1652,6 +1658,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					n_reject_likelihood += 1
 					#reverting back to the old state.
 					object = object_backup
+					LAB = LAB_backup
 					
 		else:
 			n_reject_bounds += 1
@@ -2061,8 +2068,6 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 			#Calculate prior likelihood for proposed parameters
 			proposed_prior = 0.0
 			
-			if SHF_prior is not None:
-				proposed_prior += -0.5 * ((proposed_scalars[0] - SHF_prior[index][0]) / SHF_prior[index][1])**2
 			if param_priors is not None:
 				for ii in range(n_params):
 					if param_priors[ii] is not None:
@@ -2157,6 +2162,7 @@ def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, up
 			else:
 				#reverting back to the original object upon rejection of the sample.
 				object = object_backup
+					
 
 	misfits = [misfits_cond, misfits_vp, misfits_vs]
 	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs]
