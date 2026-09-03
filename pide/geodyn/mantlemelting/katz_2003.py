@@ -229,6 +229,7 @@ def F_wet(P,T,X,D,M=0.15):
 	Xi = X_H2O(X, F, D)
 
 	delT = delta_T(Xi)
+	is_saturated = delT > delT_sat 
 	delT = np.minimum(delT, delT_sat)
 	delT = np.clip(delT, 0, 1e99)
 
@@ -244,7 +245,8 @@ def F_wet(P,T,X,D,M=0.15):
 
 	F[F > F_cpx_out] = F_opx[F > F_cpx_out]
 	F[F>1.0] = 1.0
-	return F
+	
+	return F, is_saturated
 	
 def T_solidus_wet(P, X, D=0.01):
 	"""
