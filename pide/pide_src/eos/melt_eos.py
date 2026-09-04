@@ -10,7 +10,6 @@ def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,
 	endmembers = [q4L, sl1L, wo1L, fo2L, fa2L, jdL, hmL, ekL, tiL, kjL, ctL, h2o1L]
 	melt_class = make_melt_class(endmembers)
 
-	
 	if method == 'array':
 		vp_melt = np.zeros(len(T))
 		density_melt = np.zeros(len(T))
@@ -27,7 +26,7 @@ def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,
 				
 				vp_melt[i] = melt.v_p
 				density_melt[i] = melt.density
-				bulk_modulus_melt[i] = melt.density * (melt.v_p**2.0)
+				bulk_modulus_melt[i] = melt.K_S
 				
 	else:
 		with open(os.devnull, 'w') as fnull, contextlib.redirect_stdout(fnull), contextlib.redirect_stderr(fnull):
@@ -40,9 +39,7 @@ def Holland_Green_Powell_2018_ds633_MeltEOS(T,P,sio2,al2o3,mgo,feo,cao,na2o,k2o,
 			
 			vp_melt = melt.v_p
 			density_melt = melt.density
-			bulk_modulus_melt = melt.density * (melt.v_p**2.0)
-	
-		
-		
+			bulk_modulus_melt = melt.K_S			
+			
 	return density_melt, vp_melt, bulk_modulus_melt
 
