@@ -1132,7 +1132,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	proposal_stds = list(proposal_stds)
 	#adding another step for the joint step if triangle_calculation is True.
 	if triangle_calculation == True:
-		proposal_stds = list(proposal_stds) + [np.mean(proposal_stds[-2:])]
+		_idx_fp_std = param_names.index('f_pyx')
+		_idx_fl_std = param_names.index('f_lherz')
+		proposal_stds = list(proposal_stds) + [np.mean([
+			proposal_stds[n_scalars + _idx_fp_std],
+			proposal_stds[n_scalars + _idx_fl_std]])]
 	if param_priors is not None:
 		param_priors = copy.deepcopy(param_priors)
 
@@ -1447,13 +1451,14 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 			object_backup = copy.deepcopy(object)
 			LAB_backup = LAB
+			object.density_fluid_loaded = False
 
 			if rand_dim < n_scalar_total:
 				_lab_temp_proposed = proposed_scalars[1] if invert_lab_temp else lab_temp
 				T_, P_, LAB = _update_geotherm(proposed_scalars[0], _lab_temp_proposed)
 				object.set_temperature(T_)
 				object.set_pressure(P_)
-
+				
 				#if bulk xFe is changed distributing iron among defined minerals.
 				if 'bulk_xfe' in param_names:
 					object.mantle_xfe_distribute(method = 'array')

@@ -5155,6 +5155,10 @@ class pide(object):
 			
 		return unique_compositions, fraction_list, idx_unique, id_list_global
 		
+	def _melt_mass_frac_to_vol(self, mass_frac, dens_fluid, dens_solid):
+		
+		return 1.0 / (1 + (((1.0/mass_frac) - 1) * (dens_fluid / dens_solid)))
+		
 	def calculate_seismic_velocities(self, mixing_method = 'HS-Medium', melt_mixing_method = 'HS-Upper', method = 'array', **kwargs):
 	
 		"""
@@ -5270,23 +5274,38 @@ class pide(object):
 				self.v_anelasticity_bulk[index] = v_anelasticity[0]
 				self.v_anelasticity_p[index] = v_anelasticity[1]
 				self.v_anelasticity_s[index] = v_anelasticity[2]
-			
-		if np.mean(self.melt_fluid_mass_frac) != 0.0:
+		
+		if method == 'array':
+			check_seis_melt = (np.mean(self.melt_fluid_mass_frac) != 0.0)
+		elif method == 'index':
+			check_seis_melt = (self.melt_fluid_mass_frac[index] != 0.0)
+		
+		if check_seis_melt == True:
 			
 			if self.density_fluid_loaded == False:
 				
 				if self.seismic_calculation_method == 'modes':
 					self.calculate_density_solid()
-				self.calculate_density_fluid(method = method,sol_idx = index)
 				
-				self.melt_fluid_frac = np.zeros(len(self.melt_fluid_mass_frac))
+				self.calculate_density_fluid(method = method, sol_idx = index)
 				
-				for i in range(0,len(self.melt_fluid_mass_frac)):
+				if (getattr(self, 'melt_fluid_frac', None) is None) or (len(self.melt_fluid_frac) != len(self.T)):
+					self.melt_fluid_frac = np.zeros(len(self.T))
 				
-					if self.melt_fluid_mass_frac[i] != 0.0:
+				if method == 'array':
+
+					for i in range(0,len(self.melt_fluid_mass_frac)):
 						
-						self.melt_fluid_frac[i] = 1.0 / (1 + (((1.0/self.melt_fluid_mass_frac[i]) - 1) * (self.dens_melt_fluid[i] / (self.density_solids[i]))))
-						
+						if self.melt_fluid_mass_frac[i] != 0.0:
+							
+							self.melt_fluid_frac[i] = self._melt_mass_frac_to_vol(mass_frac=self.melt_fluid_mass_frac[i],
+							dens_fluid = self.dens_melt_fluid[i], dens_solid = self.density_solids[i])
+
+				elif method == 'index':
+				
+					self.melt_fluid_frac[index] = self._melt_mass_frac_to_vol(mass_frac=self.melt_fluid_mass_frac[index],
+					dens_fluid = self.dens_melt_fluid[index], dens_solid = self.density_solids[index])
+					
 			if self.seismic_calculation_method == 'gibbs':
 				shear_mod = self.shear_mod_solid.copy()
 				bulk_mod = self.bulk_mod_solid.copy()
