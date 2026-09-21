@@ -110,6 +110,7 @@ class pide(object):
 		self.temperature_default = False
 		self.density_loaded = False
 		self.density_fluid_loaded = False
+		self._reset_melt_eos_cache()
 		self.seis_property_overwrite = [False] * 16
 		self.melt_composition_method = 'Default'
 		self.melt_comp_manual = False
@@ -3260,6 +3261,8 @@ class pide(object):
 
 			self.melt_comp = np.array(self.melt_comp)
 
+		self._reset_melt_eos_cache()
+
 	def set_grain_size(self,reval = False,**kwargs):
 	
 		"""
@@ -5282,29 +5285,42 @@ class pide(object):
 		
 		if check_seis_melt == True:
 			
-			if self.density_fluid_loaded == False:
+			dens_arr = getattr(self, 'dens_melt_fluid', None)
+			if (dens_arr is None) or (len(dens_arr) != len(self.T)):
+				dens_invalid = True
+			elif method == 'array':
+				dens_invalid = np.any(dens_arr[self.melt_fluid_mass_frac > 0.0] <= 0.0)
+			else:
+				dens_invalid = (dens_arr[index] <= 0.0)
+			
+			if (self.density_fluid_loaded == False) or dens_invalid:
 				
 				if self.seismic_calculation_method == 'modes':
 					self.calculate_density_solid()
 				
 				self.calculate_density_fluid(method = method, sol_idx = index)
-				
-				if (getattr(self, 'melt_fluid_frac', None) is None) or (len(self.melt_fluid_frac) != len(self.T)):
-					self.melt_fluid_frac = np.zeros(len(self.T))
-				
-				if method == 'array':
+			
+			if (getattr(self, 'melt_fluid_frac', None) is None) or (len(self.melt_fluid_frac) != len(self.T)):
+				self.melt_fluid_frac = np.zeros(len(self.T))
+			
+			if method == 'array':
 
-					for i in range(0,len(self.melt_fluid_mass_frac)):
+				for i in range(0,len(self.melt_fluid_mass_frac)):
+					
+					if self.melt_fluid_mass_frac[i] != 0.0:
 						
-						if self.melt_fluid_mass_frac[i] != 0.0:
-							
-							self.melt_fluid_frac[i] = self._melt_mass_frac_to_vol(mass_frac=self.melt_fluid_mass_frac[i],
-							dens_fluid = self.dens_melt_fluid[i], dens_solid = self.density_solids[i])
+						self.melt_fluid_frac[i] = self._melt_mass_frac_to_vol(mass_frac=self.melt_fluid_mass_frac[i],
+						dens_fluid = self.dens_melt_fluid[i], dens_solid = self.density_solids[i])
+					else:
+						self.melt_fluid_frac[i] = 0.0
 
-				elif method == 'index':
-				
+			elif method == 'index':
+			
+				if self.melt_fluid_mass_frac[index] != 0.0:
 					self.melt_fluid_frac[index] = self._melt_mass_frac_to_vol(mass_frac=self.melt_fluid_mass_frac[index],
 					dens_fluid = self.dens_melt_fluid[index], dens_solid = self.density_solids[index])
+				else:
+					self.melt_fluid_frac[index] = 0.0
 					
 			if self.seismic_calculation_method == 'gibbs':
 				shear_mod = self.shear_mod_solid.copy()
@@ -5568,6 +5584,22 @@ class pide(object):
 				else:
 	
 					return density
+
+	def _reset_melt_eos_cache(self):
+	
+		"""
+		Invalidate the row-wise melt EOS cache used by calculate_density_fluid.
+
+		The cache key already carries T, P and the full 12-oxide melt composition,
+		so this is only needed when something outside those inputs changes the
+		meaning of a cached row (object rebuild, melt composition replaced,
+		different column loaded).
+		"""
+
+		self._melt_eos_key = None
+		self._melt_eos_dens = None
+		self._melt_eos_vp = None
+		self._melt_eos_K = None
 					
 	def calculate_density_fluid(self, method = 'array', **kwargs):
 	
@@ -5633,8 +5665,16 @@ class pide(object):
 						
 					
 				elif self.melt_composition_method == 'Input':
-					if melt_comp_calc is None:
+
+					if self.melt_comp is None:
 						raise KeyError('You have to define melt composition first with the method: set_melt_composition.')
+
+					if interp_for_iter == False:
+
+						melt_comp_calc = self.melt_comp.copy()
+					else:
+
+						melt_comp_calc = np.array([self.melt_comp[sol_idx].copy() for _ in range(len(temp))])
 					
 			else:
 
@@ -5672,13 +5712,44 @@ class pide(object):
 				self.K_melt_fluid = np.zeros(len(temp))
 			
 			if method == 'array':
-				
+			
 				if interp_for_iter == False:
-					
-					self.dens_melt_fluid, self.vp_melt_fluid, self.K_melt_fluid = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp, P = pres, sio2 = melt_comp_calc[:,0],
-					al2o3 = melt_comp_calc[:,1],mgo = melt_comp_calc[:,2],feo = melt_comp_calc[:,3],cao = melt_comp_calc[:,4],
-					na2o = melt_comp_calc[:,5],k2o = melt_comp_calc[:,6],tio2 = melt_comp_calc[:,7],mno = melt_comp_calc[:,8],p2o5 = melt_comp_calc[:,9],
-					cr2o3 = melt_comp_calc[:,10],h2o = melt_comp_calc[:,11])
+
+					#Row-wise caching of the melt EOS. In iterative inversions most proposals
+					#change the inputs of only one depth node, so only the rows whose
+					#(T, P, melt composition) actually changed are sent to the EOS.
+					melt_comp_calc = np.asarray(melt_comp_calc, dtype = float)
+					eos_key = np.column_stack([np.asarray(temp, dtype = float),
+						np.asarray(pres, dtype = float), melt_comp_calc])
+
+					cached_key = getattr(self, '_melt_eos_key', None)
+
+					if (cached_key is None) or (np.shape(cached_key) != np.shape(eos_key)):
+						idx_recalc = np.arange(len(temp))
+						self._melt_eos_dens = np.zeros(len(temp))
+						self._melt_eos_vp = np.zeros(len(temp))
+						self._melt_eos_K = np.zeros(len(temp))
+					else:
+						idx_recalc = np.where(np.any(eos_key != cached_key, axis = 1))[0]
+
+					if len(idx_recalc) > 0:
+
+						dens_recalc, vp_recalc, K_recalc = Holland_Green_Powell_2018_ds633_MeltEOS(T = temp[idx_recalc], P = pres[idx_recalc], sio2 = melt_comp_calc[:,0][idx_recalc],
+						al2o3 = melt_comp_calc[:,1][idx_recalc],mgo = melt_comp_calc[:,2][idx_recalc],feo = melt_comp_calc[:,3][idx_recalc],cao = melt_comp_calc[:,4][idx_recalc],
+						na2o = melt_comp_calc[:,5][idx_recalc],k2o = melt_comp_calc[:,6][idx_recalc],tio2 = melt_comp_calc[:,7][idx_recalc],mno = melt_comp_calc[:,8][idx_recalc],p2o5 = melt_comp_calc[:,9][idx_recalc],
+						cr2o3 = melt_comp_calc[:,10][idx_recalc],h2o = melt_comp_calc[:,11][idx_recalc])
+
+						self._melt_eos_dens[idx_recalc] = dens_recalc
+						self._melt_eos_vp[idx_recalc] = vp_recalc
+						self._melt_eos_K[idx_recalc] = K_recalc
+
+					self._melt_eos_key = eos_key
+
+					#Handing out copies, so the CO2 mixing below can never write back into
+					#the cache and mix an unchanged row twice on the next call.
+					self.dens_melt_fluid = self._melt_eos_dens.copy()
+					self.vp_melt_fluid = self._melt_eos_vp.copy()
+					self.K_melt_fluid = self._melt_eos_K.copy()
 
 				else:
 
