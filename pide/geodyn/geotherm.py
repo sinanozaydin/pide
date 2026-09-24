@@ -53,10 +53,10 @@ def calculate_hasterok2011_geotherm(SHF,  T_0, max_depth, moho, adiabat=True, BD
 	moho = moho * 1e3 #converting moho depth to meters
 	T_0 = T_0 + 273.0 #converting celsius to kelvin
 	max_depth = max_depth * 1e3 #converting max depth to meters.
-
+	rho_mantle = kwargs.pop('rho_mantle', 3300.0)
 	g = 9806.0
 	rho_crust = 2850.0
-	rho_mantle = 3340.0
+
 	A_upper_crust = 1e-3 #mW/m^3
 	A_lower_crust = 0.4e-3 #mW/m^3
 	heat_prod_mantle = 4e-5 #mW/m^3
