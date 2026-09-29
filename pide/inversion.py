@@ -524,8 +524,6 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	#deep copy object to not confuse multiprocessing workers.
 	object = copy.deepcopy(object)
 	
-	widen_count = 0
-
 	#determining length of the parametrisation
 	n_depths = len(depths)
 	n_params = len(param_names)
@@ -603,6 +601,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		proposal_stds = list(proposal_stds) + [np.mean([
 			proposal_stds[n_scalars + _idx_fp_std],
 			proposal_stds[n_scalars + _idx_fl_std]])]
+			
+	proposal_stds_initial = list(proposal_stds)
+	
 	if param_priors is not None:
 		param_priors = copy.deepcopy(param_priors)
 
@@ -616,6 +617,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 	# --- Determine which params need water distribution ---
 	water_solv = 'bulk_water' in param_names
+	idx_water_param = param_names.index('bulk_water') if water_solv == True else None
 
 	melt_solv = 'melt_fluid_mass_frac' in param_names
 	if melt_thermodyn is True:
@@ -655,6 +657,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	#Setting all the parameters defined...
 	for ii in range(n_params):
 		getattr(object, param_names[ii])[:n_depths] = current_depth_params[:, ii]
+		
+	if 'melt_fluid_mass_frac' in param_names:
+		_im = param_names.index('melt_fluid_mass_frac')
+		_m0 = current_depth_params[:, _im].copy()
+		_m0[_m0 < melt_frac_limit] = 0.0
+		object.melt_fluid_mass_frac[:n_depths] = _m0
 
 	# converting the f_pyx/f_lherz columns into unconstrained coordinates ---
 	# From here on, these two columns of current_depth_params hold logit-space
@@ -702,6 +710,14 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	if water_solv == True:
 
 		object.mantle_water_distribute()
+		
+		if np.any(object.melt_water_saturated[:n_depths]):
+			_bad = np.where(object.melt_water_saturated[:n_depths])[0]
+			raise ValueError('Initial bulk_water exceeds melt water saturation at depth '
+				'indices %s (%s km). Allowed maximum there is %s ppm. Lower initial_params '
+				'for bulk_water, or every proposal will be rejected.'
+				% (_bad.tolist(), np.asarray(depths)[_bad].tolist(),
+				np.round(object.bulk_water[_bad], 1).tolist()))
 
 		if (melt_solv == True) or (melt_thermodyn == True):
 
@@ -856,6 +872,10 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	n_reject_bounds = 0
 	n_reject_nan = 0
 	n_reject_likelihood = 0
+	n_reject_saturation = 0
+	
+	status = 'ok'
+	status_message = ''
 
 	n_step_dims = n_scalars + n_params + (1 if triangle_calculation == True else 0)
 	n_attempted_per_dim = [0] * n_step_dims
@@ -934,6 +954,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			object.density_fluid_loaded = False
 
 			if rand_dim < n_scalar_total:
+				#if tree for geotherm scalar sampling
 				_lab_temp_proposed = proposed_scalars[1] if invert_lab_temp else lab_temp
 				T_, P_, LAB = _update_geotherm(proposed_scalars[0], _lab_temp_proposed)
 				object.set_temperature(T_)
@@ -967,6 +988,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				if water_solv == True:
 
 					object.mantle_water_distribute(method = 'array')
+					
 			elif rand_dim < n_scalar_total + n_param_total:
 
 				#if one of the parameters are a composition parameter.
@@ -1004,6 +1026,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					object.f_lherz[depth_idx] = fl
 				else:
 					getattr(object, param_names[param_idx])[depth_idx] = proposed_depth_params[depth_idx, param_idx]
+					if param_names[param_idx] == 'melt_fluid_mass_frac':
+						if object.melt_fluid_mass_frac[depth_idx] < melt_frac_limit:
+							object.melt_fluid_mass_frac[depth_idx] = 0.0
 
 				#if bulk xFe is changed distributing iron among defined minerals.
 				if 'bulk_xfe' in param_names:
@@ -1047,67 +1072,83 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				if water_solv == True:
 					object.mantle_water_distribute(method = 'index', sol_idx = joint_depth_idx)
 			
-			#Calculating the conductivity and seismic velocities.
-			if (vp_list is not None) or (vs_list is not None):
-				v_bulk_, vp_, vs_ = object.calculate_seismic_velocities(method = 'array')
-
-			#calculating conductivity later, because the conductivity may depend on gibbs-derived mineral
-			#assemblage calculated within calculate_seismic_velocities call
-			if cond_list is not None:
-				cond_ = object.calculate_conductivity(method = 'array')			
-
-			if cond_list is not None:
-				proposed_likelihood_cond, misf_cond = _likelihood(cond_, cond_list[index], sigma_cond[index])
-				proposed_likelihood_cond = np.sum(proposed_likelihood_cond)
+			#checking if added sample had melt saturation
+			reject_saturation = False
+			if water_solv == True:
+				if np.any(object.melt_water_saturated[:n_depths]):
+					reject_saturation = True
+					n_reject_saturation += 1
+			
+			if reject_saturation == False:
+			
+				#Calculating the conductivity and seismic velocities.
+				if (vp_list is not None) or (vs_list is not None):
+					v_bulk_, vp_, vs_ = object.calculate_seismic_velocities(method = 'array')
+	
+				#calculating conductivity later, because the conductivity may depend on gibbs-derived mineral
+				#assemblage calculated within calculate_seismic_velocities call
+				if cond_list is not None:
+					cond_ = object.calculate_conductivity(method = 'array')			
+	
+				if cond_list is not None:
+					proposed_likelihood_cond, misf_cond = _likelihood(cond_, cond_list[index], sigma_cond[index])
+					proposed_likelihood_cond = np.sum(proposed_likelihood_cond)
+				else:
+					proposed_likelihood_cond = 1
+					misf_cond = np.zeros(len(object.T))
+	
+				if vp_list is not None:
+					proposed_likelihood_vp, misf_vp = _likelihood(vp_, vp_list[index], sigma_vp[index], norm = 'linear')
+					proposed_likelihood_vp = np.sum(proposed_likelihood_vp)
+				else:
+					proposed_likelihood_vp = 1
+					misf_vp = np.zeros(len(object.T))
+				if vs_list is not None:
+					proposed_likelihood_vs, misf_vs = _likelihood(vs_, vs_list[index], sigma_vs[index], norm = 'linear')
+					proposed_likelihood_vs = np.sum(proposed_likelihood_vs)
+				else:
+					proposed_likelihood_vs = 1
+					misf_vs = np.zeros(len(object.T))
+					
+				if lab_depth is not None:
+					proposed_likelihood_lab, misf_lab = _likelihood(LAB, lab_depth, sigma_lab, norm = 'linear')
+				else:
+					proposed_likelihood_lab = 1
+					misf_lab = 0.0
+	
+				#Calculate prior likelihood for proposed parameters
+				proposed_prior = 0.0
+				if SHF_prior is not None:
+					proposed_prior += -0.5 * ((proposed_scalars[0] - SHF_prior[index][0]) / SHF_prior[index][1])**2
+				if param_priors is not None:
+					for ii in range(n_params):
+						if param_priors[ii] is not None:
+							prior_mean = param_priors[ii][0]   # array length n_depths
+							prior_sigma = param_priors[ii][1]   # array length n_depths
+	
+							if triangle_calculation == True and ii == idx_fp:
+								param_vals = np.array([_unconstrained_to_fractions(
+									proposed_depth_params[iz, idx_fp], proposed_depth_params[iz, idx_fl])[0]
+									for iz in range(n_depths)])
+							elif triangle_calculation == True and ii == idx_fl:
+								param_vals = np.array([_unconstrained_to_fractions(
+									proposed_depth_params[iz, idx_fp], proposed_depth_params[iz, idx_fl])[1]
+									for iz in range(n_depths)])
+							else:
+								param_vals = proposed_depth_params[:, ii]
+	
+							proposed_prior += np.sum(-0.5 * ((param_vals - prior_mean) / prior_sigma)**2)
+	
+				proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + proposed_prior)
+			
 			else:
-				proposed_likelihood_cond = 1
-				misf_cond = np.zeros(len(object.T))
+				proposed_likelihood = 0.0
 
-			if vp_list is not None:
-				proposed_likelihood_vp, misf_vp = _likelihood(vp_, vp_list[index], sigma_vp[index], norm = 'linear')
-				proposed_likelihood_vp = np.sum(proposed_likelihood_vp)
-			else:
-				proposed_likelihood_vp = 1
-				misf_vp = np.zeros(len(object.T))
-			if vs_list is not None:
-				proposed_likelihood_vs, misf_vs = _likelihood(vs_, vs_list[index], sigma_vs[index], norm = 'linear')
-				proposed_likelihood_vs = np.sum(proposed_likelihood_vs)
-			else:
-				proposed_likelihood_vs = 1
-				misf_vs = np.zeros(len(object.T))
-				
-			if lab_depth is not None:
-				proposed_likelihood_lab, misf_lab = _likelihood(LAB, lab_depth, sigma_lab, norm = 'linear')
-			else:
-				proposed_likelihood_lab = 1
-				misf_lab = 0.0
-
-			#Calculate prior likelihood for proposed parameters
-			proposed_prior = 0.0
-			if SHF_prior is not None:
-				proposed_prior += -0.5 * ((proposed_scalars[0] - SHF_prior[index][0]) / SHF_prior[index][1])**2
-			if param_priors is not None:
-				for ii in range(n_params):
-					if param_priors[ii] is not None:
-						prior_mean = param_priors[ii][0]   # array length n_depths
-						prior_sigma = param_priors[ii][1]   # array length n_depths
-
-						if triangle_calculation == True and ii == idx_fp:
-							param_vals = np.array([_unconstrained_to_fractions(
-								proposed_depth_params[iz, idx_fp], proposed_depth_params[iz, idx_fl])[0]
-								for iz in range(n_depths)])
-						elif triangle_calculation == True and ii == idx_fl:
-							param_vals = np.array([_unconstrained_to_fractions(
-								proposed_depth_params[iz, idx_fp], proposed_depth_params[iz, idx_fl])[1]
-								for iz in range(n_depths)])
-						else:
-							param_vals = proposed_depth_params[:, ii]
-
-						proposed_prior += np.sum(-0.5 * ((param_vals - prior_mean) / prior_sigma)**2)
-
-			proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + proposed_prior)
-
-			if np.isnan(proposed_likelihood):
+			if reject_saturation == True:
+				restore_object_state(object, state_backup)
+				LAB = LAB_backup
+			
+			elif np.isnan(proposed_likelihood):
 				n_reject_nan += 1
 				restore_object_state(object, state_backup)
 				LAB = LAB_backup
@@ -1126,7 +1167,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					current_misf_vp = misf_vp.copy()
 					current_misf_vs = misf_vs.copy()
 					current_misf_lab = misf_lab
-					
+										
 					n_accepted_per_dim[step_idx] += 1
 
 					if _ > burning:
@@ -1183,6 +1224,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			if _ >= n_iter and (_ - n_iter) % 2000 == 0:
 				if  ideal_acceptance_bounds[0] <= acceptance_rate <= ideal_acceptance_bounds[1]:
 					print(f'Acceptance rate {acceptance_rate:.3f} is good. Terminating at {_} iterations.')
+					status = 'converged_acceptance'
 					break
 				else:
 					print(f'Acceptance rate {acceptance_rate:.3f} still not converged to desired acceptance rate. Continuing to maximum number of iterations...')
@@ -1208,16 +1250,18 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		# Check if stuck after enough post-burn-in samples
 		if _ != 0:
 			if _ > burning and ((_ - burning) % 5000 == 0) and accepted == 0:
-				print(text_color.RED + 'Zero acceptance after 5000 samples. Widening priors.' + text_color.END)
-				if widen_count < max_widen_attempts:
-					widen_count += 1
-					# Widen priors for parameters that have them
-					if param_priors is not None:
-						for ii in range(n_params):
-							if param_priors[ii] is not None:
-								param_priors[ii][1][:] = param_priors[ii][1][:] * 1.25
-								print(text_color.YELLOW + f'Index {index}: widening prior for {param_names[ii]} '
-									f'to sigma_mean={param_priors[ii][1].mean():.3f}, attempt {widen_count}' + text_color.END)
+
+				status = 'stuck_no_acceptance'
+				status_message = ('zero acceptances in %d iterations after burn-in. '
+					'Rejections: bounds %d, NaN %d, saturation %d, likelihood %d.'
+					% (_ - burning, n_reject_bounds, n_reject_nan,
+					n_reject_saturation, n_reject_likelihood))
+
+				print(text_color.RED + f'Index {index} STOPPED: {status_message}' + text_color.END)
+				print(text_color.RED + 'Returning what was collected. Check initial_params, the '
+					'bounds, and whether melt_water_saturated is restored on rejection.' + text_color.END)
+				break
+				
 		if acceptance_rate < 0.1:
 			color_ovr = text_color.RED
 		elif acceptance_rate < ideal_acceptance_bounds[0]:
@@ -1234,27 +1278,38 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				print(f'Rejected based on likelihood per cent(%): {(1e2*n_reject_likelihood / _):.2f}')
 				print(f'Rejected based on NaN petrophysical/thermodynamic calculation per cent(%): {(1e2*n_reject_nan / _):.2f}')
 				print(f'Rejected based on bound limitations per cent(%): {(1e2*n_reject_bounds / _):.2f}')
+				print(f'Rejected based on melt water saturation per cent(%): {(1e2*n_reject_saturation / _):.2f}')   #ADDED
 
 				for d in range(n_step_dims):
 					if n_attempted_per_dim[d] == 0:
 						continue
 					dim_acceptance = n_accepted_per_dim[d] / n_attempted_per_dim[d]
 					if dim_acceptance < 0.1:
-						proposal_stds[d] *= 0.8
-						status, color = 'very low', text_color.RED
+						factor, status, color = 0.8, 'very low', text_color.RED
 					elif dim_acceptance < ideal_acceptance_bounds[0]:
-						proposal_stds[d] *= 0.95
-						status, color = 'low', text_color.YELLOW
+						factor, status, color = 0.95, 'low', text_color.YELLOW
 					elif dim_acceptance > 0.5:
-						proposal_stds[d] *= 1.2
-						status, color = 'very high', text_color.RED
+						factor, status, color = 1.2, 'very high', text_color.RED
 					elif dim_acceptance > ideal_acceptance_bounds[1]:
-						proposal_stds[d] *= 1.05
-						status, color = 'high', text_color.YELLOW
+						factor, status, color = 1.05, 'high', text_color.YELLOW
 					else:
-						status, color = 'good', text_color.GREEN
-					if step_size_limits is not None:
-						proposal_stds[d] = min(proposal_stds[d], step_size_limits[d])
+						factor, status, color = 1.0, 'good', text_color.GREEN
+
+					if _ < burning:
+						
+						#multiplying by the factor depending on accpetance rate
+						proposal_stds[d] *= factor
+
+						if step_size_limits is not None:
+							proposal_stds[d] = min(proposal_stds[d], step_size_limits[d])
+						
+						#putting a 5 per cent floor from it cannot be lower than initial proposal stds
+						proposal_stds[d] = max(proposal_stds[d], 0.05 * proposal_stds_initial[d])
+
+						_frozen = ''
+					else:
+						_frozen = ' [frozen]'
+
 
 					if d < n_scalars:
 						name = scalar_names[d]
@@ -1263,7 +1318,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					else:
 						name = 'f_pyx_f_lherz_joint'
 					print(color + f'  {name}: acceptance {status} ({dim_acceptance:.3f}), '
-						f'attempted={n_attempted_per_dim[d]}, step={proposal_stds[d]:.4f}' + text_color.END)
+						f'attempted={n_attempted_per_dim[d]}, step={proposal_stds[d]:.4f}{_frozen}' + text_color.END)
 
 				n_attempted_per_dim = [0] * n_step_dims
 				n_accepted_per_dim = [0] * n_step_dims
@@ -1296,7 +1351,14 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		'preds_vs': np.array(preds_vs),
 		'preds_cond': np.array(preds_cond),
 		'melt_samples': np.array(melt_samples),
-		'katz_melt_samples': np.array(katz_melt_samples)
+		'katz_melt_samples': np.array(katz_melt_samples),
+		'status': status,
+		'status_message': status_message,
+		'n_iterations_run': _ + 1,
+		'n_reject_bounds': n_reject_bounds,
+		'n_reject_nan': n_reject_nan,
+		'n_reject_saturation': n_reject_saturation,
+		'n_reject_likelihood': n_reject_likelihood,
 	}
  
 	if invert_lab_temp == True:
@@ -1312,7 +1374,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 def _solv_MCMC_n_param(index, cond_list, object, initial_params, param_names, upper_limits,
 	lower_limits, sigma_cond, proposal_stds, n_iter, burning, water_solv, comp_solv, melt_thermodyn, pres_interp, melt_frac_limit,
 	vp_list = None, vs_list = None, sigma_vp = None, sigma_vs = None,
-	adaptive_alg = True, ideal_acceptance_bounds = [0.2,0.3], adaptive_check_length = 1000,
+	adaptive_alg = True, ideal_acceptance_bounds = [0.25,0.45], adaptive_check_length = 1000,
 	comp_index = [0,0], step_size_limits = None, transition_zone = False, param_priors = None,
 	max_widen_attempts = 3, melt_thermodyn_interp = None):
 	

@@ -58,7 +58,7 @@ from .pide_src.min_stab.min_stab import *
 from .utils.utils import check_type, array_modifier, read_csv, text_color, modify_melt_composition, _check_conductivity_mechanism_warning
 from .utils.geochem import classify_tas_diagram
 #importing geodyn
-from .geodyn.mantlemelting.katz_2003 import T_solidus_wet
+from .geodyn.mantlemelting.katz_2003 import T_solidus_wet, X_sat
 
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) #ignoring many RuntimeWarning printouts that are useless
@@ -151,6 +151,7 @@ class pide(object):
 		self.set_mantle_water_partitions()
 		self.set_mantle_transition_zone_water_partitions()
 		self.set_mantle_water_solubility()
+		self.set_melt_water_saturation()
 		self.set_melt_solubility()
 		self.set_grain_boundary_water_partitioning()
 		self.set_grain_boundary_H_Diffusion()
@@ -1232,6 +1233,21 @@ class pide(object):
 			if self.mineral_sol_name[4][self.opx_sol_choice] == 'FromOl':
 				self.ol_sol_choice = 0
 				raise ValueError('The olivine and opx water solubilities references each other, this will generate an infinite loop during calculation. Reverting to the default value for olivine.')
+	
+	def set_melt_water_saturation(self, limit = True):
+
+		"""
+		Turn the melt water saturation limit on or off.
+
+		When True, water in the melt is capped at the saturation value of
+		Katz et al. (2003), and the bulk water content is brought back to
+		the amount a saturated melt in equilibrium with the solid can
+		actually hold. When False, the melt water follows the partitioning
+		with no upper bound.
+		"""
+
+		self.melt_water_saturation_limit = bool(limit)
+			
 			
 	def set_mantle_water_partitions(self,**kwargs):
 
@@ -6276,19 +6292,75 @@ class pide(object):
 				
 			self._define_per_melt(index = idx_node)
 			
-			self.h2o_melt[idx_node] = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node], melt_mass_frac = self.melt_fluid_mass_frac[idx_node], d_per_melt = self.d_per_melt[idx_node])
-			
-			#reassigning the zero mass frac melt layers using pre-mapped indexing array.
-			if idx_node == None:
-				self.h2o_melt[self.melt_fluid_mass_frac <= 0.0] = 0.0
-			
-			self.solid_water[idx_node] = (self.bulk_water[idx_node] * self.d_per_melt[idx_node]) /\
-				(self.melt_fluid_mass_frac[idx_node] + ((1.0 - self.melt_fluid_mass_frac[idx_node]) * self.d_per_melt[idx_node]))
-				
+			#flag array so the caller can tell where the cap engaged
+		if (getattr(self, 'melt_water_saturated', None) is None) or \
+			(len(self.melt_water_saturated) != len(self.bulk_water)):
+			self.melt_water_saturated = np.zeros(len(self.bulk_water), dtype = bool)
+		
+		if method == 'array':
+
+			wet = self.melt_fluid_mass_frac > 0.0
+
+			self.melt_water_saturated[:] = False
+			self.h2o_melt[~wet] = 0.0
+			self.solid_water[~wet] = self.bulk_water[~wet]
+
+			if np.any(wet):
+
+				_f = self.melt_fluid_mass_frac[wet]
+				_d = self.d_per_melt[wet]
+
+				_m = self._calculate_melt_water(h2o_bulk = self.bulk_water[wet],
+					melt_mass_frac = _f, d_per_melt = _d)
+
+				if self.melt_water_saturation_limit == True:
+
+					#water in the melt cannot exceed saturation (Katz 2003, eq. 17)
+					_sat = X_sat(self.p[wet]) * 1e4
+					_over = _m > _sat
+					_m = np.where(_over, _sat, _m)
+
+					#a saturated melt in equilibrium with the solid accounts for
+					#X_sat * (F + (1-F)*D) of bulk water and no more, so the
+					#excess is not storable and the bulk value comes back to it
+					_idx = np.where(wet)[0][_over]
+					self.bulk_water[_idx] = _sat[_over] \
+						* (_f[_over] + (1.0 - _f[_over]) * _d[_over])
+					self.melt_water_saturated[_idx] = True
+
+				self.h2o_melt[wet] = _m
+				#the solid is in equilibrium with the melt as it actually is
+				self.solid_water[wet] = _m * _d
+
 		else:
 			
-			self.solid_water[idx_node] = np.array(self.bulk_water[idx_node])
+			self.melt_water_saturated[idx_node] = False
 
+			if self.melt_fluid_mass_frac[idx_node] > 0.0:
+				
+				_f = self.melt_fluid_mass_frac[idx_node]
+				_d = self.d_per_melt[idx_node]
+
+				_m = self._calculate_melt_water(h2o_bulk = self.bulk_water[idx_node],
+					melt_mass_frac = _f, d_per_melt = _d)
+				
+				if self.melt_water_saturation_limit == True:
+
+					#water in the melt cannot exceed saturation (Katz 2003, eq. 17)
+					_sat = X_sat(self.p[idx_node]) * 1e4
+
+					if _m > _sat:
+						_m = _sat
+						self.bulk_water[idx_node] = _sat * (_f + (1.0 - _f) * _d)
+						self.melt_water_saturated[idx_node] = True
+
+				self.h2o_melt[idx_node] = _m
+				self.solid_water[idx_node] = _m * _d
+
+			else:
+				self.h2o_melt[idx_node] = 0.0
+				self.solid_water[idx_node] = self.bulk_water[idx_node]
+		
 		#calculating olivine water content from bulk water using mineral partitioning contents
 		self.ol_water[idx_node] = self.solid_water[idx_node] / (self.ol_frac_wt[idx_node] + ((self.opx_frac_wt[idx_node] * self.d_opx_ol[idx_node]) +\
 		(self.cpx_frac_wt[idx_node] * self.d_cpx_ol[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_ol[idx_node])))
