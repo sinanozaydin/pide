@@ -767,6 +767,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + current_prior_log)
 	
+	#the misfit of the CURRENT accepted state, carried forward on rejection
+	current_misf_cond = misf_cond.copy()
+	current_misf_vp = misf_vp.copy()
+	current_misf_vs = misf_vs.copy()
+	current_misf_lab = misf_lab
+	
 	if np.isnan(current_likelihood) == True:
 		raise ValueError('From the initial calculations likelihood is calculate to be nan. Try to change the initial parameters.\
 		This likely caused by f_pyx, f_lherz parameters cannot finding a solution at a certain depth index.')
@@ -792,6 +798,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	acceptance_rates = []
 	melt_samples = []
 	melt_samples_all = []
+	
+	preds_vp = []
+	preds_vs = []
+	preds_cond = []
+
+	katz_melt_samples = []
 	
 	accepted = 0
 
@@ -1110,6 +1122,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					current_depth_params = proposed_depth_params.copy()
 					current_likelihood = proposed_likelihood
 					
+					current_misf_cond = misf_cond.copy()
+					current_misf_vp = misf_vp.copy()
+					current_misf_vs = misf_vs.copy()
+					current_misf_lab = misf_lab
+					
 					n_accepted_per_dim[step_idx] += 1
 
 					if _ > burning:
@@ -1123,8 +1140,25 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						misfits_vp.append(misf_vp)
 						misfits_vs.append(misf_vs)
 						misfits_lab.append(misf_lab)
-						if melt_thermodyn == True:
-							melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
+						
+						melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
+							
+						if vp_list is not None:
+							preds_vp.append(np.array(vp_).copy())
+						if vs_list is not None:
+							preds_vs.append(np.array(vs_).copy())
+						if cond_list is not None:
+							preds_cond.append(np.array(cond_).copy())
+
+						if melt_thermodyn_interp is not None:
+							_k = np.zeros(n_depths)
+							for iz in range(n_depths):
+								_k[iz] = float(melt_thermodyn_interp([
+									object.T[iz] - 273.15,
+									object.bulk_water[iz] * 1e-4,
+									object.p[iz]]))
+							katz_melt_samples.append(_k)
+							
 						for rname in record_names:
 							samples_record[rname].append(np.array(getattr(object, rname)[:n_depths]).copy())
 						accepted += 1
@@ -1154,10 +1188,10 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					print(f'Acceptance rate {acceptance_rate:.3f} still not converged to desired acceptance rate. Continuing to maximum number of iterations...')
 	
 		acceptance_rates.append(acceptance_rate)
-		misfits_all_cond.append(misf_cond.copy())
-		misfits_all_vp.append(misf_vp.copy())
-		misfits_all_vs.append(misf_vs.copy())
-		misfits_all_lab.append(misf_lab)
+		misfits_all_cond.append(current_misf_cond.copy())
+		misfits_all_vp.append(current_misf_vp.copy())
+		misfits_all_vs.append(current_misf_vs.copy())
+		misfits_all_lab.append(current_misf_lab)
 		samples_depth_params_all.append(_to_real_fractions(current_depth_params))
 		samples_SHF_all.append(current_scalars[0])
 		
@@ -1258,6 +1292,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		'misfits_all': misfits_all,
 		'samples_record': samples_record,
 		'samples_record_all': samples_record_all,
+		'preds_vp': np.array(preds_vp),
+		'preds_vs': np.array(preds_vs),
+		'preds_cond': np.array(preds_cond),
+		'melt_samples': np.array(melt_samples),
+		'katz_melt_samples': np.array(katz_melt_samples)
 	}
  
 	if invert_lab_temp == True:
