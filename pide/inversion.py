@@ -394,8 +394,8 @@ def _unconstrained_to_fractions(x1, x2):
 	return remaining * u2, remaining * (1.0 - u2)
 	
 def _solv_MCMC_column(index, object, depths, moho_depth,
-	cond_list, vp_list, vs_list,
-	sigma_cond, sigma_vp, sigma_vs,
+	cond_list, vp_list, vs_list, vpvs_list,
+	sigma_cond, sigma_vp, sigma_vs, sigma_vpvs,
 	initial_SHF, initial_lab_temp,
 	initial_params, param_names,
 	upper_limits, lower_limits,
@@ -455,6 +455,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		Observed Vp at each depth node [km/s].
 	vs_list : array or None
 		Observed Vs at each depth node [km/s].
+	vpvs_list : array or None
+		Observed Vp/Vs ratio at each depth node [dimensionless].
 	lab_depth: float or None
 		Observed Lab depth [km] from independent information. This is used
 		to fit to the estimations.
@@ -464,6 +466,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		Vp uncertainty at each depth [km/s].
 	sigma_vs : array or None
 		Vs uncertainty at each depth [km/s].
+	sigma_vpvs : array or None
+		Vp/Vs uncertainty at each depth [dimensionless]. 
 	sigma_lab : float or None
 		Lab depth uncertainty [km].
 	initial_SHF : array
@@ -733,7 +737,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			interp_for_iter = True, water_start = 0, water_end = water_end)
 
 
-	if (vp_list is not None) or (vs_list is not None):
+	if (vp_list is not None) or (vs_list is not None) or (vpvs_list is not None):
 		v_bulk_init, vp_init, vs_init = object.calculate_seismic_velocities(method = 'array')
 	
 	#Calculating the initial conductivity
@@ -760,6 +764,13 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		current_likelihood_vs = 1
 		misf_vs = np.zeros(len(object.T))
 		
+	if vpvs_list is not None:
+		current_likelihood_vpvs, misf_vpvs = _likelihood(vp_init / vs_init, vpvs_list[index], sigma_vpvs[index], norm = 'linear')
+		current_likelihood_vpvs = np.sum(current_likelihood_vpvs)
+	else:
+		current_likelihood_vpvs = 1
+		misf_vpvs = np.zeros(len(object.T))
+		
 	if lab_depth is not None:
 		current_likelihood_lab, misf_lab = _likelihood(LAB, lab_depth, sigma_lab, norm = 'linear')
 	else:
@@ -781,12 +792,13 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 				current_prior_log += np.sum(-0.5 * ((initial_params[:, ii] - prior_mean) / prior_sigma)**2)
 
-	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + current_prior_log)
+	current_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + np.sum(misf_vpvs) + misf_lab + current_prior_log)
 	
 	#the misfit of the CURRENT accepted state, carried forward on rejection
 	current_misf_cond = misf_cond.copy()
 	current_misf_vp = misf_vp.copy()
 	current_misf_vs = misf_vs.copy()
+	current_misf_vpvs = misf_vpvs.copy()
 	current_misf_lab = misf_lab
 	
 	if np.isnan(current_likelihood) == True:
@@ -801,10 +813,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	misfits_cond = []
 	misfits_vp = []
 	misfits_vs = []
+	misfits_vpvs = [] 
 	misfits_lab = []
 	misfits_all_cond = []
 	misfits_all_vp = []
 	misfits_all_vs = []
+	misfits_all_vpvs = [] 
 	misfits_all_lab = []
 	samples_SHF_all = []
 	samples_lab_temp_all = []
@@ -817,6 +831,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	preds_vp = []
 	preds_vs = []
+	preds_vpvs = [] 
 	preds_cond = []
 
 	katz_melt_samples = []
@@ -1082,7 +1097,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			if reject_saturation == False:
 			
 				#Calculating the conductivity and seismic velocities.
-				if (vp_list is not None) or (vs_list is not None):
+				if (vp_list is not None) or (vs_list is not None) or (vpvs_list is not None):
 					v_bulk_, vp_, vs_ = object.calculate_seismic_velocities(method = 'array')
 	
 				#calculating conductivity later, because the conductivity may depend on gibbs-derived mineral
@@ -1109,6 +1124,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				else:
 					proposed_likelihood_vs = 1
 					misf_vs = np.zeros(len(object.T))
+				if vpvs_list is not None:
+					proposed_likelihood_vpvs, misf_vpvs = _likelihood(vp_ / vs_, vpvs_list[index], sigma_vpvs[index], norm = 'linear')
+					proposed_likelihood_vpvs = np.sum(proposed_likelihood_vpvs)
+				else:
+					proposed_likelihood_vpvs = 1
+					misf_vpvs = np.zeros(len(object.T))
 					
 				if lab_depth is not None:
 					proposed_likelihood_lab, misf_lab = _likelihood(LAB, lab_depth, sigma_lab, norm = 'linear')
@@ -1139,7 +1160,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 							proposed_prior += np.sum(-0.5 * ((param_vals - prior_mean) / prior_sigma)**2)
 	
-				proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + misf_lab + proposed_prior)
+				proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + np.sum(misf_vpvs) + misf_lab + proposed_prior)
 			
 			else:
 				proposed_likelihood = 0.0
@@ -1166,6 +1187,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					current_misf_cond = misf_cond.copy()
 					current_misf_vp = misf_vp.copy()
 					current_misf_vs = misf_vs.copy()
+					current_misf_vpvs = misf_vpvs.copy()
 					current_misf_lab = misf_lab
 										
 					n_accepted_per_dim[step_idx] += 1
@@ -1180,6 +1202,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						misfits_cond.append(misf_cond)
 						misfits_vp.append(misf_vp)
 						misfits_vs.append(misf_vs)
+						misfits_vpvs.append(misf_vpvs) 
 						misfits_lab.append(misf_lab)
 						
 						melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
@@ -1188,6 +1211,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 							preds_vp.append(np.array(vp_).copy())
 						if vs_list is not None:
 							preds_vs.append(np.array(vs_).copy())
+						if vpvs_list is not None:
+							preds_vpvs.append(np.array(vp_ / vs_).copy())
 						if cond_list is not None:
 							preds_cond.append(np.array(cond_).copy())
 
@@ -1233,6 +1258,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		misfits_all_cond.append(current_misf_cond.copy())
 		misfits_all_vp.append(current_misf_vp.copy())
 		misfits_all_vs.append(current_misf_vs.copy())
+		misfits_all_vpvs.append(current_misf_vpvs.copy())
 		misfits_all_lab.append(current_misf_lab)
 		samples_depth_params_all.append(_to_real_fractions(current_depth_params))
 		samples_SHF_all.append(current_scalars[0])
@@ -1328,30 +1354,58 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			if (_ + 1) % adaptive_check_length == 0:
 				print(text_color.GREEN + f'Acceptance Rate: {round(acceptance_rate,3)}' + text_color.END)
 
-	misfits = [misfits_cond, misfits_vp, misfits_vs, misfits_lab]
-	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs, misfits_all_lab]
+	misfits = [misfits_cond, misfits_vp, misfits_vs, misfits_vpvs, misfits_lab]
+	misfits_all = [misfits_all_cond, misfits_all_vp, misfits_all_vs, misfits_all_vpvs, misfits_all_lab]
 
 	samples_record = {k: np.array(v) for k, v in samples_record.items()}
 	samples_record_all = {k: np.array(v) for k, v in samples_record_all.items()}
+	
+	def _arr(lst, width = None):
+		"""
+		List to array, but an EMPTY list becomes a correctly shaped empty
+		array rather than shape (0,). Without the width, a caller doing
+		a[:, iz] on a quantity that was never recorded gets an IndexError
+		instead of an empty result.
+		"""
+		if len(lst) > 0:
+			return np.array(lst)
+		if width is None:
+			return np.empty((0,), dtype = float)
+		return np.empty((0, width), dtype = float)
 
 	results = {
-		'samples_SHF': np.array(samples_SHF),
-		'samples_lab': np.array(samples_lab),
-		'samples_temp': np.array(samples_temp),
-		'samples_depth_params': np.array(samples_depth_params),
-		'acceptance_rates': np.array(acceptance_rates),
+		#--- accepted chain ---
+		'samples_SHF': _arr(samples_SHF),
+		'samples_lab': _arr(samples_lab),
+		'samples_lab_temp': _arr(samples_lab_temp),
+		'samples_temp': _arr(samples_temp, n_depths),
+		'samples_depth_params': _arr(samples_depth_params),
+		'melt_samples': _arr(melt_samples, n_depths),
+		'katz_melt_samples': _arr(katz_melt_samples, n_depths),
+	
+		#--- all proposals ---
+		'samples_SHF_all': _arr(samples_SHF_all),
+		'samples_lab_all': _arr(samples_lab_all),
+		'samples_lab_temp_all': _arr(samples_lab_temp_all),
+		'samples_depth_params_all': _arr(samples_depth_params_all),
+		'melt_samples_all': _arr(melt_samples_all, n_depths),
+	
+		#--- predictions ---
+		'preds_vp': _arr(preds_vp, n_depths),
+		'preds_vs': _arr(preds_vs, n_depths),
+		'preds_vpvs': _arr(preds_vpvs, n_depths),
+		'preds_cond': _arr(preds_cond, n_depths),
+	
+		#--- misfits ---
 		'misfits': misfits,
-		'samples_SHF_all': np.array(samples_SHF_all),
-		'samples_lab_all': np.array(samples_lab_all),
-		'samples_depth_params_all': np.array(samples_depth_params_all),
 		'misfits_all': misfits_all,
+	
+		#--- recorded attributes ---
 		'samples_record': samples_record,
 		'samples_record_all': samples_record_all,
-		'preds_vp': np.array(preds_vp),
-		'preds_vs': np.array(preds_vs),
-		'preds_cond': np.array(preds_cond),
-		'melt_samples': np.array(melt_samples),
-		'katz_melt_samples': np.array(katz_melt_samples),
+	
+		#--- run health ---
+		'acceptance_rates': _arr(acceptance_rates),
 		'status': status,
 		'status_message': status_message,
 		'n_iterations_run': _ + 1,
@@ -1359,15 +1413,18 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		'n_reject_nan': n_reject_nan,
 		'n_reject_saturation': n_reject_saturation,
 		'n_reject_likelihood': n_reject_likelihood,
+	
+		#--- what was actually switched on, so an empty array is never ambiguous ---
+		'invert_lab_temp': bool(invert_lab_temp),
+		'melt_thermodyn': bool(melt_thermodyn),
+		'fitted_cond': cond_list is not None,
+		'fitted_vp': vp_list is not None,
+		'fitted_vs': vs_list is not None,
+		'fitted_vpvs': vpvs_list is not None,
+		'fitted_lab': lab_depth is not None,
+		'lab_temp_fixed': float('nan') if invert_lab_temp else float(lab_temp),
+		'melt_frac_limit': float(melt_frac_limit),
 	}
- 
-	if invert_lab_temp == True:
-		results['samples_lab_temp'] = np.array(samples_lab_temp)
-		results['samples_lab_temp_all'] = np.array(samples_lab_temp_all)
- 
-	if melt_thermodyn == True:
-		results['melt_samples'] = np.array(melt_samples)
-		results['melt_samples_all'] = np.array(melt_samples_all)
  
 	return results
 		
