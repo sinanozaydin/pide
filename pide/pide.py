@@ -137,6 +137,7 @@ class pide(object):
 		self.set_param1_mineral()
 		self.set_param1_rock()
 		self.set_melt_or_fluid_mode(mode = 'melt') #default choice is melt - 1
+		self.set_solid_melt_fluid_seismic_mix_method(method = 0) #default is HS-Upper
 		self.set_seismic_attenuation(mode = 'JF2010') #default choice is JF2010
 		self.set_solid_phase_method(mode = 'mineral') #default choice is mineral - 2
 		self.set_solid_phs_mix_method(method = 1) #default choice H-S lower bounds
@@ -3152,6 +3153,48 @@ class pide(object):
 		if (self.phs_melt_mix_method < 0) or (self.phs_melt_mix_method > 5):
 		
 			raise ValueError('The solid-fluid phase mixing method is not entered correctly, the value is not between 0 and 6')
+			
+	def set_solid_melt_fluid_seismic_mix_method(self, method):
+
+		"""
+		Set the mixing model for a coupled solid matrix and melt/fluid system,
+		for seismic velocities.
+
+		This is the seismic counterpart of set_solid_melt_fluid_mix_method,
+		which sets the equivalent model for electrical conductivity. The two
+		are set separately but describe the same physical melt texture, so a
+		consistent pair should be chosen. Tubes (conductivity index 1) and
+		Takei2002 or Clark-Lesher both describe interconnected equilibrium
+		geometry; HS-Upper for seismic velocity describes isolated melt
+		pockets and is not consistent with an interconnected conductivity
+		model.
+
+		Parameters
+		----------
+		method : int
+			An integer between 0 and 3 indicating the mixing model:
+				0 : Hashin-Shtrikman Upper Bound (melt isolated, stiffest)
+				1 : Hashin-Shtrikman Lower Bound (melt as host, suspension)
+				2 : Takei (2002) equilibrium geometry, exact
+				3 : Clark and Lesher (2017), first order in melt fraction
+
+		Notes
+		-----
+		Methods 2 and 3 use the contiguity relation of Takei and Holtzman
+		(2009), fitted to olivine plus silicate melt. They are not valid for
+		aqueous fluids, which wet far less.
+
+		Examples
+		--------
+		> set_solid_melt_fluid_seismic_mix_method(method=2)
+		> set_solid_melt_fluid_seismic_mix_method(2)
+		"""
+
+		if (method < 0) or (method > 3):
+
+			raise ValueError('The solid-fluid phase seismic mixing method is not entered correctly, the value is not between 0 and 3')
+
+		self.phs_melt_mix_method_seismic = method
 				
 	def set_seismic_velocity_properties(self, **kwargs):
 
@@ -3389,6 +3432,32 @@ class pide(object):
 			print(f'{str(i)}.   {phs_mix_list[i]}')
 		
 		return phs_mix_list
+		
+	def list_phs_melt_fluid_seismic_mix_methods(self):
+
+		"""
+		A method that lists all available solid-melt/fluid phase mixing
+		methods for seismic velocities.
+
+		Returns
+		-------
+			list: method names, indexed by method ID.
+
+		Examples
+		--------
+		> list_phs_melt_fluid_seismic_mix_methods()
+		"""
+
+		seis_melt_mix_list = ["Hashin-Shtrikman Upper-Bound (Berryman, 1995)",
+		"Hashin-Shtrikman Lower-Bound (Berryman, 1995)",
+		"Equilibrium Geometry, exact (Takei, 2002)",
+		"Equilibrium Geometry, linearised (Clark and Lesher, 2017)"]
+
+		print(text_color.RED + 'Solid-Fluid/Melt Seismic Mixing models:' + text_color.END)
+		for i in range(0,len(seis_melt_mix_list)):
+			print(f'{str(i)}.   {seis_melt_mix_list[i]}')
+
+		return seis_melt_mix_list
 	
 	def list_phs_melt_fluid_mix_methods(self):
 	
@@ -4701,6 +4770,149 @@ class pide(object):
 				self.bulk_cond[idx_node] = self.bulk_cond[idx_node] * (1 +\
 				((3 * self.melt_fluid_frac[idx_node] * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])) /\
 				(3 * self.bulk_cond[idx_node] + (vol_matrix * (self.melt_fluid_cond[idx_node] - self.bulk_cond[idx_node])))))
+				
+	def _takei_melt_velocity_factors(self, melt_frac, bulk_mod, shear_mod,
+		k_melt, dens_melt, dens_solid, contiguity = None, linearise = False):
+
+		"""
+		Velocity reduction factors for partial melt in equilibrium geometry.
+
+		linearise = False  Takei (2002) eqs 1-3, exact.
+		linearise = True   Clark and Lesher (2017) eqs 1-2, first order in phi.
+
+		Both use the skeleton moduli of Takei (2002) Appendix A, and the
+		contiguity relation of Takei and Holtzman (2009a). This is the melt
+		texture consistent with the interconnected tube model used on the
+		conductivity side; HS-Upper is not, since it puts melt in isolated
+		pockets.
+
+		Returns (v_p_factor, v_s_factor), multipliers for the MELT-FREE
+		velocities computed with the SOLID density. The density effect of
+		replacing solid with melt is already inside these factors, so forming
+		a density mixture as well would count it twice.
+
+		Parameters
+		----------
+		melt_frac : melt VOLUME fraction (self.melt_fluid_frac), not mass
+		bulk_mod, shear_mod : moduli of the melt-free solid aggregate, Pa
+		k_melt : bulk modulus of the melt, Pa
+		dens_melt, dens_solid : densities, consistent units
+		contiguity : psi. If None, the Takei and Holtzman relation is used.
+		"""
+		#Table A1, fitting parameters for the skeleton moduli. Row i is the coefficient
+		#a_(i+1) / b_(i+1) in eqs A5 and A6; column j is the power of solid Poisson's
+		#ratio it multiplies in eqs A7 and A8. The b array has one fewer column than
+		#the a array, which is in the paper and not a typo. Signs transcribed from the
+		#rendered page, since the PDF text layer drops them.
+		_TAKEI02_A_HAT = np.array([
+			[ 1.8625,   0.52594,  -4.8397,    0.0    ],
+			[ 4.5001,  -6.1551,   -4.3634,    0.0    ],
+			[-5.6512,   6.9159,   29.595,   -58.96   ]])
+		
+		_TAKEI02_B_HAT = np.array([
+			[ 1.6122,   0.13527,   0.0    ],
+			[ 4.5869,   3.6086,    0.0    ],
+			[-7.5395,  -4.8676,   -4.3182 ]])
+		
+		#Contiguity. Takei and Holtzman (2009a) Figure 11a: psi = 1 - A*sqrt(phi), a
+		#semiempirical fit to contiguity measured on texturally equilibrated partially
+		#molten rocks by Yoshino et al. (2005). A = 2.3 for olivine plus basalt,
+		#A = 2.0 is the alternative they also plot. psi reaches zero at
+		#phi = (1/A)^2 = 0.189, the rheologically critical melt fraction.
+		_TAKEI02_PSI_COEFF = 2.3
+		
+		#Validity. Takei fitted eqs A3-A8 over 0.1 <= psi <= 1 and 0.05 <= nu <= 0.45.
+		#With A = 2.3, psi = 0.10 corresponds to phi = 0.189, so clip melt there.
+		_TAKEI02_PSI_MIN = 0.0
+		_TAKEI02_NU_MIN = 0.05
+		_TAKEI02_NU_MAX = 0.45
+		_TAKEI02_PHI_MAX = 0.189
+
+		#phi, clipped where the skeleton fits stop being supported
+		f = np.clip(np.asarray(melt_frac, dtype = float), 0.0, _TAKEI02_PHI_MAX)
+
+		#Poisson's ratio of the solid from its own moduli, clipped to the range
+		#Takei fitted eqs A3-A8 over
+		nu = ((3.0 * bulk_mod) - (2.0 * shear_mod)) \
+			/ (2.0 * ((3.0 * bulk_mod) + shear_mod))
+		nu = np.clip(nu, _TAKEI02_NU_MIN, _TAKEI02_NU_MAX)
+
+		#contiguity, the fraction of grain surface still in solid-solid contact
+		if contiguity is None:
+			psi = np.clip(1.0 - (_TAKEI02_PSI_COEFF * np.sqrt(f)),
+				_TAKEI02_PSI_MIN, 1.0)
+		else:
+			psi = np.clip(np.asarray(contiguity, dtype = float), 0.0, 1.0)
+
+		one_m = 1.0 - psi
+
+		#eqs A7 and A8, the a_i and b_i as polynomials in nu
+		a = [sum(_TAKEI02_A_HAT[i, j] * nu ** j for j in range(4)) for i in range(3)]
+		b = [sum(_TAKEI02_B_HAT[i, j] * nu ** j for j in range(3)) for i in range(3)]
+
+		#eqs A5 and A6, exponents controlling how fast the skeleton softens
+		n_k = (a[0] * psi) + (a[1] * one_m) + (a[2] * psi * one_m ** 1.5)
+		n_m = (b[0] * psi) + (b[1] * one_m) + (b[2] * psi * one_m ** 2.0)
+
+		#eqs A3, A4 then A1, A2. Kb/k and N/mu, each exactly 1 at psi = 1, f = 0.
+		with np.errstate(divide = 'ignore', invalid = 'ignore'):
+			kb = (1.0 - f) * (1.0 - np.where(one_m > 0.0, one_m ** n_k, 0.0))
+			n = (1.0 - f) * (1.0 - np.where(one_m > 0.0, one_m ** n_m, 0.0))
+
+		#gamma = mu/k for the solid, equals 0.6 at nu = 0.25 as Takei states
+		gamma = (3.0 * (1.0 - (2.0 * nu))) / (2.0 * (1.0 + nu))
+		g43 = 4.0 * gamma / 3.0
+
+		#beta = solid bulk modulus over melt bulk modulus, dimensionless
+		beta = bulk_mod / k_melt
+
+		#the density offset, (1 - rho_L/rho_S)
+		d_off = 1.0 - (dens_melt / dens_solid)
+
+		#--- Takei (2002) eqs 1-3, exact ---
+		if linearise == False:
+
+			#eq 3, Gassmann-type fluid substitution. First term is the drained
+			#framework, second the stiffening from melt resisting compression.
+			#At phi = 0 with psi = 1 numerator and denominator are both exactly
+			#zero, so the term is dropped. np.where evaluates both branches,
+			#hence the guarded denominator.
+			_den = 1.0 - f - kb + (f * beta)
+			_ok = np.abs(_den) > 1e-12
+			_safe = np.where(_ok, _den, 1.0)
+			keff = kb + np.where(_ok, ((1.0 - kb) ** 2) / _safe, 0.0)
+
+			#rho_bar/rho, the same density effect d_off carries below
+			rho_r = 1.0 - (f * d_off)
+
+			#eq 1, shear waves see only the skeleton shear modulus
+			v_s_fac = np.sqrt(np.clip(n, 0.0, None)) / np.sqrt(rho_r)
+
+			#eq 2, compressional waves mix saturated bulk with skeleton shear
+			v_p_fac = (np.sqrt(np.clip(keff + (g43 * n), 0.0, None))
+				/ (np.sqrt(1.0 + g43) * np.sqrt(rho_r)))
+
+			return v_p_fac, v_s_fac
+
+		#--- Clark and Lesher (2017) eqs 1-2, first order in phi ---
+
+		bm1 = beta - 1.0
+
+		#Lambda_K, the slope of Kb/k against phi. Needed explicitly because it
+		#enters eq 1 nonlinearly. Guarded at phi = 0, where the factors are 1.
+		_f = np.where(f > 0.0, f, 1.0)
+		lam_k = np.where(f > 0.0, (1.0 - kb) / _f, 0.0)
+
+		#eq 1, fractional reduction in Vp
+		_num = ((bm1 * lam_k) / (bm1 + lam_k)) + (g43 * ((1.0 - n) / _f))
+		d_vp = np.where(f > 0.0, ((_num / (1.0 + g43)) - d_off) * (f / 2.0), 0.0)
+
+		#eq 2, fractional reduction in Vs. Written without dividing by phi,
+		#since Lambda_G * phi is just (1 - N/mu). No beta, because shear waves
+		#do not travel through the liquid.
+		d_vs = ((1.0 - n) - (d_off * f)) / 2.0
+
+		return 1.0 - d_vp, 1.0 - d_vs
 			
 	def calculate_conductivity(self, method = 'array',**kwargs):
 	
@@ -5182,7 +5394,7 @@ class pide(object):
 		
 		return 1.0 / (1 + (((1.0/mass_frac) - 1) * (dens_fluid / dens_solid)))
 		
-	def calculate_seismic_velocities(self, mixing_method = 'HS-Medium', melt_mixing_method = 'HS-Upper', method = 'array', **kwargs):
+	def calculate_seismic_velocities(self, mixing_method = 'HS-Medium', melt_mixing_method = None, method = 'array', **kwargs):
 	
 		"""
 		Calculate seismic velocities for the configured environment.
@@ -5203,6 +5415,15 @@ class pide(object):
 		v_s : float or ndarray
 			S-wave seismic velocity in km/s.
 		"""
+		
+		seis_melt_mix_methods = ['HS-Upper', 'HS-Lower', 'Takei2002', 'Clark-Lesher']
+
+		if melt_mixing_method is None:
+			melt_mixing_method = seis_melt_mix_methods[self.phs_melt_mix_method_seismic]
+		elif isinstance(melt_mixing_method, int) == True:
+			if (melt_mixing_method < 0) or (melt_mixing_method > 3):
+				raise ValueError('melt_mixing_method index is not between 0 and 3')
+			melt_mixing_method = seis_melt_mix_methods[melt_mixing_method]
 
 		sol_idx = kwargs.pop('sol_idx', 0)
 		
@@ -5348,55 +5569,92 @@ class pide(object):
 			alpha = (shear_mod * (9*bulk_mod + 8*shear_mod)) / (6 * (bulk_mod + 2*shear_mod))
 			
 			if method == 'array':
-				#Hashin-Shtrikman Upper-Bound (reference/host phase = solid, the stiff phase)
-				#This is the bound pide's original code computed, previously mislabeled 'Lower-Bound' in the comment.
-				if melt_mixing_method == 'HS-Upper':
-					shear_mod_mixture = (((self.melt_fluid_frac / alpha) + ((1-self.melt_fluid_frac) / (shear_mod + alpha)))**-1) - alpha
-					bulk_mod_mixture = (((self.melt_fluid_frac / (self.K_melt_fluid + (1.3333333333333333 * shear_mod))) +\
-					((1-self.melt_fluid_frac) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
-					
-				elif melt_mixing_method == 'HS-Lower':
-					#Hashin-Shtrikman Lower-Bound (reference/host phase = melt, the soft phase)
-					#Melt has zero shear modulus by definition (a liquid cannot support shear),
-					#so alpha_melt collapses to exactly zero and shear_mod_mixture goes to zero
-					#for any nonzero melt fraction. This is the correct limiting behavior, not an error,
-					#but must be handled explicitly to avoid a literal division by zero.
-					self.shear_mod_melt = 0.0
- 
-					with np.errstate(divide='ignore', invalid='ignore'):
-						shear_mod_mixture = np.where(
-							self.melt_fluid_frac > 0,
-							0.0,
-							shear_mod)
-			 
-					bulk_mod_mixture = ((self.melt_fluid_frac / self.K_melt_fluid) +
-						((1 - self.melt_fluid_frac) / bulk_mod))**-1
-					
-				density_mixture = (self.melt_fluid_mass_frac * self.dens_melt_fluid) + ((1-self.melt_fluid_mass_frac) * self.density_solids)
+				
+				if melt_mixing_method in ('Takei2002', 'Clark-Lesher'):
+				
+					#Takei (2002) equilibrium geometry, exact or linearised.
 
-				self.v_bulk = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
-				self.v_p = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
-				self.v_s = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
+					_fp, _fs = self._takei_melt_velocity_factors(
+						melt_frac = self.melt_fluid_frac,
+						bulk_mod = bulk_mod, shear_mod = shear_mod,
+						k_melt = self.K_melt_fluid,
+						dens_melt = self.dens_melt_fluid,
+						dens_solid = self.density_solids,
+						contiguity = kwargs.pop('contiguity', None),
+						linearise = (melt_mixing_method == 'Clark-Lesher'))
+
+					self.v_bulk = 1e-3 * np.sqrt(bulk_mod / self.density_solids)
+					self.v_p = (1e-3 * np.sqrt((bulk_mod + (1.3333333333333333 * shear_mod))
+						/ self.density_solids)) * _fp
+					self.v_s = (1e-3 * np.sqrt(shear_mod / self.density_solids)) * _fs
+					
+				else:
+				
+					if melt_mixing_method == 'HS-Upper':
+					
+						#Hashin-Shtrikman Upper-Bound (reference/host phase = solid, the stiff phase)
+						shear_mod_mixture = (((self.melt_fluid_frac / alpha) + ((1-self.melt_fluid_frac) / (shear_mod + alpha)))**-1) - alpha
+						bulk_mod_mixture = (((self.melt_fluid_frac / (self.K_melt_fluid + (1.3333333333333333 * shear_mod))) +\
+						((1-self.melt_fluid_frac) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
+						
+					elif melt_mixing_method == 'HS-Lower':
+					
+						#Hashin-Shtrikman Lower-Bound (reference/host phase = melt, the soft phase
+						self.shear_mod_melt = 0.0
+	 
+						with np.errstate(divide='ignore', invalid='ignore'):
+							shear_mod_mixture = np.where(
+								self.melt_fluid_frac > 0,
+								0.0,
+								shear_mod)
+				 
+						bulk_mod_mixture = ((self.melt_fluid_frac / self.K_melt_fluid) +
+							((1 - self.melt_fluid_frac) / bulk_mod))**-1
+				
+				
+					density_mixture = (self.melt_fluid_mass_frac * self.dens_melt_fluid) + ((1-self.melt_fluid_mass_frac) * self.density_solids)
+	
+					self.v_bulk = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
+					self.v_p = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
+					self.v_s = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
 				
 			elif method == 'index':
+			
 				#Hashin-Shtrikman Upper-Bound 
+				if melt_mixing_method in ('Takei2002', 'Clark-Lesher'):
+
+					_fp, _fs = self._takei_melt_velocity_factors(
+						melt_frac = self.melt_fluid_frac[index],
+						bulk_mod = bulk_mod, shear_mod = shear_mod,
+						k_melt = self.K_melt_fluid[index],
+						dens_melt = self.dens_melt_fluid[index],
+						dens_solid = self.density_solids[index],
+						contiguity = kwargs.pop('contiguity', None),
+						linearise = (melt_mixing_method == 'Clark-Lesher'))
+
+					self.v_bulk[index] = 1e-3 * np.sqrt(bulk_mod / self.density_solids[index])
+					self.v_p[index] = (1e-3 * np.sqrt((bulk_mod + (1.3333333333333333 * shear_mod))
+						/ self.density_solids[index])) * _fp
+					self.v_s[index] = (1e-3 * np.sqrt(shear_mod / self.density_solids[index])) * _fs
 				
-				if melt_mixing_method == 'HS-Upper':
-					shear_mod_mixture = (((self.melt_fluid_frac[index] / alpha) + ((1-self.melt_fluid_frac[index]) / (shear_mod + alpha)))**-1) - alpha
-					bulk_mod_mixture = (((self.melt_fluid_frac[index] / (self.K_melt_fluid[index] + (1.3333333333333333 * shear_mod))) +\
-					((1-self.melt_fluid_frac[index]) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
+				else:
+				
+					if melt_mixing_method == 'HS-Upper':
+						shear_mod_mixture = (((self.melt_fluid_frac[index] / alpha) + ((1-self.melt_fluid_frac[index]) / (shear_mod + alpha)))**-1) - alpha
+						bulk_mod_mixture = (((self.melt_fluid_frac[index] / (self.K_melt_fluid[index] + (1.3333333333333333 * shear_mod))) +\
+						((1-self.melt_fluid_frac[index]) / (bulk_mod + (1.3333333333333333 * shear_mod))))**-1) - (1.3333333333333333 * shear_mod)
+						
+					elif melt_mixing_method == 'HS-Lower':
+		
+						shear_mod_mixture = 0.0
+				 
+						bulk_mod_mixture = ((self.melt_fluid_frac[index] / self.K_melt_fluid[index]) +
+							((1 - self.melt_fluid_frac[index]) / bulk_mod))**-1				
 					
-				elif melt_mixing_method == 'HS-Lower':
-	
-					shear_mod_mixture = 0.0
-			 
-					bulk_mod_mixture = ((self.melt_fluid_frac[index] / self.K_melt_fluid[index]) +
-						((1 - self.melt_fluid_frac[index]) / bulk_mod))**-1				
-				
-				density_mixture = (self.melt_fluid_mass_frac[index] * self.dens_melt_fluid[index]) + ((1-self.melt_fluid_mass_frac[index]) * self.density_solids[index])
-				self.v_bulk[index] = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
-				self.v_p[index] = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
-				self.v_s[index] = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
+					density_mixture = (self.melt_fluid_mass_frac[index] * self.dens_melt_fluid[index]) + ((1-self.melt_fluid_mass_frac[index]) * self.density_solids[index])
+					self.v_bulk[index] = 1e-3 * np.sqrt(bulk_mod_mixture / density_mixture)
+					self.v_p[index] = 1e-3 * np.sqrt((bulk_mod_mixture + (1.3333333333333333 * shear_mod_mixture)) / density_mixture)
+					self.v_s[index] = 1e-3 * np.sqrt(shear_mod_mixture / density_mixture)
 
 		if method == 'array':
 			return self.v_bulk*self.v_anelasticity_bulk, self.v_p*self.v_anelasticity_p, self.v_s*self.v_anelasticity_s
