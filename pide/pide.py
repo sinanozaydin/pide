@@ -152,7 +152,8 @@ class pide(object):
 		self.set_mantle_water_partitions()
 		self.set_mantle_transition_zone_water_partitions()
 		self.set_mantle_water_solubility()
-		self.set_melt_water_saturation()
+		self.set_melt_water_saturation(limit = False)
+		self.set_mineral_water_saturation(limit = False)
 		self.set_melt_solubility()
 		self.set_grain_boundary_water_partitioning()
 		self.set_grain_boundary_H_Diffusion()
@@ -1248,6 +1249,24 @@ class pide(object):
 		"""
 
 		self.melt_water_saturation_limit = bool(limit)
+		
+	def set_mineral_water_saturation(self, limit = True):
+
+		"""
+		Turn the mineral water saturation limit on or off.
+
+		When True, the water held by the solid is capped at the storage
+		capacity of whichever nominally anhydrous phase saturates first,
+		and the bulk water content is brought back to the amount a solid
+		at that limit can actually hold. When False, the mineral water
+		contents follow the partitioning with no upper bound.
+		"""
+
+		self.mineral_water_saturation_limit = bool(limit)
+
+		if self.mineral_water_saturation_limit == False:
+			if getattr(self, 'mineral_water_saturated', None) is not None:
+				self.mineral_water_saturated[:] = False
 			
 			
 	def set_mantle_water_partitions(self,**kwargs):
@@ -6547,14 +6566,19 @@ class pide(object):
 			
 			if len(self.h2o_melt) != len(self.bulk_water):
 				self.h2o_melt = np.zeros(len(self.bulk_water))
-				
+
 			self._define_per_melt(index = idx_node)
-			
-			#flag array so the caller can tell where the cap engaged
+
 		if (getattr(self, 'melt_water_saturated', None) is None) or \
 			(len(self.melt_water_saturated) != len(self.bulk_water)):
 			self.melt_water_saturated = np.zeros(len(self.bulk_water), dtype = bool)
-		
+			
+		if (getattr(self, 'mineral_water_saturated', None) is None) or \
+			(len(self.mineral_water_saturated) != len(self.bulk_water)):
+			self.mineral_water_saturated = np.zeros(len(self.bulk_water), dtype = bool)
+			self.mineral_sat_binding_phase = np.zeros(len(self.bulk_water), dtype = int)
+			self.mineral_sat_inconsistency = np.zeros(len(self.bulk_water))
+
 		if method == 'array':
 
 			wet = self.melt_fluid_mass_frac > 0.0
@@ -6618,7 +6642,93 @@ class pide(object):
 			else:
 				self.h2o_melt[idx_node] = 0.0
 				self.solid_water[idx_node] = self.bulk_water[idx_node]
-		
+				
+		#--- mineral water saturation check
+		#Reset first. A stale flag from a previous proposal would reject a
+		#good sample. Mirrors the melt resets at lines 6562 and 6595.
+		if method == 'array':
+			self.mineral_water_saturated[:] = False
+		else:
+			self.mineral_water_saturated[sol_idx] = False
+
+		if self.mineral_water_saturation_limit == True:
+
+			#computed array-wide for safety, since
+			#calculate_bulk_mantle_water_solubility does not forward sol_idx
+			self.calculate_bulk_mantle_water_solubility(method = 'array')
+
+			#the same denominator the ol_water line below uses
+			_W = (self.ol_frac_wt + (self.opx_frac_wt * self.d_opx_ol)
+				+ (self.cpx_frac_wt * self.d_cpx_ol)
+				+ (self.garnet_frac_wt * self.d_garnet_ol))
+
+			def _ceiling(max_w, frac, d):
+				#ol_water ceiling implied by one phase. An absent phase or a
+				#zero partition coefficient cannot bind, so it returns inf.
+				ok = (frac > 0.0) & (d > 0.0)
+				return np.where(ok, max_w / np.where(ok, d, 1.0), np.inf)
+
+			_ones = np.ones(len(self.T))
+			_stack = np.vstack([
+				_ceiling(self.max_ol_water, self.ol_frac_wt, _ones),
+				_ceiling(self.max_opx_water, self.opx_frac_wt, self.d_opx_ol),
+				_ceiling(self.max_cpx_water, self.cpx_frac_wt, self.d_cpx_ol),
+				_ceiling(self.max_garnet_water, self.garnet_frac_wt, self.d_garnet_ol)])
+
+			#every phase's water is proportional to solid_water, so the
+			#binding constraint is whichever saturates first and one cap
+			#handles all four at once
+			_ol_max = np.min(_stack, axis = 0)
+			_solid_max = _ol_max * _W
+
+			#0 = ol, 1 = opx, 2 = cpx, 3 = garnet
+			self.mineral_sat_binding_phase = np.argmin(_stack, axis = 0)
+
+			#zero means the partition coefficients and the solubility models
+			#agree. Nonzero measures how far apart those two experiment sets are.
+			self.mineral_sat_inconsistency = _solid_max - self.max_bulk_water
+
+			#NaN at supersolidus nodes propagates into _solid_max, and
+			#(x > nan) is False, so those are never flagged. Explicit rather
+			#than relied on.
+			_over = np.zeros(len(self.T), dtype = bool)
+			_ok = np.isfinite(_solid_max)
+			_over[_ok] = self.solid_water[_ok] > _solid_max[_ok]
+
+			if method == 'index':
+				_mask = np.zeros(len(self.T), dtype = bool)
+				_mask[sol_idx] = _over[sol_idx]
+				_over = _mask
+
+			if np.any(_over):
+
+				self.mineral_water_saturated[_over] = True
+
+				#cap solid_water, then carry it back so bulk_water stays
+				#self-consistent, exactly as the X_sat cap above does
+				self.solid_water[_over] = _solid_max[_over]
+
+				#Split by whether the node actually has melt. d_per_melt is
+				#only defined when _define_per_melt has run, which happens
+				#only on the melt-bearing path, so it must not be touched at
+				#a dry node.
+				_wet = _over & (self.melt_fluid_mass_frac > 0.0)
+				_dry = _over & (self.melt_fluid_mass_frac <= 0.0)
+
+				#dry: the solid holds everything, so bulk is just the cap
+				if np.any(_dry):
+					self.h2o_melt[_dry] = 0.0
+					self.bulk_water[_dry] = _solid_max[_dry]
+
+				#wet: carry the cap back through the melt mass balance
+				if np.any(_wet):
+					_f = self.melt_fluid_mass_frac[_wet]
+					_d = self.d_per_melt[_wet]
+					_m = np.where(_d > 0.0,
+						_solid_max[_wet] / np.where(_d > 0.0, _d, 1.0), 0.0)
+					self.h2o_melt[_wet] = _m
+					self.bulk_water[_wet] = _m * (_f + ((1.0 - _f) * _d))
+
 		#calculating olivine water content from bulk water using mineral partitioning contents
 		self.ol_water[idx_node] = self.solid_water[idx_node] / (self.ol_frac_wt[idx_node] + ((self.opx_frac_wt[idx_node] * self.d_opx_ol[idx_node]) +\
 		(self.cpx_frac_wt[idx_node] * self.d_cpx_ol[idx_node]) + (self.garnet_frac_wt[idx_node] * self.d_garnet_ol[idx_node])))
@@ -6869,7 +6979,7 @@ class pide(object):
 					self.max_ol_water = np.array(max_mineral_water)
 				except AttributeError:
 					raise AttributeError('You have to enter ti_ol as a different parameter by the self.set_parameter method')
-				
+
 		elif mineral_name == 'opx':
 			
 			min_idx = 4

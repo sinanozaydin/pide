@@ -524,6 +524,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 	melt_frac_limit = kwargs.pop('melt_frac_limit',0.005)
 	comp_index = kwargs.pop('comp_index',[0] * len(param_names))
+	verbose = kwargs.pop('verbose', False)
 
 	#deep copy object to not confuse multiprocessing workers.
 	object = copy.deepcopy(object)
@@ -722,6 +723,16 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				'for bulk_water, or every proposal will be rejected.'
 				% (_bad.tolist(), np.asarray(depths)[_bad].tolist(),
 				np.round(object.bulk_water[_bad], 1).tolist()))
+				
+		if np.any(object.mineral_water_saturated[:n_depths]):
+				_bad = np.where(object.mineral_water_saturated[:n_depths])[0]
+				_ph = ['ol', 'opx', 'cpx', 'gt']
+				raise ValueError('Initial bulk_water exceeds mineral water solubility at depth '
+					'indices %s (%s km). Binding phase there is %s, allowed maximum %s ppm. '
+					'Lower initial_params for bulk_water, or every proposal will be rejected.'
+					% (_bad.tolist(), np.asarray(depths)[_bad].tolist(),
+					[_ph[i] for i in object.mineral_sat_binding_phase[_bad]],
+					np.round(object.bulk_water[_bad], 1).tolist()))
 
 		if (melt_solv == True) or (melt_thermodyn == True):
 
@@ -800,6 +811,14 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	current_misf_vs = misf_vs.copy()
 	current_misf_vpvs = misf_vpvs.copy()
 	current_misf_lab = misf_lab
+	
+	current_vp_ = np.array(vp_init).copy() if vp_list is not None else None
+	current_vs_ = np.array(vs_init).copy() if vs_list is not None else None
+	current_cond_ = np.array(cond_init).copy() if cond_list is not None else None
+	if vpvs_list is not None:
+		current_vpvs_ = (np.array(vp_init) / np.array(vs_init)).copy()
+	else:
+		current_vpvs_ = None
 	
 	if np.isnan(current_likelihood) == True:
 		raise ValueError('From the initial calculations likelihood is calculate to be nan. Try to change the initial parameters.\
@@ -887,7 +906,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	n_reject_bounds = 0
 	n_reject_nan = 0
 	n_reject_likelihood = 0
-	n_reject_saturation = 0
+	n_reject_sat_melt_only = 0
+	n_reject_sat_mineral_only = 0
+	n_reject_sat_both = 0
 	
 	status = 'ok'
 	status_message = ''
@@ -1090,9 +1111,18 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			#checking if added sample had melt saturation
 			reject_saturation = False
 			if water_solv == True:
-				if np.any(object.melt_water_saturated[:n_depths]):
+
+				_melt_sat = bool(np.any(object.melt_water_saturated[:n_depths]))
+				_min_sat = bool(np.any(object.mineral_water_saturated[:n_depths]))
+
+				if _melt_sat or _min_sat:
 					reject_saturation = True
-					n_reject_saturation += 1
+					if _melt_sat and _min_sat:
+						n_reject_sat_both += 1
+					elif _melt_sat:
+						n_reject_sat_melt_only += 1
+					else:
+						n_reject_sat_mineral_only += 1
 			
 			if reject_saturation == False:
 			
@@ -1159,7 +1189,21 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 								param_vals = proposed_depth_params[:, ii]
 	
 							proposed_prior += np.sum(-0.5 * ((param_vals - prior_mean) / prior_sigma)**2)
-	
+				
+				if verbose == True:
+					if (_ % 100) == 0:
+						_lp_cond = float(np.sum(misf_cond))
+						_lp_vp   = float(np.sum(misf_vp))
+						_lp_vs   = float(np.sum(misf_vs))
+						_lp_vpvs = float(np.sum(misf_vpvs))
+						_lp_lab  = float(misf_lab)
+						_lp_prior = float(proposed_prior)
+						_lp_data = _lp_cond + _lp_vp + _lp_vs + _lp_vpvs + _lp_lab
+						
+						print('it %7d  logL %9.2f  [Cond %8.2f  vp %8.2f  vs %8.2f  vpvs %8.2f  lab %7.2f]  logPrior %9.2f  logPost %9.2f'
+							% (_, _lp_data, _lp_cond, _lp_vp, _lp_vs, _lp_vpvs,
+							_lp_lab, _lp_prior, _lp_data + _lp_prior))
+						
 				proposed_likelihood = np.exp(np.sum(misf_cond) + np.sum(misf_vp) + np.sum(misf_vs) + np.sum(misf_vpvs) + misf_lab + proposed_prior)
 			
 			else:
@@ -1189,6 +1233,15 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					current_misf_vs = misf_vs.copy()
 					current_misf_vpvs = misf_vpvs.copy()
 					current_misf_lab = misf_lab
+					
+					if vp_list is not None:
+						current_vp_ = np.array(vp_).copy()
+					if vs_list is not None:
+						current_vs_ = np.array(vs_).copy()
+					if vpvs_list is not None:
+						current_vpvs_ = np.array(vp_ / vs_).copy()
+					if cond_list is not None:
+						current_cond_ = np.array(cond_).copy()
 										
 					n_accepted_per_dim[step_idx] += 1
 
@@ -1279,9 +1332,10 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 				status = 'stuck_no_acceptance'
 				status_message = ('zero acceptances in %d iterations after burn-in. '
-					'Rejections: bounds %d, NaN %d, saturation %d, likelihood %d.'
-					% (_ - burning, n_reject_bounds, n_reject_nan,
-					n_reject_saturation, n_reject_likelihood))
+						'Rejections: bounds %d, NaN %d, melt saturation %d, '
+						'mineral saturation %d, likelihood %d.'
+						% (_ - burning, n_reject_bounds, n_reject_nan,
+						n_reject_saturation, n_reject_mineral_sat, n_reject_likelihood))
 
 				print(text_color.RED + f'Index {index} STOPPED: {status_message}' + text_color.END)
 				print(text_color.RED + 'Returning what was collected. Check initial_params, the '
@@ -1304,7 +1358,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				print(f'Rejected based on likelihood per cent(%): {(1e2*n_reject_likelihood / _):.2f}')
 				print(f'Rejected based on NaN petrophysical/thermodynamic calculation per cent(%): {(1e2*n_reject_nan / _):.2f}')
 				print(f'Rejected based on bound limitations per cent(%): {(1e2*n_reject_bounds / _):.2f}')
-				print(f'Rejected based on melt water saturation per cent(%): {(1e2*n_reject_saturation / _):.2f}')   #ADDED
+				print(f'Rejected, melt saturation only (%): {(1e2*n_reject_sat_melt_only / _):.2f}')
+				print(f'Rejected, mineral saturation only (%): {(1e2*n_reject_sat_mineral_only / _):.2f}')
+				print(f'Rejected, both (%): {(1e2*n_reject_sat_both / _):.2f}')
 
 				for d in range(n_step_dims):
 					if n_attempted_per_dim[d] == 0:
@@ -1411,7 +1467,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		'n_iterations_run': _ + 1,
 		'n_reject_bounds': n_reject_bounds,
 		'n_reject_nan': n_reject_nan,
-		'n_reject_saturation': n_reject_saturation,
+		'n_reject_sat_melt_only': n_reject_sat_melt_only,
+		'n_reject_sat_mineral_only': n_reject_sat_mineral_only,
+		'n_reject_sat_both': n_reject_sat_both,
 		'n_reject_likelihood': n_reject_likelihood,
 	
 		#--- what was actually switched on, so an empty array is never ambiguous ---
