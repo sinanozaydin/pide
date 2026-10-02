@@ -1246,40 +1246,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 					n_accepted_per_dim[step_idx] += 1
 
 					if _ > burning:
-						samples_SHF.append(current_scalars[0])
-						if invert_lab_temp == True:
-							samples_lab_temp.append(current_scalars[1])
-						samples_lab.append(LAB)
-						samples_temp.append(object.T.copy())
-						samples_depth_params.append(_to_real_fractions(current_depth_params))
-						misfits_cond.append(misf_cond)
-						misfits_vp.append(misf_vp)
-						misfits_vs.append(misf_vs)
-						misfits_vpvs.append(misf_vpvs) 
-						misfits_lab.append(misf_lab)
 						
-						melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
-							
-						if vp_list is not None:
-							preds_vp.append(np.array(vp_).copy())
-						if vs_list is not None:
-							preds_vs.append(np.array(vs_).copy())
-						if vpvs_list is not None:
-							preds_vpvs.append(np.array(vp_ / vs_).copy())
-						if cond_list is not None:
-							preds_cond.append(np.array(cond_).copy())
-
-						if melt_thermodyn_interp is not None:
-							_k = np.zeros(n_depths)
-							for iz in range(n_depths):
-								_k[iz] = float(melt_thermodyn_interp([
-									object.T[iz] - 273.15,
-									object.bulk_water[iz] * 1e-4,
-									object.p[iz]]))
-							katz_melt_samples.append(_k)
-							
-						for rname in record_names:
-							samples_record[rname].append(np.array(getattr(object, rname)[:n_depths]).copy())
 						accepted += 1
 						
 				else:
@@ -1325,6 +1292,43 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 		if melt_thermodyn == True:
 			melt_samples_all.append(object.melt_fluid_mass_frac[:n_depths].copy())
+		
+		if _ > burning:
+		
+			samples_SHF.append(current_scalars[0])
+			if invert_lab_temp == True:
+				samples_lab_temp.append(current_scalars[1])
+			samples_lab.append(LAB)
+			samples_temp.append(object.T.copy())
+			samples_depth_params.append(_to_real_fractions(current_depth_params))
+			misfits_cond.append(misf_cond)
+			misfits_vp.append(misf_vp)
+			misfits_vs.append(misf_vs)
+			misfits_vpvs.append(misf_vpvs) 
+			misfits_lab.append(misf_lab)
+			
+			melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
+				
+			if vp_list is not None:
+				preds_vp.append(np.array(vp_).copy())
+			if vs_list is not None:
+				preds_vs.append(np.array(vs_).copy())
+			if vpvs_list is not None:
+				preds_vpvs.append(np.array(vp_ / vs_).copy())
+			if cond_list is not None:
+				preds_cond.append(np.array(cond_).copy())
+	
+			if melt_thermodyn_interp is not None:
+				_k = np.zeros(n_depths)
+				for iz in range(n_depths):
+					_k[iz] = float(melt_thermodyn_interp([
+						object.T[iz] - 273.15,
+						object.bulk_water[iz] * 1e-4,
+						object.p[iz]]))
+				katz_melt_samples.append(_k)
+				
+			for rname in record_names:
+				samples_record[rname].append(np.array(getattr(object, rname)[:n_depths]).copy())
 
 		# Check if stuck after enough post-burn-in samples
 		if _ != 0:
@@ -1335,7 +1339,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						'Rejections: bounds %d, NaN %d, melt saturation %d, '
 						'mineral saturation %d, likelihood %d.'
 						% (_ - burning, n_reject_bounds, n_reject_nan,
-						n_reject_saturation, n_reject_mineral_sat, n_reject_likelihood))
+						n_reject_sat_melt_only, n_reject_sat_mineral_only,
+						n_reject_sat_both, n_reject_likelihood))
 
 				print(text_color.RED + f'Index {index} STOPPED: {status_message}' + text_color.END)
 				print(text_color.RED + 'Returning what was collected. Check initial_params, the '
