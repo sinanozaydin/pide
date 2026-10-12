@@ -815,6 +815,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	current_vp_ = np.array(vp_init).copy() if vp_list is not None else None
 	current_vs_ = np.array(vs_init).copy() if vs_list is not None else None
 	current_cond_ = np.array(cond_init).copy() if cond_list is not None else None
+
 	if vpvs_list is not None:
 		current_vpvs_ = (np.array(vp_init) / np.array(vs_init)).copy()
 	else:
@@ -1301,22 +1302,22 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			samples_lab.append(LAB)
 			samples_temp.append(object.T.copy())
 			samples_depth_params.append(_to_real_fractions(current_depth_params))
-			misfits_cond.append(misf_cond)
-			misfits_vp.append(misf_vp)
-			misfits_vs.append(misf_vs)
-			misfits_vpvs.append(misf_vpvs) 
-			misfits_lab.append(misf_lab)
-			
+			misfits_cond.append(current_misf_cond.copy())
+			misfits_vp.append(current_misf_vp.copy())
+			misfits_vs.append(current_misf_vs.copy())
+			misfits_vpvs.append(current_misf_vpvs.copy())
+			misfits_lab.append(current_misf_lab)
+
 			melt_samples.append(object.melt_fluid_mass_frac[:n_depths].copy())
-				
+
 			if vp_list is not None:
-				preds_vp.append(np.array(vp_).copy())
+				preds_vp.append(current_vp_.copy())
 			if vs_list is not None:
-				preds_vs.append(np.array(vs_).copy())
+				preds_vs.append(current_vs_.copy())
 			if vpvs_list is not None:
-				preds_vpvs.append(np.array(vp_ / vs_).copy())
+				preds_vpvs.append(current_vpvs_.copy())
 			if cond_list is not None:
-				preds_cond.append(np.array(cond_).copy())
+				preds_cond.append(current_cond_.copy())
 	
 			if melt_thermodyn_interp is not None:
 				_k = np.zeros(n_depths)
@@ -1366,6 +1367,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				print(f'Rejected, melt saturation only (%): {(1e2*n_reject_sat_melt_only / _):.2f}')
 				print(f'Rejected, mineral saturation only (%): {(1e2*n_reject_sat_mineral_only / _):.2f}')
 				print(f'Rejected, both (%): {(1e2*n_reject_sat_both / _):.2f}')
+				print(f'SHF: {proposed_scalars[0]}')
+				print(f'Lab_Temp: {proposed_scalars[1]}')
 
 				for d in range(n_step_dims):
 					if n_attempted_per_dim[d] == 0:
