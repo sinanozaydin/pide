@@ -322,3 +322,164 @@ def T_Katsura_2022_Adiabat(P_input, out_type = 'T'):
 		grad_out = np.interp(P_input, P_mid, grad)
 
 		return grad_out
+
+#k = (k0 + k1/T + k2 T^2)(1 + k3 P), T in K, P in GPa, k in mW/m/K
+K_MANTLE_SP = (2.271e3, 681.12e3, -1.259e-4, 0.0399)
+K_MANTLE_GT = (2.371e3, 669.4e3, -1.288e-4, 0.0384)
+
+A_MANTLE = 4e-5      #mW/m^3
+RHO_CRUST = 2850.0
+RHO_MANTLE = 3300.0
+G = 9806.0
+KELVIN = 273.0
+
+def _k_mantle(T_K, P_GPa):
+	"""Hasterok (2010) mantle conductivity, mW/m/K, with the sp-gt switch."""
+
+	T_K = np.asarray(T_K, dtype = float)
+	P = np.asarray(P_GPa, dtype = float)
+
+	def f(c):
+		return (c[0] + (c[1] / T_K) + (c[2] * T_K ** 2.0)) * (1.0 + c[3] * P)
+
+	p_transition = 1.4209 + np.exp((3.9073e-3 * T_K) - 6.8041)
+
+	return np.where(P >= p_transition, f(K_MANTLE_GT), f(K_MANTLE_SP))
+
+
+def _pressure(depth, moho):
+	"""GPa. Matches the cumulative sum in the Hasterok function."""
+
+	z = np.asarray(depth, dtype = float)
+
+	return (RHO_CRUST * np.minimum(z, moho)
+		+ RHO_MANTLE * np.maximum(z - moho, 0.0)) * G * 1e-9
+
+
+def calculate_gradient_geotherm(T_moho, gradients, gradient_depths,
+	moho = 40.0, T_0 = 0.0, max_depth = 300.0, dz = 1.0,
+	interp_gradients = True):
+	"""
+	Geotherm from explicit interval gradients below the Moho.
+
+	Interval i runs from gradient_depths[i-1] to gradient_depths[i], with the
+	Moho as the lower edge of the first. Positive gradients make the profile
+	monotonic automatically, so nothing is ever rejected for an inverted
+	geotherm.
+
+	No LAB and no adiabat are imposed. With the gradients bounded down to
+	0.3 K/km the adiabat is reachable as a special case, and the LAB comes
+	out afterwards as the shallowest depth where the sampled gradient falls
+	below about 1 K/km. Imposing a cap instead would make every gradient
+	below it inert, with a flat posterior.
+
+	Parameters
+	----------
+	T_moho : degrees C
+	gradients : K/km, one per interval
+	gradient_depths : km, strictly increasing, all deeper than moho
+	moho : km
+	T_0 : degrees C at the surface, for the placeholder crustal line only
+	max_depth : km
+	dz : km
+	interp_gradients : True for a smooth profile, False for kinks at nodes
+
+	Returns
+	-------
+	T : KELVIN
+	depth : km
+	P : GPa
+	idx_lab : index where the gradient first falls below 1 K/km, else -1
+	"""
+
+	grad = np.asarray(gradients, dtype = float)
+	gd = np.asarray(gradient_depths, dtype = float)
+
+	if len(grad) != len(gd):
+		raise ValueError('gradients and gradient_depths must match in length, '
+			'got %d and %d.' % (len(grad), len(gd)))
+	if np.any(np.diff(gd) <= 0.0):
+		raise ValueError('gradient_depths must be strictly increasing.')
+	if gd[0] <= moho:
+		raise ValueError('every gradient depth must be deeper than the Moho.')
+	if np.any(grad <= 0.0):
+		raise ValueError('gradients must be positive.')
+
+	depth = np.arange(0.0, max_depth + 0.5 * dz, dz)
+	P = _pressure(depth, moho)
+	T = np.zeros(len(depth), dtype = float)
+
+	T_moho_K = T_moho + KELVIN
+	T_0_K = T_0 + KELVIN
+
+	#placeholder crustal line, so the array starts at the surface
+	in_crust = depth <= moho
+	T[in_crust] = T_0_K + (T_moho_K - T_0_K) * depth[in_crust] / moho
+
+	#gradient as a function of depth
+	edges = np.concatenate(([moho], gd))
+	if interp_gradients:
+		mids = 0.5 * (edges[:-1] + edges[1:])
+		g_of_z = np.interp(depth, mids, grad, left = grad[0], right = grad[-1])
+	else:
+		idx = np.clip(np.searchsorted(edges, depth, side = 'right') - 1,
+			0, len(grad) - 1)
+		g_of_z = grad[idx]
+
+	#cumulative integral from the anchor
+	i_start = int(np.argmax(depth > moho))
+	if i_start == 0:
+		return T, depth, P, -1
+
+	T[i_start:] = T_moho_K + np.cumsum(
+		0.5 * (g_of_z[i_start - 1:-1] + g_of_z[i_start:])
+		* np.diff(depth[i_start - 1:]))
+
+	#derived LAB
+	idx_lab = -1
+	below = np.where((depth > moho) & (g_of_z < 1.0))[0]
+	if len(below) > 0:
+		idx_lab = int(below[0])
+
+	return T, depth, P, idx_lab
+
+
+def conductive_gradients_at(depths, T_moho, q_moho, moho = 40.0,
+	A_mantle = A_MANTLE, dz = 1.0):
+	"""
+	The interval gradients a conductive solution gives, for a prior mean.
+
+	Integrates dT/dz = q/k and dq/dz = -A_mantle downward from the anchor
+	with the Hasterok mantle conductivity, then averages over each interval
+	of [moho, depths[0], depths[1], ...].
+
+	Returns
+	-------
+	gradients : K/km, len(depths) values
+	"""
+
+	d = np.asarray(depths, dtype = float)
+	depth = np.arange(moho, d[-1] + 10.0 + 0.5 * dz, dz)
+	P = _pressure(depth, moho)
+
+	T = np.zeros(len(depth), dtype = float)
+	T[0] = T_moho + KELVIN
+	q = float(q_moho)
+
+	for i in range(1, len(depth)):
+
+		h = depth[i] - depth[i - 1]
+
+		#q in mW/m^2 over k in mW/m/K gives K/m, so scale by 1e3 for K/km.
+		#A in mW/m^3 times km times 1e3 gives mW/m^2.
+		k1 = float(_k_mantle(T[i - 1], P[i - 1]))
+		T_mid = T[i - 1] + (q / k1 * 1e3) * 0.5 * h
+		k2 = float(_k_mantle(T_mid, 0.5 * (P[i - 1] + P[i])))
+
+		T[i] = T[i - 1] + ((q - A_mantle * 0.5 * h * 1e3) / k2 * 1e3) * h
+		q = q - A_mantle * h * 1e3
+
+	edges = np.concatenate(([moho], d))
+	T_edges = np.interp(edges, depth, T)
+
+	return np.diff(T_edges) / np.diff(edges)
