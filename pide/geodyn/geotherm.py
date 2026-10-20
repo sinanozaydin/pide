@@ -333,6 +333,7 @@ RHO_MANTLE = 3300.0
 G = 9806.0
 KELVIN = 273.0
 
+
 def _k_mantle(T_K, P_GPa):
 	"""Hasterok (2010) mantle conductivity, mW/m/K, with the sp-gt switch."""
 
@@ -354,6 +355,110 @@ def _pressure(depth, moho):
 
 	return (RHO_CRUST * np.minimum(z, moho)
 		+ RHO_MANTLE * np.maximum(z - moho, 0.0)) * G * 1e-9
+
+
+def calculate_conductive_geotherm(T_moho, q_moho, moho = 40.0, T_0 = 0.0,
+	max_depth = 300.0, dz = 1.0, A_mantle = A_MANTLE, k_scale = 1.0,
+	thermal_lab = True, thermal_lab_temp = 1300.0, adiabat_gradient = 0.4):
+	"""
+	Steady state conductive geotherm anchored at the Moho. Stage one.
+
+	Solves dT/dz = q/k and dq/dz = -A_mantle downward from T_moho with the
+	Hasterok mantle conductivity, switches to an adiabat at the thermal LAB.
+
+	The crust is a straight line to the anchor and carries no information.
+
+	Parameters
+	----------
+	T_moho : degrees C
+	q_moho : mW/m^2
+	moho, max_depth, dz : km
+	A_mantle : mW/m^3
+	k_scale : multiplier on the mantle conductivity. Very nearly degenerate
+		with 1/q_moho. Only A_mantle separates them, and weakly: refitting
+		T_moho and q_moho to hold the 50 and 120 km temperatures fixed, a
+		k_scale of 0.85 to 1.15 moves the middle of the column by at most
+		1.4 K, and even a factor of two moves it 8 K. Against a 100 K bow
+		that is nothing. Use it for a one-off sensitivity test, never as a
+		free parameter.
+	thermal_lab, thermal_lab_temp, adiabat_gradient : the LAB switch
+
+	Returns
+	-------
+	T : KELVIN
+	depth : km
+	P : GPa
+	idx_lab : index of the thermal LAB, or -1
+
+	Notes
+	-----
+	This family has TWO real degrees of freedom, level and slope, and no
+	useful curvature freedom. That is the point: it is a stiff model, so its
+	failure is informative. Neither candidate third parameter helps. k_scale
+	buys 1.4 K of curvature over its plausible range, see above. A_mantle
+	cannot do it either, because a layer pinned at both ends bows by
+	A L^2 / 8k, so 100 K over 70 km needs A near 0.49 microW/m^3, twelve
+	times depleted peridotite.
+
+	Unlike the gradient geotherm, this one does return a LAB, so lab_depth
+	can be fitted in stage one.
+	"""
+
+	if q_moho <= 0.0:
+		raise ValueError('q_moho must be positive.')
+	if moho >= max_depth:
+		raise ValueError('moho must be shallower than max_depth.')
+
+	depth = np.arange(0.0, max_depth + 0.5 * dz, dz)
+	P = _pressure(depth, moho)
+	T = np.zeros(len(depth), dtype = float)
+
+	T_moho_K = T_moho + KELVIN
+	T_0_K = T_0 + KELVIN
+
+	in_crust = depth <= moho
+	T[in_crust] = T_0_K + (T_moho_K - T_0_K) * depth[in_crust] / moho
+
+	i_start = int(np.argmax(depth > moho))
+	if i_start == 0:
+		return T, depth, P, -1
+
+	T_cur = float(T_moho_K)
+	q = float(q_moho)
+	z_cur = float(moho)
+
+	idx_lab = -1
+	T_lab_K = thermal_lab_temp + 273.15
+
+	for i in range(i_start, len(depth)):
+
+		h = depth[i] - z_cur
+
+		#q in mW/m^2 over k in mW/m/K gives K/m, so scale by 1e3 for K/km.
+		#A in mW/m^3 times km times 1e3 gives mW/m^2.
+		k1 = k_scale * float(_k_mantle(T_cur, P[i - 1]))
+		T_mid = T_cur + (q / k1 * 1e3) * 0.5 * h
+		k2 = k_scale * float(_k_mantle(T_mid, 0.5 * (P[i - 1] + P[i])))
+
+		T_next = T_cur + ((q - A_mantle * 0.5 * h * 1e3) / k2 * 1e3) * h
+		q_next = q - A_mantle * h * 1e3
+
+		if thermal_lab and T_next >= T_lab_K:
+			#land the LAB on the isotherm, then follow the adiabat
+			frac = (T_lab_K - T_cur) / (T_next - T_cur) if T_next > T_cur else 0.0
+			z_lab = z_cur + frac * h
+			idx_lab = i
+			T[i:] = T_lab_K + adiabat_gradient * (depth[i:] - z_lab)
+			break
+
+		T[i] = T_next
+		T_cur, q, z_cur = T_next, q_next, depth[i]
+
+		if q <= 0.0:
+			T[i:] = T_cur
+			break
+
+	return T, depth, P, idx_lab
 
 
 def calculate_gradient_geotherm(T_moho, gradients, gradient_depths,
@@ -459,25 +564,12 @@ def conductive_gradients_at(depths, T_moho, q_moho, moho = 40.0,
 	"""
 
 	d = np.asarray(depths, dtype = float)
-	depth = np.arange(moho, d[-1] + 10.0 + 0.5 * dz, dz)
-	P = _pressure(depth, moho)
 
-	T = np.zeros(len(depth), dtype = float)
-	T[0] = T_moho + KELVIN
-	q = float(q_moho)
-
-	for i in range(1, len(depth)):
-
-		h = depth[i] - depth[i - 1]
-
-		#q in mW/m^2 over k in mW/m/K gives K/m, so scale by 1e3 for K/km.
-		#A in mW/m^3 times km times 1e3 gives mW/m^2.
-		k1 = float(_k_mantle(T[i - 1], P[i - 1]))
-		T_mid = T[i - 1] + (q / k1 * 1e3) * 0.5 * h
-		k2 = float(_k_mantle(T_mid, 0.5 * (P[i - 1] + P[i])))
-
-		T[i] = T[i - 1] + ((q - A_mantle * 0.5 * h * 1e3) / k2 * 1e3) * h
-		q = q - A_mantle * h * 1e3
+	#LAB off, so the conductive branch runs the whole way and the gradients
+	#are the pure conductive ones at every node
+	T, depth, _P, _i = calculate_conductive_geotherm(T_moho, q_moho,
+		moho = moho, max_depth = float(d[-1]) + 10.0, dz = dz,
+		A_mantle = A_mantle, thermal_lab = False)
 
 	edges = np.concatenate(([moho], d))
 	T_edges = np.interp(edges, depth, T)

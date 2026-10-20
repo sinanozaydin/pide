@@ -2,7 +2,7 @@
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator, interp1d
-from pide.geodyn.geotherm import calculate_hasterok2011_geotherm
+from pide.geodyn.geotherm import calculate_hasterok2011_geotherm, calculate_conductive_geotherm, calculate_gradient_geotherm, conductive_gradients_at
 from .utils.utils import text_color, check_type
 from .utils.inversion_tools import snapshot_object_state, restore_object_state
 import copy
@@ -407,7 +407,10 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	param_priors=None, SHF_prior=None, lab_temp = 1350,
 	invert_lab_temp = False, lab_temp_bounds = None,
 	composition = None, max_widen_attempts = 3,
-	record_names = None,
+	record_names = None, geotherm_method = 'hasterok',
+	initial_T_moho = None, T_moho_bounds = None, T_moho_prior = None,
+	initial_q_moho = None, q_moho_bounds = None, q_moho_prior = None,
+	dt_dz_smooth_scale = None,
 	**kwargs):
 	"""
 	MCMC column solver for geotherm-based inversion.
@@ -557,6 +560,39 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 	if invert_lab_temp == True and lab_temp_bounds is None:
 		raise ValueError('lab_temp_bounds must be provided when invert_lab_temp=True.')
+		
+	if geotherm_method not in ('hasterok', 'conductive', 'gradient'):
+		raise ValueError("geotherm_method must be 'hasterok', 'conductive' or 'gradient'.")
+
+	idx_dt_dz = param_names.index('dt_dz') if 'dt_dz' in param_names else None
+
+	if geotherm_method == 'hasterok':
+		if idx_dt_dz is not None:
+			raise ValueError("'dt_dz' only applies to geotherm_method='gradient'.")
+	else:
+		if invert_lab_temp == True:
+			raise ValueError('invert_lab_temp applies only to '
+				"geotherm_method='hasterok'. The Moho-anchored methods take "
+				'their level from T_moho.')
+		if initial_T_moho is None:
+			raise ValueError('%s needs initial_T_moho, as the fixed value, or as '
+				'the starting value if T_moho_bounds is given.' % geotherm_method)
+
+	if geotherm_method == 'conductive':
+		if idx_dt_dz is not None:
+			raise ValueError("'dt_dz' only applies to geotherm_method='gradient'.")
+		if initial_q_moho is None:
+			raise ValueError("geotherm_method='conductive' needs initial_q_moho, as "
+				'the fixed value, or as the starting value if q_moho_bounds is given.')
+
+	if geotherm_method == 'gradient':
+		if idx_dt_dz is None:
+			raise ValueError("geotherm_method='gradient' needs 'dt_dz' in param_names, "
+				'one gradient per depth node.')
+		if lab_depth is not None:
+			raise ValueError("geotherm_method='gradient' imposes no LAB isotherm, so "
+				'there is no LAB to fit. Set lab_depth=None, or use '
+				"geotherm_method='conductive' to keep the LAB constraint.")
 
 	if record_names is None:
 		record_names = []
@@ -565,16 +601,40 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	# sampled scalar. Each scalar gets n_params "slots" of sampling weight,
 	# same relative emphasis SHF always had -- this generalizes the old
 	# single-scalar setup without changing behavior when invert_lab_temp=False.
-	scalar_names = ['SHF']
-	scalar_slots = [n_params]
-	scalar_bounds_list = [SHF_bounds]
-	current_scalars = [initial_SHF[index]]
+	scalar_names = []
+	scalar_bounds_list = []
+	current_scalars = []
 
-	if invert_lab_temp == True:
-		scalar_names.append('lab_temp')
-		scalar_slots.append(n_params)
-		scalar_bounds_list.append(lab_temp_bounds)
-		current_scalars.append(initial_lab_temp[index])
+	def _add_scalar(name, init, bounds):
+		scalar_names.append(name)
+		current_scalars.append(init[index])
+		scalar_bounds_list.append(bounds)
+
+	if geotherm_method == 'hasterok':
+		_add_scalar('SHF', initial_SHF, SHF_bounds)
+		if invert_lab_temp == True:
+			_add_scalar('lab_temp', initial_lab_temp, lab_temp_bounds)
+	else:
+		if T_moho_bounds is not None:
+			_add_scalar('T_moho', initial_T_moho, T_moho_bounds)
+		if geotherm_method == 'conductive' and q_moho_bounds is not None:
+			_add_scalar('q_moho', initial_q_moho, q_moho_bounds)
+
+	if len(scalar_names) == 0 and geotherm_method != 'gradient':
+		raise ValueError('nothing is being inverted in the geotherm. Give bounds '
+			'to at least one of T_moho or q_moho.')
+
+	#where each quantity lives in the scalar vector, or None if it is fixed
+	_i_SHF = scalar_names.index('SHF') if 'SHF' in scalar_names else None
+	_i_lab_temp = scalar_names.index('lab_temp') if 'lab_temp' in scalar_names else None
+	_i_T_moho = scalar_names.index('T_moho') if 'T_moho' in scalar_names else None
+	_i_q_moho = scalar_names.index('q_moho') if 'q_moho' in scalar_names else None
+
+	_T_moho_fixed = initial_T_moho[index] if initial_T_moho is not None else None
+	_q_moho_fixed = initial_q_moho[index] if initial_q_moho is not None else None
+
+	#each scalar keeps the n_params sampling weight SHF always had
+	scalar_slots = [n_params] * len(scalar_names)
 
 	current_scalars = np.array(current_scalars, dtype=float)
 	n_scalars = len(scalar_names)
@@ -628,13 +688,32 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	if melt_thermodyn is True:
 		melt_solv = True
 
-	# --- Calculate initial geotherm and set on object ---
-	def _update_geotherm(shf_val, lab_temp_val):
+	def _update_geotherm(scalars, depth_params):
+	
 		"""Calculate geotherm and interpolate onto depth nodes."""
-		T_full, depth_full, p_full, idx_LAB = calculate_hasterok2011_geotherm(
-			SHF=shf_val, T_0=0, max_depth=depths[-1] + 10,
-			moho=moho_depth[index], adiabat=True,
-			thermal_lab = True, thermal_lab_temp = lab_temp_val)
+
+		if geotherm_method == 'hasterok':
+			_lt = scalars[_i_lab_temp] if _i_lab_temp is not None else lab_temp
+			T_full, depth_full, p_full, idx_LAB = calculate_hasterok2011_geotherm(
+				SHF = scalars[_i_SHF], T_0 = 0, max_depth = 300.0,
+				moho = moho_depth[index], adiabat = True,
+				thermal_lab = True, thermal_lab_temp = _lt)
+		else:
+			_tm = scalars[_i_T_moho] if _i_T_moho is not None else _T_moho_fixed
+
+			if geotherm_method == 'conductive':
+				_qm = scalars[_i_q_moho] if _i_q_moho is not None else _q_moho_fixed
+				T_full, depth_full, p_full, idx_LAB = calculate_conductive_geotherm(
+					T_moho = _tm, q_moho = _qm,
+					moho = moho_depth[index], T_0 = 0, max_depth = 300.0,
+					thermal_lab = True, thermal_lab_temp = lab_temp)
+			else:
+				T_full, depth_full, p_full, idx_LAB = calculate_gradient_geotherm(
+					T_moho = _tm,
+					gradients = depth_params[:, idx_dt_dz],
+					gradient_depths = depths,
+					moho = moho_depth[index], T_0 = 0, max_depth = 300.0,
+					interp_gradients = False)
 
 		# Interpolate onto our depth nodes
 		T_interp_func = interp1d(depth_full, T_full, kind='linear', fill_value='extrapolate')
@@ -642,13 +721,38 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 		T_at_depths = T_interp_func(depths)
 		P_at_depths = P_interp_func(depths)
-		LAB = depth_full[idx_LAB]
+
+		#the Hasterok function can hand back an array index, the others an int
+		idx_LAB = int(np.atleast_1d(idx_LAB)[0]) if np.size(idx_LAB) > 0 else -1
+		LAB = depth_full[idx_LAB] if idx_LAB >= 0 else np.nan
 
 		return T_at_depths, P_at_depths, LAB
 
-	#Generating the initial temperature from initial SHF (and lab_temp if inverted) distribution.
-	_lab_temp_for_geotherm = current_scalars[1] if invert_lab_temp else lab_temp
-	T_init, P_init, LAB = _update_geotherm(shf_val=current_scalars[0], lab_temp_val=_lab_temp_for_geotherm)
+	def _geotherm_prior(scalars, depth_params):
+		"""Prior from the inverted geotherm parameters only."""
+
+		lp = 0.0
+
+		if _i_SHF is not None and SHF_prior is not None:
+			lp += -0.5 * ((scalars[_i_SHF] - SHF_prior[index][0]) / SHF_prior[index][1])**2
+
+		if _i_T_moho is not None and T_moho_prior is not None:
+			lp += -0.5 * ((scalars[_i_T_moho] - T_moho_prior[index][0]) / T_moho_prior[index][1])**2
+
+		if _i_q_moho is not None and q_moho_prior is not None:
+			lp += -0.5 * ((scalars[_i_q_moho] - q_moho_prior[index][0]) / q_moho_prior[index][1])**2
+
+		if idx_dt_dz is not None and dt_dz_smooth_scale is not None:
+			#L1 on first differences. Total variation, so it prefers a few
+			#constant segments joined by sharp jumps, which is the
+			#lid-then-adiabat structure, chosen by the data not assumed.
+			_g = depth_params[:, idx_dt_dz]
+			lp += -np.sum(np.abs(np.diff(_g))) / dt_dz_smooth_scale
+
+		return lp
+
+	#Generating the initial temperature from the geotherm parameters.
+	T_init, P_init, LAB = _update_geotherm(current_scalars, current_depth_params)
 	object.set_temperature(T_init)
 	object.set_pressure(P_init)
 	object.set_parameter('LAB', LAB)
@@ -661,6 +765,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 	#Setting all the parameters defined...
 	for ii in range(n_params):
+		if ii == idx_dt_dz:
+			continue   #dt_dz does not have to be in pide, a parameter for geotherm function only.
 		getattr(object, param_names[ii])[:n_depths] = current_depth_params[:, ii]
 		
 	if 'melt_fluid_mass_frac' in param_names:
@@ -791,8 +897,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	current_prior_log = 0.0
 
 	#SHF prior:
-	if SHF_prior is not None:
-		current_prior_log += -0.5 * ((current_scalars[0] - SHF_prior[index][0]) / SHF_prior[index][1])**2
+	current_prior_log += _geotherm_prior(current_scalars, current_depth_params)
 
 	#DO THIS LATER, does not work now.
 	if param_priors is not None:
@@ -827,6 +932,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	samples_SHF = []
 	samples_lab_temp = []
+	samples_scalars = []
+	samples_scalars_all = []
 	samples_lab = []
 	samples_temp = []
 	samples_depth_params = []
@@ -913,6 +1020,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 	status = 'ok'
 	status_message = ''
+	best_rms = np.inf
+	rms_history = []
 
 	n_step_dims = n_scalars + n_params + (1 if triangle_calculation == True else 0)
 	n_attempted_per_dim = [0] * n_step_dims
@@ -934,6 +1043,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		proposed_scalars = current_scalars.copy()
 		proposed_depth_params = current_depth_params.copy()
 		continue_bounds = True
+		is_dt_dz_move = False
 
 		if rand_dim < n_scalar_total:
 			s_idx = _get_scalar_idx(rand_dim)
@@ -946,6 +1056,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			dim_offset = rand_dim - n_scalar_total
 			param_idx = dim_offset // n_depths
 			depth_idx = dim_offset % n_depths
+			is_dt_dz_move = (idx_dt_dz is not None and param_idx == idx_dt_dz)
 
 			proposed_depth_params[depth_idx, param_idx] += randomgen
 
@@ -990,10 +1101,9 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			LAB_backup = LAB
 			object.density_fluid_loaded = False
 
-			if rand_dim < n_scalar_total:
-				#if tree for geotherm scalar sampling
-				_lab_temp_proposed = proposed_scalars[1] if invert_lab_temp else lab_temp
-				T_, P_, LAB = _update_geotherm(proposed_scalars[0], _lab_temp_proposed)
+			if rand_dim < n_scalar_total or is_dt_dz_move == True:
+				#any geotherm move: a scalar, or one of the dt_dz gradients
+				T_, P_, LAB = _update_geotherm(proposed_scalars, proposed_depth_params)
 				object.set_temperature(T_)
 				object.set_pressure(P_)
 				
@@ -1170,8 +1280,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 				#Calculate prior likelihood for proposed parameters
 				proposed_prior = 0.0
-				if SHF_prior is not None:
-					proposed_prior += -0.5 * ((proposed_scalars[0] - SHF_prior[index][0]) / SHF_prior[index][1])**2
+				proposed_prior += _geotherm_prior(proposed_scalars, proposed_depth_params)
+				
 				if param_priors is not None:
 					for ii in range(n_params):
 						if param_priors[ii] is not None:
@@ -1282,7 +1392,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		misfits_all_vpvs.append(current_misf_vpvs.copy())
 		misfits_all_lab.append(current_misf_lab)
 		samples_depth_params_all.append(_to_real_fractions(current_depth_params))
-		samples_SHF_all.append(current_scalars[0])
+		samples_SHF_all.append(current_scalars[0] if n_scalars > 0 else np.nan)
+		samples_scalars_all.append(current_scalars.copy())
 		
 		if invert_lab_temp == True:
 			samples_lab_temp_all.append(current_scalars[1])
@@ -1296,7 +1407,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		
 		if _ > burning:
 		
-			samples_SHF.append(current_scalars[0])
+			samples_SHF.append(current_scalars[0] if n_scalars > 0 else np.nan)
+			samples_scalars.append(current_scalars.copy())
 			if invert_lab_temp == True:
 				samples_lab_temp.append(current_scalars[1])
 			samples_lab.append(LAB)
@@ -1367,23 +1479,24 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				print(f'Rejected, melt saturation only (%): {(1e2*n_reject_sat_melt_only / _):.2f}')
 				print(f'Rejected, mineral saturation only (%): {(1e2*n_reject_sat_mineral_only / _):.2f}')
 				print(f'Rejected, both (%): {(1e2*n_reject_sat_both / _):.2f}')
-				print(f'SHF: {proposed_scalars[0]}')
-				print(f'Lab_Temp: {proposed_scalars[1]}')
-
+				for _si in range(n_scalars):
+					print(f'{scalar_names[_si]}: {proposed_scalars[_si]}')
+				print('n_step_dims %d  n_total %d  n_scalar_total %d  counters %s'
+						% (n_step_dims, n_total, n_scalar_total, n_attempted_per_dim))
 				for d in range(n_step_dims):
 					if n_attempted_per_dim[d] == 0:
 						continue
 					dim_acceptance = n_accepted_per_dim[d] / n_attempted_per_dim[d]
 					if dim_acceptance < 0.1:
-						factor, status, color = 0.8, 'very low', text_color.RED
+						factor, step_status, color = 0.8, 'very low', text_color.RED
 					elif dim_acceptance < ideal_acceptance_bounds[0]:
-						factor, status, color = 0.95, 'low', text_color.YELLOW
+						factor, step_status, color = 0.95, 'low', text_color.YELLOW
 					elif dim_acceptance > 0.5:
-						factor, status, color = 1.2, 'very high', text_color.RED
+						factor, step_status, color = 1.2, 'very high', text_color.RED
 					elif dim_acceptance > ideal_acceptance_bounds[1]:
-						factor, status, color = 1.05, 'high', text_color.YELLOW
+						factor, step_status, color = 1.05, 'high', text_color.YELLOW
 					else:
-						factor, status, color = 1.0, 'good', text_color.GREEN
+						factor, step_status, color = 1.0, 'good', text_color.GREEN
 
 					if _ < burning:
 						
@@ -1407,11 +1520,49 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 						name = param_names[d - n_scalars]
 					else:
 						name = 'f_pyx_f_lherz_joint'
-					print(color + f'  {name}: acceptance {status} ({dim_acceptance:.3f}), '
-						f'attempted={n_attempted_per_dim[d]}, step={proposal_stds[d]:.4f}{_frozen}' + text_color.END)
+					print(color + f'  {name}: acceptance {step_status} ({dim_acceptance:.3f}), '
+					f'attempted={n_attempted_per_dim[d]}, step={proposal_stds[d]:.4f}{_frozen}' + text_color.END)
 
 				n_attempted_per_dim = [0] * n_step_dims
 				n_accepted_per_dim = [0] * n_step_dims
+				
+				_sets = []
+				if cond_list is not None:
+					_sets.append(('cond', current_misf_cond, current_cond_, cond_list[index]))
+				if vp_list is not None:
+					_sets.append(('vp', current_misf_vp, current_vp_, vp_list[index]))
+				if vs_list is not None:
+					_sets.append(('vs', current_misf_vs, current_vs_, vs_list[index]))
+				if vpvs_list is not None:
+					_sets.append(('vpvs', current_misf_vpvs, current_vpvs_, vpvs_list[index]))
+
+				_all_z2, _rms_each = [], []
+				for _nm, _mv, _pr, _ob in _sets:
+					_z = np.sqrt(np.maximum(-2.0 * np.asarray(_mv, dtype=float)[:n_depths], 0.0))
+					if _pr is not None:
+						_z = _z * np.sign(np.asarray(_pr, dtype=float)[:n_depths]
+							- np.asarray(_ob, dtype=float)[:n_depths])
+					_rms_each.append((_nm, float(np.sqrt(np.mean(_z ** 2))), _z))
+					_all_z2.append(_z ** 2)
+
+				if len(_all_z2) > 0:
+					_rms = float(np.sqrt(np.mean(np.concatenate(_all_z2))))
+				else:
+					_rms = float('nan')
+
+				if _rms < best_rms:
+					best_rms = _rms
+				rms_history.append(_rms)
+
+				_c = text_color.GREEN if _rms < 1.5 else (
+					text_color.YELLOW if _rms < 3.0 else text_color.RED)
+				print(_c + 'RMS (sigma)  total %.3f   best %.3f' % (_rms, best_rms) + text_color.END)
+				print('    depth(km) ' + ' '.join('%6.0f' % v for v in np.asarray(depths)[:n_depths]))
+				for _nm, _r, _z in _rms_each:
+					_cc = text_color.GREEN if _r < 1.5 else (
+						text_color.YELLOW if _r < 3.0 else text_color.RED)
+					print(_cc + '    %-5s %6.2f  z: %s'
+						% (_nm, _r, ' '.join('%+6.2f' % v for v in _z)) + text_color.END)
 
 				print(color_ovr + f'Overall acceptance: {acceptance_rate:.3f} | {(_/n_iter)*100:.1f}% done' + text_color.END)
 		else:
@@ -1470,6 +1621,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	
 		#--- run health ---
 		'acceptance_rates': _arr(acceptance_rates),
+		'rms_history': _arr(rms_history),
+		'best_rms': float(best_rms),
 		'status': status,
 		'status_message': status_message,
 		'n_iterations_run': _ + 1,
@@ -1479,6 +1632,13 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		'n_reject_sat_mineral_only': n_reject_sat_mineral_only,
 		'n_reject_sat_both': n_reject_sat_both,
 		'n_reject_likelihood': n_reject_likelihood,
+		
+		#--- geotherm parameterisation ---
+		'samples_scalars': _arr(samples_scalars, n_scalars),
+		'samples_scalars_all': _arr(samples_scalars_all, n_scalars),
+		'scalar_names': list(scalar_names),
+		'geotherm_method': geotherm_method,
+		'idx_dt_dz': idx_dt_dz,
 	
 		#--- what was actually switched on, so an empty array is never ambiguous ---
 		'invert_lab_temp': bool(invert_lab_temp),
