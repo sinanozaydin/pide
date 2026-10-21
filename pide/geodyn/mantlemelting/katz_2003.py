@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import root
+from scipy.optimize import root, brentq
 import warnings
 
 #This code is modified after the following repository:
@@ -223,9 +223,20 @@ def F_wet(P,T,X,D,M=0.15):
 
 		return F_new - F
 
-	sol = root(F_iter, x0=F_opx, method='anderson')
-	F = sol.x
+	def _g(f, i):
+		dT = min(delta_T(X_H2O(X[i], f, d_per_melt=D)), delT_sat[i])
+		base = (T[i] - (T_s[i] - dT)) / (T_lh[i] - T_s[i])
+		return (base**1.5 if base > 0.0 else 0.0) - f
 
+	F = np.zeros(n)
+	for i in range(n):
+		if _g(1e-12, i) <= 0.0:
+			F[i] = 0.0            #below the solidus, exactly zero
+		elif _g(1.0, i) >= 0.0:
+			F[i] = 1.0            #above the lherzolite liquidus
+		else:
+			F[i] = brentq(_g, 1e-12, 1.0, args=(i,), xtol=1e-12, rtol=1e-14)
+			
 	Xi = X_H2O(X, F, D)
 
 	delT = delta_T(Xi)

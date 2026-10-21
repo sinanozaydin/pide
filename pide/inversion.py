@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator, interp1d
 from pide.geodyn.geotherm import calculate_hasterok2011_geotherm, calculate_conductive_geotherm, calculate_gradient_geotherm, conductive_gradients_at
+from pide.geodyn.mantlemelting.katz_2003 import F_wet
 from .utils.utils import text_color, check_type
 from .utils.inversion_tools import snapshot_object_state, restore_object_state
 import copy
@@ -401,7 +402,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	upper_limits, lower_limits,
 	SHF_bounds,
 	proposal_stds, n_iter, burning, lab_depth = None, sigma_lab = None,
-	melt_thermodyn=False, melt_thermodyn_interp=None,
+	melt_thermodyn=False, melt_thermodyn_interp=None, melt_D = 0.0035,
 	adaptive_alg=True, ideal_acceptance_bounds=[0.2, 0.3],
 	adaptive_check_length=1000, step_size_limits=None,
 	param_priors=None, SHF_prior=None, lab_temp = 1350,
@@ -410,7 +411,8 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	record_names = None, geotherm_method = 'hasterok',
 	initial_T_moho = None, T_moho_bounds = None, T_moho_prior = None,
 	initial_q_moho = None, q_moho_bounds = None, q_moho_prior = None,
-	dt_dz_smooth_scale = None,
+	dt_dz_smooth_scale = None, fixed_T = None, fixed_P = None,
+	initial_T_offset = None, T_offset_bounds = None, T_offset_prior = None,
 	**kwargs):
 	"""
 	MCMC column solver for geotherm-based inversion.
@@ -561,15 +563,15 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	if invert_lab_temp == True and lab_temp_bounds is None:
 		raise ValueError('lab_temp_bounds must be provided when invert_lab_temp=True.')
 		
-	if geotherm_method not in ('hasterok', 'conductive', 'gradient'):
-		raise ValueError("geotherm_method must be 'hasterok', 'conductive' or 'gradient'.")
+	if geotherm_method not in ('hasterok', 'conductive', 'gradient', 'fixed'):
+		raise ValueError("geotherm_method must be 'hasterok', 'conductive', 'gradient' or 'fixed'.")
 
 	idx_dt_dz = param_names.index('dt_dz') if 'dt_dz' in param_names else None
 
 	if geotherm_method == 'hasterok':
 		if idx_dt_dz is not None:
 			raise ValueError("'dt_dz' only applies to geotherm_method='gradient'.")
-	else:
+	elif geotherm_method in ('conductive', 'gradient'):
 		if invert_lab_temp == True:
 			raise ValueError('invert_lab_temp applies only to '
 				"geotherm_method='hasterok'. The Moho-anchored methods take "
@@ -593,11 +595,63 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 			raise ValueError("geotherm_method='gradient' imposes no LAB isotherm, so "
 				'there is no LAB to fit. Set lab_depth=None, or use '
 				"geotherm_method='conductive' to keep the LAB constraint.")
+				
+	# --- 'fixed': the temperature profile is supplied, not modelled ---------
+	# Nothing about the geotherm is inverted. T and P come straight in and go
+	# straight out. Temperature uncertainty is handled by running the whole
+	# inversion once per bracket value of T, not by sampling it, which keeps
+	# the parameter count at one bulk_water per depth against one
+	# conductivity per depth.
+	_T_fixed_C = None
+	_P_fixed = None
+
+	if geotherm_method == 'fixed':
+
+		if fixed_T is None:
+			raise ValueError("geotherm_method='fixed' needs fixed_T: a list with "
+				'one temperature profile per column, each of length len(depths), '
+				'in CELSIUS (same convention as T_moho, T_0 and lab_temp).')
+
+		_T_fixed_C = np.asarray(fixed_T[index], dtype=float)
+		if _T_fixed_C.shape != (n_depths,):
+			raise ValueError('fixed_T[%d] has shape %s but needs (%d,) to match '
+				'depths. Set depths to the nodes your temperature model actually '
+				'has, rather than extrapolating it onto extra ones.'
+				% (index, _T_fixed_C.shape, n_depths))
+		if not np.all(np.isfinite(_T_fixed_C)):
+			raise ValueError('fixed_T[%d] contains non-finite values. Check for '
+				'fill values or extrapolation outside the source grid.' % index)
+		if np.nanmax(_T_fixed_C) > 2000.0:
+			raise ValueError('fixed_T[%d] reaches %.0f, which looks like KELVIN. '
+				'It must be CELSIUS.' % (index, np.nanmax(_T_fixed_C)))
+
+		if fixed_P is not None:
+			_P_fixed = np.asarray(fixed_P[index], dtype=float)
+			if _P_fixed.shape != (n_depths,):
+				raise ValueError('fixed_P[%d] has shape %s but needs (%d,).'
+					% (index, _P_fixed.shape, n_depths))
+		else:
+			#two-layer lithostatic, the same constants the geotherm functions use
+			_z = np.asarray(depths, dtype=float)
+			_P_fixed = (2850.0 * np.minimum(_z, moho_depth[index])
+				+ 3300.0 * np.maximum(_z - moho_depth[index], 0.0)) * 9806.0 * 1e-9
+
+		if lab_depth is not None:
+			raise ValueError("geotherm_method='fixed' imposes no LAB, so there is "
+				'none to fit. Set lab_depth=None.')
+
+		if T_moho_bounds is not None or q_moho_bounds is not None:
+			raise ValueError("geotherm_method='fixed' reads no T_moho or q_moho, "
+				'so bounds on them would add a scalar the geotherm never looks '
+				'at. Drop them from the call.')
+				
+		if T_offset_bounds is not None and initial_T_offset is None:
+			initial_T_offset = [0.0] * (index + 1)
 
 	if record_names is None:
 		record_names = []
 
-	# --- Scalars: SHF is always sampled; lab_temp is optionally a second
+	# --- Scalars: SHF is sampled; lab_temp is optionally a second
 	# sampled scalar. Each scalar gets n_params "slots" of sampling weight,
 	# same relative emphasis SHF always had -- this generalizes the old
 	# single-scalar setup without changing behavior when invert_lab_temp=False.
@@ -614,13 +668,16 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		_add_scalar('SHF', initial_SHF, SHF_bounds)
 		if invert_lab_temp == True:
 			_add_scalar('lab_temp', initial_lab_temp, lab_temp_bounds)
+	elif geotherm_method == 'fixed':
+		if T_offset_bounds is not None:
+			_add_scalar('T_offset', initial_T_offset, T_offset_bounds)
 	else:
 		if T_moho_bounds is not None:
 			_add_scalar('T_moho', initial_T_moho, T_moho_bounds)
 		if geotherm_method == 'conductive' and q_moho_bounds is not None:
 			_add_scalar('q_moho', initial_q_moho, q_moho_bounds)
 
-	if len(scalar_names) == 0 and geotherm_method != 'gradient':
+	if len(scalar_names) == 0 and geotherm_method not in ('gradient', 'fixed'):
 		raise ValueError('nothing is being inverted in the geotherm. Give bounds '
 			'to at least one of T_moho or q_moho.')
 
@@ -629,6 +686,7 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	_i_lab_temp = scalar_names.index('lab_temp') if 'lab_temp' in scalar_names else None
 	_i_T_moho = scalar_names.index('T_moho') if 'T_moho' in scalar_names else None
 	_i_q_moho = scalar_names.index('q_moho') if 'q_moho' in scalar_names else None
+	_i_T_offset = scalar_names.index('T_offset') if 'T_offset' in scalar_names else None
 
 	_T_moho_fixed = initial_T_moho[index] if initial_T_moho is not None else None
 	_q_moho_fixed = initial_q_moho[index] if initial_q_moho is not None else None
@@ -687,11 +745,43 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	melt_solv = 'melt_fluid_mass_frac' in param_names
 	if melt_thermodyn is True:
 		melt_solv = True
+		
+	def _melt_at(T_C, water_wt, P_GPa):
+		"""
+		Melt fraction at one node.
+
+		melt_thermodyn_interp=None calls F_wet directly, which is exact and
+		measured faster than a RegularGridInterpolator lookup at one point,
+		since the interpolator's per-call overhead dominates at this size.
+		Pass an interpolator to keep the old table behaviour.
+
+		F_wet returns (F, is_saturated) and goes negative outside its valid
+		range, which is what the table builder's F_table[F_table < 0] = 0.0
+		was for. Both are handled here.
+		"""
+
+		if melt_thermodyn_interp is not None:
+			v = melt_thermodyn_interp([T_C, water_wt, P_GPa])
+			try:
+				v = float(v)
+			except (TypeError, ValueError):
+				v = float(np.asarray(v).ravel()[0])
+		else:
+			out = F_wet(T = float(T_C), P = float(P_GPa),
+				X = max(float(water_wt), 0.0), D = melt_D)
+			v = float(out[0]) if isinstance(out, tuple) else float(out)
+
+		if not np.isfinite(v) or v < melt_frac_limit:
+			return 0.0
+		return min(v, 1.0)
 
 	def _update_geotherm(scalars, depth_params):
 	
 		"""Calculate geotherm and interpolate onto depth nodes."""
-
+		if geotherm_method == 'fixed':
+			_off = scalars[_i_T_offset] if _i_T_offset is not None else 0.0
+			return _T_fixed_C + 273.15 + _off, _P_fixed, np.nan
+		
 		if geotherm_method == 'hasterok':
 			_lt = scalars[_i_lab_temp] if _i_lab_temp is not None else lab_temp
 			T_full, depth_full, p_full, idx_LAB = calculate_hasterok2011_geotherm(
@@ -741,6 +831,10 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 
 		if _i_q_moho is not None and q_moho_prior is not None:
 			lp += -0.5 * ((scalars[_i_q_moho] - q_moho_prior[index][0]) / q_moho_prior[index][1])**2
+			
+		if _i_T_offset is not None and T_offset_prior is not None:
+			#(0.0, sigma) in Kelvin, sigma being their T_err
+			lp += -0.5 * ((scalars[_i_T_offset] - T_offset_prior[index][0]) / T_offset_prior[index][1])**2
 
 		if idx_dt_dz is not None and dt_dz_smooth_scale is not None:
 			#L1 on first differences. Total variation, so it prefers a few
@@ -801,20 +895,17 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	#Calculating thermodynamic calculation of partial melting is True.
 	current_melt = None
 
-	if melt_thermodyn and melt_thermodyn_interp is not None:
+	if melt_thermodyn:
 
 		idx_water = param_names.index('bulk_water') if 'bulk_water' in param_names else None
 		current_melt = np.zeros(n_depths)
 		for iz in range(n_depths):
-			T_C = object.T[iz] - 273.15
 			if idx_water is not None:
 				water_wt = current_depth_params[iz, idx_water] * 1e-4
 			else:
 				water_wt = object.bulk_water[iz] * 1e-4
-			melt_val = float(melt_thermodyn_interp([T_C, water_wt, object.p[iz]]))
-			if melt_val < melt_frac_limit:
-				melt_val = 0.0
-			current_melt[iz] = melt_val
+			current_melt[iz] = _melt_at(object.T[iz] - 273.15, water_wt,
+				object.p[iz])
 		object.melt_fluid_mass_frac[:n_depths] = current_melt
 
 	# --- Set up fluid density interpolation for melt calculations ---
@@ -960,8 +1051,6 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 	preds_vs = []
 	preds_vpvs = [] 
 	preds_cond = []
-
-	katz_melt_samples = []
 	
 	accepted = 0
 
@@ -1119,16 +1208,12 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 							object.f_pyx[iz] = fp
 							object.f_lherz[iz] = fl
 
-				if melt_thermodyn and melt_thermodyn_interp is not None:
+				if melt_thermodyn:
 
 					current_melt = np.zeros(n_depths)
 					for iz in range(n_depths):
-						T_C = object.T[iz] - 273.15
-						water_wt = object.bulk_water[iz] * 1e-4
-						melt_frac = float(melt_thermodyn_interp([T_C, water_wt, object.p[iz]]))
-						if melt_frac < melt_frac_limit:
-							melt_frac = 0.0
-						current_melt[iz] = melt_frac
+						current_melt[iz] = _melt_at(object.T[iz] - 273.15,
+							object.bulk_water[iz] * 1e-4, object.p[iz])
 					object.melt_fluid_mass_frac[:n_depths] = current_melt
 
 				# --- Set up fluid density interpolation for melt calculations ---
@@ -1208,13 +1293,11 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				object.f_pyx[joint_depth_idx] = fp
 				object.f_lherz[joint_depth_idx] = fl
 
-				if melt_thermodyn and melt_thermodyn_interp is not None:
-					T_C = object.T[joint_depth_idx] - 273.15
-					water_wt = object.bulk_water[joint_depth_idx] * 1e-4
-					melt_frac = float(melt_thermodyn_interp([T_C, water_wt, object.p[joint_depth_idx]]))
-					if melt_frac < melt_frac_limit:
-						melt_frac = 0.0
-					object.melt_fluid_mass_frac[joint_depth_idx] = melt_frac
+				if melt_thermodyn:
+					object.melt_fluid_mass_frac[joint_depth_idx] = _melt_at(
+						object.T[joint_depth_idx] - 273.15,
+						object.bulk_water[joint_depth_idx] * 1e-4,
+						object.p[joint_depth_idx])
 
 				if water_solv == True:
 					object.mantle_water_distribute(method = 'index', sol_idx = joint_depth_idx)
@@ -1430,15 +1513,6 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 				preds_vpvs.append(current_vpvs_.copy())
 			if cond_list is not None:
 				preds_cond.append(current_cond_.copy())
-	
-			if melt_thermodyn_interp is not None:
-				_k = np.zeros(n_depths)
-				for iz in range(n_depths):
-					_k[iz] = float(melt_thermodyn_interp([
-						object.T[iz] - 273.15,
-						object.bulk_water[iz] * 1e-4,
-						object.p[iz]]))
-				katz_melt_samples.append(_k)
 				
 			for rname in record_names:
 				samples_record[rname].append(np.array(getattr(object, rname)[:n_depths]).copy())
@@ -1596,7 +1670,6 @@ def _solv_MCMC_column(index, object, depths, moho_depth,
 		'samples_temp': _arr(samples_temp, n_depths),
 		'samples_depth_params': _arr(samples_depth_params),
 		'melt_samples': _arr(melt_samples, n_depths),
-		'katz_melt_samples': _arr(katz_melt_samples, n_depths),
 	
 		#--- all proposals ---
 		'samples_SHF_all': _arr(samples_SHF_all),
