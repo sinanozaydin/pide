@@ -49,7 +49,7 @@ from .pide_src.water_sol.rwd_wds_sol import *
 #importing eos functions
 from .pide_src.eos.fluid_eos import *
 from .pide_src.eos.melt_eos import Holland_Green_Powell_2018_ds633_MeltEOS
-from .pide_src.eos.burnman_mantle_lookup import BurnmanTableQuery
+from .pide_src.eos.triangle_mantle_lookup import TriangleTableQuery
 #importin anelasticity functions
 from .pide_src.anelasticity import Q1_Sobolev1996, Q2_Berckhemer1982, YamauchiTakei2016, JacksonFaul2010
 #importing mineral stability functions
@@ -123,6 +123,7 @@ class pide(object):
 		self.set_composition_solid_mineral(overlookError = True)
 		self.set_composition_solid_rock(overlookError = True)
 		self.set_NCFMAS()
+		self.set_triangle_table_path()
 		self.set_seismic_calculation_method()
 		self.set_mineral_conductivity_choice()
 		self.set_rock_conductivity_choice()
@@ -816,13 +817,38 @@ class pide(object):
 				
 		self.density_loaded = False
 		
+	def set_triangle_table_path(self, path=None):
+
+		"""
+		Set which lookup table .npz calculate_composition_modulii_from_triangle
+		reads from.
+
+		Parameters
+		----------
+		path : str or None
+			Path to the table .npz. None is the default and leaves the
+			choice to the query class, which falls back to the table
+			sitting next to it.
+
+		Changing the path invalidates the loaded table AND the row-wise
+		query cache. Both matter. Without clearing _triangle_key, a depth
+		whose (f_pyx, f_lherz, T, p) had not moved would keep the value it
+		got from the previous table, so half the column would be from one
+		table and half from the other with nothing to show it.
+		"""
+
+		self.triangle_table_path = path
+		self._triangle_query = None
+		self.triangle_table_loaded = False
+		self._triangle_key = None
+		
 	def set_composition_triangle(self, f_pyx=None, f_lherz=None, reval=False, **kwargs):
 
 		"""
 		Set the dunite*/pyroxenite*/lherzolite* bulk composition mixing
 		fractions (Munch et al. 2025 style three-endmember mixing) to be
 		used for Fe-Mg partitioning and modal mineralogy lookup
-		(mantle_xfe_distribute / BurnmanTableQuery), as depth-varying
+		(mantle_xfe_distribute / TriangleTableQuery), as depth-varying
 		arrays matching self.T.
 	
 		Only f_pyx and f_lherz are set directly; f_dun = 1 - f_pyx - f_lherz
@@ -6210,7 +6236,7 @@ class pide(object):
 			
 			self.water_fugacity_calculated = True
 			
-	def calculate_composition_modulii_from_triangle(self, npz_path=None, method='array', **kwargs):
+	def calculate_composition_modulii_from_triangle(self, method='array', **kwargs):
 
 		"""
 		Populate bulk composition, modal mineralogy, and per-phase xFe from
@@ -6227,8 +6253,6 @@ class pide(object):
 	
 		Parameters
 		----------
-		npz_path : str
-			Path to the lookup table .npz (see BurnmanTableQuery).
 		method : str
 			'array' to process all depths, 'index' to process a single point
 		sol_idx : int, optional
@@ -6243,9 +6267,10 @@ class pide(object):
 	
 		sol_idx = kwargs.pop('sol_idx', 0)
 		idx_node = None if method == 'array' else sol_idx
+		npz_path = self.triangle_table_path
 		
 		if getattr(self, 'triangle_table_loaded', False) == False or not hasattr(self, '_triangle_query'):
-			self._triangle_query = BurnmanTableQuery(npz_path)
+			self._triangle_query = TriangleTableQuery(npz_path)
 			self.triangle_table_loaded = True
 			self._triangle_key = None
 		
