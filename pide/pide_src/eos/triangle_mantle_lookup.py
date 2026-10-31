@@ -59,13 +59,13 @@ class TriangleTableQuery:
 			#the current default first, then older names, so an existing
 			#installation keeps working without being renamed
 			for name in ('pyx_lherz_dun_table.npz',
-				'burnman_pyx_lherz_dun.npz'):
+				'magemin_pyx_lherz_dun.npz'):
 				candidate = os.path.join(here, name)
 				if os.path.exists(candidate):
 					npz_path = candidate
 					break
 			else:
-				npz_path = os.path.join(here, 'perplex_pyx_lherz_dun.npz')
+				npz_path = os.path.join(here, 'magemin_pyx_lherz_dun.npz')
 
 		d_loaded = np.load(npz_path, allow_pickle=True)
 		d = {k: d_loaded[k] for k in d_loaded.files}
