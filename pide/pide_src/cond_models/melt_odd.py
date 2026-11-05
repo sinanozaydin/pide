@@ -220,7 +220,7 @@ def Guo2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2
 
 def Laumonier2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
-	P = P * 1e5 #converting gpa to bars
+	P = P * 1e4 #converting gpa to bars
 
 	a = -0.34
 	b = 8.96
@@ -241,7 +241,7 @@ def Laumonier2017_WetAndesite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Mel
 
 def Laumonier2015_WetDacite(T, P, Melt_H2O, Melt_CO2, Melt_Na2O, Melt_K2O, Melt_SiO2, method):
 
-	P = P * 1e5 #converting gpa to bars
+	P = P * 1e4 #converting gpa to bars
 
 	a = -0.064
 	b = 5.96
